@@ -6,13 +6,20 @@ import { cn } from "@/app/lib/cn";
 import { navLinks } from "./nav-links";
 import { ExternalLink } from "lucide-react";
 
-export function Sidebar({ slug }: { slug: string }) {
+export function Sidebar({
+  slug,
+  onNavigate,
+}: {
+  slug: string;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
     <nav className="flex h-full flex-col gap-1 p-4">
       <Link
         href="/dashboard"
+        onClick={onNavigate}
         className="mb-6 flex items-center gap-2 px-2 text-lg font-semibold text-foreground"
       >
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -31,6 +38,7 @@ export function Sidebar({ slug }: { slug: string }) {
           <Link
             key={link.href}
             href={link.href}
+            onClick={onNavigate}
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
               active
@@ -49,6 +57,7 @@ export function Sidebar({ slug }: { slug: string }) {
           href={`/portaal/${slug}`}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={onNavigate}
           className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >
           <ExternalLink className="h-4 w-4" />
