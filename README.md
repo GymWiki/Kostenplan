@@ -21,15 +21,17 @@ kosten, gebaseerd op vier instelbare kostenposten: **arbeidskosten**, **transpor
 
 - [Next.js](https://nextjs.org) 16 (App Router, Server Actions, Turbopack)
 - React 19, TypeScript, Tailwind CSS 4
-- Prisma 7 met SQLite (via `@prisma/adapter-better-sqlite3`)
+- Prisma 7 met PostgreSQL (via `@prisma/adapter-pg`)
 - Sessie-authenticatie met `jose` (JWT in httpOnly cookie) en `bcryptjs`
 
-## Aan de slag
+## Aan de slag (lokaal)
+
+Je hebt een PostgreSQL-database nodig (lokaal, of gratis bijv. via [Neon](https://neon.tech)).
 
 ```bash
 npm install
-cp .env.example .env      # pas SESSION_SECRET aan voor productie
-npx prisma migrate deploy # database aanmaken
+cp .env.example .env      # vul DATABASE_URL en SESSION_SECRET in
+npx prisma migrate deploy # tabellen aanmaken
 npm run dev
 ```
 
@@ -38,10 +40,29 @@ De app draait daarna op `http://localhost:3000`.
 ### Scripts
 
 - `npm run dev` — ontwikkelserver
-- `npm run build` — productiebuild
+- `npm run build` — productiebuild (draait ook `prisma generate` via `postinstall`)
 - `npm run start` — productieserver
 - `npm run lint` — ESLint
+- `npm run db:deploy` — migraties toepassen (`prisma migrate deploy`)
 - `npx prisma studio` — database inspecteren
+
+## Deployen naar Vercel
+
+1. **Database**: maak een gratis Postgres-database aan, bijv. via [Neon](https://neon.tech) of de
+   Vercel Postgres-integratie (Storage → Postgres in je Vercel-project). Kopieer de
+   connectiestring.
+2. **Project importeren**: ga naar [vercel.com/new](https://vercel.com/new), importeer deze
+   GitHub-repository en kies de branch die je wilt deployen. Next.js wordt automatisch herkend.
+3. **Environment variables**: zet in de Vercel-projectinstellingen:
+   - `DATABASE_URL` — de connectiestring uit stap 1
+   - `SESSION_SECRET` — een lange willekeurige string (bijv. `openssl rand -base64 32`)
+4. **Migraties toepassen**: eenmalig (en na elke schemawijziging) de tabellen aanmaken op de
+   productie-database:
+   ```bash
+   DATABASE_URL="<jouw-connectiestring>" npm run db:deploy
+   ```
+5. **Deploy**: Vercel bouwt en deployt automatisch. Je krijgt een `https://<project>.vercel.app`
+   URL die je in de browser kunt openen.
 
 ## Projectstructuur
 
