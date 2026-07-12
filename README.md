@@ -38,7 +38,10 @@ producten.
    → New Project (gratis tier is voldoende).
 2. **Sleutels ophalen**: Project Settings → API — kopieer de **Project URL** en de **anon
    public key**.
-3. **Database-connectiestring ophalen**: Project Settings → Database → Connection string (URI).
+3. **Database-connectiestring ophalen**: klik de groene **Connect**-knop bovenaan het dashboard →
+   tab **Session pooler** (poort 5432). Gebruik niet de "Direct connection" — die host
+   (`db.<project-ref>.supabase.co`) is IPv6-only en werkt niet vanaf de meeste IPv4-only
+   netwerken/CI-omgevingen.
 4. **Environment variables instellen**:
    ```bash
    cp .env.example .env
