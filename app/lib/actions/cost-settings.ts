@@ -18,16 +18,20 @@ export async function updateCostSettingsAction(
 
   const raw = {
     arbeidEnabled: formData.get("arbeidEnabled") === "on",
+    arbeidZichtbaar: formData.get("arbeidZichtbaar") === "on",
     arbeidTarief: formData.get("arbeidTarief"),
 
     transportEnabled: formData.get("transportEnabled") === "on",
+    transportZichtbaar: formData.get("transportZichtbaar") === "on",
     transportType: formData.get("transportType"),
     transportTarief: formData.get("transportTarief"),
 
     voorrijEnabled: formData.get("voorrijEnabled") === "on",
+    voorrijZichtbaar: formData.get("voorrijZichtbaar") === "on",
     voorrijTarief: formData.get("voorrijTarief"),
 
     materiaalEnabled: formData.get("materiaalEnabled") === "on",
+    materiaalZichtbaar: formData.get("materiaalZichtbaar") === "on",
     materiaalMarge: formData.get("materiaalMarge"),
 
     btwPercentage: formData.get("btwPercentage"),

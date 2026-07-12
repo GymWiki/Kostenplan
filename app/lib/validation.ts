@@ -13,29 +13,28 @@ export const loginSchema = z.object({
 
 export const costSettingsSchema = z.object({
   arbeidEnabled: z.boolean(),
+  arbeidZichtbaar: z.boolean(),
   arbeidTarief: z.coerce.number().min(0),
 
   transportEnabled: z.boolean(),
+  transportZichtbaar: z.boolean(),
   transportType: z.enum(["VAST", "PER_KM"]),
   transportTarief: z.coerce.number().min(0),
 
   voorrijEnabled: z.boolean(),
+  voorrijZichtbaar: z.boolean(),
   voorrijTarief: z.coerce.number().min(0),
 
   materiaalEnabled: z.boolean(),
+  materiaalZichtbaar: z.boolean(),
   materiaalMarge: z.coerce.number().min(0).max(500),
 
   btwPercentage: z.coerce.number().min(0).max(100),
 });
 
-export const categorySchema = z.object({
-  naam: z.string().trim().min(1, "Vul een naam in").max(60),
-});
-
 export const serviceSchema = z.object({
   naam: z.string().trim().min(1, "Vul een naam in").max(120),
   omschrijving: z.string().trim().max(500).optional().or(z.literal("")),
-  categoryId: z.string().trim().optional().or(z.literal("")),
   eenheid: z.string().trim().min(1).max(20),
   arbeidsuren: z.coerce.number().min(0),
   materiaalkosten: z.coerce.number().min(0),
@@ -45,8 +44,23 @@ export const serviceSchema = z.object({
 export const productSchema = z.object({
   naam: z.string().trim().min(1, "Vul een naam in").max(120),
   omschrijving: z.string().trim().max(500).optional().or(z.literal("")),
-  categoryId: z.string().trim().optional().or(z.literal("")),
   eenheid: z.string().trim().min(1).max(20),
+  actief: z.boolean(),
+});
+
+export const materialCategorySchema = z.object({
+  naam: z.string().trim().min(1, "Vul een naam in").max(60),
+});
+
+export const materialOptionSchema = z.object({
+  naam: z.string().trim().min(1, "Vul een naam in").max(120),
+  prijs: z.coerce.number().min(0),
+  actief: z.boolean(),
+});
+
+export const extraOptionSchema = z.object({
+  naam: z.string().trim().min(1, "Vul een naam in").max(120),
+  omschrijving: z.string().trim().max(500).optional().or(z.literal("")),
   prijs: z.coerce.number().min(0),
   actief: z.boolean(),
 });

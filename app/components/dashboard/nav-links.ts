@@ -1,7 +1,6 @@
 import {
   LayoutDashboard,
   SlidersHorizontal,
-  FolderTree,
   Wrench,
   Package,
   type LucideIcon,
@@ -14,7 +13,6 @@ export const navLinks: { href: string; label: string; icon: LucideIcon }[] = [
     label: "Kosteninstellingen",
     icon: SlidersHorizontal,
   },
-  { href: "/dashboard/categorieen", label: "Categorieën", icon: FolderTree },
   { href: "/dashboard/diensten", label: "Diensten", icon: Wrench },
   { href: "/dashboard/producten", label: "Producten", icon: Package },
 ];

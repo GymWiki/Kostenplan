@@ -5,17 +5,15 @@ import { Button, LinkButton } from "@/app/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import type { ServiceFormState } from "@/app/lib/actions/services";
-import type { Category, Service } from "@/app/generated/prisma/client";
+import type { Service } from "@/app/generated/prisma/client";
 
 const eenheden = ["m2", "m1", "m3", "stuks", "uur", "dag"];
 
 export function ServiceForm({
   action,
-  categories,
   service,
 }: {
   action: (state: ServiceFormState, formData: FormData) => Promise<ServiceFormState>;
-  categories: Category[];
   service?: Service;
 }) {
   const [state, formAction, pending] = useActionState<ServiceFormState, FormData>(
@@ -55,28 +53,15 @@ export function ServiceForm({
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="categoryId">Categorie</Label>
-          <Select id="categoryId" name="categoryId" defaultValue={service?.categoryId ?? ""}>
-            <option value="">Geen categorie</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.naam}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="eenheid">Eenheid</Label>
-          <Select id="eenheid" name="eenheid" defaultValue={service?.eenheid ?? "m2"}>
-            {eenheden.map((e) => (
-              <option key={e} value={e}>
-                {e}
-              </option>
-            ))}
-          </Select>
-        </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="eenheid">Eenheid</Label>
+        <Select id="eenheid" name="eenheid" defaultValue={service?.eenheid ?? "m2"}>
+          {eenheden.map((e) => (
+            <option key={e} value={e}>
+              {e}
+            </option>
+          ))}
+        </Select>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

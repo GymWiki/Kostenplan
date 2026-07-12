@@ -15,7 +15,6 @@ function parseServiceForm(formData: FormData) {
   return serviceSchema.safeParse({
     naam: formData.get("naam"),
     omschrijving: formData.get("omschrijving") ?? "",
-    categoryId: formData.get("categoryId") ?? "",
     eenheid: formData.get("eenheid"),
     arbeidsuren: formData.get("arbeidsuren"),
     materiaalkosten: formData.get("materiaalkosten"),
@@ -37,14 +36,12 @@ export async function createServiceAction(
     return { fieldErrors };
   }
 
-  const { categoryId, ...data } = parsed.data;
   const count = await prisma.service.count({ where: { userId: user.id } });
 
   await prisma.service.create({
     data: {
-      ...data,
+      ...parsed.data,
       userId: user.id,
-      categoryId: categoryId || null,
       order: count,
     },
   });
@@ -69,11 +66,9 @@ export async function updateServiceAction(
     return { fieldErrors };
   }
 
-  const { categoryId, ...data } = parsed.data;
-
   await prisma.service.updateMany({
     where: { id: serviceId, userId: user.id },
-    data: { ...data, categoryId: categoryId || null },
+    data: parsed.data,
   });
 
   revalidatePath("/dashboard/diensten");

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Plus, Pencil, Package } from "lucide-react";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { formatCurrency } from "@/app/lib/format";
 import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
@@ -21,7 +20,7 @@ export default async function ProductenPage() {
   const products = await prisma.product.findMany({
     where: { userId: user.id },
     orderBy: { order: "asc" },
-    include: { category: true },
+    include: { _count: { select: { materiaalCategorieen: true, extraOpties: true } } },
   });
 
   return (
@@ -30,7 +29,8 @@ export default async function ProductenPage() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Producten</h1>
           <p className="mt-1 text-muted-foreground">
-            Materialen die klanten los kunnen toevoegen aan hun kostenraming.
+            Samengestelde producten met materiaalkeuzes, bijv. een schutting met palen en
+            tussenbekleding.
           </p>
         </div>
         <LinkButton href="/dashboard/producten/nieuw">
@@ -48,7 +48,7 @@ export default async function ProductenPage() {
             <div>
               <p className="font-medium text-foreground">Nog geen producten</p>
               <p className="text-sm text-muted-foreground">
-                Voeg materialen toe die klanten kunnen selecteren in de calculator.
+                Voeg een product toe en richt daarna de materiaalcategorieën en extra opties in.
               </p>
             </div>
             <LinkButton href="/dashboard/producten/nieuw" variant="secondary">
@@ -64,8 +64,8 @@ export default async function ProductenPage() {
               <thead>
                 <tr className="border-b border-border bg-muted/50 text-left text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Product</th>
-                  <th className="px-4 py-3 font-medium">Categorie</th>
-                  <th className="px-4 py-3 font-medium">Prijs</th>
+                  <th className="px-4 py-3 font-medium">Materiaalcategorieën</th>
+                  <th className="px-4 py-3 font-medium">Extra opties</th>
                   <th className="px-4 py-3 font-medium">Actief</th>
                   <th className="px-4 py-3 font-medium text-right">Acties</th>
                 </tr>
@@ -75,16 +75,15 @@ export default async function ProductenPage() {
                   <tr key={product.id}>
                     <td className="px-4 py-3">
                       <p className="font-medium text-foreground">{product.naam}</p>
+                      <p className="text-xs text-muted-foreground">/ {product.eenheid}</p>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {product.category ? (
-                        <Badge variant="muted">{product.category.naam}</Badge>
-                      ) : (
-                        "—"
-                      )}
+                      <Badge variant="muted">
+                        {product._count.materiaalCategorieen}
+                      </Badge>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {formatCurrency(product.prijs)} / {product.eenheid}
+                      <Badge variant="muted">{product._count.extraOpties}</Badge>
                     </td>
                     <td className="px-4 py-3">
                       <ActiveToggle

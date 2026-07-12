@@ -5,7 +5,6 @@ import { prisma } from "@/app/lib/prisma";
 import { formatCurrency } from "@/app/lib/format";
 import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
 import { ActiveToggle } from "@/app/components/dashboard/active-toggle";
 import { DeleteButton } from "@/app/components/dashboard/delete-button";
 import {
@@ -21,7 +20,6 @@ export default async function DienstenPage() {
   const services = await prisma.service.findMany({
     where: { userId: user.id },
     orderBy: { order: "asc" },
-    include: { category: true },
   });
 
   return (
@@ -64,7 +62,6 @@ export default async function DienstenPage() {
               <thead>
                 <tr className="border-b border-border bg-muted/50 text-left text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Dienst</th>
-                  <th className="px-4 py-3 font-medium">Categorie</th>
                   <th className="px-4 py-3 font-medium">Arbeid</th>
                   <th className="px-4 py-3 font-medium">Materiaal</th>
                   <th className="px-4 py-3 font-medium">Actief</th>
@@ -77,13 +74,6 @@ export default async function DienstenPage() {
                     <td className="px-4 py-3">
                       <p className="font-medium text-foreground">{service.naam}</p>
                       <p className="text-xs text-muted-foreground">/ {service.eenheid}</p>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {service.category ? (
-                        <Badge variant="muted">{service.category.naam}</Badge>
-                      ) : (
-                        "—"
-                      )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {service.arbeidsuren} uur
