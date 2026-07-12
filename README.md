@@ -66,7 +66,8 @@ De app draait daarna op `http://localhost:3000`.
 - `npm run build` — productiebuild (draait ook `prisma generate` via `postinstall`)
 - `npm run start` — productieserver
 - `npm run lint` — ESLint
-- `npm run db:deploy` — migraties toepassen (`prisma migrate deploy`)
+- `npm run db:deploy` — migraties handmatig toepassen (`prisma migrate deploy`)
+- `npm run vercel-build` — wat Vercel gebruikt: migraties toepassen én bouwen in één stap
 - `npx prisma studio` — database inspecteren
 
 ## Deployen naar Vercel
@@ -76,11 +77,14 @@ De app draait daarna op `http://localhost:3000`.
    GitHub-repository en kies de branch die je wilt deployen. Next.js wordt automatisch herkend.
 3. **Environment variables**: zet in de Vercel-projectinstellingen dezelfde drie waarden als in
    `.env` (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL`).
-4. **Migraties toepassen**: eenmalig (en na elke schemawijziging) de tabellen aanmaken op de
-   Supabase-database:
-   ```bash
-   DATABASE_URL="<jouw-connectiestring>" npm run db:deploy
-   ```
+4. **Build Command overschrijven**: Project Settings → Build & Development Settings → Build
+   Command → override aanzetten → vul in `npm run vercel-build`. Hierdoor draait
+   `prisma migrate deploy` automatisch vóór elke build, dus elke push naar de gekoppelde branch
+   houdt de databasetabellen vanzelf up-to-date — geen handmatige stap meer nodig.
+   > Let op: dit voert migraties uit op elke deploy die dit Build Command gebruikt (dus ook
+   > preview-deployments als die dezelfde `DATABASE_URL` gebruiken). Voor een solo-project is dat
+   > geen probleem; bij een team met meerdere omgevingen kun je per environment een eigen
+   > `DATABASE_URL` instellen.
 5. **Redirect-URL toevoegen**: zet in Supabase onder Authentication → URL Configuration je
    Vercel-domein (`https://<project>.vercel.app`) bij Site URL / Redirect URLs, anders werken
    e-mailbevestigingslinks niet.
