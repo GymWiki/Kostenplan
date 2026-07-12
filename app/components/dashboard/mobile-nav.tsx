@@ -35,7 +35,7 @@ export function MobileNav({ slug }: { slug: string }) {
               >
                 <X className="h-4 w-4" />
               </button>
-              <Sidebar slug={slug} />
+              <Sidebar slug={slug} onNavigate={() => setOpen(false)} />
             </div>
           </div>,
           document.body
