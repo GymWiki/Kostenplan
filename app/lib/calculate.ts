@@ -34,6 +34,7 @@ export type CalcMaterialCategory = {
 export type CalcExtraOption = {
   id: string;
   prijs: number;
+  type: "PER_EENHEID" | "PER_STUK";
 };
 
 export type CalcProduct = {
@@ -70,7 +71,7 @@ export function calculateBreakdown({
   serviceQty: Record<string, number>;
   productQty: Record<string, number>;
   materialSelections: Record<string, string>;
-  extraSelections: Record<string, boolean>;
+  extraSelections: Record<string, number>;
   afstandKm: number;
   costSettings: CalcCostSettings;
 }) {
@@ -111,9 +112,9 @@ export function calculateBreakdown({
       }
 
       for (const extra of product.extraOpties) {
-        if (extraSelections[extra.id]) {
-          materiaalkosten += qty * extra.prijs;
-        }
+        const aantal = extraSelections[extra.id] ?? 0;
+        if (aantal <= 0) continue;
+        materiaalkosten += (extra.type === "PER_STUK" ? aantal : qty) * extra.prijs;
       }
     }
   }

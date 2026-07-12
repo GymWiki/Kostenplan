@@ -73,5 +73,6 @@ export const extraOptionSchema = z.object({
   naam: z.string().trim().min(1, "Vul een naam in").max(120),
   omschrijving: z.string().trim().max(500).optional().or(z.literal("")),
   prijs: z.coerce.number().min(0),
+  type: z.enum(["PER_EENHEID", "PER_STUK"]),
   actief: z.boolean(),
 });

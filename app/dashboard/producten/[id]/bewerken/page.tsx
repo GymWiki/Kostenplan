@@ -53,7 +53,11 @@ export default async function BewerkProductPage({
         categories={product.materiaalCategorieen}
       />
 
-      <ExtraOptionsManager productId={product.id} extraOpties={product.extraOpties} />
+      <ExtraOptionsManager
+        productId={product.id}
+        productEenheid={product.eenheid}
+        extraOpties={product.extraOpties}
+      />
     </div>
   );
 }

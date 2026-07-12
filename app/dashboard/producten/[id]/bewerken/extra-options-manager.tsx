@@ -10,7 +10,7 @@ import {
   type ExtraOptionFormState,
 } from "@/app/lib/actions/extra-options";
 import { Button } from "@/app/components/ui/button";
-import { Input, Textarea } from "@/app/components/ui/input";
+import { Input, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { formatCurrency } from "@/app/lib/format";
@@ -18,9 +18,11 @@ import type { ExtraOption } from "@/app/generated/prisma/client";
 
 export function ExtraOptionsManager({
   productId,
+  productEenheid,
   extraOpties,
 }: {
   productId: string;
+  productEenheid: string;
   extraOpties: ExtraOption[];
 }) {
   return (
@@ -29,11 +31,13 @@ export function ExtraOptionsManager({
         <h2 className="font-semibold text-foreground">Extra opties</h2>
         <p className="text-sm text-muted-foreground">
           Optionele toevoegingen die de klant kan aanvinken, bijv. &ldquo;Metalen
-          tussenbekleding voor planten&rdquo;.
+          tussenbekleding voor planten&rdquo;. Kies of de prijs meetelt met de hoeveelheid
+          van dit product (per {productEenheid}) of dat de klant er zelf een apart aantal
+          van opgeeft (per stuk).
         </p>
       </div>
 
-      <NewExtraOptionForm productId={productId} />
+      <NewExtraOptionForm productId={productId} productEenheid={productEenheid} />
 
       {extraOpties.length === 0 ? (
         <Card>
@@ -45,7 +49,7 @@ export function ExtraOptionsManager({
         <Card>
           <ul className="divide-y divide-border">
             {extraOpties.map((option) => (
-              <ExtraOptionRow key={option.id} option={option} />
+              <ExtraOptionRow key={option.id} option={option} productEenheid={productEenheid} />
             ))}
           </ul>
         </Card>
@@ -54,7 +58,28 @@ export function ExtraOptionsManager({
   );
 }
 
-function NewExtraOptionForm({ productId }: { productId: string }) {
+function ExtraOptionTypeSelect({
+  productEenheid,
+  defaultValue,
+}: {
+  productEenheid: string;
+  defaultValue?: string;
+}) {
+  return (
+    <Select name="type" defaultValue={defaultValue ?? "PER_EENHEID"} className="w-full sm:w-56">
+      <option value="PER_EENHEID">Per {productEenheid} (schaalt mee)</option>
+      <option value="PER_STUK">Per stuk (apart aantal)</option>
+    </Select>
+  );
+}
+
+function NewExtraOptionForm({
+  productId,
+  productEenheid,
+}: {
+  productId: string;
+  productEenheid: string;
+}) {
   const action = createExtraOptionAction.bind(null, productId);
   const [state, formAction, pending] = useActionState<ExtraOptionFormState, FormData>(
     action,
@@ -71,6 +96,7 @@ function NewExtraOptionForm({ productId }: { productId: string }) {
           </span>
           <Input name="prijs" type="number" step="0.01" min={0} placeholder="0" className="pl-7" />
         </div>
+        <ExtraOptionTypeSelect productEenheid={productEenheid} />
         <input type="hidden" name="actief" value="on" />
         <Button type="submit" disabled={pending} className="shrink-0">
           <Plus className="h-4 w-4" />
@@ -82,7 +108,13 @@ function NewExtraOptionForm({ productId }: { productId: string }) {
   );
 }
 
-function ExtraOptionRow({ option }: { option: ExtraOption }) {
+function ExtraOptionRow({
+  option,
+  productEenheid,
+}: {
+  option: ExtraOption;
+  productEenheid: string;
+}) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [pending, startTransition] = useTransition();
@@ -133,6 +165,7 @@ function ExtraOptionRow({ option }: { option: ExtraOption }) {
               <X className="h-4 w-4" />
             </Button>
           </div>
+          <ExtraOptionTypeSelect productEenheid={productEenheid} defaultValue={option.type} />
           <Textarea
             name="omschrijving"
             defaultValue={option.omschrijving ?? ""}
@@ -150,7 +183,10 @@ function ExtraOptionRow({ option }: { option: ExtraOption }) {
         <ActiveMiniToggle extraOptionId={option.id} actief={option.actief} />
         <div>
           <p className="text-sm font-medium text-foreground">{option.naam}</p>
-          <p className="text-xs text-muted-foreground">{formatCurrency(option.prijs)}</p>
+          <p className="text-xs text-muted-foreground">
+            {formatCurrency(option.prijs)} /{" "}
+            {option.type === "PER_STUK" ? "stuk" : productEenheid}
+          </p>
         </div>
       </div>
       <div className="flex gap-1">
