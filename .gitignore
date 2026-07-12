@@ -48,3 +48,10 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+# python (skill scripts)
+__pycache__/
+*.pyc
+
+# local Claude Code settings (per-user, not shared)
+.claude/settings.local.json
