@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+// Empty/blank input becomes `null` (feature disabled); anything else must be
+// a positive number. Used for optional numeric fields like arbeidsCapaciteit
+// and stapgrootte.
+const optionalPositiveNumber = z.preprocess(
+  (val) => (val === "" || val === null || val === undefined ? null : val),
+  z.coerce.number().positive().nullable()
+);
+
 export const registerSchema = z.object({
   bedrijfsnaam: z.string().trim().min(2, "Vul een bedrijfsnaam in").max(80),
   email: z.string().trim().email("Vul een geldig e-mailadres in"),
@@ -14,6 +22,7 @@ export const loginSchema = z.object({
 export const costSettingsSchema = z.object({
   arbeidEnabled: z.boolean(),
   arbeidZichtbaar: z.boolean(),
+  arbeidStapEenheid: z.enum(["UUR", "DAGDEEL", "DAG"]),
   arbeidTarief: z.coerce.number().min(0),
 
   transportEnabled: z.boolean(),
@@ -36,7 +45,7 @@ export const serviceSchema = z.object({
   naam: z.string().trim().min(1, "Vul een naam in").max(120),
   omschrijving: z.string().trim().max(500).optional().or(z.literal("")),
   eenheid: z.string().trim().min(1).max(20),
-  arbeidsuren: z.coerce.number().min(0),
+  arbeidstijd: z.coerce.number().min(0),
   materiaalkosten: z.coerce.number().min(0),
   actief: z.boolean(),
 });
@@ -45,6 +54,7 @@ export const productSchema = z.object({
   naam: z.string().trim().min(1, "Vul een naam in").max(120),
   omschrijving: z.string().trim().max(500).optional().or(z.literal("")),
   eenheid: z.string().trim().min(1).max(20),
+  arbeidsCapaciteit: optionalPositiveNumber,
   actief: z.boolean(),
 });
 
@@ -55,6 +65,7 @@ export const materialCategorySchema = z.object({
 export const materialOptionSchema = z.object({
   naam: z.string().trim().min(1, "Vul een naam in").max(120),
   prijs: z.coerce.number().min(0),
+  stapgrootte: optionalPositiveNumber,
   actief: z.boolean(),
 });
 

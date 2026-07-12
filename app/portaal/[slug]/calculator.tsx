@@ -190,7 +190,7 @@ function ServiceRow({
   const step = wholeUnits.has(service.eenheid) ? 1 : 0.1;
   const active = qty > 0;
   const indicatiePrijs =
-    (costSettings.arbeidEnabled ? service.arbeidsuren * costSettings.arbeidTarief : 0) +
+    (costSettings.arbeidEnabled ? service.arbeidstijd * costSettings.arbeidTarief : 0) +
     (costSettings.materiaalEnabled ? service.materiaalkosten : 0);
 
   return (

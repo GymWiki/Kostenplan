@@ -61,3 +61,11 @@ export async function requireUser() {
   const authUser = await verifySupabaseUser();
   return ensureProfile(authUser);
 }
+
+export async function getArbeidStapEenheid(userId: string) {
+  const costSettings = await prisma.costSettings.findUnique({
+    where: { userId },
+    select: { arbeidStapEenheid: true },
+  });
+  return costSettings?.arbeidStapEenheid ?? "UUR";
+}

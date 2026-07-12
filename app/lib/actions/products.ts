@@ -16,6 +16,7 @@ function parseProductForm(formData: FormData) {
     naam: formData.get("naam"),
     omschrijving: formData.get("omschrijving") ?? "",
     eenheid: formData.get("eenheid"),
+    arbeidsCapaciteit: formData.get("arbeidsCapaciteit"),
     actief: formData.get("actief") === "on",
   });
 }

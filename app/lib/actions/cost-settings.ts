@@ -19,6 +19,7 @@ export async function updateCostSettingsAction(
   const raw = {
     arbeidEnabled: formData.get("arbeidEnabled") === "on",
     arbeidZichtbaar: formData.get("arbeidZichtbaar") === "on",
+    arbeidStapEenheid: formData.get("arbeidStapEenheid"),
     arbeidTarief: formData.get("arbeidTarief"),
 
     transportEnabled: formData.get("transportEnabled") === "on",

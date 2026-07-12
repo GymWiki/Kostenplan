@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/app/lib/dal";
+import { requireUser, getArbeidStapEenheid } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { updateProductAction } from "@/app/lib/actions/products";
 import { ProductForm } from "../../product-form";
@@ -17,16 +17,19 @@ export default async function BewerkProductPage({
   const { id } = await params;
   const user = await requireUser();
 
-  const product = await prisma.product.findFirst({
-    where: { id, userId: user.id },
-    include: {
-      materiaalCategorieen: {
-        orderBy: { order: "asc" },
-        include: { materialen: { orderBy: { order: "asc" } } },
+  const [product, arbeidStapEenheid] = await Promise.all([
+    prisma.product.findFirst({
+      where: { id, userId: user.id },
+      include: {
+        materiaalCategorieen: {
+          orderBy: { order: "asc" },
+          include: { materialen: { orderBy: { order: "asc" } } },
+        },
+        extraOpties: { orderBy: { order: "asc" } },
       },
-      extraOpties: { orderBy: { order: "asc" } },
-    },
-  });
+    }),
+    getArbeidStapEenheid(user.id),
+  ]);
 
   if (!product) notFound();
 
@@ -37,11 +40,16 @@ export default async function BewerkProductPage({
           <h1 className="text-2xl font-semibold text-foreground">Product bewerken</h1>
           <p className="mt-1 text-muted-foreground">Werk de gegevens van dit product bij.</p>
         </div>
-        <ProductForm action={updateProductAction.bind(null, product.id)} product={product} />
+        <ProductForm
+          action={updateProductAction.bind(null, product.id)}
+          product={product}
+          arbeidStapEenheid={arbeidStapEenheid}
+        />
       </div>
 
       <MaterialCategoriesManager
         productId={product.id}
+        productEenheid={product.eenheid}
         categories={product.materiaalCategorieen}
       />
 

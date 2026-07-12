@@ -73,7 +73,7 @@ export default function Home() {
               <FeatureCard
                 icon={Wrench}
                 title="Arbeidskosten"
-                description="Stel je uurtarief in en koppel arbeidsuren aan elke dienst."
+                description="Reken per uur, dagdeel of dag en koppel arbeidstijd aan elke dienst."
               />
               <FeatureCard
                 icon={Truck}
