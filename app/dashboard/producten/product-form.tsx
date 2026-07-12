@@ -5,17 +5,15 @@ import { Button, LinkButton } from "@/app/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import type { ProductFormState } from "@/app/lib/actions/products";
-import type { Category, Product } from "@/app/generated/prisma/client";
+import type { Product } from "@/app/generated/prisma/client";
 
-const eenheden = ["stuks", "m2", "m1", "m3", "kg", "zak", "pallet"];
+const eenheden = ["m1", "m2", "m3", "stuks"];
 
 export function ProductForm({
   action,
-  categories,
   product,
 }: {
   action: (state: ProductFormState, formData: FormData) => Promise<ProductFormState>;
-  categories: Category[];
   product?: Product;
 }) {
   const [state, formAction, pending] = useActionState<ProductFormState, FormData>(
@@ -36,7 +34,7 @@ export function ProductForm({
         <Input
           id="naam"
           name="naam"
-          placeholder="Bijv. Grind grijs 8-16mm"
+          placeholder="Bijv. Schutting"
           defaultValue={product?.naam}
           required
         />
@@ -55,47 +53,19 @@ export function ProductForm({
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="categoryId">Categorie</Label>
-          <Select id="categoryId" name="categoryId" defaultValue={product?.categoryId ?? ""}>
-            <option value="">Geen categorie</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.naam}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="eenheid">Eenheid</Label>
-          <Select id="eenheid" name="eenheid" defaultValue={product?.eenheid ?? "stuks"}>
-            {eenheden.map((e) => (
-              <option key={e} value={e}>
-                {e}
-              </option>
-            ))}
-          </Select>
-        </div>
-      </div>
-
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="prijs">Prijs per eenheid</Label>
-        <div className="relative max-w-xs">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-            €
-          </span>
-          <Input
-            id="prijs"
-            name="prijs"
-            type="number"
-            step="0.01"
-            min={0}
-            className="pl-7"
-            defaultValue={product?.prijs ?? 0}
-            required
-          />
-        </div>
+        <Label htmlFor="eenheid">Eenheid</Label>
+        <Select id="eenheid" name="eenheid" defaultValue={product?.eenheid ?? "m1"}>
+          {eenheden.map((e) => (
+            <option key={e} value={e}>
+              {e}
+            </option>
+          ))}
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          De hoeveelheid die de klant opgeeft, bijv. meters schutting. Materiaalprijzen en extra
+          opties worden hiermee vermenigvuldigd.
+        </p>
       </div>
 
       <div className="flex items-center gap-3 rounded-md border border-border p-3">

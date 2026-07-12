@@ -28,9 +28,6 @@ export default async function PortaalPage({
     where: { slug },
     include: {
       costSettings: true,
-      categories: {
-        orderBy: { order: "asc" },
-      },
       services: {
         where: { actief: true },
         orderBy: { order: "asc" },
@@ -38,6 +35,21 @@ export default async function PortaalPage({
       products: {
         where: { actief: true },
         orderBy: { order: "asc" },
+        include: {
+          materiaalCategorieen: {
+            orderBy: { order: "asc" },
+            include: {
+              materialen: {
+                where: { actief: true },
+                orderBy: { order: "asc" },
+              },
+            },
+          },
+          extraOpties: {
+            where: { actief: true },
+            orderBy: { order: "asc" },
+          },
+        },
       },
     },
   });
@@ -49,7 +61,6 @@ export default async function PortaalPage({
       bedrijfsnaam={user.bedrijfsnaam}
       email={user.email}
       costSettings={user.costSettings}
-      categories={user.categories}
       services={user.services}
       products={user.products}
     />

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app
 import { Input, Label, Select } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { cn } from "@/app/lib/cn";
+import { Eye } from "lucide-react";
 import type { CostSettings } from "@/app/generated/prisma/client";
 
 export function CostSettingsForm({
@@ -47,6 +48,8 @@ export function CostSettingsForm({
         enabled={arbeidOn}
         onToggle={setArbeidOn}
         toggleName="arbeidEnabled"
+        visibleName="arbeidZichtbaar"
+        visibleDefault={costSettings.arbeidZichtbaar}
       >
         <FieldRow>
           <Field label="Uurtarief" htmlFor="arbeidTarief">
@@ -67,6 +70,8 @@ export function CostSettingsForm({
         enabled={transportOn}
         onToggle={setTransportOn}
         toggleName="transportEnabled"
+        visibleName="transportZichtbaar"
+        visibleDefault={costSettings.transportZichtbaar}
       >
         <FieldRow>
           <Field label="Type" htmlFor="transportType">
@@ -104,6 +109,8 @@ export function CostSettingsForm({
         enabled={voorrijOn}
         onToggle={setVoorrijOn}
         toggleName="voorrijEnabled"
+        visibleName="voorrijZichtbaar"
+        visibleDefault={costSettings.voorrijZichtbaar}
       >
         <FieldRow>
           <Field label="Voorrijkosten" htmlFor="voorrijTarief">
@@ -123,6 +130,8 @@ export function CostSettingsForm({
         enabled={materiaalOn}
         onToggle={setMateriaalOn}
         toggleName="materiaalEnabled"
+        visibleName="materiaalZichtbaar"
+        visibleDefault={costSettings.materiaalZichtbaar}
       >
         <FieldRow>
           <Field label="Opslag op materiaalkosten" htmlFor="materiaalMarge">
@@ -173,6 +182,8 @@ function CostTypeCard({
   enabled,
   onToggle,
   toggleName,
+  visibleName,
+  visibleDefault,
   children,
 }: {
   title: string;
@@ -180,6 +191,8 @@ function CostTypeCard({
   enabled: boolean;
   onToggle: (value: boolean) => void;
   toggleName: string;
+  visibleName: string;
+  visibleDefault: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -195,8 +208,21 @@ function CostTypeCard({
           onChange={(e) => onToggle(e.target.checked)}
         />
       </CardHeader>
-      <CardContent className={cn(!enabled && "opacity-50")}>
+      <CardContent className={cn("flex flex-col gap-4", !enabled && "opacity-50")}>
         {children}
+        <label className="flex items-center gap-2 border-t border-border pt-4 text-sm text-foreground">
+          <input
+            type="checkbox"
+            name={visibleName}
+            defaultChecked={visibleDefault}
+            className="h-4 w-4 rounded border-input accent-primary"
+          />
+          <Eye className="h-4 w-4 text-muted-foreground" />
+          Zichtbaar voor klant
+          <span className="text-muted-foreground">
+            — telt mee in het totaal, maar de aparte regel wordt verborgen als je dit uitzet.
+          </span>
+        </label>
       </CardContent>
     </Card>
   );

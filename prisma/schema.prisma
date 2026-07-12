@@ -26,7 +26,6 @@ model User {
   updatedAt    DateTime @updatedAt
 
   costSettings CostSettings?
-  categories   Category[]
   services     Service[]
   products     Product[]
 }
@@ -37,48 +36,36 @@ model CostSettings {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Arbeidskosten
-  arbeidEnabled Boolean @default(true)
-  arbeidTarief  Float   @default(45)
+  arbeidEnabled   Boolean @default(true)
+  arbeidZichtbaar Boolean @default(true)
+  arbeidTarief    Float   @default(45)
 
   // Transportkosten
-  transportEnabled Boolean       @default(true)
-  transportType    TransportType @default(VAST)
-  transportTarief  Float         @default(25)
+  transportEnabled   Boolean       @default(true)
+  transportZichtbaar Boolean       @default(true)
+  transportType      TransportType @default(VAST)
+  transportTarief    Float         @default(25)
 
   // Voorrijkosten
-  voorrijEnabled Boolean @default(true)
-  voorrijTarief  Float   @default(35)
+  voorrijEnabled   Boolean @default(true)
+  voorrijZichtbaar Boolean @default(true)
+  voorrijTarief    Float   @default(35)
 
   // Materiaalkosten
-  materiaalEnabled Boolean @default(true)
-  materiaalMarge   Float   @default(0)
+  materiaalEnabled   Boolean @default(true)
+  materiaalZichtbaar Boolean @default(true)
+  materiaalMarge     Float   @default(0)
 
   btwPercentage Float @default(21)
 
   updatedAt DateTime @updatedAt
 }
 
-model Category {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  naam  String
-  order Int    @default(0)
-
-  services Service[]
-  products Product[]
-
-  createdAt DateTime @default(now())
-}
-
+// Een dienst (arbeid), bijv. "Terrastegels leggen".
 model Service {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   naam            String
   omschrijving    String?
@@ -92,21 +79,70 @@ model Service {
   updatedAt DateTime @updatedAt
 }
 
+// Een samengesteld product, bijv. "Schutting". De klant kiest een
+// hoeveelheid, een materiaal per materiaalcategorie (bijv. "Palen") en
+// eventueel extra opties.
 model Product {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  naam         String
+  omschrijving String?
+  eenheid      String  @default("m1")
+  actief       Boolean @default(true)
+  order        Int     @default(0)
+
+  materiaalCategorieen MaterialCategory[]
+  extraOpties          ExtraOption[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Onderdeel van een product waarvoor de klant één materiaal kiest,
+// bijv. "Palen" of "Tussenbekleding" binnen het product "Schutting".
+model MaterialCategory {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  naam  String
+  order Int    @default(0)
+
+  materialen MaterialOption[]
+
+  createdAt DateTime @default(now())
+}
+
+// Een keuzeoptie binnen een materiaalcategorie, bijv. "Betonnen palen".
+// De prijs is per eenheid van het bijbehorende product.
+model MaterialOption {
+  id                 String           @id @default(cuid())
+  materialCategoryId String
+  materialCategory   MaterialCategory @relation(fields: [materialCategoryId], references: [id], onDelete: Cascade)
+
+  naam   String
+  prijs  Float   @default(0)
+  actief Boolean @default(true)
+  order  Int     @default(0)
+
+  createdAt DateTime @default(now())
+}
+
+// Optionele toevoeging op een product, bijv. "Metalen tussenbekleding
+// voor planten". De klant kan er meerdere aanvinken. Prijs is per
+// eenheid van het bijbehorende product.
+model ExtraOption {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   naam         String
   omschrijving String?
-  eenheid      String  @default("stuks")
   prijs        Float   @default(0)
   actief       Boolean @default(true)
   order        Int     @default(0)
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }

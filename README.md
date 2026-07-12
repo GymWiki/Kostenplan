@@ -11,11 +11,16 @@ kosten, gebaseerd op vier instelbare kostenposten: **arbeidskosten**, **transpor
 - **Kosteninstellingen** — arbeidskosten, transportkosten (vast of per km), voorrijkosten en
   materiaalkosten (met opslagpercentage) zijn elk afzonderlijk aan of uit te zetten en in te
   stellen, plus een btw-percentage.
-- **Categorieën, diensten en producten** — volledige vrijheid om het aanbod in te richten:
-  diensten met arbeidsuren en materiaalkosten per eenheid, en producten met een prijs per eenheid.
+- **Diensten** — werkzaamheden met arbeidsuren en materiaalkosten per eenheid.
+- **Producten** — samengestelde producten (bijv. "Schutting") opgebouwd uit materiaalcategorieën
+  (bijv. "Palen", "Tussenbekleding") met per categorie een keuze uit materialen, plus optionele
+  extra opties die de klant kan aanvinken.
+- **Zichtbaarheid per kostenpost** — elke kostenpost is niet alleen aan/uit te zetten, maar ook
+  los "zichtbaar voor klant" te maken: verborgen kosten tellen nog gewoon mee in het totaal, maar
+  verschijnen niet als aparte regel in de uitsplitsing.
 - **Klantenportaal** — elk account krijgt een unieke, deelbare link (`/portaal/<slug>`) waar
-  klanten hun tuinproject samenstellen en live een kostenraming zien, uitgesplitst per
-  kostenpost. De link staat prominent op het dashboard, inclusief kopieerknop.
+  klanten hun tuinproject samenstellen en live een kostenraming zien. De link staat prominent op
+  het dashboard, inclusief kopieerknop.
 
 ## Techstack
 
@@ -94,9 +99,10 @@ De app draait daarna op `http://localhost:3000`.
 ## Projectstructuur
 
 - `app/(auth)` — login- en registratiepagina's
-- `app/dashboard` — beveiligd hoveniersdashboard (instellingen, categorieën, diensten, producten)
+- `app/dashboard` — beveiligd hoveniersdashboard (instellingen, diensten, producten)
 - `app/portaal/[slug]` — het publieke klantenportaal met de kostencalculator
 - `app/lib/supabase` — Supabase server client
-- `app/lib/actions` — server actions (auth, kosteninstellingen, categorieën, diensten, producten)
+- `app/lib/actions` — server actions (auth, kosteninstellingen, diensten, producten en de
+  materiaalcategorieën/materialen/extra opties daarbinnen)
 - `app/lib/dal.ts` — leest de ingelogde Supabase-gebruiker en koppelt die aan het Prisma `User`-profiel
 - `prisma/schema.prisma` — datamodel van de app-tabellen (niet van Supabase Auth)

@@ -15,13 +15,7 @@ export default async function BewerkDienstPage({
   const { id } = await params;
   const user = await requireUser();
 
-  const [service, categories] = await Promise.all([
-    prisma.service.findFirst({ where: { id, userId: user.id } }),
-    prisma.category.findMany({
-      where: { userId: user.id },
-      orderBy: { order: "asc" },
-    }),
-  ]);
+  const service = await prisma.service.findFirst({ where: { id, userId: user.id } });
 
   if (!service) notFound();
 
@@ -33,7 +27,6 @@ export default async function BewerkDienstPage({
       </div>
       <ServiceForm
         action={updateServiceAction.bind(null, service.id)}
-        categories={categories}
         service={service}
       />
     </div>

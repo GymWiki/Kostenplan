@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ExternalLink, Wrench, Package, FolderTree, SlidersHorizontal } from "lucide-react";
+import { ExternalLink, Wrench, Package, SlidersHorizontal } from "lucide-react";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { getPortalUrl } from "@/app/lib/url";
@@ -12,11 +12,10 @@ export const metadata: Metadata = { title: "Overzicht" };
 export default async function DashboardPage() {
   const user = await requireUser();
 
-  const [servicesCount, productsCount, categoriesCount, costSettings, portalUrl] =
+  const [servicesCount, productsCount, costSettings, portalUrl] =
     await Promise.all([
       prisma.service.count({ where: { userId: user.id } }),
       prisma.product.count({ where: { userId: user.id } }),
-      prisma.category.count({ where: { userId: user.id } }),
       prisma.costSettings.findUnique({ where: { userId: user.id } }),
       getPortalUrl(user.slug),
     ]);
@@ -66,8 +65,7 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard icon={FolderTree} label="Categorieën" value={categoriesCount} href="/dashboard/categorieen" />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <StatCard icon={Wrench} label="Diensten" value={servicesCount} href="/dashboard/diensten" />
         <StatCard icon={Package} label="Producten" value={productsCount} href="/dashboard/producten" />
         <StatCard
@@ -92,11 +90,6 @@ export default async function DashboardPage() {
                 description="Bepaal je uurtarief, voorrijkosten en transportkosten."
               />
               <Step
-                href="/dashboard/categorieen"
-                title="Maak categorieën aan"
-                description="Groepeer je aanbod, bijvoorbeeld 'Bestrating' of 'Beplanting'."
-              />
-              <Step
                 href="/dashboard/diensten"
                 title="Voeg diensten toe"
                 description="Denk aan tegels leggen, schutting plaatsen of gras zaaien."
@@ -104,7 +97,7 @@ export default async function DashboardPage() {
               <Step
                 href="/dashboard/producten"
                 title="Voeg producten toe"
-                description="Materialen zoals grind, planten of terrastegels met een prijs per eenheid."
+                description="Samengestelde producten zoals een schutting, met materiaalkeuzes en prijzen."
               />
             </ol>
           </CardContent>

@@ -5,36 +5,37 @@ import { Minus, Plus, Sprout, Printer, Mail } from "lucide-react";
 import { calculateBreakdown } from "@/app/lib/calculate";
 import { formatCurrency } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { Input, Label } from "@/app/components/ui/input";
+import { Input, Label, Select } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import type {
-  Category,
   CostSettings,
+  ExtraOption,
+  MaterialCategory,
+  MaterialOption,
   Product,
   Service,
 } from "@/app/generated/prisma/client";
+
+type ProductWithDetails = Product & {
+  materiaalCategorieen: (MaterialCategory & { materialen: MaterialOption[] })[];
+  extraOpties: ExtraOption[];
+};
 
 type Props = {
   bedrijfsnaam: string;
   email: string;
   costSettings: CostSettings;
-  categories: Category[];
   services: Service[];
-  products: Product[];
+  products: ProductWithDetails[];
 };
 
 const wholeUnits = new Set(["stuks", "uur", "dag", "pallet", "zak"]);
 
-export function Calculator({
-  bedrijfsnaam,
-  email,
-  costSettings,
-  categories,
-  services,
-  products,
-}: Props) {
+export function Calculator({ bedrijfsnaam, email, costSettings, services, products }: Props) {
   const [serviceQty, setServiceQty] = useState<Record<string, number>>({});
   const [productQty, setProductQty] = useState<Record<string, number>>({});
+  const [materialSelections, setMaterialSelections] = useState<Record<string, string>>({});
+  const [extraSelections, setExtraSelections] = useState<Record<string, boolean>>({});
   const [afstandKm, setAfstandKm] = useState(0);
 
   const breakdown = useMemo(
@@ -44,36 +45,22 @@ export function Calculator({
         products,
         serviceQty,
         productQty,
+        materialSelections,
+        extraSelections,
         afstandKm,
         costSettings,
       }),
-    [services, products, serviceQty, productQty, afstandKm, costSettings]
+    [
+      services,
+      products,
+      serviceQty,
+      productQty,
+      materialSelections,
+      extraSelections,
+      afstandKm,
+      costSettings,
+    ]
   );
-
-  const groups = useMemo(() => {
-    const byCategory = new Map<
-      string | null,
-      { category: Category | null; services: Service[]; products: Product[] }
-    >();
-
-    byCategory.set(null, { category: null, services: [], products: [] });
-    for (const category of categories) {
-      byCategory.set(category.id, { category, services: [], products: [] });
-    }
-
-    for (const service of services) {
-      const key = service.categoryId && byCategory.has(service.categoryId) ? service.categoryId : null;
-      byCategory.get(key)!.services.push(service);
-    }
-    for (const product of products) {
-      const key = product.categoryId && byCategory.has(product.categoryId) ? product.categoryId : null;
-      byCategory.get(key)!.products.push(product);
-    }
-
-    return Array.from(byCategory.values()).filter(
-      (group) => group.services.length > 0 || group.products.length > 0
-    );
-  }, [categories, services, products]);
 
   const isEmpty = services.length === 0 && products.length === 0;
 
@@ -111,46 +98,57 @@ export function Calculator({
                 </p>
               </div>
 
-              {groups.map((group, index) => (
-                <section key={group.category?.id ?? `overig-${index}`} className="flex flex-col gap-3">
+              {services.length > 0 && (
+                <section className="flex flex-col gap-3">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    {group.category?.naam ?? "Overig"}
+                    Diensten
                   </h3>
                   <div className="flex flex-col gap-3">
-                    {group.services.map((service) => (
-                      <ItemRow
+                    {services.map((service) => (
+                      <ServiceRow
                         key={service.id}
-                        naam={service.naam}
-                        omschrijving={service.omschrijving}
-                        eenheid={service.eenheid}
-                        indicatiePrijs={
-                          (costSettings.arbeidEnabled
-                            ? service.arbeidsuren * costSettings.arbeidTarief
-                            : 0) +
-                          (costSettings.materiaalEnabled ? service.materiaalkosten : 0)
-                        }
+                        service={service}
+                        costSettings={costSettings}
                         qty={serviceQty[service.id] ?? 0}
                         onChange={(qty) =>
                           setServiceQty((prev) => ({ ...prev, [service.id]: qty }))
                         }
                       />
                     ))}
-                    {group.products.map((product) => (
-                      <ItemRow
+                  </div>
+                </section>
+              )}
+
+              {products.length > 0 && (
+                <section className="flex flex-col gap-3">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Producten
+                  </h3>
+                  <div className="flex flex-col gap-3">
+                    {products.map((product) => (
+                      <ProductCard
                         key={product.id}
-                        naam={product.naam}
-                        omschrijving={product.omschrijving}
-                        eenheid={product.eenheid}
-                        indicatiePrijs={costSettings.materiaalEnabled ? product.prijs : 0}
+                        product={product}
                         qty={productQty[product.id] ?? 0}
-                        onChange={(qty) =>
+                        onQtyChange={(qty) =>
                           setProductQty((prev) => ({ ...prev, [product.id]: qty }))
+                        }
+                        materialSelections={materialSelections}
+                        onMaterialSelect={(categoryId, materialOptionId) =>
+                          setMaterialSelections((prev) => ({
+                            ...prev,
+                            [categoryId]: materialOptionId,
+                          }))
+                        }
+                        extraSelections={extraSelections}
+                        onExtraToggle={(extraOptionId, checked) =>
+                          setExtraSelections((prev) => ({ ...prev, [extraOptionId]: checked }))
                         }
                       />
                     ))}
                   </div>
                 </section>
-              ))}
+              )}
             </div>
 
             <div className="lg:order-2">
@@ -178,72 +176,191 @@ export function Calculator({
   );
 }
 
-function ItemRow({
-  naam,
-  omschrijving,
-  eenheid,
-  indicatiePrijs,
+function ServiceRow({
+  service,
+  costSettings,
   qty,
   onChange,
 }: {
-  naam: string;
-  omschrijving: string | null;
-  eenheid: string;
-  indicatiePrijs: number;
+  service: Service;
+  costSettings: CostSettings;
   qty: number;
   onChange: (qty: number) => void;
 }) {
-  const step = wholeUnits.has(eenheid) ? 1 : 0.1;
+  const step = wholeUnits.has(service.eenheid) ? 1 : 0.1;
   const active = qty > 0;
+  const indicatiePrijs =
+    (costSettings.arbeidEnabled ? service.arbeidsuren * costSettings.arbeidTarief : 0) +
+    (costSettings.materiaalEnabled ? service.materiaalkosten : 0);
 
   return (
     <Card className={active ? "border-primary/40 bg-accent/40" : undefined}>
       <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="font-medium text-foreground">{naam}</p>
-          {omschrijving && (
-            <p className="mt-0.5 text-sm text-muted-foreground">{omschrijving}</p>
+          <p className="font-medium text-foreground">{service.naam}</p>
+          {service.omschrijving && (
+            <p className="mt-0.5 text-sm text-muted-foreground">{service.omschrijving}</p>
           )}
           {indicatiePrijs > 0 && (
             <p className="mt-1 text-sm text-muted-foreground">
-              ≈ {formatCurrency(indicatiePrijs)} / {eenheid}
+              ≈ {formatCurrency(indicatiePrijs)} / {service.eenheid}
             </p>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onChange(Math.max(0, round(qty - step)))}
-            className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary disabled:opacity-40"
-            disabled={qty <= 0}
-            aria-label={`${naam} verminderen`}
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-          <div className="flex flex-col items-center">
-            <Input
-              type="number"
-              inputMode="decimal"
-              min={0}
-              step={step}
-              value={qty === 0 ? "" : qty}
-              placeholder="0"
-              onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
-              className="h-9 w-20 text-center"
-            />
-            <span className="mt-0.5 text-xs text-muted-foreground">{eenheid}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => onChange(round(qty + step))}
-            className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary"
-            aria-label={`${naam} toevoegen`}
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
+        <QuantityStepper
+          naam={service.naam}
+          eenheid={service.eenheid}
+          qty={qty}
+          step={step}
+          onChange={onChange}
+        />
       </CardContent>
     </Card>
+  );
+}
+
+function ProductCard({
+  product,
+  qty,
+  onQtyChange,
+  materialSelections,
+  onMaterialSelect,
+  extraSelections,
+  onExtraToggle,
+}: {
+  product: ProductWithDetails;
+  qty: number;
+  onQtyChange: (qty: number) => void;
+  materialSelections: Record<string, string>;
+  onMaterialSelect: (categoryId: string, materialOptionId: string) => void;
+  extraSelections: Record<string, boolean>;
+  onExtraToggle: (extraOptionId: string, checked: boolean) => void;
+}) {
+  const step = wholeUnits.has(product.eenheid) ? 1 : 0.1;
+  const active = qty > 0;
+  const categoriesWithOptions = product.materiaalCategorieen.filter(
+    (category) => category.materialen.length > 0
+  );
+
+  return (
+    <Card className={active ? "border-primary/40 bg-accent/40" : undefined}>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="font-medium text-foreground">{product.naam}</p>
+            {product.omschrijving && (
+              <p className="mt-0.5 text-sm text-muted-foreground">{product.omschrijving}</p>
+            )}
+          </div>
+          <QuantityStepper
+            naam={product.naam}
+            eenheid={product.eenheid}
+            qty={qty}
+            step={step}
+            onChange={onQtyChange}
+          />
+        </div>
+
+        {active && (categoriesWithOptions.length > 0 || product.extraOpties.length > 0) && (
+          <div className="flex flex-col gap-4 border-t border-border pt-4">
+            {categoriesWithOptions.map((category) => (
+              <div key={category.id} className="flex flex-col gap-1.5">
+                <Label htmlFor={`materiaal-${category.id}`}>{category.naam}</Label>
+                <Select
+                  id={`materiaal-${category.id}`}
+                  value={materialSelections[category.id] ?? ""}
+                  onChange={(e) => onMaterialSelect(category.id, e.target.value)}
+                >
+                  <option value="">Kies {category.naam.toLowerCase()}</option>
+                  {category.materialen.map((material) => (
+                    <option key={material.id} value={material.id}>
+                      {material.naam} — {formatCurrency(material.prijs)} / {product.eenheid}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            ))}
+
+            {product.extraOpties.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-foreground">Extra opties</p>
+                {product.extraOpties.map((extra) => (
+                  <label
+                    key={extra.id}
+                    className="flex items-start gap-2 rounded-md border border-border p-2.5 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 rounded border-input accent-primary"
+                      checked={extraSelections[extra.id] ?? false}
+                      onChange={(e) => onExtraToggle(extra.id, e.target.checked)}
+                    />
+                    <span className="flex-1">
+                      <span className="block font-medium text-foreground">{extra.naam}</span>
+                      {extra.omschrijving && (
+                        <span className="block text-muted-foreground">{extra.omschrijving}</span>
+                      )}
+                    </span>
+                    <span className="shrink-0 text-muted-foreground">
+                      + {formatCurrency(extra.prijs)} / {product.eenheid}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function QuantityStepper({
+  naam,
+  eenheid,
+  qty,
+  step,
+  onChange,
+}: {
+  naam: string;
+  eenheid: string;
+  qty: number;
+  step: number;
+  onChange: (qty: number) => void;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-2">
+      <button
+        type="button"
+        onClick={() => onChange(Math.max(0, round(qty - step)))}
+        className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary disabled:opacity-40"
+        disabled={qty <= 0}
+        aria-label={`${naam} verminderen`}
+      >
+        <Minus className="h-4 w-4" />
+      </button>
+      <div className="flex flex-col items-center">
+        <Input
+          type="number"
+          inputMode="decimal"
+          min={0}
+          step={step}
+          value={qty === 0 ? "" : qty}
+          placeholder="0"
+          onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
+          className="h-9 w-20 text-center"
+        />
+        <span className="mt-0.5 text-xs text-muted-foreground">{eenheid}</span>
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(round(qty + step))}
+        className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary"
+        aria-label={`${naam} toevoegen`}
+      >
+        <Plus className="h-4 w-4" />
+      </button>
+    </div>
   );
 }
 
@@ -263,16 +380,16 @@ function Summary({
   email: string;
 }) {
   const rows: { label: string; value: number }[] = [];
-  if (costSettings.arbeidEnabled) {
+  if (costSettings.arbeidEnabled && costSettings.arbeidZichtbaar) {
     rows.push({ label: "Arbeidskosten", value: breakdown.arbeidskosten });
   }
-  if (costSettings.materiaalEnabled) {
+  if (costSettings.materiaalEnabled && costSettings.materiaalZichtbaar) {
     rows.push({ label: "Materiaalkosten", value: breakdown.materiaalkosten });
   }
-  if (costSettings.transportEnabled) {
+  if (costSettings.transportEnabled && costSettings.transportZichtbaar) {
     rows.push({ label: "Transportkosten", value: breakdown.transportkosten });
   }
-  if (costSettings.voorrijEnabled) {
+  if (costSettings.voorrijEnabled && costSettings.voorrijZichtbaar) {
     rows.push({ label: "Voorrijkosten", value: breakdown.voorrijkosten });
   }
 
@@ -312,31 +429,33 @@ function Summary({
             </p>
           ) : (
             <>
-              <div className="flex flex-col gap-2 text-sm">
-                {rows.map((row) => (
-                  <div key={row.label} className="flex items-center justify-between">
-                    <span className="text-muted-foreground">{row.label}</span>
+              {rows.length > 0 && (
+                <div className="flex flex-col gap-2 text-sm">
+                  {rows.map((row) => (
+                    <div key={row.label} className="flex items-center justify-between">
+                      <span className="text-muted-foreground">{row.label}</span>
+                      <span className="font-medium text-foreground">
+                        {formatCurrency(row.value)}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="my-1 border-t border-border" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Subtotaal</span>
                     <span className="font-medium text-foreground">
-                      {formatCurrency(row.value)}
+                      {formatCurrency(breakdown.subtotaal)}
                     </span>
                   </div>
-                ))}
-                <div className="my-1 border-t border-border" />
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Subtotaal</span>
-                  <span className="font-medium text-foreground">
-                    {formatCurrency(breakdown.subtotaal)}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">
+                      Btw ({costSettings.btwPercentage}%)
+                    </span>
+                    <span className="font-medium text-foreground">
+                      {formatCurrency(breakdown.btw)}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">
-                    Btw ({costSettings.btwPercentage}%)
-                  </span>
-                  <span className="font-medium text-foreground">
-                    {formatCurrency(breakdown.btw)}
-                  </span>
-                </div>
-              </div>
+              )}
 
               <div className="flex items-center justify-between rounded-lg bg-accent px-3 py-3">
                 <span className="font-semibold text-accent-foreground">Totaal (incl. btw)</span>

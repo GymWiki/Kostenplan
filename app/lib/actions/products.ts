@@ -15,9 +15,7 @@ function parseProductForm(formData: FormData) {
   return productSchema.safeParse({
     naam: formData.get("naam"),
     omschrijving: formData.get("omschrijving") ?? "",
-    categoryId: formData.get("categoryId") ?? "",
     eenheid: formData.get("eenheid"),
-    prijs: formData.get("prijs"),
     actief: formData.get("actief") === "on",
   });
 }
@@ -36,21 +34,19 @@ export async function createProductAction(
     return { fieldErrors };
   }
 
-  const { categoryId, ...data } = parsed.data;
   const count = await prisma.product.count({ where: { userId: user.id } });
 
-  await prisma.product.create({
+  const product = await prisma.product.create({
     data: {
-      ...data,
+      ...parsed.data,
       userId: user.id,
-      categoryId: categoryId || null,
       order: count,
     },
   });
 
   revalidatePath("/dashboard/producten");
   revalidatePath(`/portaal/${user.slug}`);
-  redirect("/dashboard/producten");
+  redirect(`/dashboard/producten/${product.id}/bewerken`);
 }
 
 export async function updateProductAction(
@@ -68,11 +64,9 @@ export async function updateProductAction(
     return { fieldErrors };
   }
 
-  const { categoryId, ...data } = parsed.data;
-
   await prisma.product.updateMany({
     where: { id: productId, userId: user.id },
-    data: { ...data, categoryId: categoryId || null },
+    data: parsed.data,
   });
 
   revalidatePath("/dashboard/producten");

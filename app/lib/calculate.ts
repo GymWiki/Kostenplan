@@ -17,9 +17,25 @@ export type CalcService = {
   materiaalkosten: number;
 };
 
-export type CalcProduct = {
+export type CalcMaterialOption = {
   id: string;
   prijs: number;
+};
+
+export type CalcMaterialCategory = {
+  id: string;
+  materialen: CalcMaterialOption[];
+};
+
+export type CalcExtraOption = {
+  id: string;
+  prijs: number;
+};
+
+export type CalcProduct = {
+  id: string;
+  materiaalCategorieen: CalcMaterialCategory[];
+  extraOpties: CalcExtraOption[];
 };
 
 export function calculateBreakdown({
@@ -27,6 +43,8 @@ export function calculateBreakdown({
   products,
   serviceQty,
   productQty,
+  materialSelections,
+  extraSelections,
   afstandKm,
   costSettings,
 }: {
@@ -34,6 +52,8 @@ export function calculateBreakdown({
   products: CalcProduct[];
   serviceQty: Record<string, number>;
   productQty: Record<string, number>;
+  materialSelections: Record<string, string>;
+  extraSelections: Record<string, boolean>;
   afstandKm: number;
   costSettings: CalcCostSettings;
 }) {
@@ -57,8 +77,22 @@ export function calculateBreakdown({
     const qty = productQty[product.id] ?? 0;
     if (qty <= 0) continue;
     itemCount += 1;
+
     if (costSettings.materiaalEnabled) {
-      materiaalkosten += qty * product.prijs;
+      for (const category of product.materiaalCategorieen) {
+        const selectedId = materialSelections[category.id];
+        if (!selectedId) continue;
+        const option = category.materialen.find((m) => m.id === selectedId);
+        if (option) {
+          materiaalkosten += qty * option.prijs;
+        }
+      }
+
+      for (const extra of product.extraOpties) {
+        if (extraSelections[extra.id]) {
+          materiaalkosten += qty * extra.prijs;
+        }
+      }
     }
   }
 
