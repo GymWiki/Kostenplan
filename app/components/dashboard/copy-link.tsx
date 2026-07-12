@@ -3,13 +3,24 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
+import { cn } from "@/app/lib/cn";
 
-export function CopyLinkButton({ url }: { url: string }) {
+export function CopyButton({
+  text,
+  label = "Kopiëren",
+  copiedLabel = "Gekopieerd",
+  className,
+}: {
+  text: string;
+  label?: string;
+  copiedLabel?: string;
+  className?: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -22,17 +33,17 @@ export function CopyLinkButton({ url }: { url: string }) {
       type="button"
       variant="secondary"
       onClick={handleCopy}
-      className="shrink-0"
+      className={cn("shrink-0", className)}
     >
       {copied ? (
         <>
           <Check className="h-4 w-4" />
-          Gekopieerd
+          {copiedLabel}
         </>
       ) : (
         <>
           <Copy className="h-4 w-4" />
-          Kopieer link
+          {label}
         </>
       )}
     </Button>

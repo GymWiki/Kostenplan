@@ -58,6 +58,7 @@ export default async function PortaalPage({
 
   return (
     <Calculator
+      slug={slug}
       bedrijfsnaam={user.bedrijfsnaam}
       email={user.email}
       costSettings={user.costSettings}
