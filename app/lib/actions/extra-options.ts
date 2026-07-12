@@ -15,6 +15,7 @@ function parseExtraOptionForm(formData: FormData) {
     naam: formData.get("naam"),
     omschrijving: formData.get("omschrijving") ?? "",
     prijs: formData.get("prijs"),
+    type: formData.get("type") || "PER_EENHEID",
     actief: formData.get("actief") === "on" || formData.get("actief") === "true",
   });
 }

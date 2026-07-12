@@ -21,6 +21,11 @@ enum ArbeidStapEenheid {
   DAG
 }
 
+enum ExtraOptionType {
+  PER_EENHEID
+  PER_STUK
+}
+
 // id matches auth.users.id from Supabase Auth — the profile row is created
 // right after a successful sign-up (see app/lib/actions/auth.ts).
 model User {
@@ -146,8 +151,10 @@ model MaterialOption {
 }
 
 // Optionele toevoeging op een product, bijv. "Metalen tussenbekleding
-// voor planten". De klant kan er meerdere aanvinken. Prijs is per
-// eenheid van het bijbehorende product.
+// voor planten". Bij PER_EENHEID vinkt de klant de optie aan en telt hij
+// mee met de hoeveelheid van het product (prijs per eenheid). Bij
+// PER_STUK geeft de klant een eigen aantal op, los van de hoeveelheid
+// van het product (prijs per stuk).
 model ExtraOption {
   id        String  @id @default(cuid())
   productId String
@@ -155,9 +162,10 @@ model ExtraOption {
 
   naam         String
   omschrijving String?
-  prijs        Float   @default(0)
-  actief       Boolean @default(true)
-  order        Int     @default(0)
+  prijs        Float           @default(0)
+  type         ExtraOptionType @default(PER_EENHEID)
+  actief       Boolean         @default(true)
+  order        Int             @default(0)
 
   createdAt DateTime @default(now())
 }

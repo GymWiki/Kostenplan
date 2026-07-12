@@ -37,7 +37,7 @@ export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, 
   const [serviceQty, setServiceQty] = useState<Record<string, number>>({});
   const [productQty, setProductQty] = useState<Record<string, number>>({});
   const [materialSelections, setMaterialSelections] = useState<Record<string, string>>({});
-  const [extraSelections, setExtraSelections] = useState<Record<string, boolean>>({});
+  const [extraSelections, setExtraSelections] = useState<Record<string, number>>({});
   const [afstandKm, setAfstandKm] = useState(0);
 
   useEffect(() => {
@@ -165,8 +165,8 @@ export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, 
                           }))
                         }
                         extraSelections={extraSelections}
-                        onExtraToggle={(extraOptionId, checked) =>
-                          setExtraSelections((prev) => ({ ...prev, [extraOptionId]: checked }))
+                        onExtraChange={(extraOptionId, aantal) =>
+                          setExtraSelections((prev) => ({ ...prev, [extraOptionId]: aantal }))
                         }
                       />
                     ))}
@@ -250,15 +250,15 @@ function ProductCard({
   materialSelections,
   onMaterialSelect,
   extraSelections,
-  onExtraToggle,
+  onExtraChange,
 }: {
   product: ProductWithDetails;
   qty: number;
   onQtyChange: (qty: number) => void;
   materialSelections: Record<string, string>;
   onMaterialSelect: (categoryId: string, materialOptionId: string) => void;
-  extraSelections: Record<string, boolean>;
-  onExtraToggle: (extraOptionId: string, checked: boolean) => void;
+  extraSelections: Record<string, number>;
+  onExtraChange: (extraOptionId: string, aantal: number) => void;
 }) {
   const step = wholeUnits.has(product.eenheid) ? 1 : 0.1;
   const active = qty > 0;
@@ -308,28 +308,52 @@ function ProductCard({
             {product.extraOpties.length > 0 && (
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-foreground">Extra opties</p>
-                {product.extraOpties.map((extra) => (
-                  <label
-                    key={extra.id}
-                    className="flex items-start gap-2 rounded-md border border-border p-2.5 text-sm"
-                  >
-                    <input
-                      type="checkbox"
-                      className="mt-0.5 h-4 w-4 rounded border-input accent-primary"
-                      checked={extraSelections[extra.id] ?? false}
-                      onChange={(e) => onExtraToggle(extra.id, e.target.checked)}
-                    />
-                    <span className="flex-1">
-                      <span className="block font-medium text-foreground">{extra.naam}</span>
-                      {extra.omschrijving && (
-                        <span className="block text-muted-foreground">{extra.omschrijving}</span>
-                      )}
-                    </span>
-                    <span className="shrink-0 text-muted-foreground">
-                      + {formatCurrency(extra.prijs)} / {product.eenheid}
-                    </span>
-                  </label>
-                ))}
+                {product.extraOpties.map((extra) =>
+                  extra.type === "PER_STUK" ? (
+                    <div
+                      key={extra.id}
+                      className="flex items-center gap-3 rounded-md border border-border p-2.5 text-sm"
+                    >
+                      <div className="flex-1">
+                        <span className="block font-medium text-foreground">{extra.naam}</span>
+                        {extra.omschrijving && (
+                          <span className="block text-muted-foreground">{extra.omschrijving}</span>
+                        )}
+                        <span className="block text-muted-foreground">
+                          {formatCurrency(extra.prijs)} / stuk
+                        </span>
+                      </div>
+                      <QuantityStepper
+                        naam={extra.naam}
+                        eenheid="stuks"
+                        qty={extraSelections[extra.id] ?? 0}
+                        step={1}
+                        onChange={(aantal) => onExtraChange(extra.id, aantal)}
+                      />
+                    </div>
+                  ) : (
+                    <label
+                      key={extra.id}
+                      className="flex items-start gap-2 rounded-md border border-border p-2.5 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 h-4 w-4 rounded border-input accent-primary"
+                        checked={(extraSelections[extra.id] ?? 0) > 0}
+                        onChange={(e) => onExtraChange(extra.id, e.target.checked ? 1 : 0)}
+                      />
+                      <span className="flex-1">
+                        <span className="block font-medium text-foreground">{extra.naam}</span>
+                        {extra.omschrijving && (
+                          <span className="block text-muted-foreground">{extra.omschrijving}</span>
+                        )}
+                      </span>
+                      <span className="shrink-0 text-muted-foreground">
+                        + {formatCurrency(extra.prijs)} / {product.eenheid}
+                      </span>
+                    </label>
+                  )
+                )}
               </div>
             )}
           </div>
