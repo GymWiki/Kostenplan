@@ -13,7 +13,7 @@ export function MobileNav({ slug }: { slug: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-10 w-10 items-center justify-center rounded-md text-foreground hover:bg-secondary md:hidden"
+        className="flex h-11 w-11 items-center justify-center rounded-md text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:hidden cursor-pointer"
         aria-label="Menu openen"
       >
         <Menu className="h-5 w-5" />
@@ -30,7 +30,7 @@ export function MobileNav({ slug }: { slug: string }) {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-md hover:bg-secondary"
+                className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-md transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
                 aria-label="Menu sluiten"
               >
                 <X className="h-4 w-4" />

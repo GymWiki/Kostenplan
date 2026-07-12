@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
+import { ThemeToggle } from "@/app/components/ui/theme-toggle";
 
 export default function Home() {
   return (
@@ -24,6 +25,7 @@ export default function Home() {
             Kostenplan
           </Link>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <LinkButton href="/login" variant="ghost">
               Inloggen
             </LinkButton>

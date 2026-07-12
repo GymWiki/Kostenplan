@@ -1,5 +1,6 @@
 import { LogOut } from "lucide-react";
 import { logoutAction } from "@/app/lib/actions/auth";
+import { ThemeToggle } from "@/app/components/ui/theme-toggle";
 import { MobileNav } from "./mobile-nav";
 
 export function Topbar({
@@ -15,10 +16,11 @@ export function Topbar({
       <p className="flex-1 truncate text-sm font-medium text-muted-foreground">
         {bedrijfsnaam}
       </p>
+      <ThemeToggle />
       <form action={logoutAction}>
         <button
           type="submit"
-          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground cursor-pointer"
         >
           <LogOut className="h-4 w-4" />
           <span className="hidden sm:inline">Uitloggen</span>
