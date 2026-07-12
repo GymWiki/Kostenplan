@@ -1,0 +1,121 @@
+"use client";
+
+import { useActionState } from "react";
+import { Button, LinkButton } from "@/app/components/ui/button";
+import { Input, Label, Select, Textarea } from "@/app/components/ui/input";
+import { Switch } from "@/app/components/ui/switch";
+import type { ProductFormState } from "@/app/lib/actions/products";
+import type { Category, Product } from "@/app/generated/prisma/client";
+
+const eenheden = ["stuks", "m2", "m1", "m3", "kg", "zak", "pallet"];
+
+export function ProductForm({
+  action,
+  categories,
+  product,
+}: {
+  action: (state: ProductFormState, formData: FormData) => Promise<ProductFormState>;
+  categories: Category[];
+  product?: Product;
+}) {
+  const [state, formAction, pending] = useActionState<ProductFormState, FormData>(
+    action,
+    null
+  );
+
+  return (
+    <form action={formAction} className="flex flex-col gap-5">
+      {state?.error && (
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {state.error}
+        </p>
+      )}
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="naam">Naam van het product</Label>
+        <Input
+          id="naam"
+          name="naam"
+          placeholder="Bijv. Grind grijs 8-16mm"
+          defaultValue={product?.naam}
+          required
+        />
+        {state?.fieldErrors?.naam && (
+          <p className="text-sm text-destructive">{state.fieldErrors.naam}</p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="omschrijving">Omschrijving (optioneel)</Label>
+        <Textarea
+          id="omschrijving"
+          name="omschrijving"
+          placeholder="Korte toelichting die klanten zien in de calculator"
+          defaultValue={product?.omschrijving ?? ""}
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="categoryId">Categorie</Label>
+          <Select id="categoryId" name="categoryId" defaultValue={product?.categoryId ?? ""}>
+            <option value="">Geen categorie</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.naam}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="eenheid">Eenheid</Label>
+          <Select id="eenheid" name="eenheid" defaultValue={product?.eenheid ?? "stuks"}>
+            {eenheden.map((e) => (
+              <option key={e} value={e}>
+                {e}
+              </option>
+            ))}
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="prijs">Prijs per eenheid</Label>
+        <div className="relative max-w-xs">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+            €
+          </span>
+          <Input
+            id="prijs"
+            name="prijs"
+            type="number"
+            step="0.01"
+            min={0}
+            className="pl-7"
+            defaultValue={product?.prijs ?? 0}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 rounded-md border border-border p-3">
+        <Switch name="actief" defaultChecked={product?.actief ?? true} />
+        <div>
+          <p className="text-sm font-medium text-foreground">Actief</p>
+          <p className="text-sm text-muted-foreground">
+            Alleen actieve producten zijn zichtbaar in het klantenportaal.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <LinkButton href="/dashboard/producten" variant="outline">
+          Annuleren
+        </LinkButton>
+        <Button type="submit" disabled={pending}>
+          {pending ? "Opslaan…" : "Product opslaan"}
+        </Button>
+      </div>
+    </form>
+  );
+}
