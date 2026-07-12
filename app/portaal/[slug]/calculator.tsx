@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Minus, Plus, Sprout, Printer, Mail } from "lucide-react";
 import { calculateBreakdown } from "@/app/lib/calculate";
 import { formatCurrency } from "@/app/lib/format";
@@ -23,6 +23,7 @@ type ProductWithDetails = Product & {
 };
 
 type Props = {
+  slug: string;
   bedrijfsnaam: string;
   email: string;
   costSettings: CostSettings;
@@ -32,12 +33,33 @@ type Props = {
 
 const wholeUnits = new Set(["stuks", "uur", "dag", "pallet", "zak"]);
 
-export function Calculator({ bedrijfsnaam, email, costSettings, services, products }: Props) {
+export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, products }: Props) {
   const [serviceQty, setServiceQty] = useState<Record<string, number>>({});
   const [productQty, setProductQty] = useState<Record<string, number>>({});
   const [materialSelections, setMaterialSelections] = useState<Record<string, string>>({});
   const [extraSelections, setExtraSelections] = useState<Record<string, boolean>>({});
   const [afstandKm, setAfstandKm] = useState(0);
+
+  useEffect(() => {
+    if (window.self === window.top) return;
+
+    function postHeight() {
+      window.parent.postMessage(
+        { type: "kostenplan:resize", slug, height: document.body.scrollHeight },
+        "*"
+      );
+    }
+
+    postHeight();
+    const observer = new ResizeObserver(postHeight);
+    observer.observe(document.body);
+    window.addEventListener("resize", postHeight);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", postHeight);
+    };
+  }, [slug]);
 
   const breakdown = useMemo(
     () =>

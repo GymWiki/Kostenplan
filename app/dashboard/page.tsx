@@ -1,23 +1,23 @@
 import type { Metadata } from "next";
-import { ExternalLink, Wrench, Package, SlidersHorizontal } from "lucide-react";
+import { Wrench, Package, SlidersHorizontal } from "lucide-react";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { getPortalUrl } from "@/app/lib/url";
+import { getPortalUrl, getEmbedCode } from "@/app/lib/url";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { LinkButton } from "@/app/components/ui/button";
-import { CopyLinkButton } from "@/app/components/dashboard/copy-link";
+import { SharePortalCard } from "@/app/components/dashboard/share-portal-card";
 
 export const metadata: Metadata = { title: "Overzicht" };
 
 export default async function DashboardPage() {
   const user = await requireUser();
 
-  const [servicesCount, productsCount, costSettings, portalUrl] =
+  const [servicesCount, productsCount, costSettings, portalUrl, embedCode] =
     await Promise.all([
       prisma.service.count({ where: { userId: user.id } }),
       prisma.product.count({ where: { userId: user.id } }),
       prisma.costSettings.findUnique({ where: { userId: user.id } }),
       getPortalUrl(user.slug),
+      getEmbedCode(user.slug, user.bedrijfsnaam),
     ]);
 
   const enabledCostTypes = costSettings
@@ -42,28 +42,7 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-accent to-card">
-        <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-accent-foreground">
-              Jouw klantenportaal
-            </p>
-            <p className="mt-1 truncate text-lg font-semibold text-foreground">
-              {portalUrl}
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Stuur deze link naar je klanten zodat ze zelf een kostenschatting kunnen maken.
-            </p>
-          </div>
-          <div className="flex shrink-0 gap-2">
-            <CopyLinkButton url={portalUrl} />
-            <LinkButton href={`/portaal/${user.slug}`} target="_blank" variant="primary">
-              <ExternalLink className="h-4 w-4" />
-              Openen
-            </LinkButton>
-          </div>
-        </CardContent>
-      </Card>
+      <SharePortalCard portalUrl={portalUrl} embedCode={embedCode} />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <StatCard icon={Wrench} label="Diensten" value={servicesCount} href="/dashboard/diensten" />
