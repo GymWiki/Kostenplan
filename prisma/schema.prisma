@@ -1,0 +1,112 @@
+// Prisma schema for Kostenplan
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TransportType {
+  VAST
+  PER_KM
+}
+
+// id matches auth.users.id from Supabase Auth — the profile row is created
+// right after a successful sign-up (see app/lib/actions/auth.ts).
+model User {
+  id           String   @id
+  email        String   @unique
+  bedrijfsnaam String
+  slug         String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  costSettings CostSettings?
+  categories   Category[]
+  services     Service[]
+  products     Product[]
+}
+
+model CostSettings {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Arbeidskosten
+  arbeidEnabled Boolean @default(true)
+  arbeidTarief  Float   @default(45)
+
+  // Transportkosten
+  transportEnabled Boolean       @default(true)
+  transportType    TransportType @default(VAST)
+  transportTarief  Float         @default(25)
+
+  // Voorrijkosten
+  voorrijEnabled Boolean @default(true)
+  voorrijTarief  Float   @default(35)
+
+  // Materiaalkosten
+  materiaalEnabled Boolean @default(true)
+  materiaalMarge   Float   @default(0)
+
+  btwPercentage Float @default(21)
+
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  naam  String
+  order Int    @default(0)
+
+  services Service[]
+  products Product[]
+
+  createdAt DateTime @default(now())
+}
+
+model Service {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  naam            String
+  omschrijving    String?
+  eenheid         String  @default("m2")
+  arbeidsuren     Float   @default(0)
+  materiaalkosten Float   @default(0)
+  actief          Boolean @default(true)
+  order           Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  naam         String
+  omschrijving String?
+  eenheid      String  @default("stuks")
+  prijs        Float   @default(0)
+  actief       Boolean @default(true)
+  order        Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
