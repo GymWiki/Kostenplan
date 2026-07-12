@@ -5,7 +5,13 @@ import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Inloggen" };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
@@ -15,6 +21,12 @@ export default function LoginPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {error === "confirmatie-mislukt" && (
+          <p className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            De bevestigingslink is ongeldig of verlopen. Probeer opnieuw te registreren of vraag
+            een nieuwe link aan.
+          </p>
+        )}
         <LoginForm />
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Nog geen account?{" "}

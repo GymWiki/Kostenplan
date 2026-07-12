@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/server";
 import { prisma } from "@/app/lib/prisma";
 import { generateUniqueSlug } from "@/app/lib/slug";
+import { getBaseUrl } from "@/app/lib/url";
 import { registerSchema, loginSchema } from "@/app/lib/validation";
 
 export type AuthFormState = {
@@ -33,11 +34,15 @@ export async function registerAction(
 
   const { bedrijfsnaam, email, password } = parsed.data;
 
+  const baseUrl = await getBaseUrl();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { bedrijfsnaam } },
+    options: {
+      data: { bedrijfsnaam },
+      emailRedirectTo: `${baseUrl}/auth/confirm`,
+    },
   });
 
   if (error) {
