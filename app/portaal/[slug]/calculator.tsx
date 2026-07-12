@@ -7,6 +7,7 @@ import { formatCurrency } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Input, Label, Select } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
+import { ThemeToggle } from "@/app/components/ui/theme-toggle";
 import type {
   CostSettings,
   ExtraOption,
@@ -71,10 +72,11 @@ export function Calculator({ bedrijfsnaam, email, costSettings, services, produc
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Sprout className="h-6 w-6" />
           </span>
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-sm text-muted-foreground">Kostencalculator van</p>
-            <h1 className="text-xl font-semibold text-foreground">{bedrijfsnaam}</h1>
+            <h1 className="truncate text-xl font-semibold text-foreground">{bedrijfsnaam}</h1>
           </div>
+          <ThemeToggle />
         </div>
       </header>
 
@@ -333,7 +335,7 @@ function QuantityStepper({
       <button
         type="button"
         onClick={() => onChange(Math.max(0, round(qty - step)))}
-        className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary disabled:opacity-40"
+        className="flex h-11 w-11 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-40 cursor-pointer"
         disabled={qty <= 0}
         aria-label={`${naam} verminderen`}
       >
@@ -348,14 +350,14 @@ function QuantityStepper({
           value={qty === 0 ? "" : qty}
           placeholder="0"
           onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
-          className="h-9 w-20 text-center"
+          className="h-11 w-20 text-center"
         />
         <span className="mt-0.5 text-xs text-muted-foreground">{eenheid}</span>
       </div>
       <button
         type="button"
         onClick={() => onChange(round(qty + step))}
-        className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary"
+        className="flex h-11 w-11 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
         aria-label={`${naam} toevoegen`}
       >
         <Plus className="h-4 w-4" />

@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { MailCheck } from "lucide-react";
 import { registerAction, type AuthFormState } from "@/app/lib/actions/auth";
 import { Button } from "@/app/components/ui/button";
-import { Input, Label } from "@/app/components/ui/input";
+import { Input, Label, PasswordInput } from "@/app/components/ui/input";
 
 export function RegisterForm() {
   const [state, formAction, pending] = useActionState<AuthFormState, FormData>(
@@ -60,10 +60,9 @@ export function RegisterForm() {
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="password">Wachtwoord</Label>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="new-password"
           placeholder="Minimaal 8 tekens"
           required
