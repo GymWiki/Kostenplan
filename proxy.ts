@@ -1,30 +1,54 @@
-import { NextRequest, NextResponse } from "next/server";
-import { decrypt } from "@/app/lib/session";
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
 const protectedPrefixes = ["/dashboard"];
 const authRoutes = ["/login", "/registreren"];
 
-export default async function proxy(req: NextRequest) {
-  const path = req.nextUrl.pathname;
-  const isProtected = protectedPrefixes.some((prefix) =>
-    path.startsWith(prefix)
+export default async function proxy(request: NextRequest) {
+  let response = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          for (const { name, value } of cookiesToSet) {
+            request.cookies.set(name, value);
+          }
+          response = NextResponse.next({ request });
+          for (const { name, value, options } of cookiesToSet) {
+            response.cookies.set(name, value, options);
+          }
+        },
+      },
+    }
   );
+
+  // getUser() (not getSession()) revalidates the token against the Auth
+  // server, which is required to decide access here.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const path = request.nextUrl.pathname;
+  const isProtected = protectedPrefixes.some((prefix) => path.startsWith(prefix));
   const isAuthRoute = authRoutes.includes(path);
 
-  const cookie = req.cookies.get("kostenplan_session")?.value;
-  const session = await decrypt(cookie);
-
-  if (isProtected && !session?.userId) {
-    const loginUrl = new URL("/login", req.nextUrl);
+  if (isProtected && !user) {
+    const loginUrl = new URL("/login", request.nextUrl);
     loginUrl.searchParams.set("next", path);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isAuthRoute && session?.userId) {
-    return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
+  if (isAuthRoute && user) {
+    return NextResponse.redirect(new URL("/dashboard", request.nextUrl));
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

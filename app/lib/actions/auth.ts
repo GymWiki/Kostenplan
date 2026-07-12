@@ -1,14 +1,14 @@
 "use server";
 
-import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+import { createClient } from "@/app/lib/supabase/server";
 import { prisma } from "@/app/lib/prisma";
-import { createSession, deleteSession } from "@/app/lib/session";
 import { generateUniqueSlug } from "@/app/lib/slug";
 import { registerSchema, loginSchema } from "@/app/lib/validation";
 
 export type AuthFormState = {
   error?: string;
+  info?: string;
   fieldErrors?: Record<string, string>;
 } | null;
 
@@ -33,27 +33,43 @@ export async function registerAction(
 
   const { bedrijfsnaam, email, password } = parsed.data;
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return { fieldErrors: { email: "Dit e-mailadres is al in gebruik" } };
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-  const slug = await generateUniqueSlug(bedrijfsnaam);
-
-  const user = await prisma.user.create({
-    data: {
-      bedrijfsnaam,
-      email,
-      passwordHash,
-      slug,
-      costSettings: {
-        create: {},
-      },
-    },
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { bedrijfsnaam } },
   });
 
-  await createSession(user.id);
+  if (error) {
+    if (error.code === "user_already_exists") {
+      return { fieldErrors: { email: "Dit e-mailadres is al in gebruik" } };
+    }
+    return { error: error.message };
+  }
+
+  if (!data.user) {
+    return { error: "Registreren is niet gelukt. Probeer het opnieuw." };
+  }
+
+  const slug = await generateUniqueSlug(bedrijfsnaam);
+  await prisma.user.upsert({
+    where: { id: data.user.id },
+    create: {
+      id: data.user.id,
+      email,
+      bedrijfsnaam,
+      slug,
+      costSettings: { create: {} },
+    },
+    update: {},
+  });
+
+  if (!data.session) {
+    return {
+      info: "Bijna klaar! Check je e-mail en klik op de bevestigingslink om in te loggen.",
+    };
+  }
+
   redirect("/dashboard");
 }
 
@@ -77,21 +93,18 @@ export async function loginAction(
 
   const { email, password } = parsed.data;
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) {
     return { error: "Onjuist e-mailadres of wachtwoord" };
   }
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) {
-    return { error: "Onjuist e-mailadres of wachtwoord" };
-  }
-
-  await createSession(user.id);
   redirect("/dashboard");
 }
 
 export async function logoutAction() {
-  await deleteSession();
+  const supabase = await createClient();
+  await supabase.auth.signOut();
   redirect("/login");
 }

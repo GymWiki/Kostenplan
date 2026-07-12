@@ -21,21 +21,41 @@ kosten, gebaseerd op vier instelbare kostenposten: **arbeidskosten**, **transpor
 
 - [Next.js](https://nextjs.org) 16 (App Router, Server Actions, Turbopack)
 - React 19, TypeScript, Tailwind CSS 4
-- Prisma 7 met PostgreSQL (via `@prisma/adapter-pg`)
-- Sessie-authenticatie met `jose` (JWT in httpOnly cookie) en `bcryptjs`
+- [Supabase](https://supabase.com) — Postgres-database én authenticatie (`@supabase/ssr`)
+- Prisma 7 als ORM bovenop de Supabase Postgres-database (via `@prisma/adapter-pg`)
+
+### Hoe database en auth samenwerken
+
+Supabase Auth beheert accounts, wachtwoorden en sessies (tabel `auth.users`, buiten Prisma's
+bereik). Direct na een geslaagde registratie maakt een server action een bijbehorende rij aan in
+onze eigen `User`-tabel (via Prisma), met hetzelfde `id` als de Supabase-gebruiker. Die tabel
+bevat de app-specifieke gegevens: bedrijfsnaam, portaal-slug, kosteninstellingen, diensten en
+producten.
 
 ## Aan de slag (lokaal)
 
-Je hebt een PostgreSQL-database nodig (lokaal, of gratis bijv. via [Neon](https://neon.tech)).
-
-```bash
-npm install
-cp .env.example .env      # vul DATABASE_URL en SESSION_SECRET in
-npx prisma migrate deploy # tabellen aanmaken
-npm run dev
-```
+1. **Supabase-project aanmaken**: ga naar [supabase.com/dashboard](https://supabase.com/dashboard)
+   → New Project (gratis tier is voldoende).
+2. **Sleutels ophalen**: Project Settings → API — kopieer de **Project URL** en de **anon
+   public key**.
+3. **Database-connectiestring ophalen**: Project Settings → Database → Connection string (URI).
+4. **Environment variables instellen**:
+   ```bash
+   cp .env.example .env
+   # vul NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY en DATABASE_URL in
+   ```
+5. **Installeren en migreren**:
+   ```bash
+   npm install
+   npx prisma migrate deploy   # maakt de app-tabellen aan in je Supabase-database
+   npm run dev
+   ```
 
 De app draait daarna op `http://localhost:3000`.
+
+> **E-mailbevestiging**: Supabase vereist standaard dat een nieuwe gebruiker zijn e-mailadres
+> bevestigt voordat hij kan inloggen. Voor snel lokaal testen kun je dit uitzetten via
+> Authentication → Providers → Email → "Confirm email".
 
 ### Scripts
 
@@ -48,20 +68,20 @@ De app draait daarna op `http://localhost:3000`.
 
 ## Deployen naar Vercel
 
-1. **Database**: maak een gratis Postgres-database aan, bijv. via [Neon](https://neon.tech) of de
-   Vercel Postgres-integratie (Storage → Postgres in je Vercel-project). Kopieer de
-   connectiestring.
+1. **Supabase-project**: volg stap 1-3 hierboven als je dat nog niet gedaan hebt.
 2. **Project importeren**: ga naar [vercel.com/new](https://vercel.com/new), importeer deze
    GitHub-repository en kies de branch die je wilt deployen. Next.js wordt automatisch herkend.
-3. **Environment variables**: zet in de Vercel-projectinstellingen:
-   - `DATABASE_URL` — de connectiestring uit stap 1
-   - `SESSION_SECRET` — een lange willekeurige string (bijv. `openssl rand -base64 32`)
+3. **Environment variables**: zet in de Vercel-projectinstellingen dezelfde drie waarden als in
+   `.env` (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL`).
 4. **Migraties toepassen**: eenmalig (en na elke schemawijziging) de tabellen aanmaken op de
-   productie-database:
+   Supabase-database:
    ```bash
    DATABASE_URL="<jouw-connectiestring>" npm run db:deploy
    ```
-5. **Deploy**: Vercel bouwt en deployt automatisch. Je krijgt een `https://<project>.vercel.app`
+5. **Redirect-URL toevoegen**: zet in Supabase onder Authentication → URL Configuration je
+   Vercel-domein (`https://<project>.vercel.app`) bij Site URL / Redirect URLs, anders werken
+   e-mailbevestigingslinks niet.
+6. **Deploy**: Vercel bouwt en deployt automatisch. Je krijgt een `https://<project>.vercel.app`
    URL die je in de browser kunt openen.
 
 ## Projectstructuur
@@ -69,5 +89,7 @@ De app draait daarna op `http://localhost:3000`.
 - `app/(auth)` — login- en registratiepagina's
 - `app/dashboard` — beveiligd hoveniersdashboard (instellingen, categorieën, diensten, producten)
 - `app/portaal/[slug]` — het publieke klantenportaal met de kostencalculator
-- `app/lib` — Prisma-client, sessiebeheer, server actions en validatie
-- `prisma/schema.prisma` — datamodel
+- `app/lib/supabase` — Supabase server client
+- `app/lib/actions` — server actions (auth, kosteninstellingen, categorieën, diensten, producten)
+- `app/lib/dal.ts` — leest de ingelogde Supabase-gebruiker en koppelt die aan het Prisma `User`-profiel
+- `prisma/schema.prisma` — datamodel van de app-tabellen (niet van Supabase Auth)

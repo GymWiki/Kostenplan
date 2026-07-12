@@ -5,7 +5,6 @@ CREATE TYPE "TransportType" AS ENUM ('VAST', 'PER_KM');
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "passwordHash" TEXT NOT NULL,
     "bedrijfsnaam" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

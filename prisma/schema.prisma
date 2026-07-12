@@ -15,10 +15,11 @@ enum TransportType {
   PER_KM
 }
 
+// id matches auth.users.id from Supabase Auth — the profile row is created
+// right after a successful sign-up (see app/lib/actions/auth.ts).
 model User {
-  id           String   @id @default(cuid())
+  id           String   @id
   email        String   @unique
-  passwordHash String
   bedrijfsnaam String
   slug         String   @unique
   createdAt    DateTime @default(now())
