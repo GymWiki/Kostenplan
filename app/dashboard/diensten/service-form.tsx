@@ -5,16 +5,19 @@ import { Button, LinkButton } from "@/app/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import type { ServiceFormState } from "@/app/lib/actions/services";
-import type { Service } from "@/app/generated/prisma/client";
+import { arbeidEenheidEnkelvoud, arbeidEenheidMeervoud } from "@/app/lib/arbeid";
+import type { ArbeidStapEenheid, Service } from "@/app/generated/prisma/client";
 
 const eenheden = ["m2", "m1", "m3", "stuks", "uur", "dag"];
 
 export function ServiceForm({
   action,
   service,
+  arbeidStapEenheid,
 }: {
   action: (state: ServiceFormState, formData: FormData) => Promise<ServiceFormState>;
   service?: Service;
+  arbeidStapEenheid: ArbeidStapEenheid;
 }) {
   const [state, formAction, pending] = useActionState<ServiceFormState, FormData>(
     action,
@@ -66,18 +69,21 @@ export function ServiceForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="arbeidsuren">Arbeidsuren per eenheid</Label>
+          <Label htmlFor="arbeidstijd">
+            Arbeidstijd per eenheid ({arbeidEenheidMeervoud(arbeidStapEenheid)})
+          </Label>
           <Input
-            id="arbeidsuren"
-            name="arbeidsuren"
+            id="arbeidstijd"
+            name="arbeidstijd"
             type="number"
             step="0.01"
             min={0}
-            defaultValue={service?.arbeidsuren ?? 0}
+            defaultValue={service?.arbeidstijd ?? 0}
             required
           />
           <p className="text-xs text-muted-foreground">
-            Gebruikt voor arbeidskosten: uren × uurtarief.
+            Gebruikt voor arbeidskosten: tijd × tarief per{" "}
+            {arbeidEenheidEnkelvoud(arbeidStapEenheid)}.
           </p>
         </div>
         <div className="flex flex-col gap-1.5">

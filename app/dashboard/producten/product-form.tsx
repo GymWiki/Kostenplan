@@ -1,25 +1,29 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button, LinkButton } from "@/app/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import type { ProductFormState } from "@/app/lib/actions/products";
-import type { Product } from "@/app/generated/prisma/client";
+import { arbeidEenheidEnkelvoud } from "@/app/lib/arbeid";
+import type { ArbeidStapEenheid, Product } from "@/app/generated/prisma/client";
 
 const eenheden = ["m1", "m2", "m3", "stuks"];
 
 export function ProductForm({
   action,
   product,
+  arbeidStapEenheid,
 }: {
   action: (state: ProductFormState, formData: FormData) => Promise<ProductFormState>;
   product?: Product;
+  arbeidStapEenheid: ArbeidStapEenheid;
 }) {
   const [state, formAction, pending] = useActionState<ProductFormState, FormData>(
     action,
     null
   );
+  const [eenheid, setEenheid] = useState(product?.eenheid ?? "m1");
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -55,7 +59,12 @@ export function ProductForm({
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="eenheid">Eenheid</Label>
-        <Select id="eenheid" name="eenheid" defaultValue={product?.eenheid ?? "m1"}>
+        <Select
+          id="eenheid"
+          name="eenheid"
+          value={eenheid}
+          onChange={(e) => setEenheid(e.target.value)}
+        >
           {eenheden.map((e) => (
             <option key={e} value={e}>
               {e}
@@ -65,6 +74,26 @@ export function ProductForm({
         <p className="text-xs text-muted-foreground">
           De hoeveelheid die de klant opgeeft, bijv. meters schutting. Materiaalprijzen en extra
           opties worden hiermee vermenigvuldigd.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="arbeidsCapaciteit">
+          Aantal {eenheid} per {arbeidEenheidEnkelvoud(arbeidStapEenheid)} (optioneel)
+        </Label>
+        <Input
+          id="arbeidsCapaciteit"
+          name="arbeidsCapaciteit"
+          type="number"
+          step="0.01"
+          min={0}
+          placeholder="Bijv. 5"
+          defaultValue={product?.arbeidsCapaciteit ?? ""}
+        />
+        <p className="text-xs text-muted-foreground">
+          Hoeveel {eenheid} jij of je team plaatst per {arbeidEenheidEnkelvoud(arbeidStapEenheid)}.
+          Bepaalt de arbeidskosten van dit product. Laat leeg als dit product geen arbeidstijd
+          kost.
         </p>
       </div>
 

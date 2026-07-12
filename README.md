@@ -11,10 +11,15 @@ kosten, gebaseerd op vier instelbare kostenposten: **arbeidskosten**, **transpor
 - **Kosteninstellingen** — arbeidskosten, transportkosten (vast of per km), voorrijkosten en
   materiaalkosten (met opslagpercentage) zijn elk afzonderlijk aan of uit te zetten en in te
   stellen, plus een btw-percentage.
-- **Diensten** — werkzaamheden met arbeidsuren en materiaalkosten per eenheid.
+- **Arbeidskosten in stappen** — arbeid wordt gerekend in uren, dagdelen of dagen. Bij dagdelen/
+  dagen wordt de totale arbeidstijd van alle gekozen diensten en producten samen naar boven
+  afgerond op hele stappen, niet per item apart.
+- **Diensten** — werkzaamheden met arbeidstijd en materiaalkosten per eenheid.
 - **Producten** — samengestelde producten (bijv. "Schutting") opgebouwd uit materiaalcategorieën
   (bijv. "Palen", "Tussenbekleding") met per categorie een keuze uit materialen, plus optionele
-  extra opties die de klant kan aanvinken.
+  extra opties die de klant kan aanvinken. Een product kan een arbeidscapaciteit hebben (bijv.
+  "5 m1 per dagdeel") en materialen kunnen een stapgrootte hebben (bijv. verkocht per 1,8 m) —
+  de bestelde hoeveelheid wordt dan naar boven afgerond op een veelvoud daarvan.
 - **Zichtbaarheid per kostenpost** — elke kostenpost is niet alleen aan/uit te zetten, maar ook
   los "zichtbaar voor klant" te maken: verborgen kosten tellen nog gewoon mee in het totaal, maar
   verschijnen niet als aparte regel in de uitsplitsing.

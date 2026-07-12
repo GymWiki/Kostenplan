@@ -26,9 +26,11 @@ type CategoryWithMaterials = MaterialCategory & { materialen: MaterialOption[] }
 
 export function MaterialCategoriesManager({
   productId,
+  productEenheid,
   categories,
 }: {
   productId: string;
+  productEenheid: string;
   categories: CategoryWithMaterials[];
 }) {
   return (
@@ -52,7 +54,7 @@ export function MaterialCategoriesManager({
       ) : (
         <div className="flex flex-col gap-4">
           {categories.map((category) => (
-            <CategoryCard key={category.id} category={category} />
+            <CategoryCard key={category.id} category={category} productEenheid={productEenheid} />
           ))}
         </div>
       )}
@@ -81,7 +83,13 @@ function NewCategoryForm({ productId }: { productId: string }) {
   );
 }
 
-function CategoryCard({ category }: { category: CategoryWithMaterials }) {
+function CategoryCard({
+  category,
+  productEenheid,
+}: {
+  category: CategoryWithMaterials;
+  productEenheid: string;
+}) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [pending, startTransition] = useTransition();
@@ -139,9 +147,9 @@ function CategoryCard({ category }: { category: CategoryWithMaterials }) {
 
         <div className="flex flex-col gap-2 border-t border-border pt-4">
           {category.materialen.map((material) => (
-            <MaterialRow key={material.id} material={material} />
+            <MaterialRow key={material.id} material={material} productEenheid={productEenheid} />
           ))}
-          <NewMaterialForm materialCategoryId={category.id} />
+          <NewMaterialForm materialCategoryId={category.id} productEenheid={productEenheid} />
         </div>
       </CardContent>
     </Card>
@@ -170,7 +178,13 @@ function DeleteCategoryForm({ materialCategoryId }: { materialCategoryId: string
   );
 }
 
-function MaterialRow({ material }: { material: MaterialOption }) {
+function MaterialRow({
+  material,
+  productEenheid,
+}: {
+  material: MaterialOption;
+  productEenheid: string;
+}) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [pending, startTransition] = useTransition();
@@ -189,36 +203,55 @@ function MaterialRow({ material }: { material: MaterialOption }) {
               }
             });
           }}
-          className="flex flex-wrap items-center gap-2"
+          className="flex flex-col gap-2"
         >
-          <Input name="naam" defaultValue={material.naam} required autoFocus className="flex-1" />
-          <div className="relative w-28">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              €
-            </span>
-            <Input
-              name="prijs"
-              type="number"
-              step="0.01"
-              min={0}
-              defaultValue={material.prijs}
-              required
-              className="pl-7"
-            />
+          <div className="flex flex-wrap items-center gap-2">
+            <Input name="naam" defaultValue={material.naam} required autoFocus className="flex-1" />
+            <div className="relative w-28">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                €
+              </span>
+              <Input
+                name="prijs"
+                type="number"
+                step="0.01"
+                min={0}
+                defaultValue={material.prijs}
+                required
+                className="pl-7"
+              />
+            </div>
+            <div className="relative w-32">
+              <Input
+                name="stapgrootte"
+                type="number"
+                step="0.01"
+                min={0}
+                placeholder={`bijv. 1.8`}
+                defaultValue={material.stapgrootte ?? ""}
+                className="pr-10"
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                {productEenheid}
+              </span>
+            </div>
+            <input type="hidden" name="actief" value={String(material.actief)} />
+            <Button type="submit" variant="secondary" size="icon" disabled={pending} aria-label="Opslaan">
+              <Check className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setEditing(false)}
+              aria-label="Annuleren"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-          <input type="hidden" name="actief" value={String(material.actief)} />
-          <Button type="submit" variant="secondary" size="icon" disabled={pending} aria-label="Opslaan">
-            <Check className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => setEditing(false)}
-            aria-label="Annuleren"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <p className="text-xs text-muted-foreground">
+            Stapgrootte (optioneel): wordt verkocht per veelvoud van deze hoeveelheid.
+          </p>
         </form>
         {error && <p className="mt-1.5 text-sm text-destructive">{error}</p>}
       </div>
@@ -231,7 +264,12 @@ function MaterialRow({ material }: { material: MaterialOption }) {
         <ActiveMiniToggle materialOptionId={material.id} actief={material.actief} />
         <div>
           <p className="text-sm font-medium text-foreground">{material.naam}</p>
-          <p className="text-xs text-muted-foreground">{formatCurrency(material.prijs)}</p>
+          <p className="text-xs text-muted-foreground">
+            {formatCurrency(material.prijs)}
+            {material.stapgrootte
+              ? ` — per ${material.stapgrootte} ${productEenheid}`
+              : ""}
+          </p>
         </div>
       </div>
       <div className="flex gap-1">
@@ -291,7 +329,13 @@ function DeleteMaterialForm({ materialOptionId }: { materialOptionId: string }) 
   );
 }
 
-function NewMaterialForm({ materialCategoryId }: { materialCategoryId: string }) {
+function NewMaterialForm({
+  materialCategoryId,
+  productEenheid,
+}: {
+  materialCategoryId: string;
+  productEenheid: string;
+}) {
   const action = createMaterialOptionAction.bind(null, materialCategoryId);
   const [state, formAction, pending] = useActionState<MaterialOptionFormState, FormData>(
     action,
@@ -299,19 +343,34 @@ function NewMaterialForm({ materialCategoryId }: { materialCategoryId: string })
   );
 
   return (
-    <form action={formAction} className="flex flex-wrap items-center gap-2 pt-1">
-      <Input name="naam" placeholder="Bijv. Betonnen palen" required className="flex-1" />
-      <div className="relative w-28">
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-          €
-        </span>
-        <Input name="prijs" type="number" step="0.01" min={0} placeholder="0" className="pl-7" />
+    <form action={formAction} className="flex flex-col gap-1 pt-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <Input name="naam" placeholder="Bijv. Betonnen palen" required className="flex-1" />
+        <div className="relative w-28">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+            €
+          </span>
+          <Input name="prijs" type="number" step="0.01" min={0} placeholder="0" className="pl-7" />
+        </div>
+        <div className="relative w-32">
+          <Input
+            name="stapgrootte"
+            type="number"
+            step="0.01"
+            min={0}
+            placeholder="stapgrootte"
+            className="pr-10"
+          />
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+            {productEenheid}
+          </span>
+        </div>
+        <input type="hidden" name="actief" value="on" />
+        <Button type="submit" variant="secondary" size="icon" disabled={pending} aria-label="Materiaal toevoegen">
+          <Plus className="h-4 w-4" />
+        </Button>
       </div>
-      <input type="hidden" name="actief" value="on" />
-      <Button type="submit" variant="secondary" size="icon" disabled={pending} aria-label="Materiaal toevoegen">
-        <Plus className="h-4 w-4" />
-      </Button>
-      {state?.error && <p className="w-full text-sm text-destructive">{state.error}</p>}
+      {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
     </form>
   );
 }

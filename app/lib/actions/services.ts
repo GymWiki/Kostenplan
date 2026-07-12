@@ -16,7 +16,7 @@ function parseServiceForm(formData: FormData) {
     naam: formData.get("naam"),
     omschrijving: formData.get("omschrijving") ?? "",
     eenheid: formData.get("eenheid"),
-    arbeidsuren: formData.get("arbeidsuren"),
+    arbeidstijd: formData.get("arbeidstijd"),
     materiaalkosten: formData.get("materiaalkosten"),
     actief: formData.get("actief") === "on",
   });

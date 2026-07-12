@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Plus, Pencil, Wrench } from "lucide-react";
-import { requireUser } from "@/app/lib/dal";
+import { requireUser, getArbeidStapEenheid } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { formatCurrency } from "@/app/lib/format";
+import { arbeidEenheidMeervoud } from "@/app/lib/arbeid";
 import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { ActiveToggle } from "@/app/components/dashboard/active-toggle";
@@ -17,10 +18,13 @@ export const metadata: Metadata = { title: "Diensten" };
 export default async function DienstenPage() {
   const user = await requireUser();
 
-  const services = await prisma.service.findMany({
-    where: { userId: user.id },
-    orderBy: { order: "asc" },
-  });
+  const [services, arbeidStapEenheid] = await Promise.all([
+    prisma.service.findMany({
+      where: { userId: user.id },
+      orderBy: { order: "asc" },
+    }),
+    getArbeidStapEenheid(user.id),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -28,7 +32,7 @@ export default async function DienstenPage() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Diensten</h1>
           <p className="mt-1 text-muted-foreground">
-            Werkzaamheden die je aanbiedt, met arbeidsuren en materiaalkosten per eenheid.
+            Werkzaamheden die je aanbiedt, met arbeidstijd en materiaalkosten per eenheid.
           </p>
         </div>
         <LinkButton href="/dashboard/diensten/nieuw">
@@ -76,7 +80,7 @@ export default async function DienstenPage() {
                       <p className="text-xs text-muted-foreground">/ {service.eenheid}</p>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {service.arbeidsuren} uur
+                      {service.arbeidstijd} {arbeidEenheidMeervoud(arbeidStapEenheid)}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {formatCurrency(service.materiaalkosten)}

@@ -11,7 +11,8 @@ import { Input, Label, Select } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { cn } from "@/app/lib/cn";
 import { Eye } from "lucide-react";
-import type { CostSettings } from "@/app/generated/prisma/client";
+import { arbeidEenheidEnkelvoud, arbeidEenheidMeervoud } from "@/app/lib/arbeid";
+import type { ArbeidStapEenheid, CostSettings } from "@/app/generated/prisma/client";
 
 export function CostSettingsForm({
   costSettings,
@@ -24,6 +25,9 @@ export function CostSettingsForm({
   >(updateCostSettingsAction, null);
 
   const [arbeidOn, setArbeidOn] = useState(costSettings.arbeidEnabled);
+  const [arbeidStapEenheid, setArbeidStapEenheid] = useState<ArbeidStapEenheid>(
+    costSettings.arbeidStapEenheid
+  );
   const [transportOn, setTransportOn] = useState(costSettings.transportEnabled);
   const [transportType, setTransportType] = useState(costSettings.transportType);
   const [voorrijOn, setVoorrijOn] = useState(costSettings.voorrijEnabled);
@@ -44,7 +48,7 @@ export function CostSettingsForm({
 
       <CostTypeCard
         title="Arbeidskosten"
-        description="Het uurtarief dat je rekent voor het werk van jou en je team."
+        description="Het tarief dat je rekent voor het werk van jou en je team."
         enabled={arbeidOn}
         onToggle={setArbeidOn}
         toggleName="arbeidEnabled"
@@ -52,16 +56,38 @@ export function CostSettingsForm({
         visibleDefault={costSettings.arbeidZichtbaar}
       >
         <FieldRow>
-          <Field label="Uurtarief" htmlFor="arbeidTarief">
+          <Field label="Reken in" htmlFor="arbeidStapEenheid">
+            <Select
+              id="arbeidStapEenheid"
+              name="arbeidStapEenheid"
+              value={arbeidStapEenheid}
+              onChange={(e) => setArbeidStapEenheid(e.target.value as ArbeidStapEenheid)}
+              disabled={!arbeidOn}
+            >
+              <option value="UUR">Uren</option>
+              <option value="DAGDEEL">Dagdelen</option>
+              <option value="DAG">Dagen</option>
+            </Select>
+          </Field>
+          <Field
+            label={`Tarief per ${arbeidEenheidEnkelvoud(arbeidStapEenheid)}`}
+            htmlFor="arbeidTarief"
+          >
             <CurrencyInput
               id="arbeidTarief"
               name="arbeidTarief"
               defaultValue={costSettings.arbeidTarief}
               disabled={!arbeidOn}
-              suffix="/ uur"
+              suffix={`/ ${arbeidEenheidEnkelvoud(arbeidStapEenheid)}`}
             />
           </Field>
         </FieldRow>
+        {arbeidStapEenheid !== "UUR" && (
+          <p className="text-xs text-muted-foreground">
+            De totale arbeidstijd van alle diensten en producten samen wordt naar boven afgerond
+            op hele {arbeidEenheidMeervoud(arbeidStapEenheid)}.
+          </p>
+        )}
       </CostTypeCard>
 
       <CostTypeCard

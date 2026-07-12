@@ -1,5 +1,8 @@
+export type ArbeidStapEenheid = "UUR" | "DAGDEEL" | "DAG";
+
 export type CalcCostSettings = {
   arbeidEnabled: boolean;
+  arbeidStapEenheid: ArbeidStapEenheid;
   arbeidTarief: number;
   transportEnabled: boolean;
   transportType: "VAST" | "PER_KM";
@@ -13,13 +16,14 @@ export type CalcCostSettings = {
 
 export type CalcService = {
   id: string;
-  arbeidsuren: number;
+  arbeidstijd: number;
   materiaalkosten: number;
 };
 
 export type CalcMaterialOption = {
   id: string;
   prijs: number;
+  stapgrootte: number | null;
 };
 
 export type CalcMaterialCategory = {
@@ -34,9 +38,22 @@ export type CalcExtraOption = {
 
 export type CalcProduct = {
   id: string;
+  arbeidsCapaciteit: number | null;
   materiaalCategorieen: CalcMaterialCategory[];
   extraOpties: CalcExtraOption[];
 };
+
+// Rounds to 6 decimals before taking the ceiling, so floating-point noise
+// (e.g. 2.9999999999) doesn't push a value up to the next whole step.
+function ceilStep(value: number) {
+  return Math.ceil(Math.round(value * 1e6) / 1e6);
+}
+
+// Rounds a quantity up to the nearest multiple of `step` (used for
+// materials that are only sold in fixed bundles, e.g. per 1.8 m).
+function roundUpToStep(qty: number, step: number) {
+  return ceilStep(qty / step) * step;
+}
 
 export function calculateBreakdown({
   services,
@@ -57,7 +74,7 @@ export function calculateBreakdown({
   afstandKm: number;
   costSettings: CalcCostSettings;
 }) {
-  let arbeidskosten = 0;
+  let arbeidstijd = 0;
   let materiaalkosten = 0;
   let itemCount = 0;
 
@@ -65,9 +82,7 @@ export function calculateBreakdown({
     const qty = serviceQty[service.id] ?? 0;
     if (qty <= 0) continue;
     itemCount += 1;
-    if (costSettings.arbeidEnabled) {
-      arbeidskosten += qty * service.arbeidsuren * costSettings.arbeidTarief;
-    }
+    arbeidstijd += qty * service.arbeidstijd;
     if (costSettings.materiaalEnabled) {
       materiaalkosten += qty * service.materiaalkosten;
     }
@@ -78,14 +93,21 @@ export function calculateBreakdown({
     if (qty <= 0) continue;
     itemCount += 1;
 
+    if (product.arbeidsCapaciteit && product.arbeidsCapaciteit > 0) {
+      arbeidstijd += qty / product.arbeidsCapaciteit;
+    }
+
     if (costSettings.materiaalEnabled) {
       for (const category of product.materiaalCategorieen) {
         const selectedId = materialSelections[category.id];
         if (!selectedId) continue;
         const option = category.materialen.find((m) => m.id === selectedId);
-        if (option) {
-          materiaalkosten += qty * option.prijs;
-        }
+        if (!option) continue;
+        const effectiveQty =
+          option.stapgrootte && option.stapgrootte > 0
+            ? roundUpToStep(qty, option.stapgrootte)
+            : qty;
+        materiaalkosten += effectiveQty * option.prijs;
       }
 
       for (const extra of product.extraOpties) {
@@ -94,6 +116,13 @@ export function calculateBreakdown({
         }
       }
     }
+  }
+
+  let arbeidskosten = 0;
+  if (costSettings.arbeidEnabled) {
+    const billedArbeidstijd =
+      costSettings.arbeidStapEenheid === "UUR" ? arbeidstijd : ceilStep(arbeidstijd);
+    arbeidskosten = billedArbeidstijd * costSettings.arbeidTarief;
   }
 
   if (costSettings.materiaalEnabled && costSettings.materiaalMarge > 0) {

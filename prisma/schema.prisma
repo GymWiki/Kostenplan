@@ -15,6 +15,12 @@ enum TransportType {
   PER_KM
 }
 
+enum ArbeidStapEenheid {
+  UUR
+  DAGDEEL
+  DAG
+}
+
 // id matches auth.users.id from Supabase Auth — the profile row is created
 // right after a successful sign-up (see app/lib/actions/auth.ts).
 model User {
@@ -36,9 +42,10 @@ model CostSettings {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Arbeidskosten
-  arbeidEnabled   Boolean @default(true)
-  arbeidZichtbaar Boolean @default(true)
-  arbeidTarief    Float   @default(45)
+  arbeidEnabled     Boolean           @default(true)
+  arbeidZichtbaar   Boolean           @default(true)
+  arbeidStapEenheid ArbeidStapEenheid @default(UUR)
+  arbeidTarief      Float             @default(45)
 
   // Transportkosten
   transportEnabled   Boolean       @default(true)
@@ -70,7 +77,7 @@ model Service {
   naam            String
   omschrijving    String?
   eenheid         String  @default("m2")
-  arbeidsuren     Float   @default(0)
+  arbeidstijd     Float   @default(0)
   materiaalkosten Float   @default(0)
   actief          Boolean @default(true)
   order           Int     @default(0)
@@ -87,11 +94,15 @@ model Product {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  naam         String
-  omschrijving String?
-  eenheid      String  @default("m1")
-  actief       Boolean @default(true)
-  order        Int     @default(0)
+  naam              String
+  omschrijving      String?
+  eenheid           String  @default("m1")
+  // Aantal eenheden dat in één arbeidsstap (zie CostSettings.arbeidStapEenheid)
+  // geplaatst kan worden, bijv. 5 (m1 schutting per dagdeel). Leeg betekent
+  // dat dit product geen arbeidstijd kost.
+  arbeidsCapaciteit Float?
+  actief            Boolean @default(true)
+  order             Int     @default(0)
 
   materiaalCategorieen MaterialCategory[]
   extraOpties          ExtraOption[]
@@ -122,10 +133,14 @@ model MaterialOption {
   materialCategoryId String
   materialCategory   MaterialCategory @relation(fields: [materialCategoryId], references: [id], onDelete: Cascade)
 
-  naam   String
-  prijs  Float   @default(0)
-  actief Boolean @default(true)
-  order  Int     @default(0)
+  naam        String
+  prijs       Float   @default(0)
+  // Wordt verkocht per veelvoud van deze hoeveelheid (in de eenheid van het
+  // product), bijv. 1.8 voor een paal die per 1,8 m wordt ingekocht. Leeg
+  // betekent doorlopend geprijsd, zonder afronding.
+  stapgrootte Float?
+  actief      Boolean @default(true)
+  order       Int     @default(0)
 
   createdAt DateTime @default(now())
 }
