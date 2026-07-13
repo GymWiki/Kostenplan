@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { extraOptionSchema } from "@/app/lib/validation";
-import { uploadFoto, deleteFoto } from "@/app/lib/storage";
+import { uploadFoto, deleteFoto, isUploadedFile } from "@/app/lib/storage";
 
 export type ExtraOptionFormState = {
   error?: string;
@@ -30,7 +30,7 @@ async function resolveFoto(
   currentFoto: string | null
 ): Promise<{ foto: string | null; error?: undefined } | { foto?: undefined; error: string }> {
   const file = formData.get("foto");
-  if (file instanceof File && file.size > 0) {
+  if (isUploadedFile(file)) {
     const result = await uploadFoto(userId, file);
     if (typeof result.url !== "string") return { error: result.error };
     if (currentFoto) await deleteFoto(currentFoto);
