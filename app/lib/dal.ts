@@ -69,3 +69,27 @@ export async function getArbeidStapEenheid(userId: string) {
   });
   return costSettings?.arbeidStapEenheid ?? "UUR";
 }
+
+// Cost-settings fields the product form needs to decide whether to show
+// per-product override inputs, and what default/fallback values to display.
+export async function getProductPricingSettings(userId: string) {
+  const costSettings = await prisma.costSettings.findUnique({
+    where: { userId },
+    select: {
+      arbeidStapEenheid: true,
+      arbeidTarief: true,
+      arbeidTariefPerProduct: true,
+      materiaalMarge: true,
+      materiaalMargePerProduct: true,
+    },
+  });
+  return (
+    costSettings ?? {
+      arbeidStapEenheid: "UUR" as const,
+      arbeidTarief: 45,
+      arbeidTariefPerProduct: false,
+      materiaalMarge: 0,
+      materiaalMargePerProduct: false,
+    }
+  );
+}

@@ -4,6 +4,7 @@ export type CalcCostSettings = {
   arbeidEnabled: boolean;
   arbeidStapEenheid: ArbeidStapEenheid;
   arbeidTarief: number;
+  arbeidTariefPerProduct: boolean;
   transportEnabled: boolean;
   transportType: "VAST" | "PER_KM";
   transportTarief: number;
@@ -11,6 +12,7 @@ export type CalcCostSettings = {
   voorrijTarief: number;
   materiaalEnabled: boolean;
   materiaalMarge: number;
+  materiaalMargePerProduct: boolean;
   btwPercentage: number;
 };
 
@@ -40,6 +42,8 @@ export type CalcExtraOption = {
 export type CalcProduct = {
   id: string;
   arbeidsCapaciteit: number | null;
+  arbeidTariefOverride: number | null;
+  materiaalMargeOverride: number | null;
   materiaalCategorieen: CalcMaterialCategory[];
   extraOpties: CalcExtraOption[];
 };
@@ -75,17 +79,28 @@ export function calculateBreakdown({
   afstandKm: number;
   costSettings: CalcCostSettings;
 }) {
-  let arbeidstijd = 0;
+  // Arbeidstijd wordt bijgehouden per geldend tarief (het globale tarief,
+  // of een product-override), zodat items met hetzelfde tarief nog steeds
+  // sámen naar boven afgerond worden op hele stappen (dagdeel/dag), terwijl
+  // een product met een eigen tarief op zichzelf wordt afgerond — je kunt
+  // afgeronde tijd nu eenmaal niet eerlijk tegen twee tarieven tegelijk
+  // afrekenen.
+  const arbeidstijdPerTarief = new Map<number, number>();
   let materiaalkosten = 0;
   let itemCount = 0;
+
+  function addArbeidstijd(tarief: number, tijd: number) {
+    if (tijd <= 0) return;
+    arbeidstijdPerTarief.set(tarief, (arbeidstijdPerTarief.get(tarief) ?? 0) + tijd);
+  }
 
   for (const service of services) {
     const qty = serviceQty[service.id] ?? 0;
     if (qty <= 0) continue;
     itemCount += 1;
-    arbeidstijd += qty * service.arbeidstijd;
+    addArbeidstijd(costSettings.arbeidTarief, qty * service.arbeidstijd);
     if (costSettings.materiaalEnabled) {
-      materiaalkosten += qty * service.materiaalkosten;
+      materiaalkosten += qty * service.materiaalkosten * (1 + costSettings.materiaalMarge / 100);
     }
   }
 
@@ -95,10 +110,15 @@ export function calculateBreakdown({
     itemCount += 1;
 
     if (product.arbeidsCapaciteit && product.arbeidsCapaciteit > 0) {
-      arbeidstijd += qty / product.arbeidsCapaciteit;
+      const arbeidTarief =
+        costSettings.arbeidTariefPerProduct && product.arbeidTariefOverride != null
+          ? product.arbeidTariefOverride
+          : costSettings.arbeidTarief;
+      addArbeidstijd(arbeidTarief, qty / product.arbeidsCapaciteit);
     }
 
     if (costSettings.materiaalEnabled) {
+      let productMateriaalkosten = 0;
       for (const category of product.materiaalCategorieen) {
         const selectedId = materialSelections[category.id];
         if (!selectedId) continue;
@@ -108,26 +128,29 @@ export function calculateBreakdown({
           option.stapgrootte && option.stapgrootte > 0
             ? roundUpToStep(qty, option.stapgrootte)
             : qty;
-        materiaalkosten += effectiveQty * option.prijs;
+        productMateriaalkosten += effectiveQty * option.prijs;
       }
 
       for (const extra of product.extraOpties) {
         const aantal = extraSelections[extra.id] ?? 0;
         if (aantal <= 0) continue;
-        materiaalkosten += (extra.type === "PER_STUK" ? aantal : qty) * extra.prijs;
+        productMateriaalkosten += (extra.type === "PER_STUK" ? aantal : qty) * extra.prijs;
       }
+
+      const materiaalMarge =
+        costSettings.materiaalMargePerProduct && product.materiaalMargeOverride != null
+          ? product.materiaalMargeOverride
+          : costSettings.materiaalMarge;
+      materiaalkosten += productMateriaalkosten * (1 + materiaalMarge / 100);
     }
   }
 
   let arbeidskosten = 0;
   if (costSettings.arbeidEnabled) {
-    const billedArbeidstijd =
-      costSettings.arbeidStapEenheid === "UUR" ? arbeidstijd : ceilStep(arbeidstijd);
-    arbeidskosten = billedArbeidstijd * costSettings.arbeidTarief;
-  }
-
-  if (costSettings.materiaalEnabled && costSettings.materiaalMarge > 0) {
-    materiaalkosten *= 1 + costSettings.materiaalMarge / 100;
+    for (const [tarief, tijd] of arbeidstijdPerTarief) {
+      const billedTijd = costSettings.arbeidStapEenheid === "UUR" ? tijd : ceilStep(tijd);
+      arbeidskosten += billedTijd * tarief;
+    }
   }
 
   const heeftSelectie = itemCount > 0;

@@ -51,6 +51,9 @@ model CostSettings {
   arbeidZichtbaar   Boolean           @default(true)
   arbeidStapEenheid ArbeidStapEenheid @default(UUR)
   arbeidTarief      Float             @default(45)
+  // Als true mag elk product een eigen Product.arbeidTariefOverride hebben
+  // die dit tarief vervangt. Diensten gebruiken altijd dit tarief.
+  arbeidTariefPerProduct Boolean @default(false)
 
   // Transportkosten
   transportEnabled   Boolean       @default(true)
@@ -67,6 +70,9 @@ model CostSettings {
   materiaalEnabled   Boolean @default(true)
   materiaalZichtbaar Boolean @default(true)
   materiaalMarge     Float   @default(0)
+  // Als true mag elk product een eigen Product.materiaalMargeOverride
+  // hebben die deze opslag vervangt. Diensten gebruiken altijd deze opslag.
+  materiaalMargePerProduct Boolean @default(false)
 
   btwPercentage Float @default(21)
 
@@ -106,8 +112,16 @@ model Product {
   // geplaatst kan worden, bijv. 5 (m1 schutting per dagdeel). Leeg betekent
   // dat dit product geen arbeidstijd kost.
   arbeidsCapaciteit Float?
-  actief            Boolean @default(true)
-  order             Int     @default(0)
+  // Vervangt CostSettings.arbeidTarief voor dit product, maar alleen als
+  // CostSettings.arbeidTariefPerProduct aanstaat. Leeg = gebruik het tarief
+  // uit Kosteninstellingen.
+  arbeidTariefOverride Float?
+  // Vervangt CostSettings.materiaalMarge voor dit product, maar alleen als
+  // CostSettings.materiaalMargePerProduct aanstaat. Leeg = gebruik de opslag
+  // uit Kosteninstellingen.
+  materiaalMargeOverride Float?
+  actief                 Boolean @default(true)
+  order                  Int     @default(0)
 
   materiaalCategorieen MaterialCategory[]
   extraOpties          ExtraOption[]

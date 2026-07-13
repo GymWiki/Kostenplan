@@ -17,6 +17,8 @@ function parseProductForm(formData: FormData) {
     omschrijving: formData.get("omschrijving") ?? "",
     eenheid: formData.get("eenheid"),
     arbeidsCapaciteit: formData.get("arbeidsCapaciteit"),
+    arbeidTariefOverride: formData.get("arbeidTariefOverride"),
+    materiaalMargeOverride: formData.get("materiaalMargeOverride"),
     actief: formData.get("actief") === "on",
   });
 }
