@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { requireUser, getArbeidStapEenheid } from "@/app/lib/dal";
+import { requireUser, getProductPricingSettings } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { updateProductAction } from "@/app/lib/actions/products";
 import { ProductForm } from "../../product-form";
@@ -17,7 +17,7 @@ export default async function BewerkProductPage({
   const { id } = await params;
   const user = await requireUser();
 
-  const [product, arbeidStapEenheid] = await Promise.all([
+  const [product, pricingSettings] = await Promise.all([
     prisma.product.findFirst({
       where: { id, userId: user.id },
       include: {
@@ -28,7 +28,7 @@ export default async function BewerkProductPage({
         extraOpties: { orderBy: { order: "asc" } },
       },
     }),
-    getArbeidStapEenheid(user.id),
+    getProductPricingSettings(user.id),
   ]);
 
   if (!product) notFound();
@@ -43,7 +43,11 @@ export default async function BewerkProductPage({
         <ProductForm
           action={updateProductAction.bind(null, product.id)}
           product={product}
-          arbeidStapEenheid={arbeidStapEenheid}
+          arbeidStapEenheid={pricingSettings.arbeidStapEenheid}
+          arbeidTarief={pricingSettings.arbeidTarief}
+          arbeidTariefPerProduct={pricingSettings.arbeidTariefPerProduct}
+          materiaalMarge={pricingSettings.materiaalMarge}
+          materiaalMargePerProduct={pricingSettings.materiaalMargePerProduct}
         />
       </div>
 

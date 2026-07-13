@@ -8,6 +8,13 @@ const optionalPositiveNumber = z.preprocess(
   z.coerce.number().positive().nullable()
 );
 
+// Same as optionalPositiveNumber but allows 0 — used for per-product
+// overrides where "0" is a meaningful value (e.g. 0% opslag).
+const optionalNonNegativeNumber = z.preprocess(
+  (val) => (val === "" || val === null || val === undefined ? null : val),
+  z.coerce.number().min(0).nullable()
+);
+
 export const registerSchema = z.object({
   bedrijfsnaam: z.string().trim().min(2, "Vul een bedrijfsnaam in").max(80),
   email: z.string().trim().email("Vul een geldig e-mailadres in"),
@@ -22,23 +29,35 @@ export const loginSchema = z.object({
 export const costSettingsSchema = z.object({
   arbeidEnabled: z.boolean(),
   arbeidZichtbaar: z.boolean(),
-  arbeidStapEenheid: z.enum(["UUR", "DAGDEEL", "DAG"]),
-  arbeidTarief: z.coerce.number().min(0),
+  arbeidStapEenheid: z.enum(["UUR", "DAGDEEL", "DAG"], "Kies een eenheid om in te rekenen"),
+  arbeidTarief: z.coerce.number("Vul een geldig tarief in").min(0, "Tarief kan niet negatief zijn"),
+  arbeidTariefPerProduct: z.boolean(),
 
   transportEnabled: z.boolean(),
   transportZichtbaar: z.boolean(),
-  transportType: z.enum(["VAST", "PER_KM"]),
-  transportTarief: z.coerce.number().min(0),
+  transportType: z.enum(["VAST", "PER_KM"], "Kies een transporttype"),
+  transportTarief: z.coerce
+    .number("Vul een geldig bedrag in")
+    .min(0, "Bedrag kan niet negatief zijn"),
 
   voorrijEnabled: z.boolean(),
   voorrijZichtbaar: z.boolean(),
-  voorrijTarief: z.coerce.number().min(0),
+  voorrijTarief: z.coerce
+    .number("Vul een geldig bedrag in")
+    .min(0, "Bedrag kan niet negatief zijn"),
 
   materiaalEnabled: z.boolean(),
   materiaalZichtbaar: z.boolean(),
-  materiaalMarge: z.coerce.number().min(0).max(500),
+  materiaalMarge: z.coerce
+    .number("Vul een geldig percentage in")
+    .min(0, "Opslag kan niet negatief zijn")
+    .max(500, "Opslag kan niet hoger zijn dan 500%"),
+  materiaalMargePerProduct: z.boolean(),
 
-  btwPercentage: z.coerce.number().min(0).max(100),
+  btwPercentage: z.coerce
+    .number("Vul een geldig percentage in")
+    .min(0, "Btw kan niet negatief zijn")
+    .max(100, "Btw kan niet hoger zijn dan 100%"),
 });
 
 export const serviceSchema = z.object({
@@ -55,6 +74,8 @@ export const productSchema = z.object({
   omschrijving: z.string().trim().max(500).optional().or(z.literal("")),
   eenheid: z.string().trim().min(1).max(20),
   arbeidsCapaciteit: optionalPositiveNumber,
+  arbeidTariefOverride: optionalNonNegativeNumber,
+  materiaalMargeOverride: optionalNonNegativeNumber,
   actief: z.boolean(),
 });
 

@@ -7,6 +7,7 @@ import { costSettingsSchema } from "@/app/lib/validation";
 
 export type CostSettingsFormState = {
   error?: string;
+  fieldErrors?: Record<string, string>;
   success?: boolean;
 } | null;
 
@@ -21,6 +22,7 @@ export async function updateCostSettingsAction(
     arbeidZichtbaar: formData.get("arbeidZichtbaar") === "on",
     arbeidStapEenheid: formData.get("arbeidStapEenheid"),
     arbeidTarief: formData.get("arbeidTarief"),
+    arbeidTariefPerProduct: formData.get("arbeidTariefPerProduct") === "on",
 
     transportEnabled: formData.get("transportEnabled") === "on",
     transportZichtbaar: formData.get("transportZichtbaar") === "on",
@@ -34,13 +36,21 @@ export async function updateCostSettingsAction(
     materiaalEnabled: formData.get("materiaalEnabled") === "on",
     materiaalZichtbaar: formData.get("materiaalZichtbaar") === "on",
     materiaalMarge: formData.get("materiaalMarge"),
+    materiaalMargePerProduct: formData.get("materiaalMargePerProduct") === "on",
 
     btwPercentage: formData.get("btwPercentage"),
   };
 
   const parsed = costSettingsSchema.safeParse(raw);
   if (!parsed.success) {
-    return { error: "Controleer de ingevulde waarden en probeer het opnieuw." };
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) {
+      fieldErrors[String(issue.path[0])] = issue.message;
+    }
+    return {
+      error: "Controleer de ingevulde waarden en probeer het opnieuw.",
+      fieldErrors,
+    };
   }
 
   await prisma.costSettings.upsert({

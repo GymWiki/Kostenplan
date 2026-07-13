@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireUser, getArbeidStapEenheid } from "@/app/lib/dal";
+import { requireUser, getProductPricingSettings } from "@/app/lib/dal";
 import { createProductAction } from "@/app/lib/actions/products";
 import { ProductForm } from "../product-form";
 
@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Nieuw product" };
 
 export default async function NieuwProductPage() {
   const user = await requireUser();
-  const arbeidStapEenheid = await getArbeidStapEenheid(user.id);
+  const pricingSettings = await getProductPricingSettings(user.id);
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -17,7 +17,14 @@ export default async function NieuwProductPage() {
           Maak eerst de basis aan. Daarna voeg je materiaalcategorieën en extra opties toe.
         </p>
       </div>
-      <ProductForm action={createProductAction} arbeidStapEenheid={arbeidStapEenheid} />
+      <ProductForm
+        action={createProductAction}
+        arbeidStapEenheid={pricingSettings.arbeidStapEenheid}
+        arbeidTarief={pricingSettings.arbeidTarief}
+        arbeidTariefPerProduct={pricingSettings.arbeidTariefPerProduct}
+        materiaalMarge={pricingSettings.materiaalMarge}
+        materiaalMargePerProduct={pricingSettings.materiaalMargePerProduct}
+      />
     </div>
   );
 }
