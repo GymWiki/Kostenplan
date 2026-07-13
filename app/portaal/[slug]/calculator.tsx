@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Minus, Plus, Sprout, Printer, Mail, Image as ImageIcon } from "lucide-react";
+import { Minus, Plus, Sprout, Printer, Mail, Image as ImageIcon, Check } from "lucide-react";
 import { calculateBreakdown } from "@/app/lib/calculate";
 import { formatCurrency } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -323,24 +323,35 @@ function ProductCard({
                             onClick={() => onMaterialSelect(category.id, material.id)}
                             aria-pressed={isSelected}
                             className={cn(
-                              "flex flex-col items-center gap-1.5 rounded-md border p-2 text-center transition-colors cursor-pointer",
+                              "flex flex-col items-center gap-1.5 rounded-md border-2 p-2 text-center transition-colors cursor-pointer",
                               isSelected
-                                ? "border-primary bg-accent/40"
-                                : "border-border hover:bg-secondary"
+                                ? "border-primary bg-accent/50"
+                                : "border-border bg-card hover:border-primary/40 hover:bg-secondary"
                             )}
                           >
-                            {material.foto ? (
-                              // eslint-disable-next-line @next/next/no-img-element -- external Supabase Storage URL, not a local asset
-                              <img
-                                src={material.foto}
-                                alt=""
-                                className="h-16 w-16 rounded-md object-cover"
-                              />
-                            ) : (
-                              <span className="flex h-16 w-16 items-center justify-center rounded-md bg-secondary text-muted-foreground">
-                                <ImageIcon className="h-6 w-6" />
-                              </span>
-                            )}
+                            <div className="relative">
+                              {material.foto ? (
+                                // eslint-disable-next-line @next/next/no-img-element -- external Supabase Storage URL, not a local asset
+                                <img
+                                  src={material.foto}
+                                  alt=""
+                                  className="h-16 w-16 rounded-md object-cover"
+                                />
+                              ) : (
+                                <span className="flex h-16 w-16 items-center justify-center rounded-md bg-secondary text-muted-foreground">
+                                  {ProductIcon ? (
+                                    <ProductIcon className="h-6 w-6" />
+                                  ) : (
+                                    <ImageIcon className="h-6 w-6" />
+                                  )}
+                                </span>
+                              )}
+                              {isSelected && (
+                                <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-card">
+                                  <Check className="h-3 w-3" />
+                                </span>
+                              )}
+                            </div>
                             <span className="text-xs font-medium text-foreground">
                               {material.naam}
                             </span>
