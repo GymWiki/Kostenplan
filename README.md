@@ -91,6 +91,11 @@ is mislukt."
    (`{auth.uid()}/...`), zodat een hovenier alleen zijn eigen foto's kan uploaden/verwijderen:
 
    ```sql
+   -- Bucket (opnieuw) aanmaken als public, ook als hij al bestond
+   insert into storage.buckets (id, name, public)
+   values ('product-fotos', 'product-fotos', true)
+   on conflict (id) do update set public = true;
+
    -- Uploaden
    create policy "Eigen fotos uploaden"
    on storage.objects for insert
