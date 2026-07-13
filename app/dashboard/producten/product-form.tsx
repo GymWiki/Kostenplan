@@ -145,11 +145,11 @@ export function ProductForm({
         </div>
       </div>
 
-      <div className="flex justify-end gap-2">
-        <LinkButton href="/dashboard/producten" variant="outline">
+      <div className="fixed bottom-4 right-4 z-30 flex gap-2 sm:bottom-6 sm:right-6">
+        <LinkButton href="/dashboard/producten" variant="outline" className="shadow-lg">
           Annuleren
         </LinkButton>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending} className="shadow-lg">
           {pending ? "Opslaan…" : "Product opslaan"}
         </Button>
       </div>
