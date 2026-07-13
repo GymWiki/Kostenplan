@@ -18,6 +18,7 @@ function parseServiceForm(formData: FormData) {
     eenheid: formData.get("eenheid"),
     arbeidstijd: formData.get("arbeidstijd"),
     materiaalkosten: formData.get("materiaalkosten"),
+    icoon: formData.get("icoon") ?? "",
     actief: formData.get("actief") === "on",
   });
 }

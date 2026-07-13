@@ -4,6 +4,7 @@ import { requireUser, getArbeidStapEenheid } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { formatCurrency } from "@/app/lib/format";
 import { arbeidEenheidMeervoud } from "@/app/lib/arbeid";
+import { getProductIcon } from "@/app/lib/icons";
 import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { ActiveToggle } from "@/app/components/dashboard/active-toggle";
@@ -73,11 +74,22 @@ export default async function DienstenPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {services.map((service) => (
+                {services.map((service) => {
+                  const ServiceIcon = getProductIcon(service.icoon);
+                  return (
                   <tr key={service.id}>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-foreground">{service.naam}</p>
-                      <p className="text-xs text-muted-foreground">/ {service.eenheid}</p>
+                      <div className="flex items-center gap-2.5">
+                        {ServiceIcon && (
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            <ServiceIcon className="h-4 w-4" />
+                          </span>
+                        )}
+                        <div>
+                          <p className="font-medium text-foreground">{service.naam}</p>
+                          <p className="text-xs text-muted-foreground">/ {service.eenheid}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {service.arbeidstijd} {arbeidEenheidMeervoud(arbeidStapEenheid)}
@@ -112,7 +124,8 @@ export default async function DienstenPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

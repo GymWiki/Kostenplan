@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { Button, LinkButton } from "@/app/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
+import { IconPicker } from "@/app/components/ui/icon-picker";
 import type { ServiceFormState } from "@/app/lib/actions/services";
 import { arbeidEenheidEnkelvoud, arbeidEenheidMeervoud } from "@/app/lib/arbeid";
 import type { ArbeidStapEenheid, Service } from "@/app/generated/prisma/client";
@@ -107,6 +108,11 @@ export function ServiceForm({
             Materiaal dat nodig is om deze dienst uit te voeren.
           </p>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <p className="text-sm font-medium text-foreground">Icoon</p>
+        <IconPicker name="icoon" defaultValue={service?.icoon} />
       </div>
 
       <div className="flex items-center gap-3 rounded-md border border-border p-3">

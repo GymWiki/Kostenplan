@@ -13,6 +13,7 @@ import { Button } from "@/app/components/ui/button";
 import { Input, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { Card, CardContent } from "@/app/components/ui/card";
+import { PhotoInput } from "@/app/components/ui/photo-input";
 import { formatCurrency } from "@/app/lib/format";
 import type { ExtraOption } from "@/app/generated/prisma/client";
 
@@ -103,6 +104,7 @@ function NewExtraOptionForm({
           Toevoegen
         </Button>
       </div>
+      <PhotoInput />
       {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
     </form>
   );
@@ -171,6 +173,7 @@ function ExtraOptionRow({
             defaultValue={option.omschrijving ?? ""}
             placeholder="Omschrijving (optioneel)"
           />
+          <PhotoInput currentUrl={option.foto} />
         </form>
         {error && <p className="mt-1.5 text-sm text-destructive">{error}</p>}
       </li>
@@ -181,6 +184,14 @@ function ExtraOptionRow({
     <li className="flex items-center justify-between gap-4 p-4">
       <div className="flex items-center gap-3">
         <ActiveMiniToggle extraOptionId={option.id} actief={option.actief} />
+        {option.foto && (
+          // eslint-disable-next-line @next/next/no-img-element -- external Supabase Storage URL, not a local asset
+          <img
+            src={option.foto}
+            alt=""
+            className="h-9 w-9 shrink-0 rounded-md border border-border object-cover"
+          />
+        )}
         <div>
           <p className="text-sm font-medium text-foreground">{option.naam}</p>
           <p className="text-xs text-muted-foreground">

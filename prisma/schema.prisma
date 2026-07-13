@@ -90,6 +90,9 @@ model Service {
   eenheid         String  @default("m2")
   arbeidstijd     Float   @default(0)
   materiaalkosten Float   @default(0)
+  // Naam van een lucide-react icoon uit app/lib/icons.ts, bijv. "Sprout".
+  // Optioneel, puur decoratief.
+  icoon           String?
   actief          Boolean @default(true)
   order           Int     @default(0)
 
@@ -120,6 +123,9 @@ model Product {
   // CostSettings.materiaalMargePerProduct aanstaat. Leeg = gebruik de opslag
   // uit Kosteninstellingen.
   materiaalMargeOverride Float?
+  // Naam van een lucide-react icoon uit app/lib/icons.ts, bijv. "Fence".
+  // Optioneel, puur decoratief.
+  icoon                  String?
   actief                 Boolean @default(true)
   order                  Int     @default(0)
 
@@ -158,6 +164,8 @@ model MaterialOption {
   // product), bijv. 1.8 voor een paal die per 1,8 m wordt ingekocht. Leeg
   // betekent doorlopend geprijsd, zonder afronding.
   stapgrootte Float?
+  // Publieke URL van een foto in Supabase Storage. Optioneel.
+  foto        String?
   actief      Boolean @default(true)
   order       Int     @default(0)
 
@@ -178,6 +186,8 @@ model ExtraOption {
   omschrijving String?
   prijs        Float           @default(0)
   type         ExtraOptionType @default(PER_EENHEID)
+  // Publieke URL van een foto in Supabase Storage. Optioneel.
+  foto         String?
   actief       Boolean         @default(true)
   order        Int             @default(0)
 

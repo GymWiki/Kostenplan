@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { extraOptionSchema } from "@/app/lib/validation";
+import { uploadFoto, deleteFoto } from "@/app/lib/storage";
 
 export type ExtraOptionFormState = {
   error?: string;
@@ -18,6 +19,28 @@ function parseExtraOptionForm(formData: FormData) {
     type: formData.get("type") || "PER_EENHEID",
     actief: formData.get("actief") === "on" || formData.get("actief") === "true",
   });
+}
+
+// Uploads a replacement photo if one was picked, or clears the existing
+// photo if "verwijderFoto" was checked. Returns the value to store in the
+// foto column, or an error message if the upload failed.
+async function resolveFoto(
+  userId: string,
+  formData: FormData,
+  currentFoto: string | null
+): Promise<{ foto: string | null; error?: undefined } | { foto?: undefined; error: string }> {
+  const file = formData.get("foto");
+  if (file instanceof File && file.size > 0) {
+    const result = await uploadFoto(userId, file);
+    if (typeof result.url !== "string") return { error: result.error };
+    if (currentFoto) await deleteFoto(currentFoto);
+    return { foto: result.url };
+  }
+  if (formData.get("verwijderFoto") === "on" && currentFoto) {
+    await deleteFoto(currentFoto);
+    return { foto: null };
+  }
+  return { foto: currentFoto };
 }
 
 export async function createExtraOptionAction(
@@ -43,10 +66,15 @@ export async function createExtraOptionAction(
     return { error: "Product niet gevonden" };
   }
 
+  const fotoResult = await resolveFoto(user.id, formData, null);
+  if (fotoResult.error) {
+    return { error: fotoResult.error };
+  }
+
   const count = await prisma.extraOption.count({ where: { productId } });
 
   await prisma.extraOption.create({
-    data: { ...parsed.data, productId, order: count },
+    data: { ...parsed.data, foto: fotoResult.foto, productId, order: count },
   });
 
   revalidatePath(`/dashboard/producten/${productId}/bewerken`);
@@ -77,9 +105,14 @@ export async function updateExtraOptionAction(
     return { error: "Extra optie niet gevonden" };
   }
 
+  const fotoResult = await resolveFoto(user.id, formData, option.foto);
+  if (fotoResult.error) {
+    return { error: fotoResult.error };
+  }
+
   await prisma.extraOption.update({
     where: { id: extraOptionId },
-    data: parsed.data,
+    data: { ...parsed.data, foto: fotoResult.foto },
   });
 
   revalidatePath(`/dashboard/producten/${option.productId}/bewerken`);
@@ -98,6 +131,7 @@ export async function deleteExtraOptionAction(formData: FormData) {
   if (!option) return;
 
   await prisma.extraOption.delete({ where: { id: extraOptionId } });
+  if (option.foto) await deleteFoto(option.foto);
 
   revalidatePath(`/dashboard/producten/${option.productId}/bewerken`);
   revalidatePath(`/portaal/${user.slug}`);

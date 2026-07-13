@@ -26,6 +26,12 @@ kosten, gebaseerd op vier instelbare kostenposten: **arbeidskosten**, **transpor
 - **Klantenportaal** — elk account krijgt een unieke, deelbare link (`/portaal/<slug>`) waar
   klanten hun tuinproject samenstellen en live een kostenraming zien. De link staat prominent op
   het dashboard, inclusief kopieerknop.
+- **Icoon per dienst/product** — optioneel een icoon kiezen uit een tuin-/hoveniersgerichte set,
+  zichtbaar in het dashboard en het klantenportaal.
+- **Foto per materiaal/extra optie** — optioneel een foto uploaden (max 5MB, JPG/PNG/WEBP/GIF).
+  Zodra minstens één materiaal in een categorie een foto heeft, toont het klantenportaal die
+  categorie als een grid met keuzekaarten in plaats van een dropdown. Vereist eenmalige setup van
+  een Supabase Storage-bucket, zie [Supabase Storage instellen (foto's)](#supabase-storage-instellen-fotos).
 
 ## Techstack
 
@@ -69,6 +75,52 @@ De app draait daarna op `http://localhost:3000`.
 > **E-mailbevestiging**: Supabase vereist standaard dat een nieuwe gebruiker zijn e-mailadres
 > bevestigt voordat hij kan inloggen. Voor snel lokaal testen kun je dit uitzetten via
 > Authentication → Providers → Email → "Confirm email".
+
+## Supabase Storage instellen (foto's)
+
+Optioneel: alleen nodig als je foto's bij materialen/extra opties wilt kunnen uploaden. Zonder
+deze stap werkt de rest van de app gewoon, maar geeft een upload-poging de foutmelding "Uploaden
+is mislukt."
+
+1. Ga in het Supabase-dashboard naar **Storage** → **New bucket**.
+2. Naam: `product-fotos` (moet exact zo heten, zie `app/lib/storage.ts`). Zet **Public bucket**
+   aan — de foto's moeten zonder inloggen zichtbaar zijn in het klantenportaal.
+3. Ga naar **Storage** → **Policies** (of **Authentication** → **Policies** → tabel
+   `storage.objects`, afhankelijk van je Supabase-versie) en voeg voor de bucket `product-fotos`
+   de volgende policies toe. Elke policy scoped op de eigen map van de gebruiker
+   (`{auth.uid()}/...`), zodat een hovenier alleen zijn eigen foto's kan uploaden/verwijderen:
+
+   ```sql
+   -- Uploaden
+   create policy "Eigen fotos uploaden"
+   on storage.objects for insert
+   to authenticated
+   with check (
+     bucket_id = 'product-fotos'
+     and (storage.foldername(name))[1] = auth.uid()::text
+   );
+
+   -- Vervangen (upsert)
+   create policy "Eigen fotos vervangen"
+   on storage.objects for update
+   to authenticated
+   using (
+     bucket_id = 'product-fotos'
+     and (storage.foldername(name))[1] = auth.uid()::text
+   );
+
+   -- Verwijderen
+   create policy "Eigen fotos verwijderen"
+   on storage.objects for delete
+   to authenticated
+   using (
+     bucket_id = 'product-fotos'
+     and (storage.foldername(name))[1] = auth.uid()::text
+   );
+   ```
+
+   Een expliciete SELECT-policy is niet nodig: bij een public bucket zijn objecten sowieso te
+   benaderen via de publieke URL (`getPublicUrl()`), ongeacht RLS-policies op `storage.objects`.
 
 ### Scripts
 
