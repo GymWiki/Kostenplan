@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Minus, Plus, Sprout, Printer, Mail } from "lucide-react";
+import { Minus, Plus, Sprout, Printer, Mail, Image as ImageIcon } from "lucide-react";
 import { calculateBreakdown } from "@/app/lib/calculate";
 import { formatCurrency } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Input, Label, Select } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { ThemeToggle } from "@/app/components/ui/theme-toggle";
+import { getProductIcon } from "@/app/lib/icons";
+import { cn } from "@/app/lib/cn";
 import type {
   CostSettings,
   ExtraOption,
@@ -216,20 +218,29 @@ function ServiceRow({
   const indicatiePrijs =
     (costSettings.arbeidEnabled ? service.arbeidstijd * costSettings.arbeidTarief : 0) +
     (costSettings.materiaalEnabled ? service.materiaalkosten : 0);
+  const ServiceIcon = getProductIcon(service.icoon);
 
   return (
     <Card className={active ? "border-primary/40 bg-accent/40" : undefined}>
       <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="font-medium text-foreground">{service.naam}</p>
-          {service.omschrijving && (
-            <p className="mt-0.5 text-sm text-muted-foreground">{service.omschrijving}</p>
+        <div className="flex min-w-0 items-center gap-3">
+          {ServiceIcon && (
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              {/* eslint-disable-next-line react-hooks/static-components -- stable lookup from a module-level icon map, not a new component */}
+              <ServiceIcon className="h-5 w-5" />
+            </span>
           )}
-          {indicatiePrijs > 0 && (
-            <p className="mt-1 text-sm text-muted-foreground">
-              ≈ {formatCurrency(indicatiePrijs)} / {service.eenheid}
-            </p>
-          )}
+          <div className="min-w-0">
+            <p className="font-medium text-foreground">{service.naam}</p>
+            {service.omschrijving && (
+              <p className="mt-0.5 text-sm text-muted-foreground">{service.omschrijving}</p>
+            )}
+            {indicatiePrijs > 0 && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                ≈ {formatCurrency(indicatiePrijs)} / {service.eenheid}
+              </p>
+            )}
+          </div>
         </div>
         <QuantityStepper
           naam={service.naam}
@@ -265,16 +276,25 @@ function ProductCard({
   const categoriesWithOptions = product.materiaalCategorieen.filter(
     (category) => category.materialen.length > 0
   );
+  const ProductIcon = getProductIcon(product.icoon);
 
   return (
     <Card className={active ? "border-primary/40 bg-accent/40" : undefined}>
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <p className="font-medium text-foreground">{product.naam}</p>
-            {product.omschrijving && (
-              <p className="mt-0.5 text-sm text-muted-foreground">{product.omschrijving}</p>
+          <div className="flex min-w-0 items-center gap-3">
+            {ProductIcon && (
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                {/* eslint-disable-next-line react-hooks/static-components -- stable lookup from a module-level icon map, not a new component */}
+                <ProductIcon className="h-5 w-5" />
+              </span>
             )}
+            <div className="min-w-0">
+              <p className="font-medium text-foreground">{product.naam}</p>
+              {product.omschrijving && (
+                <p className="mt-0.5 text-sm text-muted-foreground">{product.omschrijving}</p>
+              )}
+            </div>
           </div>
           <QuantityStepper
             naam={product.naam}
@@ -287,23 +307,67 @@ function ProductCard({
 
         {active && (categoriesWithOptions.length > 0 || product.extraOpties.length > 0) && (
           <div className="flex flex-col gap-4 border-t border-border pt-4">
-            {categoriesWithOptions.map((category) => (
-              <div key={category.id} className="flex flex-col gap-1.5">
-                <Label htmlFor={`materiaal-${category.id}`}>{category.naam}</Label>
-                <Select
-                  id={`materiaal-${category.id}`}
-                  value={materialSelections[category.id] ?? ""}
-                  onChange={(e) => onMaterialSelect(category.id, e.target.value)}
-                >
-                  <option value="">Kies {category.naam.toLowerCase()}</option>
-                  {category.materialen.map((material) => (
-                    <option key={material.id} value={material.id}>
-                      {material.naam} — {formatCurrency(material.prijs)} / {product.eenheid}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            ))}
+            {categoriesWithOptions.map((category) => {
+              const hasFotos = category.materialen.some((m) => m.foto);
+              return (
+                <div key={category.id} className="flex flex-col gap-1.5">
+                  <Label htmlFor={`materiaal-${category.id}`}>{category.naam}</Label>
+                  {hasFotos ? (
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {category.materialen.map((material) => {
+                        const isSelected = materialSelections[category.id] === material.id;
+                        return (
+                          <button
+                            key={material.id}
+                            type="button"
+                            onClick={() => onMaterialSelect(category.id, material.id)}
+                            aria-pressed={isSelected}
+                            className={cn(
+                              "flex flex-col items-center gap-1.5 rounded-md border p-2 text-center transition-colors cursor-pointer",
+                              isSelected
+                                ? "border-primary bg-accent/40"
+                                : "border-border hover:bg-secondary"
+                            )}
+                          >
+                            {material.foto ? (
+                              // eslint-disable-next-line @next/next/no-img-element -- external Supabase Storage URL, not a local asset
+                              <img
+                                src={material.foto}
+                                alt=""
+                                className="h-16 w-16 rounded-md object-cover"
+                              />
+                            ) : (
+                              <span className="flex h-16 w-16 items-center justify-center rounded-md bg-secondary text-muted-foreground">
+                                <ImageIcon className="h-6 w-6" />
+                              </span>
+                            )}
+                            <span className="text-xs font-medium text-foreground">
+                              {material.naam}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {formatCurrency(material.prijs)} / {product.eenheid}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <Select
+                      id={`materiaal-${category.id}`}
+                      value={materialSelections[category.id] ?? ""}
+                      onChange={(e) => onMaterialSelect(category.id, e.target.value)}
+                    >
+                      <option value="">Kies {category.naam.toLowerCase()}</option>
+                      {category.materialen.map((material) => (
+                        <option key={material.id} value={material.id}>
+                          {material.naam} — {formatCurrency(material.prijs)} / {product.eenheid}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </div>
+              );
+            })}
 
             {product.extraOpties.length > 0 && (
               <div className="flex flex-col gap-2">
@@ -314,6 +378,14 @@ function ProductCard({
                       key={extra.id}
                       className="flex items-center gap-3 rounded-md border border-border p-2.5 text-sm"
                     >
+                      {extra.foto && (
+                        // eslint-disable-next-line @next/next/no-img-element -- external Supabase Storage URL, not a local asset
+                        <img
+                          src={extra.foto}
+                          alt=""
+                          className="h-10 w-10 shrink-0 rounded-md object-cover"
+                        />
+                      )}
                       <div className="flex-1">
                         <span className="block font-medium text-foreground">{extra.naam}</span>
                         {extra.omschrijving && (
@@ -342,6 +414,14 @@ function ProductCard({
                         checked={(extraSelections[extra.id] ?? 0) > 0}
                         onChange={(e) => onExtraChange(extra.id, e.target.checked ? 1 : 0)}
                       />
+                      {extra.foto && (
+                        // eslint-disable-next-line @next/next/no-img-element -- external Supabase Storage URL, not a local asset
+                        <img
+                          src={extra.foto}
+                          alt=""
+                          className="h-10 w-10 shrink-0 rounded-md object-cover"
+                        />
+                      )}
                       <span className="flex-1">
                         <span className="block font-medium text-foreground">{extra.naam}</span>
                         {extra.omschrijving && (

@@ -19,6 +19,7 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { Card, CardContent } from "@/app/components/ui/card";
+import { PhotoInput } from "@/app/components/ui/photo-input";
 import { formatCurrency } from "@/app/lib/format";
 import type { MaterialCategory, MaterialOption } from "@/app/generated/prisma/client";
 
@@ -252,6 +253,7 @@ function MaterialRow({
           <p className="text-xs text-muted-foreground">
             Stapgrootte (optioneel): wordt verkocht per veelvoud van deze hoeveelheid.
           </p>
+          <PhotoInput currentUrl={material.foto} />
         </form>
         {error && <p className="mt-1.5 text-sm text-destructive">{error}</p>}
       </div>
@@ -262,6 +264,14 @@ function MaterialRow({
     <div className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
       <div className="flex items-center gap-3">
         <ActiveMiniToggle materialOptionId={material.id} actief={material.actief} />
+        {material.foto && (
+          // eslint-disable-next-line @next/next/no-img-element -- external Supabase Storage URL, not a local asset
+          <img
+            src={material.foto}
+            alt=""
+            className="h-9 w-9 shrink-0 rounded-md border border-border object-cover"
+          />
+        )}
         <div>
           <p className="text-sm font-medium text-foreground">{material.naam}</p>
           <p className="text-xs text-muted-foreground">
@@ -370,6 +380,7 @@ function NewMaterialForm({
           <Plus className="h-4 w-4" />
         </Button>
       </div>
+      <PhotoInput />
       {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
     </form>
   );

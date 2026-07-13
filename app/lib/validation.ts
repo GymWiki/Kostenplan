@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PRODUCT_ICON_NAMES } from "@/app/lib/icons";
 
 // Empty/blank input becomes `null` (feature disabled); anything else must be
 // a positive number. Used for optional numeric fields like arbeidsCapaciteit
@@ -13,6 +14,13 @@ const optionalPositiveNumber = z.preprocess(
 const optionalNonNegativeNumber = z.preprocess(
   (val) => (val === "" || val === null || val === undefined ? null : val),
   z.coerce.number().min(0).nullable()
+);
+
+// Empty/blank input becomes `null` (geen icoon); anything else must be a
+// known key from app/lib/icons.ts.
+const optionalIconName = z.preprocess(
+  (val) => (val === "" || val === null || val === undefined ? null : val),
+  z.enum(PRODUCT_ICON_NAMES as [string, ...string[]], "Onbekend icoon").nullable()
 );
 
 export const registerSchema = z.object({
@@ -66,6 +74,7 @@ export const serviceSchema = z.object({
   eenheid: z.string().trim().min(1).max(20),
   arbeidstijd: z.coerce.number().min(0),
   materiaalkosten: z.coerce.number().min(0),
+  icoon: optionalIconName,
   actief: z.boolean(),
 });
 
@@ -76,6 +85,7 @@ export const productSchema = z.object({
   arbeidsCapaciteit: optionalPositiveNumber,
   arbeidTariefOverride: optionalNonNegativeNumber,
   materiaalMargeOverride: optionalNonNegativeNumber,
+  icoon: optionalIconName,
   actief: z.boolean(),
 });
 

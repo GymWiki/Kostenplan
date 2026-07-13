@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { materialOptionSchema } from "@/app/lib/validation";
+import { uploadFoto, deleteFoto } from "@/app/lib/storage";
 
 export type MaterialOptionFormState = { error?: string } | null;
 
@@ -14,6 +15,28 @@ function parseMaterialOptionForm(formData: FormData) {
     stapgrootte: formData.get("stapgrootte"),
     actief: formData.get("actief") === "on" || formData.get("actief") === "true",
   });
+}
+
+// Uploads a replacement photo if one was picked, or clears the existing
+// photo if "verwijderFoto" was checked. Returns the value to store in the
+// foto column, or an error message if the upload failed.
+async function resolveFoto(
+  userId: string,
+  formData: FormData,
+  currentFoto: string | null
+): Promise<{ foto: string | null; error?: undefined } | { foto?: undefined; error: string }> {
+  const file = formData.get("foto");
+  if (file instanceof File && file.size > 0) {
+    const result = await uploadFoto(userId, file);
+    if (typeof result.url !== "string") return { error: result.error };
+    if (currentFoto) await deleteFoto(currentFoto);
+    return { foto: result.url };
+  }
+  if (formData.get("verwijderFoto") === "on" && currentFoto) {
+    await deleteFoto(currentFoto);
+    return { foto: null };
+  }
+  return { foto: currentFoto };
 }
 
 export async function createMaterialOptionAction(
@@ -35,10 +58,15 @@ export async function createMaterialOptionAction(
     return { error: "Categorie niet gevonden" };
   }
 
+  const fotoResult = await resolveFoto(user.id, formData, null);
+  if (fotoResult.error) {
+    return { error: fotoResult.error };
+  }
+
   const count = await prisma.materialOption.count({ where: { materialCategoryId } });
 
   await prisma.materialOption.create({
-    data: { ...parsed.data, materialCategoryId, order: count },
+    data: { ...parsed.data, foto: fotoResult.foto, materialCategoryId, order: count },
   });
 
   revalidatePath(`/dashboard/producten/${category.productId}/bewerken`);
@@ -66,9 +94,14 @@ export async function updateMaterialOptionAction(
     return { error: "Materiaal niet gevonden" };
   }
 
+  const fotoResult = await resolveFoto(user.id, formData, option.foto);
+  if (fotoResult.error) {
+    return { error: fotoResult.error };
+  }
+
   await prisma.materialOption.update({
     where: { id: materialOptionId },
-    data: parsed.data,
+    data: { ...parsed.data, foto: fotoResult.foto },
   });
 
   revalidatePath(`/dashboard/producten/${option.materialCategory.productId}/bewerken`);
@@ -88,6 +121,7 @@ export async function deleteMaterialOptionAction(formData: FormData) {
   if (!option) return;
 
   await prisma.materialOption.delete({ where: { id: materialOptionId } });
+  if (option.foto) await deleteFoto(option.foto);
 
   revalidatePath(`/dashboard/producten/${option.materialCategory.productId}/bewerken`);
   revalidatePath(`/portaal/${user.slug}`);

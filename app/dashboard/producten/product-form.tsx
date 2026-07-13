@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { Button, LinkButton } from "@/app/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
+import { IconPicker } from "@/app/components/ui/icon-picker";
 import type { ProductFormState } from "@/app/lib/actions/products";
 import { arbeidEenheidEnkelvoud } from "@/app/lib/arbeid";
 import { formatCurrency } from "@/app/lib/format";
@@ -128,6 +129,11 @@ export function ProductForm({
         helperWhenFixed={`Alle producten gebruiken de opslag uit Kosteninstellingen (${materiaalMarge}%). Wil je voor dit product een andere opslag? Zet "Opslag per product instelbaar" aan bij Kosteninstellingen.`}
         error={state?.fieldErrors?.materiaalMargeOverride}
       />
+
+      <div className="flex flex-col gap-1.5">
+        <p className="text-sm font-medium text-foreground">Icoon</p>
+        <IconPicker name="icoon" defaultValue={product?.icoon} />
+      </div>
 
       <div className="flex items-center gap-3 rounded-md border border-border p-3">
         <Switch name="actief" defaultChecked={product?.actief ?? true} />

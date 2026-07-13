@@ -5,6 +5,7 @@ import { prisma } from "@/app/lib/prisma";
 import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
+import { getProductIcon } from "@/app/lib/icons";
 import { ActiveToggle } from "@/app/components/dashboard/active-toggle";
 import { DeleteButton } from "@/app/components/dashboard/delete-button";
 import {
@@ -71,11 +72,22 @@ export default async function ProductenPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {products.map((product) => (
+                {products.map((product) => {
+                  const ProductIcon = getProductIcon(product.icoon);
+                  return (
                   <tr key={product.id}>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-foreground">{product.naam}</p>
-                      <p className="text-xs text-muted-foreground">/ {product.eenheid}</p>
+                      <div className="flex items-center gap-2.5">
+                        {ProductIcon && (
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            <ProductIcon className="h-4 w-4" />
+                          </span>
+                        )}
+                        <div>
+                          <p className="font-medium text-foreground">{product.naam}</p>
+                          <p className="text-xs text-muted-foreground">/ {product.eenheid}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       <Badge variant="muted">
@@ -112,7 +124,8 @@ export default async function ProductenPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
