@@ -7,7 +7,7 @@ import {
 } from "@/app/lib/actions/cost-settings";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
-import { Input, Label, Select } from "@/app/components/ui/input";
+import { DecimalInput, Label, Select } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { cn } from "@/app/lib/cn";
 import { Eye, Layers } from "lucide-react";
@@ -339,7 +339,7 @@ function CurrencyInput({
   symbol = true,
   className,
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & {
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> & {
   suffix?: string;
   symbol?: boolean;
 }) {
@@ -350,10 +350,7 @@ function CurrencyInput({
           €
         </span>
       )}
-      <Input
-        type="number"
-        step="0.01"
-        min={0}
+      <DecimalInput
         className={cn(symbol && "pl-7", suffix && "pr-14", className)}
         {...props}
       />

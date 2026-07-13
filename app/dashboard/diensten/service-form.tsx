@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { Button, LinkButton } from "@/app/components/ui/button";
-import { Input, Label, Select, Textarea } from "@/app/components/ui/input";
+import { DecimalInput, Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { IconPicker } from "@/app/components/ui/icon-picker";
 import type { ServiceFormState } from "@/app/lib/actions/services";
@@ -73,12 +73,9 @@ export function ServiceForm({
           <Label htmlFor="arbeidstijd">
             Arbeidstijd per eenheid ({arbeidEenheidMeervoud(arbeidStapEenheid)})
           </Label>
-          <Input
+          <DecimalInput
             id="arbeidstijd"
             name="arbeidstijd"
-            type="number"
-            step="0.01"
-            min={0}
             defaultValue={service?.arbeidstijd ?? 0}
             required
           />
@@ -93,12 +90,9 @@ export function ServiceForm({
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
               €
             </span>
-            <Input
+            <DecimalInput
               id="materiaalkosten"
               name="materiaalkosten"
-              type="number"
-              step="0.01"
-              min={0}
               className="pl-7"
               defaultValue={service?.materiaalkosten ?? 0}
               required
