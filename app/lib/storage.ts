@@ -16,6 +16,21 @@ const EXTENSION_BY_TYPE: Record<string, string> = {
   "image/gif": "gif",
 };
 
+// Duck-types a FormData entry as an uploaded file instead of `instanceof
+// File`, which can fail across realms (e.g. if the File that shows up in
+// server-parsed FormData isn't the exact same global constructor reference
+// as the one this module sees) and would otherwise silently skip the
+// upload with no error at all.
+export function isUploadedFile(value: FormDataEntryValue | null): value is File {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as { size?: unknown }).size === "number" &&
+    (value as { size: number }).size > 0 &&
+    typeof (value as { arrayBuffer?: unknown }).arrayBuffer === "function"
+  );
+}
+
 export async function uploadFoto(
   userId: string,
   file: File
@@ -36,6 +51,7 @@ export async function uploadFoto(
     upsert: false,
   });
   if (error) {
+    console.error("Supabase Storage upload failed:", error);
     return { error: "Uploaden is mislukt. Probeer het opnieuw." };
   }
 
