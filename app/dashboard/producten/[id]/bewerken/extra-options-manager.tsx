@@ -10,7 +10,7 @@ import {
   type ExtraOptionFormState,
 } from "@/app/lib/actions/extra-options";
 import { Button } from "@/app/components/ui/button";
-import { Input, Select, Textarea } from "@/app/components/ui/input";
+import { DecimalInput, Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { PhotoInput } from "@/app/components/ui/photo-input";
@@ -60,14 +60,16 @@ export function ExtraOptionsManager({
 }
 
 function ExtraOptionTypeSelect({
+  id,
   productEenheid,
   defaultValue,
 }: {
+  id?: string;
   productEenheid: string;
   defaultValue?: string;
 }) {
   return (
-    <Select name="type" defaultValue={defaultValue ?? "PER_EENHEID"} className="w-full sm:w-56">
+    <Select id={id} name="type" defaultValue={defaultValue ?? "PER_EENHEID"}>
       <option value="PER_EENHEID">Per {productEenheid} (schaalt mee)</option>
       <option value="PER_STUK">Per stuk (apart aantal)</option>
     </Select>
@@ -88,24 +90,35 @@ function NewExtraOptionForm({
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <Input name="naam" placeholder="Bijv. Metalen tussenbekleding" required className="flex-1" />
-        <div className="relative w-28">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-            €
-          </span>
-          <Input name="prijs" type="number" step="0.01" min={0} placeholder="0" className="pl-7" />
+    <form action={formAction} className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="new-extra-naam">Naam</Label>
+        <Input id="new-extra-naam" name="naam" placeholder="Bijv. Metalen tussenbekleding" required />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="new-extra-prijs">Prijs</Label>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+              €
+            </span>
+            <DecimalInput id="new-extra-prijs" name="prijs" placeholder="0" className="pl-7" />
+          </div>
         </div>
-        <ExtraOptionTypeSelect productEenheid={productEenheid} />
-        <input type="hidden" name="actief" value="on" />
-        <Button type="submit" disabled={pending} className="shrink-0">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="new-extra-type">Type</Label>
+          <ExtraOptionTypeSelect id="new-extra-type" productEenheid={productEenheid} />
+        </div>
+      </div>
+      <input type="hidden" name="actief" value="on" />
+      <PhotoInput />
+      {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
+      <div className="flex justify-end">
+        <Button type="submit" disabled={pending}>
           <Plus className="h-4 w-4" />
           Toevoegen
         </Button>
       </div>
-      <PhotoInput />
-      {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
     </form>
   );
 }
@@ -135,45 +148,65 @@ function ExtraOptionRow({
               }
             });
           }}
-          className="flex flex-col gap-2"
+          className="flex flex-col gap-3"
         >
-          <div className="flex flex-wrap items-center gap-2">
-            <Input name="naam" defaultValue={option.naam} required autoFocus className="flex-1" />
-            <div className="relative w-28">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                €
-              </span>
-              <Input
-                name="prijs"
-                type="number"
-                step="0.01"
-                min={0}
-                defaultValue={option.prijs}
-                required
-                className="pl-7"
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`naam-${option.id}`}>Naam</Label>
+            <Input
+              id={`naam-${option.id}`}
+              name="naam"
+              defaultValue={option.naam}
+              required
+              autoFocus
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`prijs-${option.id}`}>Prijs</Label>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  €
+                </span>
+                <DecimalInput
+                  id={`prijs-${option.id}`}
+                  name="prijs"
+                  defaultValue={option.prijs}
+                  required
+                  className="pl-7"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`type-${option.id}`}>Type</Label>
+              <ExtraOptionTypeSelect
+                id={`type-${option.id}`}
+                productEenheid={productEenheid}
+                defaultValue={option.type}
               />
             </div>
-            <input type="hidden" name="actief" value={String(option.actief)} />
-            <Button type="submit" variant="secondary" size="icon" disabled={pending} aria-label="Opslaan">
-              <Check className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setEditing(false)}
-              aria-label="Annuleren"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
-          <ExtraOptionTypeSelect productEenheid={productEenheid} defaultValue={option.type} />
+          <input type="hidden" name="actief" value={String(option.actief)} />
           <Textarea
             name="omschrijving"
             defaultValue={option.omschrijving ?? ""}
             placeholder="Omschrijving (optioneel)"
           />
           <PhotoInput currentUrl={option.foto} />
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setEditing(false)}
+              disabled={pending}
+            >
+              <X className="h-4 w-4" />
+              Annuleren
+            </Button>
+            <Button type="submit" variant="secondary" disabled={pending}>
+              <Check className="h-4 w-4" />
+              Opslaan
+            </Button>
+          </div>
         </form>
         {error && <p className="mt-1.5 text-sm text-destructive">{error}</p>}
       </li>

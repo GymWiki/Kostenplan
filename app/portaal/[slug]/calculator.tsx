@@ -5,7 +5,7 @@ import { Minus, Plus, Sprout, Printer, Mail, Image as ImageIcon, Check } from "l
 import { calculateBreakdown } from "@/app/lib/calculate";
 import { formatCurrency } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { Input, Label, Select } from "@/app/components/ui/input";
+import { DecimalInput, Label, Select } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { ThemeToggle } from "@/app/components/ui/theme-toggle";
 import { getProductIcon } from "@/app/lib/icons";
@@ -479,15 +479,12 @@ function QuantityStepper({
         <Minus className="h-4 w-4" />
       </button>
       <div className="flex flex-col items-center">
-        <Input
-          type="number"
-          inputMode="decimal"
-          min={0}
-          step={step}
-          value={qty === 0 ? "" : qty}
+        <DecimalField
+          value={qty}
+          onChange={onChange}
           placeholder="0"
-          onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
           className="h-11 w-20 text-center"
+          aria-label={`Aantal ${naam}`}
         />
         <span className="mt-0.5 text-xs text-muted-foreground">{eenheid}</span>
       </div>
@@ -544,16 +541,7 @@ function Summary({
         <Card>
           <CardContent className="flex flex-col gap-1.5">
             <Label htmlFor="afstand">Afstand tot jouw locatie (km)</Label>
-            <Input
-              id="afstand"
-              type="number"
-              inputMode="decimal"
-              min={0}
-              step={1}
-              value={afstandKm === 0 ? "" : afstandKm}
-              placeholder="0"
-              onChange={(e) => onAfstandChange(Math.max(0, Number(e.target.value) || 0))}
-            />
+            <DecimalField id="afstand" value={afstandKm} onChange={onAfstandChange} placeholder="0" />
           </CardContent>
         </Card>
       )}
@@ -635,4 +623,50 @@ function Summary({
 
 function round(value: number) {
   return Math.round(value * 100) / 100;
+}
+
+function parseDecimal(raw: string) {
+  return Number(raw.trim().replace(",", "."));
+}
+
+// Local text buffer, not just `value` formatted as a string: a controlled
+// value derived straight from the number would snap "2," back to "2" the
+// instant the comma is typed (since parsing "2," already equals 2), making
+// it impossible to ever type a decimal. The buffer only gets overwritten
+// when `value` changes from elsewhere (e.g. the +/- stepper buttons) and no
+// longer matches what's currently typed.
+function DecimalField({
+  value,
+  onChange,
+  ...props
+}: {
+  value: number;
+  onChange: (value: number) => void;
+} & Omit<React.ComponentProps<typeof DecimalInput>, "value" | "onChange">) {
+  const [text, setText] = useState(value === 0 ? "" : String(value));
+  const [prevValue, setPrevValue] = useState(value);
+
+  // Adjust state during render when `value` changes externally (e.g. the
+  // +/- stepper buttons), per https://react.dev/learn/you-might-not-need-an-effect
+  // — avoids the extra render pass a useEffect-based sync would cause.
+  if (value !== prevValue) {
+    setPrevValue(value);
+    if (parseDecimal(text) !== value) {
+      setText(value === 0 ? "" : String(value));
+    }
+  }
+
+  function handleChange(raw: string) {
+    setText(raw);
+    if (raw.trim() === "") {
+      onChange(0);
+      return;
+    }
+    const parsed = parseDecimal(raw);
+    if (!Number.isNaN(parsed)) {
+      onChange(Math.max(0, parsed));
+    }
+  }
+
+  return <DecimalInput value={text} onChange={(e) => handleChange(e.target.value)} {...props} />;
 }

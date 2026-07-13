@@ -16,7 +16,7 @@ import {
   type MaterialOptionFormState,
 } from "@/app/lib/actions/material-options";
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
+import { DecimalInput, Input, Label } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { PhotoInput } from "@/app/components/ui/photo-input";
@@ -204,56 +204,70 @@ function MaterialRow({
               }
             });
           }}
-          className="flex flex-col gap-2"
+          className="flex flex-col gap-3"
         >
-          <div className="flex flex-wrap items-center gap-2">
-            <Input name="naam" defaultValue={material.naam} required autoFocus className="flex-1" />
-            <div className="relative w-28">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                €
-              </span>
-              <Input
-                name="prijs"
-                type="number"
-                step="0.01"
-                min={0}
-                defaultValue={material.prijs}
-                required
-                className="pl-7"
-              />
-            </div>
-            <div className="relative w-32">
-              <Input
-                name="stapgrootte"
-                type="number"
-                step="0.01"
-                min={0}
-                placeholder={`bijv. 1.8`}
-                defaultValue={material.stapgrootte ?? ""}
-                className="pr-10"
-              />
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                {productEenheid}
-              </span>
-            </div>
-            <input type="hidden" name="actief" value={String(material.actief)} />
-            <Button type="submit" variant="secondary" size="icon" disabled={pending} aria-label="Opslaan">
-              <Check className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setEditing(false)}
-              aria-label="Annuleren"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`naam-${material.id}`}>Naam</Label>
+            <Input
+              id={`naam-${material.id}`}
+              name="naam"
+              defaultValue={material.naam}
+              required
+              autoFocus
+            />
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`prijs-${material.id}`}>Prijs</Label>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  €
+                </span>
+                <DecimalInput
+                  id={`prijs-${material.id}`}
+                  name="prijs"
+                  defaultValue={material.prijs}
+                  required
+                  className="pl-7"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`stapgrootte-${material.id}`}>Stapgrootte</Label>
+              <div className="relative">
+                <DecimalInput
+                  id={`stapgrootte-${material.id}`}
+                  name="stapgrootte"
+                  placeholder="bijv. 1.8"
+                  defaultValue={material.stapgrootte ?? ""}
+                  className="pr-10"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  {productEenheid}
+                </span>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" name="actief" value={String(material.actief)} />
           <p className="text-xs text-muted-foreground">
             Stapgrootte (optioneel): wordt verkocht per veelvoud van deze hoeveelheid.
           </p>
           <PhotoInput currentUrl={material.foto} />
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setEditing(false)}
+              disabled={pending}
+            >
+              <X className="h-4 w-4" />
+              Annuleren
+            </Button>
+            <Button type="submit" variant="secondary" disabled={pending}>
+              <Check className="h-4 w-4" />
+              Opslaan
+            </Button>
+          </div>
         </form>
         {error && <p className="mt-1.5 text-sm text-destructive">{error}</p>}
       </div>
@@ -353,35 +367,45 @@ function NewMaterialForm({
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-1 pt-1">
-      <div className="flex flex-wrap items-center gap-2">
-        <Input name="naam" placeholder="Bijv. Betonnen palen" required className="flex-1" />
-        <div className="relative w-28">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-            €
-          </span>
-          <Input name="prijs" type="number" step="0.01" min={0} placeholder="0" className="pl-7" />
-        </div>
-        <div className="relative w-32">
-          <Input
-            name="stapgrootte"
-            type="number"
-            step="0.01"
-            min={0}
-            placeholder="stapgrootte"
-            className="pr-10"
-          />
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-            {productEenheid}
-          </span>
-        </div>
-        <input type="hidden" name="actief" value="on" />
-        <Button type="submit" variant="secondary" size="icon" disabled={pending} aria-label="Materiaal toevoegen">
-          <Plus className="h-4 w-4" />
-        </Button>
+    <form action={formAction} className="flex flex-col gap-3 pt-1">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="new-material-naam">Naam</Label>
+        <Input id="new-material-naam" name="naam" placeholder="Bijv. Betonnen palen" required />
       </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="new-material-prijs">Prijs</Label>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+              €
+            </span>
+            <DecimalInput id="new-material-prijs" name="prijs" placeholder="0" className="pl-7" />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="new-material-stapgrootte">Stapgrootte</Label>
+          <div className="relative">
+            <DecimalInput
+              id="new-material-stapgrootte"
+              name="stapgrootte"
+              placeholder="bijv. 1.8"
+              className="pr-10"
+            />
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+              {productEenheid}
+            </span>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" name="actief" value="on" />
       <PhotoInput />
       {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
+      <div className="flex justify-end">
+        <Button type="submit" variant="secondary" disabled={pending}>
+          <Plus className="h-4 w-4" />
+          Materiaal toevoegen
+        </Button>
+      </div>
     </form>
   );
 }

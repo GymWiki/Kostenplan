@@ -19,6 +19,32 @@ export function Input({
   );
 }
 
+// Decimal number entry (prijzen, hoeveelheden, tarieven, ...). Deliberately
+// NOT <input type="number">: on a phone with a Dutch (or most non-US)
+// keyboard layout, typing a decimal comma into a native number input gets
+// silently dropped mid-keystroke — "2,5" becomes "25", ten times too large,
+// with no error and no empty-field signal to notice something went wrong.
+// type="text" + inputMode="decimal" still shows a numeric keypad on mobile
+// but accepts whatever the user actually types; the comma is normalized to
+// a period server-side (see app/lib/validation.ts's normalizeDecimalInput).
+export function DecimalInput({
+  className,
+  ...props
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">) {
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      className={cn(
+        "flex h-11 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
 export function PasswordInput({
   className,
   ...props

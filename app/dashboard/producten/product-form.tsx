@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Button, LinkButton } from "@/app/components/ui/button";
-import { Input, Label, Select, Textarea } from "@/app/components/ui/input";
+import { DecimalInput, Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { IconPicker } from "@/app/components/ui/icon-picker";
 import type { ProductFormState } from "@/app/lib/actions/products";
@@ -20,6 +20,7 @@ export function ProductForm({
   arbeidTariefPerProduct,
   materiaalMarge,
   materiaalMargePerProduct,
+  children,
 }: {
   action: (state: ProductFormState, formData: FormData) => Promise<ProductFormState>;
   product?: Product;
@@ -28,6 +29,7 @@ export function ProductForm({
   arbeidTariefPerProduct: boolean;
   materiaalMarge: number;
   materiaalMargePerProduct: boolean;
+  children?: React.ReactNode;
 }) {
   const [state, formAction, pending] = useActionState<ProductFormState, FormData>(
     action,
@@ -36,7 +38,8 @@ export function ProductForm({
   const [eenheid, setEenheid] = useState(product?.eenheid ?? "m1");
 
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    <div className="flex flex-col gap-8">
+      <form id="product-form" action={formAction} className="flex flex-col gap-5">
       {state?.error && (
         <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {state.error}
@@ -91,12 +94,9 @@ export function ProductForm({
         <Label htmlFor="arbeidsCapaciteit">
           Aantal {eenheid} per {arbeidEenheidEnkelvoud(arbeidStapEenheid)} (optioneel)
         </Label>
-        <Input
+        <DecimalInput
           id="arbeidsCapaciteit"
           name="arbeidsCapaciteit"
-          type="number"
-          step="0.01"
-          min={0}
           placeholder="Bijv. 5"
           defaultValue={product?.arbeidsCapaciteit ?? ""}
         />
@@ -145,15 +145,19 @@ export function ProductForm({
         </div>
       </div>
 
-      <div className="fixed bottom-4 right-4 z-30 flex gap-2 sm:bottom-6 sm:right-6">
+      </form>
+
+      {children}
+
+      <div className="sticky bottom-4 z-20 flex justify-end gap-2 sm:bottom-6">
         <LinkButton href="/dashboard/producten" variant="outline" className="shadow-lg">
           Annuleren
         </LinkButton>
-        <Button type="submit" disabled={pending} className="shadow-lg">
+        <Button type="submit" form="product-form" disabled={pending} className="shadow-lg">
           {pending ? "Opslaan…" : "Product opslaan"}
         </Button>
       </div>
-    </form>
+    </div>
   );
 }
 
@@ -193,12 +197,9 @@ function OverrideField({
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={name}>{label} (optioneel)</Label>
       <div className="relative">
-        <Input
+        <DecimalInput
           id={name}
           name={name}
-          type="number"
-          step="0.01"
-          min={0}
           placeholder={placeholder}
           defaultValue={defaultOverrideValue}
           className={suffix ? "pr-10" : undefined}
