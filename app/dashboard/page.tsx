@@ -4,19 +4,22 @@ import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { getPortalUrl, getEmbedCode } from "@/app/lib/url";
 import { effectiveTier, isProTier } from "@/app/lib/subscription";
+import { bouwOnboardingStappen } from "@/app/lib/onboarding";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { SharePortalCard } from "@/app/components/dashboard/share-portal-card";
+import { OnboardingChecklist } from "@/app/components/dashboard/onboarding-checklist";
 
 export const metadata: Metadata = { title: "Overzicht" };
 
 export default async function DashboardPage() {
   const user = await requireUser();
 
-  const [servicesCount, productsCount, costSettings, portalUrl, embedCode, leadsCount, nieuweLeadsCount] =
+  const [servicesCount, productsCount, costSettings, branding, portalUrl, embedCode, leadsCount, nieuweLeadsCount] =
     await Promise.all([
       prisma.service.count({ where: { userId: user.id } }),
       prisma.product.count({ where: { userId: user.id } }),
       prisma.costSettings.findUnique({ where: { userId: user.id } }),
+      prisma.branding.findUnique({ where: { userId: user.id } }),
       getPortalUrl(user.slug),
       getEmbedCode(user.slug, user.bedrijfsnaam),
       prisma.lead.count({ where: { userId: user.id } }),
@@ -32,7 +35,22 @@ export default async function DashboardPage() {
       ].filter(Boolean).length
     : 0;
 
-  const hasOffering = servicesCount > 0 || productsCount > 0;
+  // Onboarding-checklist: de eerste twee stappen live afgeleid van bestaande
+  // data (nooit apart opgeslagen, zie schema), de derde expliciet
+  // bijgehouden zodra de portaal-link is aangeklikt.
+  const onboardingStappen = bouwOnboardingStappen({
+    heeftBedrijfsgegevens: Boolean(branding?.logoUrl || branding?.telefoonnummer),
+    heeftCatalogusItem: servicesCount + productsCount > 0,
+    heeftPortaalBekeken: user.onboardingPortaalBekeken,
+    portalUrl,
+  });
+  const alleStappenVoltooid = onboardingStappen.every((stap) => stap.voltooid);
+  let justCompletedOnboarding = false;
+  if (alleStappenVoltooid && !user.onboardingVoltooid) {
+    await prisma.user.update({ where: { id: user.id }, data: { onboardingVoltooid: true } });
+    justCompletedOnboarding = true;
+  }
+  const toonOnboarding = !user.onboardingVoltooid || justCompletedOnboarding;
 
   return (
     <div className="flex flex-col gap-8">
@@ -44,6 +62,10 @@ export default async function DashboardPage() {
           Dit is jouw Kostenplan-dashboard. Beheer je calculator en deel de link met klanten.
         </p>
       </div>
+
+      {toonOnboarding && (
+        <OnboardingChecklist stappen={onboardingStappen} justCompleted={justCompletedOnboarding} />
+      )}
 
       <SharePortalCard
         portalUrl={portalUrl}
@@ -68,34 +90,6 @@ export default async function DashboardPage() {
           badge={nieuweLeadsCount > 0 ? `${nieuweLeadsCount} nieuw${nieuweLeadsCount > 1 ? "e" : ""}` : undefined}
         />
       </div>
-
-      {!hasOffering && (
-        <Card>
-          <CardContent>
-            <h2 className="font-semibold text-foreground">Aan de slag</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Je calculator is nog leeg. Volg deze stappen om hem klaar te maken voor klanten:
-            </p>
-            <ol className="mt-4 flex flex-col gap-3 text-sm">
-              <Step
-                href="/dashboard/instellingen"
-                title="Stel je kostentypes in"
-                description="Bepaal je uurtarief, voorrijkosten en transportkosten."
-              />
-              <Step
-                href="/dashboard/diensten"
-                title="Voeg diensten toe"
-                description="Denk aan tegels leggen, schutting plaatsen of gras zaaien."
-              />
-              <Step
-                href="/dashboard/producten"
-                title="Voeg producten toe"
-                description="Samengestelde producten zoals een schutting, met materiaalkeuzes en prijzen."
-              />
-            </ol>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
@@ -135,29 +129,5 @@ function StatCard({
         </CardContent>
       </Card>
     </a>
-  );
-}
-
-function Step({
-  href,
-  title,
-  description,
-}: {
-  href: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <li>
-      <a
-        href={href}
-        className="flex items-center justify-between gap-4 rounded-lg border border-border p-4 transition-colors hover:border-primary/40 hover:bg-secondary/50"
-      >
-        <div>
-          <p className="font-medium text-foreground">{title}</p>
-          <p className="text-muted-foreground">{description}</p>
-        </div>
-      </a>
-    </li>
   );
 }
