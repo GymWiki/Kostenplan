@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/app/components/ui/logo";
 import { ThemeToggle } from "@/app/components/ui/theme-toggle";
 
 export default function AuthLayout({
@@ -16,9 +17,7 @@ export default function AuthLayout({
           href="/"
           className="mb-8 flex items-center gap-2 text-lg font-semibold text-foreground"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            K
-          </span>
+          <Logo />
           Kostenplan
         </Link>
         {children}

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Mail, Sprout } from "lucide-react";
+import { Mail } from "lucide-react";
+import { Logo } from "@/app/components/ui/logo";
 
 const snelleLinks = [
   { href: "/", label: "Home" },
@@ -23,9 +24,7 @@ export function SiteFooter() {
               href="/"
               className="flex items-center gap-2 text-lg font-semibold text-foreground"
             >
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Sprout className="h-4 w-4" />
-              </span>
+              <Logo />
               Kostenplan
             </Link>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">

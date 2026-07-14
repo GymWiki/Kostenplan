@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Minus, Plus, Sprout, Printer, Mail, Image as ImageIcon, Check } from "lucide-react";
+import { Minus, Plus, Printer, Mail, Image as ImageIcon, Check } from "lucide-react";
 import { calculateBreakdown } from "@/app/lib/calculate";
 import { formatCurrency } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
+import { Logo } from "@/app/components/ui/logo";
 import { DecimalInput, Label, Select } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { ThemeToggle } from "@/app/components/ui/theme-toggle";
@@ -82,9 +83,7 @@ export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, 
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-6 sm:px-6">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Sprout className="h-6 w-6" />
-          </span>
+          <Logo className="h-11 w-11 rounded-xl p-1.5" />
           <div className="min-w-0 flex-1">
             <p className="text-sm text-muted-foreground">Kostencalculator van</p>
             <h1 className="truncate text-xl font-semibold text-foreground">{bedrijfsnaam}</h1>
