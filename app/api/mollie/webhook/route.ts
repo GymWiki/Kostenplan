@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { Payment, Subscription } from "@mollie/api-client";
-import { getMollieClient } from "@/app/lib/mollie";
+import { getMollieClient, getMollieWebhookUrl } from "@/app/lib/mollie";
 import { prisma } from "@/app/lib/prisma";
 import { MOLLIE_INTERVAL, PRIJZEN } from "@/app/lib/subscription";
 import type { BillingInterval, MollieSubscriptionStatus, SubscriptionTier } from "@/app/generated/prisma/client";
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       });
       await syncSubscriptionStatus(payment.customerId, subscription);
     } else if (payment.status === "paid" && payment.sequenceType === "first") {
-      await activateSubscription(payment);
+      await activateSubscription(payment, request.nextUrl.origin);
     }
   } catch (error) {
     // Mollie retries on any non-2xx response — logging and returning 200
@@ -60,7 +60,7 @@ function parseMetadata(metadata: unknown) {
   return { userId, plan: plan as "PLUS" | "PRO", interval: interval as BillingInterval };
 }
 
-async function activateSubscription(payment: Payment) {
+async function activateSubscription(payment: Payment, fallbackBaseUrl: string) {
   const metadata = parseMetadata(payment.metadata);
   if (!metadata || !payment.customerId || !payment.mandateId) {
     console.error("Mollie webhook: eerste betaling gemarkeerd betaald maar metadata/mandaat ontbreekt", {
@@ -71,7 +71,6 @@ async function activateSubscription(payment: Payment) {
 
   const { userId, plan, interval } = metadata;
   const bedrag = PRIJZEN[plan][interval];
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
   const subscription = await getMollieClient().customerSubscriptions.create({
     customerId: payment.customerId,
@@ -79,7 +78,7 @@ async function activateSubscription(payment: Payment) {
     interval: MOLLIE_INTERVAL[interval],
     description: `Kostenplan ${plan} (${interval === "JAARLIJKS" ? "jaarlijks" : "maandelijks"})`,
     mandateId: payment.mandateId,
-    webhookUrl: baseUrl ? `${baseUrl}/api/mollie/webhook` : undefined,
+    webhookUrl: getMollieWebhookUrl(fallbackBaseUrl),
     metadata: { userId, plan, interval },
   });
 
