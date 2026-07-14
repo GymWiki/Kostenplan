@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/app/lib/prisma";
+import { effectiveTier } from "@/app/lib/subscription";
 import { Calculator } from "./calculator";
 
 export async function generateMetadata({
@@ -62,7 +63,7 @@ export default async function PortaalPage({
       slug={slug}
       bedrijfsnaam={user.bedrijfsnaam}
       email={user.email}
-      subscriptionTier={user.subscriptionTier}
+      subscriptionTier={effectiveTier(user)}
       branding={user.branding}
       costSettings={user.costSettings}
       services={user.services}

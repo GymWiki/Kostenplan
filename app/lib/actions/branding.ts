@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { brandingSchema, subscriptionTierSchema } from "@/app/lib/validation";
+import { brandingSchema } from "@/app/lib/validation";
 import { uploadFoto, deleteFoto, isUploadedFile } from "@/app/lib/storage";
+import { effectiveTier } from "@/app/lib/subscription";
 
 export type BrandingFormState = {
   error?: string;
@@ -68,7 +69,7 @@ export async function updateBrandingAction(
   // Kleuren en lettertype zijn een Plus/Pro-feature — nooit vertrouwen op
   // wat de client meestuurt. Bij Gratis worden deze velden simpelweg niet
   // meegenomen in de update, zodat ze op hun (standaard)waarde blijven staan.
-  const magPersonaliserenUiterlijk = user.subscriptionTier !== "GRATIS";
+  const magPersonaliserenUiterlijk = effectiveTier(user) !== "GRATIS";
 
   const data = {
     logoUrl: logoResult.logoUrl,
@@ -94,33 +95,4 @@ export async function updateBrandingAction(
   revalidatePath(`/portaal/${user.slug}`);
 
   return { success: true };
-}
-
-export type SubscriptionFormState = { error?: string } | null;
-
-// Tijdelijke, zelf-instelbare abonnementskeuze zonder echte betaling — er is
-// nog geen betaalprovider gekoppeld. Zodra die er is, vervangt een webhook
-// (bijv. na een geslaagde Stripe-checkout) deze server action.
-export async function updateSubscriptionTierAction(
-  _prevState: SubscriptionFormState,
-  formData: FormData
-): Promise<SubscriptionFormState> {
-  const user = await requireUser();
-
-  const parsed = subscriptionTierSchema.safeParse({
-    subscriptionTier: formData.get("subscriptionTier"),
-  });
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Ongeldige invoer" };
-  }
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { subscriptionTier: parsed.data.subscriptionTier },
-  });
-
-  revalidatePath("/dashboard/branding");
-  revalidatePath(`/portaal/${user.slug}`);
-
-  return null;
 }

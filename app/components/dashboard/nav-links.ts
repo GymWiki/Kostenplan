@@ -4,6 +4,7 @@ import {
   Wrench,
   Package,
   Palette,
+  CreditCard,
   type LucideIcon,
 } from "lucide-react";
 
@@ -17,4 +18,5 @@ export const navLinks: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/dashboard/diensten", label: "Diensten", icon: Wrench },
   { href: "/dashboard/producten", label: "Producten", icon: Package },
   { href: "/dashboard/branding", label: "Branding", icon: Palette },
+  { href: "/dashboard/abonnement", label: "Abonnement", icon: CreditCard },
 ];

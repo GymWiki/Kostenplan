@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { serviceSchema } from "@/app/lib/validation";
+import { effectiveTier, GRATIS_CATALOGUS_LIMIET } from "@/app/lib/subscription";
 
 export type ServiceFormState = {
   error?: string;
@@ -36,6 +37,18 @@ export async function createServiceAction(
       fieldErrors[String(issue.path[0])] = issue.message;
     }
     return { fieldErrors };
+  }
+
+  if (effectiveTier(user) === "GRATIS") {
+    const [productCount, serviceCount] = await Promise.all([
+      prisma.product.count({ where: { userId: user.id } }),
+      prisma.service.count({ where: { userId: user.id } }),
+    ]);
+    if (productCount + serviceCount >= GRATIS_CATALOGUS_LIMIET) {
+      return {
+        error: `Je hebt de limiet van ${GRATIS_CATALOGUS_LIMIET} diensten en producten voor het Gratis-pakket bereikt. Upgrade naar Plus of Pro voor onbeperkt diensten en producten.`,
+      };
+    }
   }
 
   const count = await prisma.service.count({ where: { userId: user.id } });
