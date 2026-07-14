@@ -152,3 +152,44 @@ export const checkoutSchema = z.object({
   plan: z.enum(["GRATIS", "PLUS", "PRO"], "Kies een pakket"),
   interval: z.enum(["MAANDELIJKS", "JAARLIJKS"], "Kies een betaalperiode"),
 });
+
+const leadSnapshotLineSchema = z.object({
+  naam: z.string(),
+  type: z.enum(["dienst", "product"]),
+  aantal: z.number().optional(),
+  eenheid: z.string().optional(),
+  materiaal: z.string().optional(),
+  extras: z.array(z.string()).optional(),
+  prijs: z.number().optional(),
+});
+
+// Vertrouwt de client-berekende bedragen (geen echte transactie, slechts een
+// prijsindicatie die de vakman zelf te zien krijgt in zijn eigen CRM) — ziet
+// alleen toe op de VORM van de data, niet op herberekening server-side.
+export const leadSnapshotSchema = z.object({
+  regels: z.array(leadSnapshotLineSchema).min(1, "Selecteer minimaal één dienst of product"),
+  arbeidskosten: z.number(),
+  materiaalkosten: z.number(),
+  transportkosten: z.number(),
+  voorrijkosten: z.number(),
+  subtotaal: z.number(),
+  btw: z.number(),
+  totaal: z.number(),
+});
+
+export const leadContactSchema = z.object({
+  naam: z.string().trim().min(1, "Vul je naam in").max(120),
+  email: z.string().trim().email("Vul een geldig e-mailadres in"),
+  telefoonnummer: z.string().trim().max(30).optional().or(z.literal("")),
+});
+
+export const leadNoteSchema = z.object({
+  tekst: z.string().trim().min(1, "Vul een notitie in").max(2000),
+});
+
+export const leadStatusSchema = z.object({
+  status: z.enum(
+    ["NIEUW", "IN_BEHANDELING", "OFFERTE_VERSTUURD", "GEWONNEN", "VERLOREN"],
+    "Kies een status"
+  ),
+});

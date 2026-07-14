@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  Users,
   SlidersHorizontal,
   Wrench,
   Package,
@@ -10,6 +11,7 @@ import {
 
 export const navLinks: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/dashboard", label: "Overzicht", icon: LayoutDashboard },
+  { href: "/dashboard/leads", label: "Leads", icon: Users },
   {
     href: "/dashboard/instellingen",
     label: "Kosteninstellingen",

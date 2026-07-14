@@ -64,15 +64,25 @@ enum ContactPositie {
   ONDERAAN
 }
 
+// Doorloopt de pipeline van links (NIEUW) naar rechts (GEWONNEN/VERLOREN) op
+// het Kanban-board in /dashboard/leads.
+enum LeadStatus {
+  NIEUW
+  IN_BEHANDELING
+  OFFERTE_VERSTUURD
+  GEWONNEN
+  VERLOREN
+}
+
 // id matches auth.users.id from Supabase Auth — the profile row is created
 // right after a successful sign-up (see app/lib/actions/auth.ts).
 model User {
-  id           String   @id
-  email        String   @unique
-  bedrijfsnaam String
-  slug         String   @unique
+  id               String            @id
+  email            String            @unique
+  bedrijfsnaam     String
+  slug             String            @unique
   // Het abonnement zoals Mollie-webhooks het bijhouden — zie effectiveTier().
-  subscriptionTier SubscriptionTier @default(GRATIS)
+  subscriptionTier SubscriptionTier  @default(GRATIS)
   // Handmatige override — uitsluitend via Supabase Studio (Table editor of
   // SQL Editor) te zetten, nooit via de app-UI, en nooit door de
   // Mollie-webhook aangepast. Heeft absolute voorrang op subscriptionTier.
@@ -80,7 +90,7 @@ model User {
   // toegang te geven ongeacht hun daadwerkelijke betaalstatus:
   //   update "User" set "overrideTier" = 'PRO' where email = '...';
   // Terugzetten naar het echte, betaalde abonnement: zet het veld op NULL.
-  overrideTier SubscriptionTier?
+  overrideTier     SubscriptionTier?
 
   // Mollie-koppeling. mollieCustomerId wordt aangemaakt bij de eerste
   // checkout-poging; mollieSubscriptionId pas zodra de eerste betaling is
@@ -91,7 +101,7 @@ model User {
   billingInterval      BillingInterval?
   // Informatief: wanneer Mollie de eerstvolgende/laatst bekende
   // termijnbetaling verwacht (subscription.nextPaymentDate).
-  huidigePeriodeEind DateTime?
+  huidigePeriodeEind   DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -100,6 +110,7 @@ model User {
   branding     Branding?
   services     Service[]
   products     Product[]
+  leads        Lead[]
 }
 
 // White-label/personalisatie-instellingen voor het klantenportaal. Los van
@@ -144,13 +155,13 @@ model CostSettings {
 
   // Arbeidskosten — geldt alleen voor Producten (arbeidsCapaciteit). Diensten
   // hebben hun eigen uurtarief/vaste projectprijs, los van deze instelling.
-  arbeidEnabled     Boolean           @default(true)
-  arbeidZichtbaar   Boolean           @default(true)
-  arbeidStapEenheid ArbeidStapEenheid @default(UUR)
-  arbeidTarief      Float             @default(45)
+  arbeidEnabled          Boolean           @default(true)
+  arbeidZichtbaar        Boolean           @default(true)
+  arbeidStapEenheid      ArbeidStapEenheid @default(UUR)
+  arbeidTarief           Float             @default(45)
   // Als true mag elk product een eigen Product.arbeidTariefOverride hebben
   // die dit tarief vervangt.
-  arbeidTariefPerProduct Boolean @default(false)
+  arbeidTariefPerProduct Boolean           @default(false)
 
   // Transportkosten — alleen aan/uit en zichtbaarheid; het bedrag wordt per
   // product ingesteld (Product.transportkosten) en hier opgeteld.
@@ -164,9 +175,9 @@ model CostSettings {
 
   // Materiaalkosten — geldt alleen voor Producten. Diensten hebben geen
   // materiaalkosten meer.
-  materiaalEnabled   Boolean @default(true)
-  materiaalZichtbaar Boolean @default(true)
-  materiaalMarge     Float   @default(0)
+  materiaalEnabled         Boolean @default(true)
+  materiaalZichtbaar       Boolean @default(true)
+  materiaalMarge           Float   @default(0)
   // Als true mag elk product een eigen Product.materiaalMargeOverride
   // hebben die deze opslag vervangt.
   materiaalMargePerProduct Boolean @default(false)
@@ -186,19 +197,19 @@ model Service {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  naam         String
-  omschrijving String?
-  prijsType    ServicePrijsType @default(UURTARIEF)
+  naam          String
+  omschrijving  String?
+  prijsType     ServicePrijsType @default(UURTARIEF)
   // Bij UURTARIEF: kostprijs = uurtarief × geschatteUren.
-  uurtarief     Float @default(0)
-  geschatteUren Float @default(0)
+  uurtarief     Float            @default(0)
+  geschatteUren Float            @default(0)
   // Bij VASTE_PRIJS: kostprijs = vastePrijs, ongeacht uren.
-  vastePrijs Float @default(0)
+  vastePrijs    Float            @default(0)
   // Naam van een lucide-react icoon uit app/lib/icons.ts, bijv. "Sprout".
   // Optioneel, puur decoratief.
-  icoon  String?
-  actief Boolean @default(true)
-  order  Int     @default(0)
+  icoon         String?
+  actief        Boolean          @default(true)
+  order         Int              @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -212,17 +223,17 @@ model Product {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  naam              String
-  omschrijving      String?
-  eenheid           String  @default("m1")
+  naam                   String
+  omschrijving           String?
+  eenheid                String  @default("m1")
   // Aantal eenheden dat in één arbeidsstap (zie CostSettings.arbeidStapEenheid)
   // geplaatst kan worden, bijv. 5 (m1 schutting per dagdeel). Leeg betekent
   // dat dit product geen arbeidstijd kost.
-  arbeidsCapaciteit Float?
+  arbeidsCapaciteit      Float?
   // Vervangt CostSettings.arbeidTarief voor dit product, maar alleen als
   // CostSettings.arbeidTariefPerProduct aanstaat. Leeg = gebruik het tarief
   // uit Kosteninstellingen.
-  arbeidTariefOverride Float?
+  arbeidTariefOverride   Float?
   // Vervangt CostSettings.materiaalMarge voor dit product, maar alleen als
   // CostSettings.materiaalMargePerProduct aanstaat. Leeg = gebruik de opslag
   // uit Kosteninstellingen.
@@ -231,7 +242,7 @@ model Product {
   // hoeveelheid > 0 heeft, één keer meegeteld (niet vermenigvuldigd met de
   // hoeveelheid) en samen met die van andere geselecteerde producten
   // opgeteld tot één transporttotaal.
-  transportkosten Float @default(0)
+  transportkosten        Float   @default(0)
   // Naam van een lucide-react icoon uit app/lib/icons.ts, bijv. "Fence".
   // Optioneel, puur decoratief.
   icoon                  String?
@@ -301,4 +312,50 @@ model ExtraOption {
   order        Int             @default(0)
 
   createdAt DateTime @default(now())
+}
+
+// Een offerte-aanvraag vanuit het publieke klantenportaal — de mini-CRM voor
+// de vakman op /dashboard/leads. Alleen aangemaakt door createLeadAction
+// (zie app/lib/actions/leads.ts), en alleen als de tenant Plus/Pro is (zie
+// effectiveTier() in app/lib/subscription.ts) — dit is dezelfde gate als de
+// "Offerte aanvragen"-knop zelf op het portaal.
+model Lead {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  naam           String
+  email          String
+  telefoonnummer String?
+
+  status LeadStatus @default(NIEUW)
+
+  // Bevroren op het moment van aanvragen — wat de consument had aangevinkt
+  // en welke prijsindicatie daarbij hoorde. Los van de huidige Diensten/
+  // Producten van de tenant, die intussen gewijzigd of verwijderd kunnen
+  // zijn. Vorm: zie LeadSnapshot in app/lib/leads.ts.
+  snapshot        Json
+  // Los uit snapshot.totaal getrokken zodat de Pipeline Waarde-KPI zonder
+  // JSON-parsing op de database kan optellen/filteren.
+  totaalIndicatie Float
+
+  notities LeadNote[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+}
+
+// Individuele, los bewerkbare/verwijderbare aantekening bij een Lead (zie
+// LeadDetailDrawer).
+model LeadNote {
+  id     String @id @default(cuid())
+  leadId String
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  tekst String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

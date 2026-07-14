@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Minus, Plus, Printer, Mail, Phone, Image as ImageIcon, Check } from "lucide-react";
 import { calculateBreakdown } from "@/app/lib/calculate";
 import { formatCurrency } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Logo } from "@/app/components/ui/logo";
-import { DecimalInput, Label, Select } from "@/app/components/ui/input";
+import { DecimalInput, Input, Label, Select } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { ThemeToggle } from "@/app/components/ui/theme-toggle";
 import { getProductIcon } from "@/app/lib/icons";
 import { cn } from "@/app/lib/cn";
 import { fontFamilyFor, brandingFontVariables } from "@/app/lib/fonts";
+import { createLeadAction, type LeadFormState } from "@/app/lib/actions/leads";
+import type { LeadSnapshot, LeadSnapshotLine } from "@/app/lib/leads";
 import type {
   Branding,
   CostSettings,
@@ -129,6 +131,62 @@ export function Calculator({
       }),
     [services, products, serviceSelected, productQty, materialSelections, extraSelections, costSettings]
   );
+
+  // Bevroren "wat had de klant aangevinkt" voor de leads-CRM (zie
+  // app/lib/leads.ts) — meegestuurd bij "Offerte aanvragen" zodat de vakman
+  // later precies kan zien waarop de prijsindicatie was gebaseerd, ook als de
+  // Diensten/Producten zelf intussen gewijzigd zijn.
+  const snapshot: LeadSnapshot = useMemo(() => {
+    const regels: LeadSnapshotLine[] = [];
+
+    for (const service of services) {
+      if (!serviceSelected[service.id]) continue;
+      regels.push({
+        naam: service.naam,
+        type: "dienst",
+        prijs:
+          service.prijsType === "VASTE_PRIJS"
+            ? service.vastePrijs
+            : service.uurtarief * service.geschatteUren,
+      });
+    }
+
+    for (const product of products) {
+      const qty = productQty[product.id] ?? 0;
+      if (qty <= 0) continue;
+
+      const materiaalNamen = product.materiaalCategorieen
+        .map((category) =>
+          category.materialen.find((m) => m.id === materialSelections[category.id])
+        )
+        .filter((option): option is NonNullable<typeof option> => Boolean(option))
+        .map((option) => option.naam);
+
+      const extraNamen = product.extraOpties
+        .filter((extra) => (extraSelections[extra.id] ?? 0) > 0)
+        .map((extra) => extra.naam);
+
+      regels.push({
+        naam: product.naam,
+        type: "product",
+        aantal: qty,
+        eenheid: product.eenheid,
+        materiaal: materiaalNamen.length > 0 ? materiaalNamen.join(", ") : undefined,
+        extras: extraNamen.length > 0 ? extraNamen : undefined,
+      });
+    }
+
+    return {
+      regels,
+      arbeidskosten: breakdown.arbeidskosten,
+      materiaalkosten: breakdown.materiaalkosten,
+      transportkosten: breakdown.transportkosten,
+      voorrijkosten: breakdown.voorrijkosten,
+      subtotaal: breakdown.subtotaal,
+      btw: breakdown.btw,
+      totaal: breakdown.totaal,
+    };
+  }, [services, products, serviceSelected, productQty, materialSelections, extraSelections, breakdown]);
 
   const isEmpty = services.length === 0 && products.length === 0;
 
@@ -252,10 +310,10 @@ export function Calculator({
             <div className="lg:order-2">
               <div className="flex flex-col gap-4 lg:sticky lg:top-6">
                 <Summary
+                  slug={slug}
                   breakdown={breakdown}
+                  snapshot={snapshot}
                   costSettings={costSettings}
-                  bedrijfsnaam={bedrijfsnaam}
-                  email={email}
                   bedankTekst={bedankTekst}
                   magOfferteAanvragen={magOfferteAanvragen}
                 />
@@ -618,21 +676,24 @@ function QuantityStepper({
 }
 
 function Summary({
+  slug,
   breakdown,
+  snapshot,
   costSettings,
-  bedrijfsnaam,
-  email,
   bedankTekst,
   magOfferteAanvragen,
 }: {
+  slug: string;
   breakdown: ReturnType<typeof calculateBreakdown>;
+  snapshot: LeadSnapshot;
   costSettings: CostSettings;
-  bedrijfsnaam: string;
-  email: string;
   bedankTekst: string;
   magOfferteAanvragen: boolean;
 }) {
-  const [aangevraagd, setAangevraagd] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const action = createLeadAction.bind(null, slug);
+  const [state, formAction, pending] = useActionState<LeadFormState, FormData>(action, null);
+
   const rows: { label: string; value: number }[] = [];
   if (costSettings.arbeidEnabled && costSettings.arbeidZichtbaar) {
     rows.push({ label: "Arbeidskosten", value: breakdown.arbeidskosten });
@@ -647,12 +708,6 @@ function Summary({
     rows.push({ label: "Voorrijkosten", value: breakdown.voorrijkosten });
   }
 
-  const mailBody = encodeURIComponent(
-    `Hallo ${bedrijfsnaam},\n\nIk heb via de kostencalculator een schatting gemaakt van ${formatCurrency(
-      breakdown.totaal
-    )} (incl. btw) en ontvang graag een officiële offerte.\n\nMet vriendelijke groet,`
-  );
-
   return (
     <>
       <Card className="border-[var(--brand-primary)]/30">
@@ -663,7 +718,7 @@ function Summary({
             <p className="text-sm text-muted-foreground">
               Selecteer diensten of producten om een schatting te zien.
             </p>
-          ) : aangevraagd ? (
+          ) : state?.success ? (
             <p className="rounded-lg bg-[var(--brand-primary)]/10 px-3 py-3 text-sm text-foreground">
               {bedankTekst}
             </p>
@@ -704,35 +759,73 @@ function Summary({
                 </span>
               </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="flex-1"
-                  onClick={() => window.print()}
-                >
-                  <Printer className="h-4 w-4" />
-                  Bewaar als PDF
-                </Button>
-                {magOfferteAanvragen && (
-                  <a
-                    href={`mailto:${email}?subject=${encodeURIComponent(
-                      `Offerte-aanvraag via kostencalculator`
-                    )}&body=${mailBody}`}
+              {formOpen ? (
+                <form action={formAction} className="flex flex-col gap-3">
+                  <input type="hidden" name="snapshot" value={JSON.stringify(snapshot)} />
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="lead-naam">Naam</Label>
+                    <Input id="lead-naam" name="naam" required autoFocus />
+                    {state?.fieldErrors?.naam && (
+                      <p className="text-xs text-destructive">{state.fieldErrors.naam}</p>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="lead-email">E-mailadres</Label>
+                    <Input id="lead-email" name="email" type="email" required />
+                    {state?.fieldErrors?.email && (
+                      <p className="text-xs text-destructive">{state.fieldErrors.email}</p>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="lead-telefoon">Telefoonnummer (optioneel)</Label>
+                    <Input id="lead-telefoon" name="telefoonnummer" type="tel" />
+                  </div>
+                  {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="flex-1"
+                      onClick={() => setFormOpen(false)}
+                      disabled={pending}
+                    >
+                      Terug
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      className="flex-1 border-transparent bg-[var(--brand-primary)] text-white hover:opacity-90"
+                      disabled={pending}
+                    >
+                      <Mail className="h-4 w-4" />
+                      {pending ? "Versturen…" : "Versturen"}
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button
+                    type="button"
+                    variant="secondary"
                     className="flex-1"
-                    onClick={() => setAangevraagd(true)}
+                    onClick={() => window.print()}
                   >
+                    <Printer className="h-4 w-4" />
+                    Bewaar als PDF
+                  </Button>
+                  {magOfferteAanvragen && (
                     <Button
                       type="button"
                       variant="primary"
-                      className="w-full border-transparent bg-[var(--brand-primary)] text-white hover:opacity-90"
+                      className="flex-1 border-transparent bg-[var(--brand-primary)] text-white hover:opacity-90"
+                      onClick={() => setFormOpen(true)}
                     >
                       <Mail className="h-4 w-4" />
                       Offerte aanvragen
                     </Button>
-                  </a>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </CardContent>
