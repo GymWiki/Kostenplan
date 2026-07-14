@@ -47,17 +47,38 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ received: true });
 }
 
+// Metadata bevat sinds de multi-company-migratie companyId. Abonnementen die
+// vóór die migratie zijn aangemaakt hebben permanent alleen userId in hun
+// Mollie-metadata (onveranderlijk na aanmaak bij Mollie) — die worden via
+// Company.migratedFromUserId naar hun (automatisch aangemaakte) company
+// vertaald. Zie ook de toelichting bij migratedFromUserId in schema.prisma.
 function parseMetadata(metadata: unknown) {
   if (typeof metadata !== "object" || metadata === null) return null;
-  const { userId, plan, interval } = metadata as Record<string, unknown>;
+  const { companyId, userId, plan, interval } = metadata as Record<string, unknown>;
   if (
-    typeof userId !== "string" ||
+    (typeof companyId !== "string" && typeof userId !== "string") ||
     (plan !== "PLUS" && plan !== "PRO") ||
     (interval !== "MAANDELIJKS" && interval !== "JAARLIJKS")
   ) {
     return null;
   }
-  return { userId, plan: plan as "PLUS" | "PRO", interval: interval as BillingInterval };
+  return {
+    companyId: typeof companyId === "string" ? companyId : null,
+    legacyUserId: typeof userId === "string" ? userId : null,
+    plan: plan as "PLUS" | "PRO",
+    interval: interval as BillingInterval,
+  };
+}
+
+async function resolveCompanyId(metadata: { companyId: string | null; legacyUserId: string | null }) {
+  if (metadata.companyId) return metadata.companyId;
+  if (!metadata.legacyUserId) return null;
+
+  const company = await prisma.company.findUnique({
+    where: { migratedFromUserId: metadata.legacyUserId },
+    select: { id: true },
+  });
+  return company?.id ?? null;
 }
 
 async function activateSubscription(payment: Payment, fallbackBaseUrl: string) {
@@ -69,7 +90,16 @@ async function activateSubscription(payment: Payment, fallbackBaseUrl: string) {
     return;
   }
 
-  const { userId, plan, interval } = metadata;
+  const companyId = await resolveCompanyId(metadata);
+  if (!companyId) {
+    console.error("Mollie webhook: kon geen company vinden voor eerste betaling", {
+      paymentId: payment.id,
+      metadata,
+    });
+    return;
+  }
+
+  const { plan, interval } = metadata;
   const bedrag = PRIJZEN[plan][interval];
 
   const subscription = await getMollieClient().customerSubscriptions.create({
@@ -79,11 +109,11 @@ async function activateSubscription(payment: Payment, fallbackBaseUrl: string) {
     description: `Kostenplan ${plan} (${interval === "JAARLIJKS" ? "jaarlijks" : "maandelijks"})`,
     mandateId: payment.mandateId,
     webhookUrl: getMollieWebhookUrl(fallbackBaseUrl),
-    metadata: { userId, plan, interval },
+    metadata: { companyId, plan, interval },
   });
 
-  await prisma.user.update({
-    where: { id: userId },
+  await prisma.company.update({
+    where: { id: companyId },
     data: {
       subscriptionTier: plan,
       subscriptionStatus: "ACTIVE",
@@ -102,18 +132,21 @@ const STATUS_MAP: Record<Subscription["status"], MollieSubscriptionStatus> = {
   completed: "COMPLETED",
 };
 
-// Een abonnement dat niet meer actief is, verliest het betaalde tier — de
-// gebruiker valt terug op Gratis totdat een nieuwe betaling slaagt. Een
+// Een abonnement dat niet meer actief is, verliest het betaalde tier — het
+// bedrijf valt terug op Gratis totdat een nieuwe betaling slaagt. Een
 // handmatige overrideTier (Supabase Studio) wordt hier nooit door
 // overschreven; dat wordt afgedwongen door effectiveTier() bij het lezen,
 // niet door dit hier te respecteren — subscriptionTier zelf mag altijd de
-// echte Mollie-status weerspiegelen.
+// echte Mollie-status weerspiegelen. Matcht op mollieCustomerId (niet op
+// metadata), dus dit werkt ongewijzigd voor zowel vóór- als ná-migratie
+// abonnementen: mollieCustomerId is bij de migratie 1-op-1 overgezet naar
+// Company.
 async function syncSubscriptionStatus(mollieCustomerId: string, subscription: Subscription) {
   const status = STATUS_MAP[subscription.status];
   const metadata = parseMetadata(subscription.metadata);
   const plan: SubscriptionTier = status === "ACTIVE" ? (metadata?.plan ?? "PLUS") : "GRATIS";
 
-  await prisma.user.updateMany({
+  await prisma.company.updateMany({
     where: { mollieCustomerId },
     data: {
       subscriptionStatus: status,

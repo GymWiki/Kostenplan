@@ -98,20 +98,57 @@ enum LeadStatus {
 }
 
 // id matches auth.users.id from Supabase Auth — the profile row is created
-// right after a successful sign-up (see app/lib/actions/auth.ts).
+// right after a successful sign-up (see app/lib/actions/auth.ts). Purely a
+// personal identity record: everything business-related (bedrijfsnaam, slug,
+// abonnement, catalogus) lives on Company — see that model for why.
 model User {
-  id               String            @id
-  email            String            @unique
-  bedrijfsnaam     String
-  slug             String            @unique
+  id    String @id
+  email String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companyMemberships CompanyMember[]
+  // Bedrijven die deze gebruiker heeft aangemaakt — bij een bestaande
+  // gebruiker is dit (na de multi-company-migratie) hun oorspronkelijke,
+  // automatisch aangemaakte bedrijf; bij een nieuw bedrijf (zie
+  // company_members) de daadwerkelijke aanmaker.
+  createdCompanies   Company[] @relation("CompanyCreator")
+}
+
+// Eén bedrijf/tenant. Alles wat vroeger op User stond (bedrijfsnaam, slug,
+// abonnement, catalogus) hoort hier nu bij — een gebruiker kan lid zijn van
+// meerdere companies (zie CompanyMember), elk met een eigen catalogus,
+// huisstijl en abonnement.
+model Company {
+  id        String  @id @default(cuid())
+  naam      String
+  // Bepaalt de publieke portaal-URL (/portaal/[slug]) — ongewijzigd van
+  // vorm t.o.v. vóór multi-company, alleen nu op Company i.p.v. User.
+  slug      String  @unique
+  kvkNummer String?
+  adres     String?
+
+  // Permanente brug voor bedrijven die zijn ontstaan uit de multi-company-
+  // migratie van een bestaande, vóór-migratie User: laat de Mollie-webhook
+  // en andere legacy-verwijzingen een company terugvinden aan de hand van
+  // het oude userId. Blijft nodig zolang er Mollie-abonnementen bestaan die
+  // vóór deze migratie zijn aangemaakt — hun metadata bevat permanent het
+  // oude userId, niet het companyId (Mollie-metadata is onveranderlijk na
+  // aanmaak). Null voor bedrijven die na de migratie zijn aangemaakt.
+  migratedFromUserId String? @unique
+
+  createdBy String
+  creator   User   @relation("CompanyCreator", fields: [createdBy], references: [id])
+
   // Het abonnement zoals Mollie-webhooks het bijhouden — zie effectiveTier().
   subscriptionTier SubscriptionTier  @default(GRATIS)
   // Handmatige override — uitsluitend via Supabase Studio (Table editor of
   // SQL Editor) te zetten, nooit via de app-UI, en nooit door de
   // Mollie-webhook aangepast. Heeft absolute voorrang op subscriptionTier.
-  // Zet dit bijv. op PRO om iemand (support, demo, VIP-klant) volledig
-  // toegang te geven ongeacht hun daadwerkelijke betaalstatus:
-  //   update "User" set "overrideTier" = 'PRO' where email = '...';
+  // Zet dit bijv. op PRO om een bedrijf (support, demo, VIP-klant) volledig
+  // toegang te geven ongeacht de daadwerkelijke betaalstatus:
+  //   update "Company" set "overrideTier" = 'PRO' where slug = '...';
   // Terugzetten naar het echte, betaalde abonnement: zet het veld op NULL.
   overrideTier     SubscriptionTier?
 
@@ -141,6 +178,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  members      CompanyMember[]
   costSettings CostSettings?
   branding     Branding?
   services     Service[]
@@ -148,12 +186,30 @@ model User {
   leads        Lead[]
 }
 
+// Koppelt een User aan een Company waar die toegang toe heeft. `rol` is
+// bewust een vrij tekstveld (geen enum): vandaag is "owner" de enige
+// geldige waarde, maar een toekomstige medewerkersrol kan zo worden
+// toegevoegd zonder schema-migratie.
+model CompanyMember {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rol       String  @default("owner")
+
+  createdAt DateTime @default(now())
+
+  @@unique([companyId, userId])
+  @@index([userId])
+}
+
 // White-label/personalisatie-instellingen voor het klantenportaal. Los van
 // CostSettings (dat gaat over prijslogica, dit over uitstraling en copy).
 model Branding {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   // Publieke URL van een logo in Supabase Storage. Optioneel — zonder logo
   // toont het portaal het standaard Kostenplan-merkteken.
@@ -169,7 +225,7 @@ model Branding {
   lettertype       Lettertype @default(MODERN)
 
   // Content & copywriting — beschikbaar op alle tiers. "{bedrijfsnaam}" in
-  // customTitel wordt vervangen door User.bedrijfsnaam.
+  // customTitel wordt vervangen door Company.naam.
   customTitel   String?
   welkomstTekst String?
   bedankTekst   String  @default("Bedankt voor uw aanvraag! Wij nemen binnen 24 uur contact met u op.")
@@ -184,9 +240,9 @@ model Branding {
 }
 
 model CostSettings {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   // Arbeidskosten — geldt alleen voor Producten (arbeidsCapaciteit). Diensten
   // hebben hun eigen uurtarief/vaste projectprijs, los van deze instelling.
@@ -234,9 +290,9 @@ model CostSettings {
 // klantenportaal, voor óf een uurtarief × geschat aantal uren, óf één vaste
 // projectprijs.
 model Service {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   naam          String
   omschrijving  String?
@@ -266,16 +322,16 @@ model Service {
   // Postgres indexeert foreign keys niet automatisch — zonder dit is elke
   // "diensten van deze tenant"-query (dashboardlijst, publiek portaal, de
   // 10-item Gratis-limietcheck) een sequential scan over de hele tabel.
-  @@index([userId])
+  @@index([companyId])
 }
 
 // Een samengesteld product, bijv. "Schutting". De klant kiest een
 // hoeveelheid, een materiaal per materiaalcategorie (bijv. "Palen") en
 // eventueel extra opties.
 model Product {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   naam                   String
   omschrijving           String?
@@ -309,7 +365,7 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId])
+  @@index([companyId])
 }
 
 // Onderdeel van een product waarvoor de klant één materiaal kiest,
@@ -391,9 +447,9 @@ model ExtraOption {
 // effectiveTier() in app/lib/subscription.ts) — dit is dezelfde gate als de
 // "Offerte aanvragen"-knop zelf op het portaal.
 model Lead {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   naam           String
   email          String
@@ -415,7 +471,7 @@ model Lead {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId, status])
+  @@index([companyId, status])
 }
 
 // Individuele, los bewerkbare/verwijderbare aantekening bij een Lead (zie

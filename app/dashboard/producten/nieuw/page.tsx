@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { requireUser, getProductPricingSettings } from "@/app/lib/dal";
+import { requireActiveCompany, getProductPricingSettings } from "@/app/lib/dal";
 import { createProductAction } from "@/app/lib/actions/products";
 import { ProductForm } from "../product-form";
 
 export const metadata: Metadata = { title: "Nieuw product" };
 
 export default async function NieuwProductPage() {
-  const user = await requireUser();
-  const pricingSettings = await getProductPricingSettings(user.id);
+  const { company } = await requireActiveCompany();
+  const pricingSettings = await getProductPricingSettings(company.id);
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">

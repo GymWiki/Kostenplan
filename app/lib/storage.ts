@@ -32,7 +32,7 @@ export function isUploadedFile(value: FormDataEntryValue | null): value is File 
 }
 
 export async function uploadFoto(
-  userId: string,
+  companyId: string,
   file: File
 ): Promise<{ url: string; error?: undefined } | { url?: undefined; error: string }> {
   const ext = EXTENSION_BY_TYPE[file.type];
@@ -44,7 +44,7 @@ export async function uploadFoto(
   }
 
   const supabase = await createClient();
-  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+  const path = `${companyId}/${crypto.randomUUID()}.${ext}`;
 
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
     contentType: file.type,

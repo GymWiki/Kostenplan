@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { CostSettingsForm } from "./cost-settings-form";
 
 export const metadata: Metadata = { title: "Kosteninstellingen" };
 
 export default async function InstellingenPage() {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
 
   // find-then-create (not upsert): CostSettings is already created at
   // sign-up, so this fallback almost never runs — but upsert's update
   // branch would otherwise write to the row on every single page view.
   const costSettings =
-    (await prisma.costSettings.findUnique({ where: { userId: user.id } })) ??
-    (await prisma.costSettings.create({ data: { userId: user.id } }));
+    (await prisma.costSettings.findUnique({ where: { companyId: company.id } })) ??
+    (await prisma.costSettings.create({ data: { companyId: company.id } }));
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">

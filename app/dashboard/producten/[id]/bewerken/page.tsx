@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { requireUser, getProductPricingSettings } from "@/app/lib/dal";
+import { requireActiveCompany, getProductPricingSettings } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { updateProductAction } from "@/app/lib/actions/products";
 import { ProductForm } from "../../product-form";
@@ -15,11 +15,11 @@ export default async function BewerkProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
 
   const [product, pricingSettings] = await Promise.all([
     prisma.product.findFirst({
-      where: { id, userId: user.id },
+      where: { id, companyId: company.id },
       include: {
         materiaalCategorieen: {
           orderBy: { order: "asc" },
@@ -28,7 +28,7 @@ export default async function BewerkProductPage({
         extraOpties: { orderBy: { order: "asc" } },
       },
     }),
-    getProductPricingSettings(user.id),
+    getProductPricingSettings(company.id),
   ]);
 
   if (!product) notFound();

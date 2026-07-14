@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { effectiveTier, PLAN_LABELS } from "@/app/lib/subscription";
 import { BrandingForm } from "./branding-form";
@@ -8,15 +8,15 @@ import { BrandingForm } from "./branding-form";
 export const metadata: Metadata = { title: "Branding" };
 
 export default async function BrandingPage() {
-  const user = await requireUser();
-  const plan = effectiveTier(user);
+  const { user, company } = await requireActiveCompany();
+  const plan = effectiveTier(company);
 
   // find-then-create (not upsert) so a plain page view never issues a
   // write — upsert's update branch still touches the row (and its
   // updatedAt) even with an empty payload, on every single visit.
   const branding =
-    (await prisma.branding.findUnique({ where: { userId: user.id } })) ??
-    (await prisma.branding.create({ data: { userId: user.id } }));
+    (await prisma.branding.findUnique({ where: { companyId: company.id } })) ??
+    (await prisma.branding.create({ data: { companyId: company.id } }));
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">

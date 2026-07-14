@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { brandingSchema } from "@/app/lib/validation";
 import { uploadFoto, deleteFoto, isUploadedFile } from "@/app/lib/storage";
@@ -14,13 +14,13 @@ export type BrandingFormState = {
 } | null;
 
 async function resolveLogo(
-  userId: string,
+  companyId: string,
   formData: FormData,
   currentLogo: string | null
 ): Promise<{ logoUrl: string | null; error?: undefined } | { logoUrl?: undefined; error: string }> {
   const file = formData.get("logo");
   if (isUploadedFile(file)) {
-    const result = await uploadFoto(userId, file);
+    const result = await uploadFoto(companyId, file);
     if (typeof result.url !== "string") return { error: result.error };
     if (currentLogo) await deleteFoto(currentLogo);
     return { logoUrl: result.url };
@@ -36,7 +36,7 @@ export async function updateBrandingAction(
   _prevState: BrandingFormState,
   formData: FormData
 ): Promise<BrandingFormState> {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
 
   const parsed = brandingSchema.safeParse({
     primaireKleur: formData.get("primaireKleur"),
@@ -60,11 +60,11 @@ export async function updateBrandingAction(
   }
 
   const existing = await prisma.branding.findUnique({
-    where: { userId: user.id },
+    where: { companyId: company.id },
     select: { logoUrl: true },
   });
 
-  const logoResult = await resolveLogo(user.id, formData, existing?.logoUrl ?? null);
+  const logoResult = await resolveLogo(company.id, formData, existing?.logoUrl ?? null);
   if (logoResult.error) {
     return { error: logoResult.error };
   }
@@ -72,7 +72,7 @@ export async function updateBrandingAction(
   // Kleuren en lettertype zijn een Plus/Pro-feature — nooit vertrouwen op
   // wat de client meestuurt. Bij Gratis worden deze velden simpelweg niet
   // meegenomen in de update, zodat ze op hun (standaard)waarde blijven staan.
-  const magPersonaliserenUiterlijk = effectiveTier(user) !== "GRATIS";
+  const magPersonaliserenUiterlijk = effectiveTier(company) !== "GRATIS";
 
   const data = {
     logoUrl: logoResult.logoUrl,
@@ -89,13 +89,13 @@ export async function updateBrandingAction(
   };
 
   await prisma.branding.upsert({
-    where: { userId: user.id },
-    create: { userId: user.id, ...data },
+    where: { companyId: company.id },
+    create: { companyId: company.id, ...data },
     update: data,
   });
 
   revalidatePath("/dashboard/branding");
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
 
   return { success: true };
 }

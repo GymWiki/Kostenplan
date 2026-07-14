@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { effectiveTier } from "@/app/lib/subscription";
 import { AbonnementView } from "./abonnement-view";
 
@@ -10,19 +10,19 @@ export default async function AbonnementPage({
 }: {
   searchParams: Promise<{ gewijzigd?: string; checkout?: string }>;
 }) {
-  const [user, params] = await Promise.all([requireUser(), searchParams]);
+  const [{ company }, params] = await Promise.all([requireActiveCompany(), searchParams]);
 
   return (
     <AbonnementView
-      effectivePlan={effectiveTier(user)}
-      isOverridden={user.overrideTier !== null}
-      actualPlan={user.subscriptionTier}
-      actualInterval={user.billingInterval}
-      subscriptionStatus={user.subscriptionStatus}
+      effectivePlan={effectiveTier(company)}
+      isOverridden={company.overrideTier !== null}
+      actualPlan={company.subscriptionTier}
+      actualInterval={company.billingInterval}
+      subscriptionStatus={company.subscriptionStatus}
       huidigePeriodeEindLabel={
-        user.huidigePeriodeEind
+        company.huidigePeriodeEind
           ? new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long", year: "numeric" }).format(
-              user.huidigePeriodeEind
+              company.huidigePeriodeEind
             )
           : null
       }

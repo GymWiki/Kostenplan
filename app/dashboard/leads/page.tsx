@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { effectiveTier } from "@/app/lib/subscription";
 import { telItMeeVoorPipeline, type LeadSnapshot } from "@/app/lib/leads";
@@ -8,8 +8,8 @@ import { LeadsView, type LeadWithNotes } from "./leads-view";
 export const metadata: Metadata = { title: "Leads" };
 
 export default async function LeadsPage() {
-  const user = await requireUser();
-  const isGratis = effectiveTier(user) === "GRATIS";
+  const { company } = await requireActiveCompany();
+  const isGratis = effectiveTier(company) === "GRATIS";
 
   // Leads ontvangen is een Plus/Pro-feature — op Gratis tonen we alleen de
   // upsell in LeadsView, dus de data zelf hoeft niet opgehaald te worden.
@@ -27,7 +27,7 @@ export default async function LeadsPage() {
   }
 
   const rawLeads = await prisma.lead.findMany({
-    where: { userId: user.id },
+    where: { companyId: company.id },
     include: { notities: { orderBy: { createdAt: "asc" } } },
     orderBy: { createdAt: "desc" },
   });

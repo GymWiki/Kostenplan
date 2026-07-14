@@ -2,8 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/server";
-import { prisma } from "@/app/lib/prisma";
-import { generateUniqueSlug } from "@/app/lib/slug";
+import { createUserWithFirstCompany } from "@/app/lib/dal";
 import { getBaseUrl } from "@/app/lib/url";
 import { registerSchema, loginSchema } from "@/app/lib/validation";
 
@@ -56,18 +55,7 @@ export async function registerAction(
     return { error: "Registreren is niet gelukt. Probeer het opnieuw." };
   }
 
-  const slug = await generateUniqueSlug(bedrijfsnaam);
-  await prisma.user.upsert({
-    where: { id: data.user.id },
-    create: {
-      id: data.user.id,
-      email,
-      bedrijfsnaam,
-      slug,
-      costSettings: { create: {} },
-    },
-    update: {},
-  });
+  await createUserWithFirstCompany(data.user.id, email, bedrijfsnaam);
 
   if (!data.session) {
     return {

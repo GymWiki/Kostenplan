@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import {
   leadContactSchema,
@@ -19,7 +19,7 @@ export type LeadFormState = {
 
 // Aangeroepen vanuit het publieke klantenportaal (geen ingelogde gebruiker) —
 // zie app/portaal/[slug]/calculator.tsx. Zoekt de tenant op via de slug in
-// plaats van requireUser().
+// plaats van requireActiveCompany().
 export async function createLeadAction(
   slug: string,
   _prevState: LeadFormState,
@@ -49,7 +49,7 @@ export async function createLeadAction(
     return { error: "Ongeldige aanvraag. Ververs de pagina en probeer het opnieuw." };
   }
 
-  const tenant = await prisma.user.findUnique({
+  const tenant = await prisma.company.findUnique({
     where: { slug },
     select: { id: true, subscriptionTier: true, overrideTier: true },
   });
@@ -66,7 +66,7 @@ export async function createLeadAction(
 
   await prisma.lead.create({
     data: {
-      userId: tenant.id,
+      companyId: tenant.id,
       naam: parsed.data.naam,
       email: parsed.data.email,
       telefoonnummer: parsed.data.telefoonnummer || null,
@@ -80,13 +80,13 @@ export async function createLeadAction(
 }
 
 export async function updateLeadStatusAction(formData: FormData) {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
   const leadId = formData.get("leadId");
   const parsed = leadStatusSchema.safeParse({ status: formData.get("status") });
   if (typeof leadId !== "string" || !parsed.success) return;
 
   await prisma.lead.updateMany({
-    where: { id: leadId, userId: user.id },
+    where: { id: leadId, companyId: company.id },
     data: { status: parsed.data.status },
   });
 
@@ -98,7 +98,7 @@ export async function addLeadNoteAction(
   _prevState: LeadFormState,
   formData: FormData
 ): Promise<LeadFormState> {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
 
   const parsed = leadNoteSchema.safeParse({ tekst: formData.get("tekst") });
   if (!parsed.success) {
@@ -106,7 +106,7 @@ export async function addLeadNoteAction(
   }
 
   const lead = await prisma.lead.findFirst({
-    where: { id: leadId, userId: user.id },
+    where: { id: leadId, companyId: company.id },
     select: { id: true },
   });
   if (!lead) return { error: "Lead niet gevonden" };
@@ -122,7 +122,7 @@ export async function updateLeadNoteAction(
   _prevState: LeadFormState,
   formData: FormData
 ): Promise<LeadFormState> {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
 
   const parsed = leadNoteSchema.safeParse({ tekst: formData.get("tekst") });
   if (!parsed.success) {
@@ -130,7 +130,7 @@ export async function updateLeadNoteAction(
   }
 
   const note = await prisma.leadNote.findFirst({
-    where: { id: noteId, lead: { userId: user.id } },
+    where: { id: noteId, lead: { companyId: company.id } },
     select: { id: true },
   });
   if (!note) return { error: "Notitie niet gevonden" };
@@ -142,12 +142,12 @@ export async function updateLeadNoteAction(
 }
 
 export async function deleteLeadNoteAction(formData: FormData) {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
   const noteId = formData.get("noteId");
   if (typeof noteId !== "string") return;
 
   const note = await prisma.leadNote.findFirst({
-    where: { id: noteId, lead: { userId: user.id } },
+    where: { id: noteId, lead: { companyId: company.id } },
     select: { id: true },
   });
   if (!note) return;

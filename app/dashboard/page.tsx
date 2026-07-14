@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Wrench, Package, SlidersHorizontal, Users } from "lucide-react";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { getPortalUrl, getEmbedCode } from "@/app/lib/url";
 import { effectiveTier, isProTier } from "@/app/lib/subscription";
@@ -12,24 +12,24 @@ import { OnboardingChecklist } from "@/app/components/dashboard/onboarding-check
 export const metadata: Metadata = { title: "Overzicht" };
 
 export default async function DashboardPage() {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
 
   const [servicesCount, productsCount, costSettings, branding, portalUrl, embedCode, leadsCount, nieuweLeadsCount] =
     await Promise.all([
-      prisma.service.count({ where: { userId: user.id } }),
-      prisma.product.count({ where: { userId: user.id } }),
+      prisma.service.count({ where: { companyId: company.id } }),
+      prisma.product.count({ where: { companyId: company.id } }),
       prisma.costSettings.findUnique({
-        where: { userId: user.id },
+        where: { companyId: company.id },
         select: { arbeidEnabled: true, transportEnabled: true, voorrijEnabled: true, materiaalEnabled: true },
       }),
       prisma.branding.findUnique({
-        where: { userId: user.id },
+        where: { companyId: company.id },
         select: { logoUrl: true, telefoonnummer: true },
       }),
-      getPortalUrl(user.slug),
-      getEmbedCode(user.slug, user.bedrijfsnaam),
-      prisma.lead.count({ where: { userId: user.id } }),
-      prisma.lead.count({ where: { userId: user.id, status: "NIEUW" } }),
+      getPortalUrl(company.slug),
+      getEmbedCode(company.slug, company.naam),
+      prisma.lead.count({ where: { companyId: company.id } }),
+      prisma.lead.count({ where: { companyId: company.id, status: "NIEUW" } }),
     ]);
 
   const enabledCostTypes = costSettings
@@ -47,22 +47,22 @@ export default async function DashboardPage() {
   const onboardingStappen = bouwOnboardingStappen({
     heeftBedrijfsgegevens: Boolean(branding?.logoUrl || branding?.telefoonnummer),
     heeftCatalogusItem: servicesCount + productsCount > 0,
-    heeftPortaalBekeken: user.onboardingPortaalBekeken,
+    heeftPortaalBekeken: company.onboardingPortaalBekeken,
     portalUrl,
   });
   const alleStappenVoltooid = onboardingStappen.every((stap) => stap.voltooid);
   let justCompletedOnboarding = false;
-  if (alleStappenVoltooid && !user.onboardingVoltooid) {
-    await prisma.user.update({ where: { id: user.id }, data: { onboardingVoltooid: true } });
+  if (alleStappenVoltooid && !company.onboardingVoltooid) {
+    await prisma.company.update({ where: { id: company.id }, data: { onboardingVoltooid: true } });
     justCompletedOnboarding = true;
   }
-  const toonOnboarding = !user.onboardingVoltooid || justCompletedOnboarding;
+  const toonOnboarding = !company.onboardingVoltooid || justCompletedOnboarding;
 
   return (
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-2xl font-semibold text-foreground">
-          Welkom terug, {user.bedrijfsnaam}
+          Welkom terug, {company.naam}
         </h1>
         <p className="mt-1 text-muted-foreground">
           Dit is jouw Kostenplan-dashboard. Beheer je calculator en deel de link met klanten.
@@ -76,7 +76,7 @@ export default async function DashboardPage() {
       <SharePortalCard
         portalUrl={portalUrl}
         embedCode={embedCode}
-        magEmbedden={isProTier(effectiveTier(user))}
+        magEmbedden={isProTier(effectiveTier(company))}
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

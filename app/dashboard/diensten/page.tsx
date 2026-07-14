@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Pencil, Wrench } from "lucide-react";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { formatCurrency, formatCurrencyRange } from "@/app/lib/format";
 import { getProductIcon } from "@/app/lib/icons";
@@ -18,17 +18,17 @@ import {
 export const metadata: Metadata = { title: "Diensten" };
 
 export default async function DienstenPage() {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
 
   const [services, productCount] = await Promise.all([
     prisma.service.findMany({
-      where: { userId: user.id },
+      where: { companyId: company.id },
       orderBy: { order: "asc" },
     }),
-    prisma.product.count({ where: { userId: user.id } }),
+    prisma.product.count({ where: { companyId: company.id } }),
   ]);
   const atLimit =
-    effectiveTier(user) === "GRATIS" && services.length + productCount >= GRATIS_CATALOGUS_LIMIET;
+    effectiveTier(company) === "GRATIS" && services.length + productCount >= GRATIS_CATALOGUS_LIMIET;
 
   return (
     <div className="flex flex-col gap-6">

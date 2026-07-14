@@ -15,7 +15,7 @@ export async function generateUniqueSlug(bedrijfsnaam: string) {
   let slug = base;
   let suffix = 1;
 
-  while (await prisma.user.findUnique({ where: { slug } })) {
+  while (await prisma.company.findUnique({ where: { slug } })) {
     suffix += 1;
     slug = `${base}-${suffix}`;
   }

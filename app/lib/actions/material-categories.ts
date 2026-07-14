@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { materialCategorySchema } from "@/app/lib/validation";
 
@@ -12,7 +12,7 @@ export async function createMaterialCategoryAction(
   _prevState: MaterialCategoryFormState,
   formData: FormData
 ): Promise<MaterialCategoryFormState> {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
 
   const parsed = materialCategorySchema.safeParse({
     naam: formData.get("naam"),
@@ -23,7 +23,7 @@ export async function createMaterialCategoryAction(
   }
 
   const product = await prisma.product.findFirst({
-    where: { id: productId, userId: user.id },
+    where: { id: productId, companyId: company.id },
     select: { id: true },
   });
   if (!product) {
@@ -37,7 +37,7 @@ export async function createMaterialCategoryAction(
   });
 
   revalidatePath(`/dashboard/producten/${productId}/bewerken`);
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
   return null;
 }
 
@@ -46,7 +46,7 @@ export async function updateMaterialCategoryAction(
   _prevState: MaterialCategoryFormState,
   formData: FormData
 ): Promise<MaterialCategoryFormState> {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
 
   const parsed = materialCategorySchema.safeParse({
     naam: formData.get("naam"),
@@ -57,7 +57,7 @@ export async function updateMaterialCategoryAction(
   }
 
   const category = await prisma.materialCategory.findFirst({
-    where: { id: materialCategoryId, product: { userId: user.id } },
+    where: { id: materialCategoryId, product: { companyId: company.id } },
     select: { productId: true },
   });
   if (!category) {
@@ -70,17 +70,17 @@ export async function updateMaterialCategoryAction(
   });
 
   revalidatePath(`/dashboard/producten/${category.productId}/bewerken`);
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
   return null;
 }
 
 export async function deleteMaterialCategoryAction(formData: FormData) {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
   const materialCategoryId = formData.get("materialCategoryId");
   if (typeof materialCategoryId !== "string") return;
 
   const category = await prisma.materialCategory.findFirst({
-    where: { id: materialCategoryId, product: { userId: user.id } },
+    where: { id: materialCategoryId, product: { companyId: company.id } },
     select: { productId: true },
   });
   if (!category) return;
@@ -88,5 +88,5 @@ export async function deleteMaterialCategoryAction(formData: FormData) {
   await prisma.materialCategory.delete({ where: { id: materialCategoryId } });
 
   revalidatePath(`/dashboard/producten/${category.productId}/bewerken`);
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
 }

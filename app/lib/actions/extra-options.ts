@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { extraOptionSchema } from "@/app/lib/validation";
 import { uploadFoto, deleteFoto, isUploadedFile } from "@/app/lib/storage";
@@ -25,13 +25,13 @@ function parseExtraOptionForm(formData: FormData) {
 // photo if "verwijderFoto" was checked. Returns the value to store in the
 // foto column, or an error message if the upload failed.
 async function resolveFoto(
-  userId: string,
+  companyId: string,
   formData: FormData,
   currentFoto: string | null
 ): Promise<{ foto: string | null; error?: undefined } | { foto?: undefined; error: string }> {
   const file = formData.get("foto");
   if (isUploadedFile(file)) {
-    const result = await uploadFoto(userId, file);
+    const result = await uploadFoto(companyId, file);
     if (typeof result.url !== "string") return { error: result.error };
     if (currentFoto) await deleteFoto(currentFoto);
     return { foto: result.url };
@@ -48,7 +48,7 @@ export async function createExtraOptionAction(
   _prevState: ExtraOptionFormState,
   formData: FormData
 ): Promise<ExtraOptionFormState> {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
 
   const parsed = parseExtraOptionForm(formData);
   if (!parsed.success) {
@@ -60,14 +60,14 @@ export async function createExtraOptionAction(
   }
 
   const product = await prisma.product.findFirst({
-    where: { id: productId, userId: user.id },
+    where: { id: productId, companyId: company.id },
     select: { id: true },
   });
   if (!product) {
     return { error: "Product niet gevonden" };
   }
 
-  const fotoResult = await resolveFoto(user.id, formData, null);
+  const fotoResult = await resolveFoto(company.id, formData, null);
   if (fotoResult.error) {
     return { error: fotoResult.error };
   }
@@ -79,7 +79,7 @@ export async function createExtraOptionAction(
   });
 
   revalidatePath(`/dashboard/producten/${productId}/bewerken`);
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
   return null;
 }
 
@@ -88,7 +88,7 @@ export async function updateExtraOptionAction(
   _prevState: ExtraOptionFormState,
   formData: FormData
 ): Promise<ExtraOptionFormState> {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
 
   const parsed = parseExtraOptionForm(formData);
   if (!parsed.success) {
@@ -100,14 +100,14 @@ export async function updateExtraOptionAction(
   }
 
   const option = await prisma.extraOption.findFirst({
-    where: { id: extraOptionId, product: { userId: user.id } },
+    where: { id: extraOptionId, product: { companyId: company.id } },
     select: { foto: true, productId: true },
   });
   if (!option) {
     return { error: "Extra optie niet gevonden" };
   }
 
-  const fotoResult = await resolveFoto(user.id, formData, option.foto);
+  const fotoResult = await resolveFoto(company.id, formData, option.foto);
   if (fotoResult.error) {
     return { error: fotoResult.error };
   }
@@ -118,17 +118,17 @@ export async function updateExtraOptionAction(
   });
 
   revalidatePath(`/dashboard/producten/${option.productId}/bewerken`);
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
   return null;
 }
 
 export async function deleteExtraOptionAction(formData: FormData) {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
   const extraOptionId = formData.get("extraOptionId");
   if (typeof extraOptionId !== "string") return;
 
   const option = await prisma.extraOption.findFirst({
-    where: { id: extraOptionId, product: { userId: user.id } },
+    where: { id: extraOptionId, product: { companyId: company.id } },
     select: { foto: true, productId: true },
   });
   if (!option) return;
@@ -137,17 +137,17 @@ export async function deleteExtraOptionAction(formData: FormData) {
   if (option.foto) await deleteFoto(option.foto);
 
   revalidatePath(`/dashboard/producten/${option.productId}/bewerken`);
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
 }
 
 export async function toggleExtraOptionActiveAction(formData: FormData) {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
   const extraOptionId = formData.get("extraOptionId");
   const actief = formData.get("actief") === "true";
   if (typeof extraOptionId !== "string") return;
 
   const option = await prisma.extraOption.findFirst({
-    where: { id: extraOptionId, product: { userId: user.id } },
+    where: { id: extraOptionId, product: { companyId: company.id } },
     select: { productId: true },
   });
   if (!option) return;
@@ -158,5 +158,5 @@ export async function toggleExtraOptionActiveAction(formData: FormData) {
   });
 
   revalidatePath(`/dashboard/producten/${option.productId}/bewerken`);
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
 }

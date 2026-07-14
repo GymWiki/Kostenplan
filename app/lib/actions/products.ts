@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { productSchema } from "@/app/lib/validation";
 import { effectiveTier, GRATIS_CATALOGUS_LIMIET } from "@/app/lib/subscription";
@@ -30,7 +30,7 @@ export async function createProductAction(
   _prevState: ProductFormState,
   formData: FormData
 ): Promise<ProductFormState> {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
   const parsed = parseProductForm(formData);
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};
@@ -44,10 +44,10 @@ export async function createProductAction(
   // hergebruikt voor "order" verderop, zodat dezelfde telling niet twee keer
   // wordt uitgevoerd.
   let productCount: number | undefined;
-  if (effectiveTier(user) === "GRATIS") {
+  if (effectiveTier(company) === "GRATIS") {
     const [count, serviceCount] = await Promise.all([
-      prisma.product.count({ where: { userId: user.id } }),
-      prisma.service.count({ where: { userId: user.id } }),
+      prisma.product.count({ where: { companyId: company.id } }),
+      prisma.service.count({ where: { companyId: company.id } }),
     ]);
     productCount = count;
     if (count + serviceCount >= GRATIS_CATALOGUS_LIMIET) {
@@ -57,18 +57,18 @@ export async function createProductAction(
     }
   }
 
-  const count = productCount ?? (await prisma.product.count({ where: { userId: user.id } }));
+  const count = productCount ?? (await prisma.product.count({ where: { companyId: company.id } }));
 
   const product = await prisma.product.create({
     data: {
       ...parsed.data,
-      userId: user.id,
+      companyId: company.id,
       order: count,
     },
   });
 
   revalidatePath("/dashboard/producten");
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
   redirect(`/dashboard/producten/${product.id}/bewerken`);
 }
 
@@ -77,7 +77,7 @@ export async function updateProductAction(
   _prevState: ProductFormState,
   formData: FormData
 ): Promise<ProductFormState> {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
   const parsed = parseProductForm(formData);
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};
@@ -88,37 +88,37 @@ export async function updateProductAction(
   }
 
   await prisma.product.updateMany({
-    where: { id: productId, userId: user.id },
+    where: { id: productId, companyId: company.id },
     data: parsed.data,
   });
 
   revalidatePath("/dashboard/producten");
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
   redirect("/dashboard/producten");
 }
 
 export async function deleteProductAction(formData: FormData) {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
   const productId = formData.get("productId");
   if (typeof productId !== "string") return;
 
-  await prisma.product.deleteMany({ where: { id: productId, userId: user.id } });
+  await prisma.product.deleteMany({ where: { id: productId, companyId: company.id } });
 
   revalidatePath("/dashboard/producten");
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
 }
 
 export async function toggleProductActiveAction(formData: FormData) {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
   const productId = formData.get("productId");
   const actief = formData.get("actief") === "true";
   if (typeof productId !== "string") return;
 
   await prisma.product.updateMany({
-    where: { id: productId, userId: user.id },
+    where: { id: productId, companyId: company.id },
     data: { actief: !actief },
   });
 
   revalidatePath("/dashboard/producten");
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
 }

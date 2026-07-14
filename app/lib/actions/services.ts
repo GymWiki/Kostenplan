@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { serviceSchema } from "@/app/lib/validation";
 import { effectiveTier, GRATIS_CATALOGUS_LIMIET } from "@/app/lib/subscription";
@@ -34,7 +34,7 @@ export async function createServiceAction(
   _prevState: ServiceFormState,
   formData: FormData
 ): Promise<ServiceFormState> {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
   const parsed = parseServiceForm(formData);
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};
@@ -48,10 +48,10 @@ export async function createServiceAction(
   // hergebruikt voor "order" verderop, zodat dezelfde telling niet twee keer
   // wordt uitgevoerd.
   let serviceCount: number | undefined;
-  if (effectiveTier(user) === "GRATIS") {
+  if (effectiveTier(company) === "GRATIS") {
     const [productCount, count] = await Promise.all([
-      prisma.product.count({ where: { userId: user.id } }),
-      prisma.service.count({ where: { userId: user.id } }),
+      prisma.product.count({ where: { companyId: company.id } }),
+      prisma.service.count({ where: { companyId: company.id } }),
     ]);
     serviceCount = count;
     if (productCount + count >= GRATIS_CATALOGUS_LIMIET) {
@@ -61,18 +61,18 @@ export async function createServiceAction(
     }
   }
 
-  const count = serviceCount ?? (await prisma.service.count({ where: { userId: user.id } }));
+  const count = serviceCount ?? (await prisma.service.count({ where: { companyId: company.id } }));
 
   await prisma.service.create({
     data: {
       ...parsed.data,
-      userId: user.id,
+      companyId: company.id,
       order: count,
     },
   });
 
   revalidatePath("/dashboard/diensten");
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
   redirect("/dashboard/diensten");
 }
 
@@ -81,7 +81,7 @@ export async function updateServiceAction(
   _prevState: ServiceFormState,
   formData: FormData
 ): Promise<ServiceFormState> {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
   const parsed = parseServiceForm(formData);
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};
@@ -92,37 +92,37 @@ export async function updateServiceAction(
   }
 
   await prisma.service.updateMany({
-    where: { id: serviceId, userId: user.id },
+    where: { id: serviceId, companyId: company.id },
     data: parsed.data,
   });
 
   revalidatePath("/dashboard/diensten");
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
   redirect("/dashboard/diensten");
 }
 
 export async function deleteServiceAction(formData: FormData) {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
   const serviceId = formData.get("serviceId");
   if (typeof serviceId !== "string") return;
 
-  await prisma.service.deleteMany({ where: { id: serviceId, userId: user.id } });
+  await prisma.service.deleteMany({ where: { id: serviceId, companyId: company.id } });
 
   revalidatePath("/dashboard/diensten");
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
 }
 
 export async function toggleServiceActiveAction(formData: FormData) {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
   const serviceId = formData.get("serviceId");
   const actief = formData.get("actief") === "true";
   if (typeof serviceId !== "string") return;
 
   await prisma.service.updateMany({
-    where: { id: serviceId, userId: user.id },
+    where: { id: serviceId, companyId: company.id },
     data: { actief: !actief },
   });
 
   revalidatePath("/dashboard/diensten");
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
 }

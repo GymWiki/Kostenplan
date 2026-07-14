@@ -11,18 +11,22 @@ import { Calculator } from "./calculator";
 // visitor of every tenant's public calculator). cache() makes them share
 // one fetch.
 const getPortalData = cache(async (slug: string) => {
-  return prisma.user.findUnique({
+  return prisma.company.findUnique({
     where: { slug },
     // select (not include) at the top level so this public, unauthenticated,
-    // highest-traffic query only pulls the scalar User columns actually
+    // highest-traffic query only pulls the scalar Company columns actually
     // used below — not Mollie IDs, onboarding flags, timestamps, etc.
     select: {
-      bedrijfsnaam: true,
-      email: true,
+      naam: true,
       subscriptionTier: true,
       overrideTier: true,
       costSettings: true,
       branding: true,
+      // De contact-e-mail die (indien Branding.toonEmail aanstaat) publiek
+      // op het portaal wordt getoond — dat was vóór multi-company altijd
+      // het login-e-mailadres van de tenant zelf, dus voor gemigreerde
+      // bedrijven levert de aanmaker-relatie exact hetzelfde adres op.
+      creator: { select: { email: true } },
       services: {
         where: { actief: true },
         orderBy: { order: "asc" },
@@ -56,11 +60,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const user = await getPortalData(slug);
-  if (!user) return { title: "Kostencalculator" };
+  const company = await getPortalData(slug);
+  if (!company) return { title: "Kostencalculator" };
   return {
-    title: `Kostencalculator ${user.bedrijfsnaam}`,
-    description: `Bereken direct een schatting van de kosten voor jouw project bij ${user.bedrijfsnaam}.`,
+    title: `Kostencalculator ${company.naam}`,
+    description: `Bereken direct een schatting van de kosten voor jouw project bij ${company.naam}.`,
   };
 }
 
@@ -71,20 +75,20 @@ export default async function PortaalPage({
 }) {
   const { slug } = await params;
 
-  const user = await getPortalData(slug);
+  const company = await getPortalData(slug);
 
-  if (!user || !user.costSettings) notFound();
+  if (!company || !company.costSettings) notFound();
 
   return (
     <Calculator
       slug={slug}
-      bedrijfsnaam={user.bedrijfsnaam}
-      email={user.email}
-      subscriptionTier={effectiveTier(user)}
-      branding={user.branding}
-      costSettings={user.costSettings}
-      services={user.services}
-      products={user.products}
+      bedrijfsnaam={company.naam}
+      email={company.creator.email}
+      subscriptionTier={effectiveTier(company)}
+      branding={company.branding}
+      costSettings={company.costSettings}
+      services={company.services}
+      products={company.products}
     />
   );
 }

@@ -34,35 +34,85 @@ const ensureProfile = cache(
     if (existing) return existing;
 
     // Profile rows are normally created during sign-up (see
-    // app/lib/actions/auth.ts). This is a fallback for accounts that ended up
-    // in Supabase Auth without one (e.g. created directly in the dashboard).
+    // app/lib/actions/auth.ts, which also creates the user's first Company).
+    // This is a fallback for accounts that ended up in Supabase Auth without
+    // one (e.g. created directly in the dashboard) — it creates both the
+    // User and their first Company, exactly like registerAction does.
     const email = authUser.email ?? "";
     const bedrijfsnaam =
       (authUser.user_metadata?.bedrijfsnaam as string | undefined) ||
       email.split("@")[0] ||
       "Mijn bedrijf";
-    const slug = await generateUniqueSlug(bedrijfsnaam);
 
-    return prisma.user.create({
-      data: {
-        id: authUser.id,
-        email,
-        bedrijfsnaam,
-        slug,
-        costSettings: { create: {} },
-      },
-    });
+    return createUserWithFirstCompany(authUser.id, email, bedrijfsnaam);
   }
 );
+
+// Aangeroepen vanuit registerAction (bij sign-up) en de ensureProfile-
+// fallback hierboven — beide gevallen maken een gloednieuwe User aan die nog
+// geen enkel bedrijf heeft, dus krijgen ze meteen hun eerste (owner)
+// Company, inclusief lege CostSettings zodat de rekentool direct werkt.
+export async function createUserWithFirstCompany(
+  userId: string,
+  email: string,
+  bedrijfsnaam: string
+) {
+  const slug = await generateUniqueSlug(bedrijfsnaam);
+
+  return prisma.user.upsert({
+    where: { id: userId },
+    create: {
+      id: userId,
+      email,
+      companyMemberships: {
+        create: {
+          rol: "owner",
+          company: {
+            create: {
+              naam: bedrijfsnaam,
+              slug,
+              createdBy: userId,
+              costSettings: { create: {} },
+            },
+          },
+        },
+      },
+    },
+    update: {},
+  });
+}
 
 export async function requireUser() {
   const authUser = await verifySupabaseUser();
   return ensureProfile(authUser);
 }
 
-export async function getArbeidStapEenheid(userId: string) {
+// Het bedrijf waarvan de ingelogde gebruiker momenteel de data ziet. Kiest
+// vandaag altijd het oudste (eerste) lidmaatschap — voor bestaande,
+// gemigreerde gebruikers is dat hun oorspronkelijke, automatisch aangemaakte
+// bedrijf, dus dit levert exact hetzelfde gedrag op als vóór multi-company.
+// Een echte "actief bedrijf"-keuze (bij 2+ bedrijven) komt in een latere
+// fase (bedrijfsswitcher).
+export const requireActiveCompany = cache(async () => {
+  const user = await requireUser();
+  const membership = await prisma.companyMember.findFirst({
+    where: { userId: user.id },
+    orderBy: { createdAt: "asc" },
+    include: { company: true },
+  });
+
+  // Kan zich in de praktijk niet voordoen: elke User krijgt bij aanmaak
+  // (registerAction / createUserWithFirstCompany) meteen een eerste Company.
+  if (!membership) {
+    throw new Error(`Gebruiker ${user.id} heeft geen enkel bedrijf — dit hoort nooit voor te komen.`);
+  }
+
+  return { user, company: membership.company };
+});
+
+export async function getArbeidStapEenheid(companyId: string) {
   const costSettings = await prisma.costSettings.findUnique({
-    where: { userId },
+    where: { companyId },
     select: { arbeidStapEenheid: true },
   });
   return costSettings?.arbeidStapEenheid ?? "UUR";
@@ -70,9 +120,9 @@ export async function getArbeidStapEenheid(userId: string) {
 
 // Cost-settings fields the product form needs to decide whether to show
 // per-product override inputs, and what default/fallback values to display.
-export async function getProductPricingSettings(userId: string) {
+export async function getProductPricingSettings(companyId: string) {
   const costSettings = await prisma.costSettings.findUnique({
-    where: { userId },
+    where: { companyId },
     select: {
       arbeidStapEenheid: true,
       arbeidTarief: true,

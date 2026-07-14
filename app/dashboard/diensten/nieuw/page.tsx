@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { createServiceAction } from "@/app/lib/actions/services";
 import { ServiceForm } from "../service-form";
 
 export const metadata: Metadata = { title: "Nieuwe dienst" };
 
 export default async function NieuweDienstPage() {
-  await requireUser();
+  await requireActiveCompany();
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">

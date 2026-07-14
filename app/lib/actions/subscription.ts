@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { SequenceType } from "@mollie/api-client";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { getMollieClient, getMollieWebhookUrl } from "@/app/lib/mollie";
 import { getBaseUrl } from "@/app/lib/url";
@@ -15,7 +15,7 @@ export async function startCheckoutAction(
   _prevState: CheckoutFormState,
   formData: FormData
 ): Promise<CheckoutFormState> {
-  const user = await requireUser();
+  const { user, company } = await requireActiveCompany();
 
   const parsed = checkoutSchema.safeParse({
     plan: formData.get("plan"),
@@ -29,17 +29,17 @@ export async function startCheckoutAction(
   // Downgraden naar Gratis: het lopende Mollie-abonnement opzeggen (indien
   // aanwezig) in plaats van een betaling te starten.
   if (plan === "GRATIS") {
-    if (user.mollieSubscriptionId && user.mollieCustomerId) {
+    if (company.mollieSubscriptionId && company.mollieCustomerId) {
       const mollie = getMollieClient();
-      await mollie.customerSubscriptions.cancel(user.mollieSubscriptionId, {
-        customerId: user.mollieCustomerId,
+      await mollie.customerSubscriptions.cancel(company.mollieSubscriptionId, {
+        customerId: company.mollieCustomerId,
       });
     }
-    await prisma.user.update({
-      where: { id: user.id },
+    await prisma.company.update({
+      where: { id: company.id },
       data: {
         subscriptionTier: "GRATIS",
-        subscriptionStatus: user.mollieSubscriptionId ? "CANCELED" : "GEEN",
+        subscriptionStatus: company.mollieSubscriptionId ? "CANCELED" : "GEEN",
       },
     });
     redirect("/dashboard/abonnement?gewijzigd=1");
@@ -52,15 +52,15 @@ export async function startCheckoutAction(
   // Al een actief Mollie-abonnement: pas het bestaande abonnement aan
   // (ander bedrag/interval) in plaats van een nieuwe eerste-betaling/mandaat
   // te starten — dat zou een tweede, dubbel-lopend abonnement opleveren.
-  if (user.mollieSubscriptionId && user.mollieCustomerId && user.subscriptionStatus === "ACTIVE") {
-    await mollie.customerSubscriptions.update(user.mollieSubscriptionId, {
-      customerId: user.mollieCustomerId,
+  if (company.mollieSubscriptionId && company.mollieCustomerId && company.subscriptionStatus === "ACTIVE") {
+    await mollie.customerSubscriptions.update(company.mollieSubscriptionId, {
+      customerId: company.mollieCustomerId,
       amount: { currency: "EUR", value: bedrag.toFixed(2) },
       interval: MOLLIE_INTERVAL[interval],
-      metadata: { userId: user.id, plan, interval },
+      metadata: { companyId: company.id, plan, interval },
     });
-    await prisma.user.update({
-      where: { id: user.id },
+    await prisma.company.update({
+      where: { id: company.id },
       data: { subscriptionTier: plan, billingInterval: interval },
     });
     redirect("/dashboard/abonnement?gewijzigd=1");
@@ -68,15 +68,15 @@ export async function startCheckoutAction(
 
   // Nieuwe (of nog niet eerder betalende) klant: eerst een Mollie-customer
   // aanmaken als die er nog niet is.
-  let customerId = user.mollieCustomerId;
+  let customerId = company.mollieCustomerId;
   if (!customerId) {
     const customer = await mollie.customers.create({
-      name: user.bedrijfsnaam,
+      name: company.naam,
       email: user.email,
-      metadata: { userId: user.id },
+      metadata: { companyId: company.id },
     });
     customerId = customer.id;
-    await prisma.user.update({ where: { id: user.id }, data: { mollieCustomerId: customerId } });
+    await prisma.company.update({ where: { id: company.id }, data: { mollieCustomerId: customerId } });
   }
 
   const intervalLabel = interval === "JAARLIJKS" ? "jaarlijks" : "maandelijks";
@@ -87,7 +87,7 @@ export async function startCheckoutAction(
     webhookUrl: getMollieWebhookUrl(baseUrl),
     customerId,
     sequenceType: SequenceType.first,
-    metadata: { userId: user.id, plan, interval },
+    metadata: { companyId: company.id, plan, interval },
   });
 
   const checkoutUrl = payment.getCheckoutUrl();

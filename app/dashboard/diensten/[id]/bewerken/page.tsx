@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { updateServiceAction } from "@/app/lib/actions/services";
 import { ServiceForm } from "../../service-form";
@@ -13,9 +13,9 @@ export default async function BewerkDienstPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
 
-  const service = await prisma.service.findFirst({ where: { id, userId: user.id } });
+  const service = await prisma.service.findFirst({ where: { id, companyId: company.id } });
 
   if (!service) notFound();
 

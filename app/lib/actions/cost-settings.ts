@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { costSettingsSchema } from "@/app/lib/validation";
 
@@ -15,7 +15,7 @@ export async function updateCostSettingsAction(
   _prevState: CostSettingsFormState,
   formData: FormData
 ): Promise<CostSettingsFormState> {
-  const user = await requireUser();
+  const { company } = await requireActiveCompany();
 
   const raw = {
     arbeidEnabled: formData.get("arbeidEnabled") === "on",
@@ -56,14 +56,14 @@ export async function updateCostSettingsAction(
   }
 
   await prisma.costSettings.upsert({
-    where: { userId: user.id },
-    create: { userId: user.id, ...parsed.data },
+    where: { companyId: company.id },
+    create: { companyId: company.id, ...parsed.data },
     update: parsed.data,
   });
 
   revalidatePath("/dashboard/instellingen");
   revalidatePath("/dashboard");
-  revalidatePath(`/portaal/${user.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
 
   return { success: true };
 }
