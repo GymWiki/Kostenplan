@@ -1,28 +1,26 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button, LinkButton } from "@/app/components/ui/button";
 import { DecimalInput, Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { IconPicker } from "@/app/components/ui/icon-picker";
 import type { ServiceFormState } from "@/app/lib/actions/services";
-import { arbeidEenheidEnkelvoud, arbeidEenheidMeervoud } from "@/app/lib/arbeid";
-import type { ArbeidStapEenheid, Service } from "@/app/generated/prisma/client";
-
-const eenheden = ["m2", "m1", "m3", "stuks", "uur", "dag"];
+import type { Service, ServicePrijsType } from "@/app/generated/prisma/client";
 
 export function ServiceForm({
   action,
   service,
-  arbeidStapEenheid,
 }: {
   action: (state: ServiceFormState, formData: FormData) => Promise<ServiceFormState>;
   service?: Service;
-  arbeidStapEenheid: ArbeidStapEenheid;
 }) {
   const [state, formAction, pending] = useActionState<ServiceFormState, FormData>(
     action,
     null
+  );
+  const [prijsType, setPrijsType] = useState<ServicePrijsType>(
+    service?.prijsType ?? "UURTARIEF"
   );
 
   return (
@@ -58,51 +56,84 @@ export function ServiceForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="eenheid">Eenheid</Label>
-        <Select id="eenheid" name="eenheid" defaultValue={service?.eenheid ?? "m2"}>
-          {eenheden.map((e) => (
-            <option key={e} value={e}>
-              {e}
-            </option>
-          ))}
+        <Label htmlFor="prijsType">Prijsvorm</Label>
+        <Select
+          id="prijsType"
+          name="prijsType"
+          value={prijsType}
+          onChange={(e) => setPrijsType(e.target.value as ServicePrijsType)}
+        >
+          <option value="UURTARIEF">Uurtarief × geschat aantal uren</option>
+          <option value="VASTE_PRIJS">Vaste projectprijs</option>
         </Select>
+        <p className="text-xs text-muted-foreground">
+          De klant vinkt deze dienst aan of uit in het klantenportaal — er wordt geen
+          hoeveelheid opgevraagd.
+        </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="arbeidstijd">
-            Arbeidstijd per eenheid ({arbeidEenheidMeervoud(arbeidStapEenheid)})
-          </Label>
-          <DecimalInput
-            id="arbeidstijd"
-            name="arbeidstijd"
-            defaultValue={service?.arbeidstijd ?? 0}
-            required
-          />
-          <p className="text-xs text-muted-foreground">
-            Gebruikt voor arbeidskosten: tijd × tarief per{" "}
-            {arbeidEenheidEnkelvoud(arbeidStapEenheid)}.
-          </p>
+      {prijsType === "UURTARIEF" ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="uurtarief">Uurtarief</Label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                €
+              </span>
+              <DecimalInput
+                id="uurtarief"
+                name="uurtarief"
+                className="pl-7"
+                defaultValue={service?.uurtarief ?? 0}
+                required
+              />
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="geschatteUren">Geschat aantal uren</Label>
+            <DecimalInput
+              id="geschatteUren"
+              name="geschatteUren"
+              defaultValue={service?.geschatteUren ?? 0}
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              Kostprijs = uurtarief × geschatte uren.
+            </p>
+          </div>
         </div>
+      ) : (
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="materiaalkosten">Materiaalkosten per eenheid</Label>
+          <Label htmlFor="vastePrijs">Vaste projectprijs</Label>
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
               €
             </span>
             <DecimalInput
-              id="materiaalkosten"
-              name="materiaalkosten"
+              id="vastePrijs"
+              name="vastePrijs"
               className="pl-7"
-              defaultValue={service?.materiaalkosten ?? 0}
+              defaultValue={service?.vastePrijs ?? 0}
               required
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            Materiaal dat nodig is om deze dienst uit te voeren.
+            Eén vast bedrag voor deze dienst, ongeacht de omvang van het project.
           </p>
         </div>
-      </div>
+      )}
+
+      {/* De niet-actieve prijsvorm blijft verborgen meegestuurd zodat het
+          zod-schema (dat altijd alle drie de velden verwacht) niet klaagt,
+          ook al toont de UI er maar één set. */}
+      {prijsType === "UURTARIEF" ? (
+        <input type="hidden" name="vastePrijs" value={service?.vastePrijs ?? 0} />
+      ) : (
+        <>
+          <input type="hidden" name="uurtarief" value={service?.uurtarief ?? 0} />
+          <input type="hidden" name="geschatteUren" value={service?.geschatteUren ?? 0} />
+        </>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <p className="text-sm font-medium text-foreground">Icoon</p>

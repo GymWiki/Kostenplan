@@ -131,6 +131,30 @@ export function ProductForm({
       />
 
       <div className="flex flex-col gap-1.5">
+        <Label htmlFor="transportkosten">Transportkosten voor dit product</Label>
+        <div className="relative">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+            €
+          </span>
+          <DecimalInput
+            id="transportkosten"
+            name="transportkosten"
+            className="pl-7"
+            defaultValue={product?.transportkosten ?? 0}
+            required
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Vast bedrag om materiaal voor dit product te vervoeren. Telt één keer mee zodra de
+          klant dit product kiest, en wordt bij de offerte opgeteld bij de transportkosten van
+          andere gekozen producten. Standaard €0.
+        </p>
+        {state?.fieldErrors?.transportkosten && (
+          <p className="text-sm text-destructive">{state.fieldErrors.transportkosten}</p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-1.5">
         <p className="text-sm font-medium text-foreground">Icoon</p>
         <IconPicker name="icoon" defaultValue={product?.icoon} />
       </div>

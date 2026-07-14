@@ -10,9 +10,9 @@ datasource db {
   provider = "postgresql"
 }
 
-enum TransportType {
-  VAST
-  PER_KM
+enum ServicePrijsType {
+  UURTARIEF
+  VASTE_PRIJS
 }
 
 enum ArbeidStapEenheid {
@@ -46,32 +46,33 @@ model CostSettings {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Arbeidskosten
+  // Arbeidskosten — geldt alleen voor Producten (arbeidsCapaciteit). Diensten
+  // hebben hun eigen uurtarief/vaste projectprijs, los van deze instelling.
   arbeidEnabled     Boolean           @default(true)
   arbeidZichtbaar   Boolean           @default(true)
   arbeidStapEenheid ArbeidStapEenheid @default(UUR)
   arbeidTarief      Float             @default(45)
   // Als true mag elk product een eigen Product.arbeidTariefOverride hebben
-  // die dit tarief vervangt. Diensten gebruiken altijd dit tarief.
+  // die dit tarief vervangt.
   arbeidTariefPerProduct Boolean @default(false)
 
-  // Transportkosten
-  transportEnabled   Boolean       @default(true)
-  transportZichtbaar Boolean       @default(true)
-  transportType      TransportType @default(VAST)
-  transportTarief    Float         @default(25)
+  // Transportkosten — alleen aan/uit en zichtbaarheid; het bedrag wordt per
+  // product ingesteld (Product.transportkosten) en hier opgeteld.
+  transportEnabled   Boolean @default(true)
+  transportZichtbaar Boolean @default(true)
 
   // Voorrijkosten
   voorrijEnabled   Boolean @default(true)
   voorrijZichtbaar Boolean @default(true)
   voorrijTarief    Float   @default(35)
 
-  // Materiaalkosten
+  // Materiaalkosten — geldt alleen voor Producten. Diensten hebben geen
+  // materiaalkosten meer.
   materiaalEnabled   Boolean @default(true)
   materiaalZichtbaar Boolean @default(true)
   materiaalMarge     Float   @default(0)
   // Als true mag elk product een eigen Product.materiaalMargeOverride
-  // hebben die deze opslag vervangt. Diensten gebruiken altijd deze opslag.
+  // hebben die deze opslag vervangt.
   materiaalMargePerProduct Boolean @default(false)
 
   btwPercentage Float @default(21)
@@ -79,22 +80,29 @@ model CostSettings {
   updatedAt DateTime @updatedAt
 }
 
-// Een dienst (arbeid), bijv. "Terrastegels leggen".
+// Een dienst (arbeid), bijv. "Terrastegels leggen". In tegenstelling tot een
+// Product (fysieke eigenschappen, schaalt met een hoeveelheid) draait een
+// Dienst om arbeid: de klant vinkt hem simpelweg aan/uit in het
+// klantenportaal, voor óf een uurtarief × geschat aantal uren, óf één vaste
+// projectprijs.
 model Service {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  naam            String
-  omschrijving    String?
-  eenheid         String  @default("m2")
-  arbeidstijd     Float   @default(0)
-  materiaalkosten Float   @default(0)
+  naam         String
+  omschrijving String?
+  prijsType    ServicePrijsType @default(UURTARIEF)
+  // Bij UURTARIEF: kostprijs = uurtarief × geschatteUren.
+  uurtarief     Float @default(0)
+  geschatteUren Float @default(0)
+  // Bij VASTE_PRIJS: kostprijs = vastePrijs, ongeacht uren.
+  vastePrijs Float @default(0)
   // Naam van een lucide-react icoon uit app/lib/icons.ts, bijv. "Sprout".
   // Optioneel, puur decoratief.
-  icoon           String?
-  actief          Boolean @default(true)
-  order           Int     @default(0)
+  icoon  String?
+  actief Boolean @default(true)
+  order  Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -123,6 +131,11 @@ model Product {
   // CostSettings.materiaalMargePerProduct aanstaat. Leeg = gebruik de opslag
   // uit Kosteninstellingen.
   materiaalMargeOverride Float?
+  // Vast transportbedrag voor dit product. Wordt, als het product een
+  // hoeveelheid > 0 heeft, één keer meegeteld (niet vermenigvuldigd met de
+  // hoeveelheid) en samen met die van andere geselecteerde producten
+  // opgeteld tot één transporttotaal.
+  transportkosten Float @default(0)
   // Naam van een lucide-react icoon uit app/lib/icons.ts, bijv. "Fence".
   // Optioneel, puur decoratief.
   icoon                  String?

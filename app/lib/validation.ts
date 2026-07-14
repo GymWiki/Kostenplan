@@ -60,11 +60,6 @@ export const costSettingsSchema = z.object({
 
   transportEnabled: z.boolean(),
   transportZichtbaar: z.boolean(),
-  transportType: z.enum(["VAST", "PER_KM"], "Kies een transporttype"),
-  transportTarief: z.preprocess(
-    normalizeDecimalInput,
-    z.coerce.number("Vul een geldig bedrag in").min(0, "Bedrag kan niet negatief zijn")
-  ),
 
   voorrijEnabled: z.boolean(),
   voorrijZichtbaar: z.boolean(),
@@ -96,9 +91,10 @@ export const costSettingsSchema = z.object({
 export const serviceSchema = z.object({
   naam: z.string().trim().min(1, "Vul een naam in").max(120),
   omschrijving: z.string().trim().max(500).optional().or(z.literal("")),
-  eenheid: z.string().trim().min(1).max(20),
-  arbeidstijd: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
-  materiaalkosten: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
+  prijsType: z.enum(["UURTARIEF", "VASTE_PRIJS"], "Kies een prijsvorm"),
+  uurtarief: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
+  geschatteUren: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
+  vastePrijs: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
   icoon: optionalIconName,
   actief: z.boolean(),
 });
@@ -110,6 +106,7 @@ export const productSchema = z.object({
   arbeidsCapaciteit: optionalPositiveNumber,
   arbeidTariefOverride: optionalNonNegativeNumber,
   materiaalMargeOverride: optionalNonNegativeNumber,
+  transportkosten: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
   icoon: optionalIconName,
   actief: z.boolean(),
 });

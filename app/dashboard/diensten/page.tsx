@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Plus, Pencil, Wrench } from "lucide-react";
-import { requireUser, getArbeidStapEenheid } from "@/app/lib/dal";
+import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { formatCurrency } from "@/app/lib/format";
-import { arbeidEenheidMeervoud } from "@/app/lib/arbeid";
 import { getProductIcon } from "@/app/lib/icons";
 import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -19,13 +18,10 @@ export const metadata: Metadata = { title: "Diensten" };
 export default async function DienstenPage() {
   const user = await requireUser();
 
-  const [services, arbeidStapEenheid] = await Promise.all([
-    prisma.service.findMany({
-      where: { userId: user.id },
-      orderBy: { order: "asc" },
-    }),
-    getArbeidStapEenheid(user.id),
-  ]);
+  const services = await prisma.service.findMany({
+    where: { userId: user.id },
+    orderBy: { order: "asc" },
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -33,7 +29,7 @@ export default async function DienstenPage() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Diensten</h1>
           <p className="mt-1 text-muted-foreground">
-            Werkzaamheden die je aanbiedt, met arbeidstijd en materiaalkosten per eenheid.
+            Werkzaamheden die draaien om arbeid: een uurtarief of een vaste projectprijs.
           </p>
         </div>
         <LinkButton href="/dashboard/diensten/nieuw">
@@ -67,8 +63,7 @@ export default async function DienstenPage() {
               <thead>
                 <tr className="border-b border-border bg-muted/50 text-left text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Dienst</th>
-                  <th className="px-4 py-3 font-medium">Arbeid</th>
-                  <th className="px-4 py-3 font-medium">Materiaal</th>
+                  <th className="px-4 py-3 font-medium">Prijsvorm</th>
                   <th className="px-4 py-3 font-medium">Actief</th>
                   <th className="px-4 py-3 font-medium text-right">Acties</th>
                 </tr>
@@ -85,17 +80,13 @@ export default async function DienstenPage() {
                             <ServiceIcon className="h-4 w-4" />
                           </span>
                         )}
-                        <div>
-                          <p className="font-medium text-foreground">{service.naam}</p>
-                          <p className="text-xs text-muted-foreground">/ {service.eenheid}</p>
-                        </div>
+                        <p className="font-medium text-foreground">{service.naam}</p>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {service.arbeidstijd} {arbeidEenheidMeervoud(arbeidStapEenheid)}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {formatCurrency(service.materiaalkosten)}
+                      {service.prijsType === "UURTARIEF"
+                        ? `${formatCurrency(service.uurtarief)}/uur × ${service.geschatteUren} uur`
+                        : `Vaste prijs: ${formatCurrency(service.vastePrijs)}`}
                     </td>
                     <td className="px-4 py-3">
                       <ActiveToggle

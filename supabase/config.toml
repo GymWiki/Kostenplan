@@ -1,0 +1,32 @@
+# Declarative Auth config for Kostenplan, synced to the hosted Supabase
+# project (ref hhsdloyyjmoqvctucwum) via `supabase config push`. See
+# https://supabase.com/docs/guides/local-development/cli/config for the
+# full reference — only the fields relevant to this project are set here.
+project_id = "kostenplan"
+
+[auth]
+# TODO: replace with the real production domain before running
+# `supabase config push` — this cannot be guessed and must be filled in.
+site_url = "https://your-production-domain.example"
+additional_redirect_urls = [
+  "http://localhost:3000/auth/confirm",
+  "https://your-production-domain.example/auth/confirm",
+]
+
+[auth.email.template.confirmation]
+subject = "Bevestig je e-mailadres · Kostenplan"
+content_path = "./supabase/templates/confirmation.html"
+
+# Supabase's built-in mailer always sends from a generic Supabase address —
+# to change the visible sender name/address, connect a custom SMTP provider
+# (e.g. Resend, Postmark, SendGrid) here. Uncomment and fill in real
+# credentials (as environment variable references, never hardcoded) once
+# you have a provider set up.
+# [auth.email.smtp]
+# enabled = true
+# host = "smtp.your-provider.com"
+# port = 587
+# user = "env(SMTP_USER)"
+# pass = "env(SMTP_PASS)"
+# admin_email = "info@kostenplan.nl"
+# sender_name = "Kostenplan"

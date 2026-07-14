@@ -29,7 +29,6 @@ export function CostSettingsForm({
     costSettings.arbeidStapEenheid
   );
   const [transportOn, setTransportOn] = useState(costSettings.transportEnabled);
-  const [transportType, setTransportType] = useState(costSettings.transportType);
   const [voorrijOn, setVoorrijOn] = useState(costSettings.voorrijEnabled);
   const [materiaalOn, setMateriaalOn] = useState(costSettings.materiaalEnabled);
 
@@ -53,7 +52,7 @@ export function CostSettingsForm({
 
       <CostTypeCard
         title="Arbeidskosten"
-        description="Het tarief dat je rekent voor het werk van jou en je team."
+        description="Het standaardtarief voor arbeidstijd van producten. Diensten hebben hun eigen uurtarief of vaste projectprijs."
         enabled={arbeidOn}
         onToggle={setArbeidOn}
         toggleName="arbeidEnabled"
@@ -100,46 +99,24 @@ export function CostSettingsForm({
           name="arbeidTariefPerProduct"
           defaultChecked={costSettings.arbeidTariefPerProduct}
           label="Tarief per product instelbaar"
-          description="Sta toe dat een product een eigen arbeidstarief heeft, in plaats van steeds dit tarief. Diensten gebruiken altijd dit tarief."
+          description="Sta toe dat een product een eigen arbeidstarief heeft, in plaats van steeds dit tarief."
         />
       </CostTypeCard>
 
       <CostTypeCard
         title="Transportkosten"
-        description="Kosten voor het vervoeren van materiaal en machines naar de klant."
+        description="Kosten voor het vervoeren van materiaal naar de klant."
         enabled={transportOn}
         onToggle={setTransportOn}
         toggleName="transportEnabled"
         visibleName="transportZichtbaar"
         visibleDefault={costSettings.transportZichtbaar}
       >
-        <FieldRow>
-          <Field label="Type" htmlFor="transportType" error={fieldErrors?.transportType}>
-            <Select
-              id="transportType"
-              name="transportType"
-              value={transportType}
-              onChange={(e) =>
-                setTransportType(e.target.value as "VAST" | "PER_KM")
-              }
-            >
-              <option value="VAST">Vast bedrag</option>
-              <option value="PER_KM">Per kilometer</option>
-            </Select>
-          </Field>
-          <Field
-            label={transportType === "VAST" ? "Vast bedrag" : "Bedrag per km"}
-            htmlFor="transportTarief"
-            error={fieldErrors?.transportTarief}
-          >
-            <CurrencyInput
-              id="transportTarief"
-              name="transportTarief"
-              defaultValue={costSettings.transportTarief}
-              suffix={transportType === "VAST" ? undefined : "/ km"}
-            />
-          </Field>
-        </FieldRow>
+        <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
+          Transportkosten verschillen per product (denk aan zware materialen die apart vervoerd
+          moeten worden). Stel per product een bedrag in bij het bewerken van dat product — hier
+          bepaal je alleen of transportkosten meetellen en zichtbaar zijn voor de klant.
+        </p>
       </CostTypeCard>
 
       <CostTypeCard
@@ -190,7 +167,7 @@ export function CostSettingsForm({
           name="materiaalMargePerProduct"
           defaultChecked={costSettings.materiaalMargePerProduct}
           label="Opslag per product instelbaar"
-          description="Sta toe dat een product een eigen opslagpercentage heeft, in plaats van steeds deze opslag. Diensten gebruiken altijd deze opslag."
+          description="Sta toe dat een product een eigen opslagpercentage heeft, in plaats van steeds deze opslag."
         />
       </CostTypeCard>
 
