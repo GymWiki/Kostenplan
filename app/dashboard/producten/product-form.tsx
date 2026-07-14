@@ -8,9 +8,8 @@ import { IconPicker } from "@/app/components/ui/icon-picker";
 import type { ProductFormState } from "@/app/lib/actions/products";
 import { arbeidEenheidEnkelvoud } from "@/app/lib/arbeid";
 import { formatCurrency } from "@/app/lib/format";
+import { CUSTOM_UNIT_VALUE, UNIT_GROUPS, isKnownUnit, unitLabel } from "@/app/lib/units";
 import type { ArbeidStapEenheid, Product } from "@/app/generated/prisma/client";
-
-const eenheden = ["m1", "m2", "m3", "stuks"];
 
 export function ProductForm({
   action,
@@ -36,6 +35,12 @@ export function ProductForm({
     null
   );
   const [eenheid, setEenheid] = useState(product?.eenheid ?? "m1");
+  // Een bestaand product met een eenheid die niet in de standaardlijst staat
+  // (bijv. eerder via "eigen eenheid" aangemaakt) opent meteen in eigen-modus,
+  // zodat de opgeslagen waarde niet stilzwijgend verandert.
+  const [eigenEenheid, setEigenEenheid] = useState(
+    () => Boolean(product) && !isKnownUnit(product!.eenheid)
+  );
 
   return (
     <div className="flex flex-col gap-8">
@@ -74,25 +79,50 @@ export function ProductForm({
         <Label htmlFor="eenheid">Eenheid</Label>
         <Select
           id="eenheid"
-          name="eenheid"
-          value={eenheid}
-          onChange={(e) => setEenheid(e.target.value)}
+          name={eigenEenheid ? undefined : "eenheid"}
+          value={eigenEenheid ? CUSTOM_UNIT_VALUE : eenheid}
+          onChange={(e) => {
+            if (e.target.value === CUSTOM_UNIT_VALUE) {
+              setEigenEenheid(true);
+              setEenheid("");
+            } else {
+              setEigenEenheid(false);
+              setEenheid(e.target.value);
+            }
+          }}
         >
-          {eenheden.map((e) => (
-            <option key={e} value={e}>
-              {e}
-            </option>
+          {UNIT_GROUPS.map((group) => (
+            <optgroup key={group.label} label={group.label}>
+              {group.opties.map((optie) => (
+                <option key={optie.value} value={optie.value}>
+                  {optie.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
+          <option value={CUSTOM_UNIT_VALUE}>Eigen eenheid…</option>
         </Select>
+        {eigenEenheid && (
+          <Input
+            id="eenheid-eigen"
+            name="eenheid"
+            placeholder="Bijv. strekkende voet"
+            value={eenheid}
+            onChange={(e) => setEenheid(e.target.value)}
+            maxLength={20}
+            required
+            autoFocus
+          />
+        )}
         <p className="text-xs text-muted-foreground">
-          De hoeveelheid die de klant opgeeft, bijv. meters schutting. Materiaalprijzen en extra
-          opties worden hiermee vermenigvuldigd.
+          De hoeveelheid die de klant opgeeft, bijv. m² beplanting of uur timmerwerk.
+          Materiaalprijzen en extra opties worden hiermee vermenigvuldigd.
         </p>
       </div>
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="arbeidsCapaciteit">
-          Aantal {eenheid} per {arbeidEenheidEnkelvoud(arbeidStapEenheid)} (optioneel)
+          Aantal {unitLabel(eenheid)} per {arbeidEenheidEnkelvoud(arbeidStapEenheid)} (optioneel)
         </Label>
         <DecimalInput
           id="arbeidsCapaciteit"
@@ -101,7 +131,8 @@ export function ProductForm({
           defaultValue={product?.arbeidsCapaciteit ?? ""}
         />
         <p className="text-xs text-muted-foreground">
-          Hoeveel {eenheid} jij of je team plaatst per {arbeidEenheidEnkelvoud(arbeidStapEenheid)}.
+          Hoeveel {unitLabel(eenheid)} jij of je team plaatst per{" "}
+          {arbeidEenheidEnkelvoud(arbeidStapEenheid)}.
           Bepaalt de arbeidskosten van dit product. Laat leeg als dit product geen arbeidstijd
           kost.
         </p>

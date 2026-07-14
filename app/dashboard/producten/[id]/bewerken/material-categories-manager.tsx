@@ -21,6 +21,7 @@ import { Switch } from "@/app/components/ui/switch";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { PhotoInput } from "@/app/components/ui/photo-input";
 import { formatCurrency } from "@/app/lib/format";
+import { unitLabel } from "@/app/lib/units";
 import type { MaterialCategory, MaterialOption } from "@/app/generated/prisma/client";
 
 type CategoryWithMaterials = MaterialCategory & { materialen: MaterialOption[] };
@@ -268,7 +269,7 @@ function MaterialRow({
                   className="pr-10"
                 />
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                  {productEenheid}
+                  {unitLabel(productEenheid)}
                 </span>
               </div>
             </div>
@@ -316,7 +317,7 @@ function MaterialRow({
           <p className="text-xs text-muted-foreground">
             {formatCurrency(material.prijs)}
             {material.stapgrootte
-              ? ` — per ${material.stapgrootte} ${productEenheid}`
+              ? ` — per ${material.stapgrootte} ${unitLabel(productEenheid)}`
               : ""}
           </p>
         </div>
@@ -417,7 +418,7 @@ function NewMaterialForm({
               className="pr-10"
             />
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              {productEenheid}
+              {unitLabel(productEenheid)}
             </span>
           </div>
         </div>

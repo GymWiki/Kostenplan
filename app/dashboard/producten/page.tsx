@@ -6,6 +6,7 @@ import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import { getProductIcon } from "@/app/lib/icons";
+import { unitLabel } from "@/app/lib/units";
 import { ActiveToggle } from "@/app/components/dashboard/active-toggle";
 import { DeleteButton } from "@/app/components/dashboard/delete-button";
 import { NieuwItemButton } from "@/app/components/dashboard/nieuw-item-button";
@@ -91,7 +92,9 @@ export default async function ProductenPage() {
                         )}
                         <div>
                           <p className="font-medium text-foreground">{product.naam}</p>
-                          <p className="text-xs text-muted-foreground">/ {product.eenheid}</p>
+                          <p className="text-xs text-muted-foreground">
+                            / {unitLabel(product.eenheid)}
+                          </p>
                         </div>
                       </div>
                     </td>

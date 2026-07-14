@@ -11,6 +11,7 @@ import { DecimalInput, Input, Label, Select } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { ThemeToggle } from "@/app/components/ui/theme-toggle";
 import { getProductIcon } from "@/app/lib/icons";
+import { unitLabel } from "@/app/lib/units";
 import { cn } from "@/app/lib/cn";
 import { fontFamilyFor, brandingFontVariables } from "@/app/lib/fonts";
 import { createLeadAction, type LeadFormState } from "@/app/lib/actions/leads";
@@ -487,7 +488,7 @@ function ProductCard({
           </div>
           <QuantityStepper
             naam={product.naam}
-            eenheid={product.eenheid}
+            eenheid={unitLabel(product.eenheid)}
             qty={qty}
             onChange={onQtyChange}
           />
@@ -553,7 +554,7 @@ function ProductCard({
                               {material.naam}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              {formatCurrency(material.prijs)} / {product.eenheid}
+                              {formatCurrency(material.prijs)} / {unitLabel(product.eenheid)}
                             </span>
                           </button>
                         );
@@ -569,7 +570,8 @@ function ProductCard({
                       <option value="">Kies {category.naam.toLowerCase()}</option>
                       {category.materialen.map((material) => (
                         <option key={material.id} value={material.id}>
-                          {material.naam} — {formatCurrency(material.prijs)} / {product.eenheid}
+                          {material.naam} — {formatCurrency(material.prijs)} /{" "}
+                          {unitLabel(product.eenheid)}
                         </option>
                       ))}
                     </Select>
@@ -637,7 +639,7 @@ function ProductCard({
                         )}
                       </span>
                       <span className="shrink-0 text-muted-foreground">
-                        + {formatCurrency(extra.prijs)} / {product.eenheid}
+                        + {formatCurrency(extra.prijs)} / {unitLabel(product.eenheid)}
                       </span>
                     </label>
                   )

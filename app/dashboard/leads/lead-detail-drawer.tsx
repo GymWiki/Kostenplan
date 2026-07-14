@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState, useTransition } from "reac
 import { createPortal } from "react-dom";
 import { X, Mail, MessageCircle, Pencil, Trash2, Check, Plus } from "lucide-react";
 import { formatCurrency } from "@/app/lib/format";
+import { unitLabel } from "@/app/lib/units";
 import { cn } from "@/app/lib/cn";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/input";
@@ -113,7 +114,7 @@ export function LeadDetailDrawer({
               {lead.snapshot.regels.map((regel, i) => {
                 const details = [
                   regel.type === "product" && regel.aantal != null
-                    ? `${regel.aantal} ${regel.eenheid ?? ""}`.trim()
+                    ? `${regel.aantal} ${regel.eenheid ? unitLabel(regel.eenheid) : ""}`.trim()
                     : null,
                   regel.materiaal,
                   regel.extras && regel.extras.length > 0 ? regel.extras.join(", ") : null,
