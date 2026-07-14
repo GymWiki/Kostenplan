@@ -26,8 +26,6 @@ export async function updateCostSettingsAction(
 
     transportEnabled: formData.get("transportEnabled") === "on",
     transportZichtbaar: formData.get("transportZichtbaar") === "on",
-    transportType: formData.get("transportType"),
-    transportTarief: formData.get("transportTarief"),
 
     voorrijEnabled: formData.get("voorrijEnabled") === "on",
     voorrijZichtbaar: formData.get("voorrijZichtbaar") === "on",

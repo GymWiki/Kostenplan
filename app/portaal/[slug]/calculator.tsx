@@ -36,11 +36,10 @@ type Props = {
 const wholeUnits = new Set(["stuks", "uur", "dag", "pallet", "zak"]);
 
 export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, products }: Props) {
-  const [serviceQty, setServiceQty] = useState<Record<string, number>>({});
+  const [serviceSelected, setServiceSelected] = useState<Record<string, boolean>>({});
   const [productQty, setProductQty] = useState<Record<string, number>>({});
   const [materialSelections, setMaterialSelections] = useState<Record<string, string>>({});
   const [extraSelections, setExtraSelections] = useState<Record<string, number>>({});
-  const [afstandKm, setAfstandKm] = useState(0);
 
   useEffect(() => {
     if (window.self === window.top) return;
@@ -68,23 +67,13 @@ export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, 
       calculateBreakdown({
         services,
         products,
-        serviceQty,
+        serviceSelected,
         productQty,
         materialSelections,
         extraSelections,
-        afstandKm,
         costSettings,
       }),
-    [
-      services,
-      products,
-      serviceQty,
-      productQty,
-      materialSelections,
-      extraSelections,
-      afstandKm,
-      costSettings,
-    ]
+    [services, products, serviceSelected, productQty, materialSelections, extraSelections, costSettings]
   );
 
   const isEmpty = services.length === 0 && products.length === 0;
@@ -119,7 +108,7 @@ export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, 
                   Stel je tuinproject samen
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Kies diensten en producten en geef de gewenste hoeveelheid op. Je ziet direct een
+                  Vink diensten aan en geef bij producten de gewenste hoeveelheid op. Je ziet direct een
                   schatting van de kosten hiernaast.
                 </p>
               </div>
@@ -135,9 +124,9 @@ export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, 
                         key={service.id}
                         service={service}
                         costSettings={costSettings}
-                        qty={serviceQty[service.id] ?? 0}
-                        onChange={(qty) =>
-                          setServiceQty((prev) => ({ ...prev, [service.id]: qty }))
+                        selected={serviceSelected[service.id] ?? false}
+                        onToggle={(selected) =>
+                          setServiceSelected((prev) => ({ ...prev, [service.id]: selected }))
                         }
                       />
                     ))}
@@ -182,8 +171,6 @@ export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, 
                 <Summary
                   breakdown={breakdown}
                   costSettings={costSettings}
-                  afstandKm={afstandKm}
-                  onAfstandChange={setAfstandKm}
                   bedrijfsnaam={bedrijfsnaam}
                   email={email}
                 />
@@ -205,52 +192,53 @@ export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, 
 function ServiceRow({
   service,
   costSettings,
-  qty,
-  onChange,
+  selected,
+  onToggle,
 }: {
   service: Service;
   costSettings: CostSettings;
-  qty: number;
-  onChange: (qty: number) => void;
+  selected: boolean;
+  onToggle: (selected: boolean) => void;
 }) {
-  const step = wholeUnits.has(service.eenheid) ? 1 : 0.1;
-  const active = qty > 0;
-  const indicatiePrijs =
-    (costSettings.arbeidEnabled ? service.arbeidstijd * costSettings.arbeidTarief : 0) +
-    (costSettings.materiaalEnabled ? service.materiaalkosten : 0);
+  const prijs =
+    service.prijsType === "VASTE_PRIJS"
+      ? service.vastePrijs
+      : service.uurtarief * service.geschatteUren;
   const ServiceIcon = getProductIcon(service.icoon);
 
   return (
-    <Card className={active ? "border-primary/40 bg-accent/40" : undefined}>
-      <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          {ServiceIcon && (
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              {/* eslint-disable-next-line react-hooks/static-components -- stable lookup from a module-level icon map, not a new component */}
-              <ServiceIcon className="h-5 w-5" />
-            </span>
-          )}
-          <div className="min-w-0">
-            <p className="font-medium text-foreground">{service.naam}</p>
-            {service.omschrijving && (
-              <p className="mt-0.5 text-sm text-muted-foreground">{service.omschrijving}</p>
-            )}
-            {indicatiePrijs > 0 && (
-              <p className="mt-1 text-sm text-muted-foreground">
-                ≈ {formatCurrency(indicatiePrijs)} / {service.eenheid}
-              </p>
-            )}
-          </div>
-        </div>
-        <QuantityStepper
-          naam={service.naam}
-          eenheid={service.eenheid}
-          qty={qty}
-          step={step}
-          onChange={onChange}
-        />
-      </CardContent>
-    </Card>
+    <label
+      className={cn(
+        "flex cursor-pointer items-center gap-3 rounded-xl border p-5 shadow-sm transition-colors",
+        selected
+          ? "border-primary/40 bg-accent/40"
+          : "border-border bg-card hover:border-primary/30"
+      )}
+    >
+      <input
+        type="checkbox"
+        className="h-5 w-5 shrink-0 rounded border-input accent-primary"
+        checked={selected}
+        onChange={(e) => onToggle(e.target.checked)}
+      />
+      {ServiceIcon && (
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          {/* eslint-disable-next-line react-hooks/static-components -- stable lookup from a module-level icon map, not a new component */}
+          <ServiceIcon className="h-5 w-5" />
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="font-medium text-foreground">{service.naam}</p>
+        {service.omschrijving && (
+          <p className="mt-0.5 text-sm text-muted-foreground">{service.omschrijving}</p>
+        )}
+      </div>
+      {costSettings.arbeidEnabled && prijs > 0 && (
+        <span className="shrink-0 text-sm font-medium text-muted-foreground">
+          {formatCurrency(prijs)}
+        </span>
+      )}
+    </label>
   );
 }
 
@@ -503,15 +491,11 @@ function QuantityStepper({
 function Summary({
   breakdown,
   costSettings,
-  afstandKm,
-  onAfstandChange,
   bedrijfsnaam,
   email,
 }: {
   breakdown: ReturnType<typeof calculateBreakdown>;
   costSettings: CostSettings;
-  afstandKm: number;
-  onAfstandChange: (value: number) => void;
   bedrijfsnaam: string;
   email: string;
 }) {
@@ -537,15 +521,6 @@ function Summary({
 
   return (
     <>
-      {costSettings.transportEnabled && costSettings.transportType === "PER_KM" && (
-        <Card>
-          <CardContent className="flex flex-col gap-1.5">
-            <Label htmlFor="afstand">Afstand tot jouw locatie (km)</Label>
-            <DecimalField id="afstand" value={afstandKm} onChange={onAfstandChange} placeholder="0" />
-          </CardContent>
-        </Card>
-      )}
-
       <Card className="border-primary/30">
         <CardContent className="flex flex-col gap-4">
           <h3 className="font-semibold text-foreground">Jouw kostenraming</h3>

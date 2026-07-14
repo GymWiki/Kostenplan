@@ -6,8 +6,6 @@ export type CalcCostSettings = {
   arbeidTarief: number;
   arbeidTariefPerProduct: boolean;
   transportEnabled: boolean;
-  transportType: "VAST" | "PER_KM";
-  transportTarief: number;
   voorrijEnabled: boolean;
   voorrijTarief: number;
   materiaalEnabled: boolean;
@@ -16,10 +14,15 @@ export type CalcCostSettings = {
   btwPercentage: number;
 };
 
+// Een Dienst draait om arbeid: óf een uurtarief × geschatte uren, óf één
+// vaste projectprijs. De klant vinkt hem simpelweg aan/uit — geen
+// hoeveelheid, geen materiaalkosten, los van CostSettings.arbeidTarief.
 export type CalcService = {
   id: string;
-  arbeidstijd: number;
-  materiaalkosten: number;
+  prijsType: "UURTARIEF" | "VASTE_PRIJS";
+  uurtarief: number;
+  geschatteUren: number;
+  vastePrijs: number;
 };
 
 export type CalcMaterialOption = {
@@ -44,6 +47,9 @@ export type CalcProduct = {
   arbeidsCapaciteit: number | null;
   arbeidTariefOverride: number | null;
   materiaalMargeOverride: number | null;
+  // Vast bedrag, telt één keer mee zodra dit product gekozen is (niet
+  // vermenigvuldigd met de hoeveelheid).
+  transportkosten: number;
   materiaalCategorieen: CalcMaterialCategory[];
   extraOpties: CalcExtraOption[];
 };
@@ -63,30 +69,30 @@ function roundUpToStep(qty: number, step: number) {
 export function calculateBreakdown({
   services,
   products,
-  serviceQty,
+  serviceSelected,
   productQty,
   materialSelections,
   extraSelections,
-  afstandKm,
   costSettings,
 }: {
   services: CalcService[];
   products: CalcProduct[];
-  serviceQty: Record<string, number>;
+  serviceSelected: Record<string, boolean>;
   productQty: Record<string, number>;
   materialSelections: Record<string, string>;
   extraSelections: Record<string, number>;
-  afstandKm: number;
   costSettings: CalcCostSettings;
 }) {
-  // Arbeidstijd wordt bijgehouden per geldend tarief (het globale tarief,
-  // of een product-override), zodat items met hetzelfde tarief nog steeds
-  // sámen naar boven afgerond worden op hele stappen (dagdeel/dag), terwijl
-  // een product met een eigen tarief op zichzelf wordt afgerond — je kunt
-  // afgeronde tijd nu eenmaal niet eerlijk tegen twee tarieven tegelijk
-  // afrekenen.
+  // Arbeidstijd van Producten wordt bijgehouden per geldend tarief (het
+  // globale tarief, of een product-override), zodat items met hetzelfde
+  // tarief nog steeds sámen naar boven afgerond worden op hele stappen
+  // (dagdeel/dag), terwijl een product met een eigen tarief op zichzelf
+  // wordt afgerond. Diensten hebben hun eigen uurtarief en tellen los
+  // daarvan direct mee in arbeidskosten (geen gedeelde stap-afronding).
   const arbeidstijdPerTarief = new Map<number, number>();
+  let arbeidskosten = 0;
   let materiaalkosten = 0;
+  let transportkosten = 0;
   let itemCount = 0;
 
   function addArbeidstijd(tarief: number, tijd: number) {
@@ -95,12 +101,13 @@ export function calculateBreakdown({
   }
 
   for (const service of services) {
-    const qty = serviceQty[service.id] ?? 0;
-    if (qty <= 0) continue;
+    if (!serviceSelected[service.id]) continue;
     itemCount += 1;
-    addArbeidstijd(costSettings.arbeidTarief, qty * service.arbeidstijd);
-    if (costSettings.materiaalEnabled) {
-      materiaalkosten += qty * service.materiaalkosten * (1 + costSettings.materiaalMarge / 100);
+    if (costSettings.arbeidEnabled) {
+      arbeidskosten +=
+        service.prijsType === "VASTE_PRIJS"
+          ? service.vastePrijs
+          : service.uurtarief * service.geschatteUren;
     }
   }
 
@@ -143,9 +150,12 @@ export function calculateBreakdown({
           : costSettings.materiaalMarge;
       materiaalkosten += productMateriaalkosten * (1 + materiaalMarge / 100);
     }
+
+    if (costSettings.transportEnabled) {
+      transportkosten += product.transportkosten;
+    }
   }
 
-  let arbeidskosten = 0;
   if (costSettings.arbeidEnabled) {
     for (const [tarief, tijd] of arbeidstijdPerTarief) {
       const billedTijd = costSettings.arbeidStapEenheid === "UUR" ? tijd : ceilStep(tijd);
@@ -154,14 +164,6 @@ export function calculateBreakdown({
   }
 
   const heeftSelectie = itemCount > 0;
-
-  let transportkosten = 0;
-  if (costSettings.transportEnabled && heeftSelectie) {
-    transportkosten =
-      costSettings.transportType === "VAST"
-        ? costSettings.transportTarief
-        : Math.max(0, afstandKm) * costSettings.transportTarief;
-  }
 
   let voorrijkosten = 0;
   if (costSettings.voorrijEnabled && heeftSelectie) {

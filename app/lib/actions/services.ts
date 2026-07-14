@@ -15,9 +15,10 @@ function parseServiceForm(formData: FormData) {
   return serviceSchema.safeParse({
     naam: formData.get("naam"),
     omschrijving: formData.get("omschrijving") ?? "",
-    eenheid: formData.get("eenheid"),
-    arbeidstijd: formData.get("arbeidstijd"),
-    materiaalkosten: formData.get("materiaalkosten"),
+    prijsType: formData.get("prijsType"),
+    uurtarief: formData.get("uurtarief") ?? 0,
+    geschatteUren: formData.get("geschatteUren") ?? 0,
+    vastePrijs: formData.get("vastePrijs") ?? 0,
     icoon: formData.get("icoon") ?? "",
     actief: formData.get("actief") === "on",
   });
