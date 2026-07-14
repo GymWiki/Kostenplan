@@ -1,4 +1,8 @@
-import type { BillingInterval, SubscriptionTier } from "@/app/generated/prisma/client";
+import type {
+  BillingInterval,
+  MollieSubscriptionStatus,
+  SubscriptionTier,
+} from "@/app/generated/prisma/client";
 
 // Single source of truth for pricing — used by both the pricing table (what
 // we show) and the checkout server action (what we actually charge via
@@ -12,6 +16,18 @@ export const PLAN_LABELS: Record<SubscriptionTier, string> = {
   GRATIS: "Gratis",
   PLUS: "Plus",
   PRO: "Pro",
+};
+
+// Gedeeld tussen /dashboard/abonnement (over het actieve bedrijf) en
+// /dashboard/profiel ("Mijn bedrijven", over alle bedrijven tegelijk) zodat
+// de statusteksten nooit uit elkaar kunnen lopen.
+export const SUBSCRIPTION_STATUS_LABELS: Record<MollieSubscriptionStatus, string> = {
+  GEEN: "Geen actief abonnement",
+  PENDING: "Betaling wordt verwerkt",
+  ACTIVE: "Actief",
+  CANCELED: "Opgezegd",
+  SUSPENDED: "Opgeschort — betaling mislukt",
+  COMPLETED: "Afgerond",
 };
 
 // Mollie's subscription `interval` parameter format, e.g. "1 month".

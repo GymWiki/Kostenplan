@@ -47,6 +47,20 @@ export const companySchema = z.object({
   naam: z.string().trim().min(2, "Vul een bedrijfsnaam in").max(80),
 });
 
+export const companyDetailsSchema = z.object({
+  naam: z.string().trim().min(2, "Vul een bedrijfsnaam in").max(80),
+  kvkNummer: z.string().trim().max(20).optional(),
+  adres: z.string().trim().max(200).optional(),
+});
+
+export const deleteCompanySchema = z.object({
+  bevestigingsNaam: z.string().trim().min(1, "Typ de bedrijfsnaam ter bevestiging"),
+});
+
+export const changePasswordSchema = z.object({
+  password: z.string().min(8, "Wachtwoord moet minimaal 8 tekens zijn"),
+});
+
 export const loginSchema = z.object({
   email: z.string().trim().email("Vul een geldig e-mailadres in"),
   password: z.string().min(1, "Vul je wachtwoord in"),

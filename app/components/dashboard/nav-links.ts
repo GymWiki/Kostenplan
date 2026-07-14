@@ -6,6 +6,7 @@ import {
   Package,
   Palette,
   CreditCard,
+  CircleUserRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -21,4 +22,5 @@ export const navLinks: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/dashboard/producten", label: "Producten", icon: Package },
   { href: "/dashboard/branding", label: "Branding", icon: Palette },
   { href: "/dashboard/abonnement", label: "Abonnement", icon: CreditCard },
+  { href: "/dashboard/profiel", label: "Profiel", icon: CircleUserRound },
 ];

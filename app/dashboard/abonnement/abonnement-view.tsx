@@ -7,21 +7,12 @@ import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { PricingTable } from "@/app/components/pricing/pricing-table";
-import { PLAN_LABELS } from "@/app/lib/subscription";
+import { PLAN_LABELS, SUBSCRIPTION_STATUS_LABELS } from "@/app/lib/subscription";
 import type {
   BillingInterval,
   MollieSubscriptionStatus,
   SubscriptionTier,
 } from "@/app/generated/prisma/client";
-
-const STATUS_LABELS: Record<MollieSubscriptionStatus, string> = {
-  GEEN: "Geen actief abonnement",
-  PENDING: "Betaling wordt verwerkt",
-  ACTIVE: "Actief",
-  CANCELED: "Opgezegd",
-  SUSPENDED: "Opgeschort — betaling mislukt",
-  COMPLETED: "Afgerond",
-};
 
 export function AbonnementView({
   effectivePlan,
@@ -71,7 +62,7 @@ export function AbonnementView({
             {isOverridden && <Badge variant="default">Handmatig toegekend</Badge>}
             {!isOverridden && actualPlan !== "GRATIS" && (
               <Badge variant={isActiveSubscription ? "success" : "warning"}>
-                {STATUS_LABELS[subscriptionStatus]}
+                {SUBSCRIPTION_STATUS_LABELS[subscriptionStatus]}
               </Badge>
             )}
           </div>
