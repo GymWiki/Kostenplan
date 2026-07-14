@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Minus, Plus, Printer, Mail, Image as ImageIcon, Check } from "lucide-react";
+import Link from "next/link";
+import { Minus, Plus, Printer, Mail, Phone, Image as ImageIcon, Check } from "lucide-react";
 import { calculateBreakdown } from "@/app/lib/calculate";
 import { formatCurrency } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -11,13 +12,16 @@ import { Button } from "@/app/components/ui/button";
 import { ThemeToggle } from "@/app/components/ui/theme-toggle";
 import { getProductIcon } from "@/app/lib/icons";
 import { cn } from "@/app/lib/cn";
+import { fontFamilyFor, brandingFontVariables } from "@/app/lib/fonts";
 import type {
+  Branding,
   CostSettings,
   ExtraOption,
   MaterialCategory,
   MaterialOption,
   Product,
   Service,
+  SubscriptionTier,
 } from "@/app/generated/prisma/client";
 
 type ProductWithDetails = Product & {
@@ -29,6 +33,8 @@ type Props = {
   slug: string;
   bedrijfsnaam: string;
   email: string;
+  subscriptionTier: SubscriptionTier;
+  branding: Branding | null;
   costSettings: CostSettings;
   services: Service[];
   products: ProductWithDetails[];
@@ -36,11 +42,54 @@ type Props = {
 
 const wholeUnits = new Set(["stuks", "uur", "dag", "pallet", "zak"]);
 
-export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, products }: Props) {
+// Moet gelijk blijven aan de Kostenplan-standaardkleuren in globals.css
+// (--primary / --background, light mode) — de kleur/lettertype die een
+// Gratis-tenant altijd krijgt, ongeacht wat er in Branding is opgeslagen
+// (bijv. na een downgrade vanaf Plus/Pro).
+const STANDAARD_PRIMAIRE_KLEUR = "#15803d";
+const STANDAARD_ACHTERGRONDKLEUR = "#f7faf8";
+
+export function Calculator({
+  slug,
+  bedrijfsnaam,
+  email,
+  subscriptionTier,
+  branding,
+  costSettings,
+  services,
+  products,
+}: Props) {
   const [serviceSelected, setServiceSelected] = useState<Record<string, boolean>>({});
   const [productQty, setProductQty] = useState<Record<string, number>>({});
   const [materialSelections, setMaterialSelections] = useState<Record<string, string>>({});
   const [extraSelections, setExtraSelections] = useState<Record<string, number>>({});
+
+  // Kleuren en lettertype zijn een Plus/Pro-feature — opnieuw afdwingen bij
+  // het renderen (niet alleen in het dashboard), zodat een Gratis-tenant
+  // nooit gepersonaliseerde kleuren te zien krijgt, wat er ook is opgeslagen.
+  const magPersonaliserenUiterlijk = subscriptionTier !== "GRATIS";
+  const primaireKleur = magPersonaliserenUiterlijk
+    ? (branding?.primaireKleur ?? STANDAARD_PRIMAIRE_KLEUR)
+    : STANDAARD_PRIMAIRE_KLEUR;
+  const achtergrondKleur = magPersonaliserenUiterlijk
+    ? (branding?.achtergrondKleur ?? STANDAARD_ACHTERGRONDKLEUR)
+    : STANDAARD_ACHTERGRONDKLEUR;
+  const fontFamily = fontFamilyFor(magPersonaliserenUiterlijk ? (branding?.lettertype ?? "MODERN") : "MODERN");
+  const toonPoweredBy = subscriptionTier === "GRATIS";
+
+  const titel = branding?.customTitel?.trim()
+    ? branding.customTitel.replaceAll("{bedrijfsnaam}", bedrijfsnaam)
+    : null;
+  const welkomstTekst = branding?.welkomstTekst?.trim() || null;
+  const bedankTekst =
+    branding?.bedankTekst?.trim() ||
+    "Bedankt voor uw aanvraag! Wij nemen binnen 24 uur contact met u op.";
+  const contactPositie = branding?.contactPositie ?? "BOVENAAN";
+  const contact = {
+    telefoonnummer: branding?.toonTelefoonnummer ? branding.telefoonnummer : null,
+    email: branding?.toonEmail ? email : null,
+  };
+  const heeftContact = Boolean(contact.telefoonnummer || contact.email);
 
   useEffect(() => {
     if (window.self === window.top) return;
@@ -80,17 +129,48 @@ export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, 
   const isEmpty = services.length === 0 && products.length === 0;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="border-b border-border bg-card">
+    <div
+      className={cn("flex min-h-screen flex-col", brandingFontVariables())}
+      style={
+        {
+          "--brand-primary": primaireKleur,
+          backgroundColor: achtergrondKleur,
+          fontFamily,
+        } as React.CSSProperties
+      }
+    >
+      <header
+        className="border-b border-border"
+        style={{ backgroundColor: "var(--brand-primary)" }}
+      >
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-6 sm:px-6">
-          <Logo className="h-11 w-11 rounded-xl p-1.5" />
+          {branding?.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- external Supabase Storage URL, not a local asset
+            <img
+              src={branding.logoUrl}
+              alt={bedrijfsnaam}
+              className="h-11 w-auto max-w-[10rem] shrink-0 object-contain"
+            />
+          ) : (
+            <Logo className="h-11 w-11 rounded-xl p-1.5" />
+          )}
           <div className="min-w-0 flex-1">
-            <p className="text-sm text-muted-foreground">Kostencalculator van</p>
-            <h1 className="truncate text-xl font-semibold text-foreground">{bedrijfsnaam}</h1>
+            {titel ? (
+              <h1 className="truncate text-xl font-semibold text-white">{titel}</h1>
+            ) : (
+              <>
+                <p className="text-sm text-white/80">Kostencalculator van</p>
+                <h1 className="truncate text-xl font-semibold text-white">{bedrijfsnaam}</h1>
+              </>
+            )}
           </div>
           <ThemeToggle />
         </div>
       </header>
+
+      {contactPositie === "BOVENAAN" && heeftContact && (
+        <ContactBalk telefoonnummer={contact.telefoonnummer} email={contact.email} />
+      )}
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
         {isEmpty ? (
@@ -107,8 +187,8 @@ export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, 
                   Stel je tuinproject samen
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Vink diensten aan en geef bij producten de gewenste hoeveelheid op. Je ziet direct een
-                  schatting van de kosten hiernaast.
+                  {welkomstTekst ??
+                    "Vink diensten aan en geef bij producten de gewenste hoeveelheid op. Je ziet direct een schatting van de kosten hiernaast."}
                 </p>
               </div>
 
@@ -172,6 +252,7 @@ export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, 
                   costSettings={costSettings}
                   bedrijfsnaam={bedrijfsnaam}
                   email={email}
+                  bedankTekst={bedankTekst}
                 />
               </div>
             </div>
@@ -179,11 +260,51 @@ export function Calculator({ slug, bedrijfsnaam, email, costSettings, services, 
         )}
       </main>
 
+      {contactPositie === "ONDERAAN" && heeftContact && (
+        <ContactBalk telefoonnummer={contact.telefoonnummer} email={contact.email} />
+      )}
+
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
         Deze berekening is een indicatie. Aan dit overzicht kunnen geen rechten worden ontleend.
-        <br />
-        Gemaakt met Kostenplan.
+        {toonPoweredBy && (
+          <>
+            <br />
+            <Link href="/" className="font-medium text-foreground hover:underline">
+              Powered by Kostenplan
+            </Link>
+          </>
+        )}
       </footer>
+    </div>
+  );
+}
+
+function ContactBalk({
+  telefoonnummer,
+  email,
+}: {
+  telefoonnummer: string | null;
+  email: string | null;
+}) {
+  return (
+    <div className="border-b border-border bg-secondary/40">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-2.5 text-sm text-foreground sm:justify-start sm:px-6">
+        {telefoonnummer && (
+          <a
+            href={`tel:${telefoonnummer.replace(/[^+\d]/g, "")}`}
+            className="flex items-center gap-1.5 hover:underline"
+          >
+            <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+            {telefoonnummer}
+          </a>
+        )}
+        {email && (
+          <a href={`mailto:${email}`} className="flex items-center gap-1.5 hover:underline">
+            <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+            {email}
+          </a>
+        )}
+      </div>
     </div>
   );
 }
@@ -210,18 +331,18 @@ function ServiceRow({
       className={cn(
         "flex cursor-pointer items-center gap-3 rounded-xl border p-5 shadow-sm transition-colors",
         selected
-          ? "border-primary/40 bg-accent/40"
-          : "border-border bg-card hover:border-primary/30"
+          ? "border-[var(--brand-primary)]/40 bg-[var(--brand-primary)]/10"
+          : "border-border bg-card hover:border-[var(--brand-primary)]/30"
       )}
     >
       <input
         type="checkbox"
-        className="h-5 w-5 shrink-0 rounded border-input accent-primary"
+        className="h-5 w-5 shrink-0 rounded border-input accent-[var(--brand-primary)]"
         checked={selected}
         onChange={(e) => onToggle(e.target.checked)}
       />
       {ServiceIcon && (
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
           {/* eslint-disable-next-line react-hooks/static-components -- stable lookup from a module-level icon map, not a new component */}
           <ServiceIcon className="h-5 w-5" />
         </span>
@@ -266,12 +387,16 @@ function ProductCard({
   const ProductIcon = getProductIcon(product.icoon);
 
   return (
-    <Card className={active ? "border-primary/40 bg-accent/40" : undefined}>
+    <Card
+      className={
+        active ? "border-[var(--brand-primary)]/40 bg-[var(--brand-primary)]/10" : undefined
+      }
+    >
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             {ProductIcon && (
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
                 {/* eslint-disable-next-line react-hooks/static-components -- stable lookup from a module-level icon map, not a new component */}
                 <ProductIcon className="h-5 w-5" />
               </span>
@@ -312,8 +437,8 @@ function ProductCard({
                             className={cn(
                               "flex flex-col items-center gap-1.5 rounded-md border-2 p-2 text-center transition-colors cursor-pointer",
                               isSelected
-                                ? "border-primary bg-accent/50"
-                                : "border-border bg-card hover:border-primary/40 hover:bg-secondary"
+                                ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/10"
+                                : "border-border bg-card hover:border-[var(--brand-primary)]/40 hover:bg-secondary"
                             )}
                           >
                             <div className="relative">
@@ -334,7 +459,7 @@ function ProductCard({
                                 </span>
                               )}
                               {isSelected && (
-                                <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-card">
+                                <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--brand-primary)] text-white ring-2 ring-card">
                                   <Check className="h-3 w-3" />
                                 </span>
                               )}
@@ -492,12 +617,15 @@ function Summary({
   costSettings,
   bedrijfsnaam,
   email,
+  bedankTekst,
 }: {
   breakdown: ReturnType<typeof calculateBreakdown>;
   costSettings: CostSettings;
   bedrijfsnaam: string;
   email: string;
+  bedankTekst: string;
 }) {
+  const [aangevraagd, setAangevraagd] = useState(false);
   const rows: { label: string; value: number }[] = [];
   if (costSettings.arbeidEnabled && costSettings.arbeidZichtbaar) {
     rows.push({ label: "Arbeidskosten", value: breakdown.arbeidskosten });
@@ -520,13 +648,17 @@ function Summary({
 
   return (
     <>
-      <Card className="border-primary/30">
+      <Card className="border-[var(--brand-primary)]/30">
         <CardContent className="flex flex-col gap-4">
           <h3 className="font-semibold text-foreground">Jouw kostenraming</h3>
 
           {!breakdown.heeftSelectie ? (
             <p className="text-sm text-muted-foreground">
               Selecteer diensten of producten om een schatting te zien.
+            </p>
+          ) : aangevraagd ? (
+            <p className="rounded-lg bg-[var(--brand-primary)]/10 px-3 py-3 text-sm text-foreground">
+              {bedankTekst}
             </p>
           ) : (
             <>
@@ -580,8 +712,13 @@ function Summary({
                     `Offerte-aanvraag via kostencalculator`
                   )}&body=${mailBody}`}
                   className="flex-1"
+                  onClick={() => setAangevraagd(true)}
                 >
-                  <Button type="button" variant="primary" className="w-full">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="w-full border-transparent bg-[var(--brand-primary)] text-white hover:opacity-90"
+                  >
                     <Mail className="h-4 w-4" />
                     Offerte aanvragen
                   </Button>

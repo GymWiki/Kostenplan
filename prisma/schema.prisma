@@ -26,6 +26,27 @@ enum ExtraOptionType {
   PER_STUK
 }
 
+// Er is nog geen echte betaalintegratie — dit veld is voor nu een simpel,
+// zelf-instelbaar veld (zie BrandingForm) dat de personalisatie-paywall
+// aan/uit zet. Wordt later gekoppeld aan een echte betaalprovider.
+enum SubscriptionTier {
+  GRATIS
+  PLUS
+  PRO
+}
+
+enum Lettertype {
+  MODERN
+  KLASSIEK
+  VRIENDELIJK
+  STOER
+}
+
+enum ContactPositie {
+  BOVENAAN
+  ONDERAAN
+}
+
 // id matches auth.users.id from Supabase Auth — the profile row is created
 // right after a successful sign-up (see app/lib/actions/auth.ts).
 model User {
@@ -33,12 +54,51 @@ model User {
   email        String   @unique
   bedrijfsnaam String
   slug         String   @unique
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  // Zie SubscriptionTier — bepaalt of de kleuren/lettertype-opties in
+  // Branding beschikbaar zijn en of de "Powered by Kostenplan"-badge
+  // verplicht getoond wordt op het klantenportaal.
+  subscriptionTier SubscriptionTier @default(GRATIS)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   costSettings CostSettings?
+  branding     Branding?
   services     Service[]
   products     Product[]
+}
+
+// White-label/personalisatie-instellingen voor het klantenportaal. Los van
+// CostSettings (dat gaat over prijslogica, dit over uitstraling en copy).
+model Branding {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Publieke URL van een logo in Supabase Storage. Optioneel — zonder logo
+  // toont het portaal het standaard Kostenplan-merkteken.
+  logoUrl String?
+
+  // Kleuren en lettertype: alleen te wijzigen/tonen op Plus/Pro (zie
+  // updateBrandingAction voor de server-side afdwinging). Gratis-tenants
+  // houden altijd de Kostenplan-standaardkleuren en het standaardlettertype,
+  // ongeacht wat hier is opgeslagen (bijv. na een downgrade).
+  primaireKleur    String     @default("#15803d")
+  achtergrondKleur String     @default("#f7faf8")
+  lettertype       Lettertype @default(MODERN)
+
+  // Content & copywriting — beschikbaar op alle tiers. "{bedrijfsnaam}" in
+  // customTitel wordt vervangen door User.bedrijfsnaam.
+  customTitel   String?
+  welkomstTekst String?
+  bedankTekst   String  @default("Bedankt voor uw aanvraag! Wij nemen binnen 24 uur contact met u op.")
+
+  // Bedrijfsgegevens tonen — beschikbaar op alle tiers.
+  toonTelefoonnummer Boolean        @default(false)
+  telefoonnummer     String?
+  toonEmail          Boolean        @default(false)
+  contactPositie     ContactPositie @default(BOVENAAN)
+
+  updatedAt DateTime @updatedAt
 }
 
 model CostSettings {

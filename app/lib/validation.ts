@@ -129,3 +129,25 @@ export const extraOptionSchema = z.object({
   type: z.enum(["PER_EENHEID", "PER_STUK"]),
   actief: z.boolean(),
 });
+
+const hexColor = z
+  .string()
+  .trim()
+  .regex(/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/, "Vul een geldige hexcode in, bijv. #15803d");
+
+export const brandingSchema = z.object({
+  primaireKleur: hexColor,
+  achtergrondKleur: hexColor,
+  lettertype: z.enum(["MODERN", "KLASSIEK", "VRIENDELIJK", "STOER"], "Kies een lettertype"),
+  customTitel: z.string().trim().max(120).optional().or(z.literal("")),
+  welkomstTekst: z.string().trim().max(500).optional().or(z.literal("")),
+  bedankTekst: z.string().trim().min(1, "Vul een bedanktekst in").max(500),
+  toonTelefoonnummer: z.boolean(),
+  telefoonnummer: z.string().trim().max(30).optional().or(z.literal("")),
+  toonEmail: z.boolean(),
+  contactPositie: z.enum(["BOVENAAN", "ONDERAAN"], "Kies een positie"),
+});
+
+export const subscriptionTierSchema = z.object({
+  subscriptionTier: z.enum(["GRATIS", "PLUS", "PRO"], "Kies een abonnement"),
+});
