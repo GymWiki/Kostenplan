@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Wrench, Package, SlidersHorizontal } from "lucide-react";
+import { Wrench, Package, SlidersHorizontal, Users } from "lucide-react";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { getPortalUrl, getEmbedCode } from "@/app/lib/url";
@@ -12,13 +12,15 @@ export const metadata: Metadata = { title: "Overzicht" };
 export default async function DashboardPage() {
   const user = await requireUser();
 
-  const [servicesCount, productsCount, costSettings, portalUrl, embedCode] =
+  const [servicesCount, productsCount, costSettings, portalUrl, embedCode, leadsCount, nieuweLeadsCount] =
     await Promise.all([
       prisma.service.count({ where: { userId: user.id } }),
       prisma.product.count({ where: { userId: user.id } }),
       prisma.costSettings.findUnique({ where: { userId: user.id } }),
       getPortalUrl(user.slug),
       getEmbedCode(user.slug, user.bedrijfsnaam),
+      prisma.lead.count({ where: { userId: user.id } }),
+      prisma.lead.count({ where: { userId: user.id, status: "NIEUW" } }),
     ]);
 
   const enabledCostTypes = costSettings
@@ -49,7 +51,7 @@ export default async function DashboardPage() {
         magEmbedden={isProTier(effectiveTier(user))}
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard icon={Wrench} label="Diensten" value={servicesCount} href="/dashboard/diensten" />
         <StatCard icon={Package} label="Producten" value={productsCount} href="/dashboard/producten" />
         <StatCard
@@ -57,6 +59,13 @@ export default async function DashboardPage() {
           label="Actieve kostentypes"
           value={`${enabledCostTypes} / 4`}
           href="/dashboard/instellingen"
+        />
+        <StatCard
+          icon={Users}
+          label="Leads"
+          value={leadsCount}
+          href="/dashboard/leads"
+          badge={nieuweLeadsCount > 0 ? `${nieuweLeadsCount} nieuw${nieuweLeadsCount > 1 ? "e" : ""}` : undefined}
         />
       </div>
 
@@ -96,14 +105,24 @@ function StatCard({
   label,
   value,
   href,
+  badge,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string | number;
   href: string;
+  // Bijv. "2 nieuwe" — trekt de aandacht naar iets dat net is binnengekomen
+  // (nu alleen gebruikt voor nieuwe leads), zonder de kaart zelf anders op
+  // te bouwen dan de andere statistiek-kaarten.
+  badge?: string;
 }) {
   return (
-    <a href={href}>
+    <a href={href} className="relative block">
+      {badge && (
+        <span className="animate-soft-pulse absolute -top-2 -right-2 z-10 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground shadow-sm">
+          {badge}
+        </span>
+      )}
       <Card className="transition-colors hover:border-primary/40">
         <CardContent className="flex items-center gap-4">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
