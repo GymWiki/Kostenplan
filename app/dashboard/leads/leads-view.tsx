@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import { LayoutGrid, List, TrendingUp, Users, Trophy, Target } from "lucide-react";
+import { LayoutGrid, List, TrendingUp, Users, Trophy, Target, Mail } from "lucide-react";
 import { cn } from "@/app/lib/cn";
 import { formatCurrency } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
+import { LinkButton } from "@/app/components/ui/button";
 import { KanbanBoard } from "./kanban-board";
 import { LeadsTable } from "./leads-table";
 import { LeadDetailDrawer } from "./lead-detail-drawer";
@@ -38,6 +38,38 @@ export function LeadsView({
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
   const selectedLead = leads.find((lead) => lead.id === selectedLeadId) ?? null;
+
+  if (isGratis) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Leads</h1>
+          <p className="mt-1 text-muted-foreground">
+            Offerte-aanvragen vanuit je klantenportaal, op één plek.
+          </p>
+        </div>
+
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Mail className="h-6 w-6" />
+            </span>
+            <p className="text-lg font-semibold text-foreground">
+              Offerte-aanvragen ontvangen?
+            </p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              Vanaf Plus verschijnt elke offerte-aanvraag die een klant via jouw klantenportaal
+              indient direct hier, inclusief contactgegevens en prijsindicatie. Upgrade naar Plus
+              of Pro om leads binnen te laten komen.
+            </p>
+            <LinkButton href="/dashboard/abonnement" className="mt-2">
+              Upgrade naar Plus of Pro
+            </LinkButton>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -77,16 +109,6 @@ export function LeadsView({
           </button>
         </div>
       </div>
-
-      {isGratis && (
-        <p className="rounded-lg border border-border bg-secondary/50 px-4 py-3 text-sm text-foreground">
-          Offerte-aanvragen ontvangen is een Plus/Pro-feature —{" "}
-          <Link href="/dashboard/abonnement" className="font-medium text-primary hover:underline">
-            bekijk de pakketten
-          </Link>{" "}
-          om leads binnen te laten komen via je klantenportaal.
-        </p>
-      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard

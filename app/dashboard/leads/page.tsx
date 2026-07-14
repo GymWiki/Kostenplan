@@ -9,6 +9,22 @@ export const metadata: Metadata = { title: "Leads" };
 
 export default async function LeadsPage() {
   const user = await requireUser();
+  const isGratis = effectiveTier(user) === "GRATIS";
+
+  // Leads ontvangen is een Plus/Pro-feature — op Gratis tonen we alleen de
+  // upsell in LeadsView, dus de data zelf hoeft niet opgehaald te worden.
+  if (isGratis) {
+    return (
+      <LeadsView
+        leads={[]}
+        pipelineWaarde={0}
+        actieveCount={0}
+        gewonnenCount={0}
+        conversieRatio={null}
+        isGratis
+      />
+    );
+  }
 
   const rawLeads = await prisma.lead.findMany({
     where: { userId: user.id },
@@ -35,7 +51,7 @@ export default async function LeadsPage() {
       actieveCount={actief.length}
       gewonnenCount={gewonnenCount}
       conversieRatio={conversieRatio}
-      isGratis={effectiveTier(user) === "GRATIS"}
+      isGratis={false}
     />
   );
 }

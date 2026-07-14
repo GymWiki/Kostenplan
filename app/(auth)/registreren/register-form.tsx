@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { MailCheck } from "lucide-react";
 import { registerAction, type AuthFormState } from "@/app/lib/actions/auth";
 import { Button } from "@/app/components/ui/button";
@@ -11,6 +11,12 @@ export function RegisterForm() {
     registerAction,
     null
   );
+  // Los bijgehouden (niet defaultValue): React reset uncontrolled velden na
+  // elke form action, ook bij een fout. Zonder deze eigen state raakt de
+  // gebruiker bij bijv. een te zwak wachtwoord ook de al correct ingevulde
+  // bedrijfsnaam en e-mail kwijt en moet alles opnieuw intypen.
+  const [bedrijfsnaam, setBedrijfsnaam] = useState("");
+  const [email, setEmail] = useState("");
 
   if (state?.info) {
     return (
@@ -36,6 +42,8 @@ export function RegisterForm() {
           id="bedrijfsnaam"
           name="bedrijfsnaam"
           placeholder="Groenrijk Hoveniers"
+          value={bedrijfsnaam}
+          onChange={(e) => setBedrijfsnaam(e.target.value)}
           required
         />
         {state?.fieldErrors?.bedrijfsnaam && (
@@ -52,6 +60,8 @@ export function RegisterForm() {
           type="email"
           autoComplete="email"
           placeholder="jij@hovenier.nl"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           required
         />
         {state?.fieldErrors?.email && (

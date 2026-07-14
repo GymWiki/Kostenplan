@@ -11,7 +11,7 @@ const snelleLinks = [
 
 const juridischeLinks = [
   { href: "/algemene-voorwaarden", label: "Algemene Voorwaarden" },
-  { href: "/privacybeleid", label: "Privacy Policy" },
+  { href: "/privacybeleid", label: "Privacybeleid" },
 ];
 
 export function SiteFooter() {

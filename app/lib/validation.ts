@@ -113,6 +113,7 @@ export const productSchema = z.object({
 
 export const materialCategorySchema = z.object({
   naam: z.string().trim().min(1, "Vul een naam in").max(60),
+  verplicht: z.coerce.boolean().default(false),
 });
 
 export const materialOptionSchema = z.object({

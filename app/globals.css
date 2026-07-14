@@ -105,13 +105,29 @@
   border-color: var(--border);
 }
 
+/* Publieke portal-calculator: achtergrondKleur is een tenant-gekozen hex
+   (of de standaardkleur), gezet als inline style zodat de vaste primaire
+   merkkleur ook werkt zonder JS. Die kleur is nooit ontworpen met dark
+   mode in gedachten, dus in dark mode negeren we hem altijd en gebruiken
+   we de gewone theme-achtergrond — anders blijft de pagina bij een
+   donker-modus voorkeur op een lichte achtergrond staan terwijl de tekst
+   er wel omheen omschakelt, wat vrijwel onleesbaar wordt. */
+.dark [data-portal-shell] {
+  background-color: var(--background) !important;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
+  /* Voorkomt dat decoratieve, licht buiten hun kader lopende elementen
+     (zoals de achtergrond-gloed achter de landingspagina-mockups) een
+     horizontale scrollbar op mobiel veroorzaken. */
+  overflow-x: hidden;
 }
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 @keyframes fade-in-up {

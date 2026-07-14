@@ -14,7 +14,10 @@ export async function createMaterialCategoryAction(
 ): Promise<MaterialCategoryFormState> {
   const user = await requireUser();
 
-  const parsed = materialCategorySchema.safeParse({ naam: formData.get("naam") });
+  const parsed = materialCategorySchema.safeParse({
+    naam: formData.get("naam"),
+    verplicht: formData.get("verplicht"),
+  });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Ongeldige invoer" };
   }
@@ -30,7 +33,7 @@ export async function createMaterialCategoryAction(
   const count = await prisma.materialCategory.count({ where: { productId } });
 
   await prisma.materialCategory.create({
-    data: { productId, naam: parsed.data.naam, order: count },
+    data: { productId, naam: parsed.data.naam, verplicht: parsed.data.verplicht, order: count },
   });
 
   revalidatePath(`/dashboard/producten/${productId}/bewerken`);
@@ -45,7 +48,10 @@ export async function updateMaterialCategoryAction(
 ): Promise<MaterialCategoryFormState> {
   const user = await requireUser();
 
-  const parsed = materialCategorySchema.safeParse({ naam: formData.get("naam") });
+  const parsed = materialCategorySchema.safeParse({
+    naam: formData.get("naam"),
+    verplicht: formData.get("verplicht"),
+  });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Ongeldige invoer" };
   }
@@ -60,7 +66,7 @@ export async function updateMaterialCategoryAction(
 
   await prisma.materialCategory.update({
     where: { id: materialCategoryId },
-    data: { naam: parsed.data.naam },
+    data: { naam: parsed.data.naam, verplicht: parsed.data.verplicht },
   });
 
   revalidatePath(`/dashboard/producten/${category.productId}/bewerken`);

@@ -42,8 +42,6 @@ type Props = {
   products: ProductWithDetails[];
 };
 
-const wholeUnits = new Set(["stuks", "uur", "dag", "pallet", "zak"]);
-
 // Moet gelijk blijven aan de Kostenplan-standaardkleuren in globals.css
 // (--primary / --background, light mode) — de kleur/lettertype die een
 // Gratis-tenant altijd krijgt, ongeacht wat er in Branding is opgeslagen
@@ -132,6 +130,21 @@ export function Calculator({
     [services, products, serviceSelected, productQty, materialSelections, extraSelections, costSettings]
   );
 
+  // Een verplichte materiaalcategorie zonder keuze houdt de prijsindicatie
+  // onvolledig (materiaalkosten blijven stil op €0) — de klant mag dan geen
+  // offerte aanvragen totdat dit is opgelost.
+  const heeftOntbrekendeVerplichteMaterialen = useMemo(
+    () =>
+      products.some((product) => {
+        const qty = productQty[product.id] ?? 0;
+        if (qty <= 0) return false;
+        return product.materiaalCategorieen.some(
+          (category) => category.verplicht && !materialSelections[category.id]
+        );
+      }),
+    [products, productQty, materialSelections]
+  );
+
   // Bevroren "wat had de klant aangevinkt" voor de leads-CRM (zie
   // app/lib/leads.ts) — meegestuurd bij "Offerte aanvragen" zodat de vakman
   // later precies kan zien waarop de prijsindicatie was gebaseerd, ook als de
@@ -192,6 +205,7 @@ export function Calculator({
 
   return (
     <div
+      data-portal-shell
       className={cn("flex min-h-screen flex-col", brandingFontVariables())}
       style={
         {
@@ -316,6 +330,7 @@ export function Calculator({
                   costSettings={costSettings}
                   bedankTekst={bedankTekst}
                   magOfferteAanvragen={magOfferteAanvragen}
+                  heeftOntbrekendeVerplichteMaterialen={heeftOntbrekendeVerplichteMaterialen}
                 />
               </div>
             </div>
@@ -442,7 +457,6 @@ function ProductCard({
   extraSelections: Record<string, number>;
   onExtraChange: (extraOptionId: string, aantal: number) => void;
 }) {
-  const step = wholeUnits.has(product.eenheid) ? 1 : 0.1;
   const active = qty > 0;
   const categoriesWithOptions = product.materiaalCategorieen.filter(
     (category) => category.materialen.length > 0
@@ -475,7 +489,6 @@ function ProductCard({
             naam={product.naam}
             eenheid={product.eenheid}
             qty={qty}
-            step={step}
             onChange={onQtyChange}
           />
         </div>
@@ -484,9 +497,18 @@ function ProductCard({
           <div className="flex flex-col gap-4 border-t border-border pt-4">
             {categoriesWithOptions.map((category) => {
               const hasFotos = category.materialen.some((m) => m.foto);
+              const ontbreektVerplichteKeuze =
+                category.verplicht && !materialSelections[category.id];
               return (
                 <div key={category.id} className="flex flex-col gap-1.5">
-                  <Label htmlFor={`materiaal-${category.id}`}>{category.naam}</Label>
+                  <Label htmlFor={`materiaal-${category.id}`}>
+                    {category.naam}
+                    {category.verplicht && (
+                      <span className="ml-1.5 text-xs font-normal text-destructive">
+                        Verplicht
+                      </span>
+                    )}
+                  </Label>
                   {hasFotos ? (
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                       {category.materialen.map((material) => {
@@ -542,6 +564,7 @@ function ProductCard({
                       id={`materiaal-${category.id}`}
                       value={materialSelections[category.id] ?? ""}
                       onChange={(e) => onMaterialSelect(category.id, e.target.value)}
+                      className={ontbreektVerplichteKeuze ? "border-destructive" : undefined}
                     >
                       <option value="">Kies {category.naam.toLowerCase()}</option>
                       {category.materialen.map((material) => (
@@ -585,7 +608,6 @@ function ProductCard({
                         naam={extra.naam}
                         eenheid="stuks"
                         qty={extraSelections[extra.id] ?? 0}
-                        step={1}
                         onChange={(aantal) => onExtraChange(extra.id, aantal)}
                       />
                     </div>
@@ -633,15 +655,14 @@ function QuantityStepper({
   naam,
   eenheid,
   qty,
-  step,
   onChange,
 }: {
   naam: string;
   eenheid: string;
   qty: number;
-  step: number;
   onChange: (qty: number) => void;
 }) {
+  const step = 1;
   return (
     <div className="flex shrink-0 items-center gap-2">
       <button
@@ -682,6 +703,7 @@ function Summary({
   costSettings,
   bedankTekst,
   magOfferteAanvragen,
+  heeftOntbrekendeVerplichteMaterialen,
 }: {
   slug: string;
   breakdown: ReturnType<typeof calculateBreakdown>;
@@ -689,10 +711,17 @@ function Summary({
   costSettings: CostSettings;
   bedankTekst: string;
   magOfferteAanvragen: boolean;
+  heeftOntbrekendeVerplichteMaterialen: boolean;
 }) {
   const [formOpen, setFormOpen] = useState(false);
   const action = createLeadAction.bind(null, slug);
   const [state, formAction, pending] = useActionState<LeadFormState, FormData>(action, null);
+  // Los bijgehouden (niet defaultValue): React reset uncontrolled velden na
+  // elke form action, ook bij een fout. Zonder deze eigen state raakt de
+  // klant bij bijv. een ongeldig e-mailadres ook de al ingevulde naam kwijt.
+  const [leadNaam, setLeadNaam] = useState("");
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadTelefoon, setLeadTelefoon] = useState("");
 
   const rows: { label: string; value: number }[] = [];
   if (costSettings.arbeidEnabled && costSettings.arbeidZichtbaar) {
@@ -759,26 +788,53 @@ function Summary({
                 </span>
               </div>
 
+              {heeftOntbrekendeVerplichteMaterialen && (
+                <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning">
+                  Kies bij elk product een verplicht materiaal om een volledige prijsindicatie te
+                  zien{magOfferteAanvragen ? " en een offerte te kunnen aanvragen" : ""}.
+                </p>
+              )}
+
               {formOpen ? (
-                <form action={formAction} className="flex flex-col gap-3">
+                <form action={formAction} noValidate className="flex flex-col gap-3">
                   <input type="hidden" name="snapshot" value={JSON.stringify(snapshot)} />
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="lead-naam">Naam</Label>
-                    <Input id="lead-naam" name="naam" required autoFocus />
+                    <Input
+                      id="lead-naam"
+                      name="naam"
+                      value={leadNaam}
+                      onChange={(e) => setLeadNaam(e.target.value)}
+                      required
+                      autoFocus
+                    />
                     {state?.fieldErrors?.naam && (
                       <p className="text-xs text-destructive">{state.fieldErrors.naam}</p>
                     )}
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="lead-email">E-mailadres</Label>
-                    <Input id="lead-email" name="email" type="email" required />
+                    <Input
+                      id="lead-email"
+                      name="email"
+                      type="email"
+                      value={leadEmail}
+                      onChange={(e) => setLeadEmail(e.target.value)}
+                      required
+                    />
                     {state?.fieldErrors?.email && (
                       <p className="text-xs text-destructive">{state.fieldErrors.email}</p>
                     )}
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="lead-telefoon">Telefoonnummer (optioneel)</Label>
-                    <Input id="lead-telefoon" name="telefoonnummer" type="tel" />
+                    <Input
+                      id="lead-telefoon"
+                      name="telefoonnummer"
+                      type="tel"
+                      value={leadTelefoon}
+                      onChange={(e) => setLeadTelefoon(e.target.value)}
+                    />
                   </div>
                   {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
                   <div className="flex flex-col gap-2 sm:flex-row">
@@ -819,6 +875,7 @@ function Summary({
                       variant="primary"
                       className="flex-1 border-transparent bg-[var(--brand-primary)] text-white hover:opacity-90"
                       onClick={() => setFormOpen(true)}
+                      disabled={heeftOntbrekendeVerplichteMaterialen}
                     >
                       <Mail className="h-4 w-4" />
                       Offerte aanvragen

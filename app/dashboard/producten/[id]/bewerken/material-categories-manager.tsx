@@ -71,15 +71,22 @@ function NewCategoryForm({ productId }: { productId: string }) {
   >(action, null);
 
   return (
-    <form action={formAction} className="flex flex-col gap-2 sm:flex-row sm:items-start">
-      <div className="flex-1">
-        <Input name="naam" placeholder="Naam van nieuwe materiaalcategorie" required />
-        {state?.error && <p className="mt-1.5 text-sm text-destructive">{state.error}</p>}
+    <form action={formAction} className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+        <div className="flex-1">
+          <Input name="naam" placeholder="Naam van nieuwe materiaalcategorie" required />
+          {state?.error && <p className="mt-1.5 text-sm text-destructive">{state.error}</p>}
+        </div>
+        <Button type="submit" disabled={pending} className="shrink-0">
+          <Plus className="h-4 w-4" />
+          Categorie toevoegen
+        </Button>
       </div>
-      <Button type="submit" disabled={pending} className="shrink-0">
-        <Plus className="h-4 w-4" />
-        Categorie toevoegen
-      </Button>
+      <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <input type="checkbox" name="verplicht" className="h-4 w-4 rounded border-input accent-primary" />
+        Materiaalkeuze verplicht — de klant moet hier een keuze maken voordat een offerte kan
+        worden aangevraagd.
+      </label>
     </form>
   );
 }
@@ -111,26 +118,44 @@ function CategoryCard({
       <CardContent className="flex flex-col gap-4">
         {editing ? (
           <div>
-            <form action={handleRename} className="flex items-center gap-2">
-              <Input name="naam" defaultValue={category.naam} required autoFocus />
-              <Button type="submit" variant="secondary" size="icon" disabled={pending} aria-label="Opslaan">
-                <Check className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setEditing(false)}
-                aria-label="Annuleren"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+            <form action={handleRename} className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Input name="naam" defaultValue={category.naam} required autoFocus />
+                <Button type="submit" variant="secondary" size="icon" disabled={pending} aria-label="Opslaan">
+                  <Check className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setEditing(false)}
+                  aria-label="Annuleren"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <input
+                  type="checkbox"
+                  name="verplicht"
+                  defaultChecked={category.verplicht}
+                  className="h-4 w-4 rounded border-input accent-primary"
+                />
+                Materiaalkeuze verplicht
+              </label>
             </form>
             {error && <p className="mt-1.5 text-sm text-destructive">{error}</p>}
           </div>
         ) : (
           <div className="flex items-center justify-between">
-            <p className="font-medium text-foreground">{category.naam}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-foreground">{category.naam}</p>
+              {category.verplicht && (
+                <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                  Verplicht
+                </span>
+              )}
+            </div>
             <div className="flex gap-1">
               <Button
                 type="button"

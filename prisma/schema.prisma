@@ -284,6 +284,10 @@ model MaterialCategory {
 
   naam  String
   order Int    @default(0)
+  // Verplicht een keuze uit deze categorie voordat de klant een offerte kan
+  // aanvragen. Zonder dit blijft een prijsindicatie mogelijk terwijl
+  // materiaalkosten stil op €0 blijven staan omdat er niets is gekozen.
+  verplicht Boolean @default(false)
 
   materialen MaterialOption[]
 
