@@ -2,20 +2,37 @@ import { LogOut } from "lucide-react";
 import { logoutAction } from "@/app/lib/actions/auth";
 import { ThemeToggle } from "@/app/components/ui/theme-toggle";
 import { MobileNav } from "./mobile-nav";
+import { CompanySwitcher } from "./company-switcher";
+import type { SubscriptionTier } from "@/app/generated/prisma/client";
+
+type CompanyOption = {
+  id: string;
+  naam: string;
+  subscriptionTier: SubscriptionTier;
+  overrideTier: SubscriptionTier | null;
+};
 
 export function Topbar({
   slug,
   bedrijfsnaam,
+  activeCompanyId,
+  alleBedrijven,
 }: {
   slug: string;
   bedrijfsnaam: string;
+  activeCompanyId: string;
+  alleBedrijven: CompanyOption[];
 }) {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-8">
       <MobileNav slug={slug} />
-      <p className="flex-1 truncate text-sm font-medium text-muted-foreground">
-        {bedrijfsnaam}
-      </p>
+      {alleBedrijven.length > 1 ? (
+        <CompanySwitcher activeCompanyId={activeCompanyId} companies={alleBedrijven} />
+      ) : (
+        <p className="flex-1 truncate text-sm font-medium text-muted-foreground">
+          {bedrijfsnaam}
+        </p>
+      )}
       <ThemeToggle />
       <form action={logoutAction}>
         <button

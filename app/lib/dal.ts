@@ -1,10 +1,18 @@
 import "server-only";
 
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/server";
 import { prisma } from "@/app/lib/prisma";
 import { generateUniqueSlug } from "@/app/lib/slug";
+
+// Onthoudt welk bedrijf de gebruiker laatst actief had gekozen (zie de
+// bedrijfsswitcher en switchActiveCompanyAction). Alleen relevant zodra
+// iemand lid is van 2+ bedrijven — requireActiveCompany() hieronder valt
+// terug op het oudste bedrijf als deze cookie ontbreekt, geen match heeft
+// met een echt lidmaatschap, of nog nooit gezet is.
+export const ACTIEF_BEDRIJF_COOKIE = "kostenplan_actief_bedrijf";
 
 export const verifySupabaseUser = cache(async () => {
   const supabase = await createClient();
@@ -87,15 +95,16 @@ export async function requireUser() {
   return ensureProfile(authUser);
 }
 
-// Het bedrijf waarvan de ingelogde gebruiker momenteel de data ziet. Kiest
-// vandaag altijd het oudste (eerste) lidmaatschap — voor bestaande,
-// gemigreerde gebruikers is dat hun oorspronkelijke, automatisch aangemaakte
-// bedrijf, dus dit levert exact hetzelfde gedrag op als vóór multi-company.
-// Een echte "actief bedrijf"-keuze (bij 2+ bedrijven) komt in een latere
-// fase (bedrijfsswitcher).
+// Het bedrijf waarvan de ingelogde gebruiker momenteel de data ziet, plus de
+// volledige lijst van bedrijven waar diegene lid van is (voor de
+// bedrijfsswitcher — zo hoeft die geen aparte query te doen). Kiest het
+// bedrijf uit de ACTIEF_BEDRIJF_COOKIE als die overeenkomt met een echt
+// lidmaatschap; anders het oudste (eerste) lidmaatschap. Voor bestaande,
+// gemigreerde gebruikers met precies één bedrijf levert dat altijd exact
+// hetzelfde bedrijf op, ongeacht de cookie.
 export const requireActiveCompany = cache(async () => {
   const user = await requireUser();
-  const membership = await prisma.companyMember.findFirst({
+  const memberships = await prisma.companyMember.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "asc" },
     include: { company: true },
@@ -103,11 +112,20 @@ export const requireActiveCompany = cache(async () => {
 
   // Kan zich in de praktijk niet voordoen: elke User krijgt bij aanmaak
   // (registerAction / createUserWithFirstCompany) meteen een eerste Company.
-  if (!membership) {
+  if (memberships.length === 0) {
     throw new Error(`Gebruiker ${user.id} heeft geen enkel bedrijf — dit hoort nooit voor te komen.`);
   }
 
-  return { user, company: membership.company };
+  const cookieStore = await cookies();
+  const gekozenId = cookieStore.get(ACTIEF_BEDRIJF_COOKIE)?.value;
+  const gekozenLidmaatschap = memberships.find((m) => m.companyId === gekozenId);
+  const actief = gekozenLidmaatschap ?? memberships[0];
+
+  return {
+    user,
+    company: actief.company,
+    alleBedrijven: memberships.map((m) => m.company),
+  };
 });
 
 export async function getArbeidStapEenheid(companyId: string) {

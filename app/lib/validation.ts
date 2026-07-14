@@ -43,6 +43,10 @@ export const registerSchema = z.object({
   password: z.string().min(8, "Wachtwoord moet minimaal 8 tekens zijn"),
 });
 
+export const companySchema = z.object({
+  naam: z.string().trim().min(2, "Vul een bedrijfsnaam in").max(80),
+});
+
 export const loginSchema = z.object({
   email: z.string().trim().email("Vul een geldig e-mailadres in"),
   password: z.string().min(1, "Vul je wachtwoord in"),
