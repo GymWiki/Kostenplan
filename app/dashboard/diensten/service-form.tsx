@@ -36,7 +36,7 @@ export function ServiceForm({
         <Input
           id="naam"
           name="naam"
-          placeholder="Bijv. Terrastegels leggen"
+          placeholder="Bijv. Muur schilderen"
           defaultValue={service?.naam}
           required
         />

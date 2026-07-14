@@ -25,7 +25,7 @@ export function LoginForm() {
           name="email"
           type="email"
           autoComplete="email"
-          placeholder="jij@hovenier.nl"
+          placeholder="jij@jouwbedrijf.nl"
           required
         />
         {state?.fieldErrors?.email && (

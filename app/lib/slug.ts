@@ -11,7 +11,7 @@ export function slugify(input: string) {
 }
 
 export async function generateUniqueSlug(bedrijfsnaam: string) {
-  const base = slugify(bedrijfsnaam) || "hovenier";
+  const base = slugify(bedrijfsnaam) || "vakman";
   let slug = base;
   let suffix = 1;
 

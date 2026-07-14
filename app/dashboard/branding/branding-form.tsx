@@ -117,7 +117,7 @@ export function BrandingForm({
             <Input
               id="customTitel"
               name="customTitel"
-              placeholder="Bereken uw tuinproject met {bedrijfsnaam}"
+              placeholder="Bereken uw project met {bedrijfsnaam}"
               defaultValue={branding.customTitel ?? ""}
             />
             <p className="text-xs text-muted-foreground">

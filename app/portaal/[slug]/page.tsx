@@ -60,7 +60,7 @@ export async function generateMetadata({
   if (!user) return { title: "Kostencalculator" };
   return {
     title: `Kostencalculator ${user.bedrijfsnaam}`,
-    description: `Bereken direct een schatting van de kosten voor jouw tuinproject bij ${user.bedrijfsnaam}.`,
+    description: `Bereken direct een schatting van de kosten voor jouw project bij ${user.bedrijfsnaam}.`,
   };
 }
 

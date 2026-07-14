@@ -15,6 +15,7 @@ import { Switch } from "@/app/components/ui/switch";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { PhotoInput } from "@/app/components/ui/photo-input";
 import { formatCurrency } from "@/app/lib/format";
+import { unitLabel } from "@/app/lib/units";
 import type { ExtraOption } from "@/app/generated/prisma/client";
 
 export function ExtraOptionsManager({
@@ -31,10 +32,10 @@ export function ExtraOptionsManager({
       <div>
         <h2 className="font-semibold text-foreground">Extra opties</h2>
         <p className="text-sm text-muted-foreground">
-          Optionele toevoegingen die de klant kan aanvinken, bijv. &ldquo;Metalen
-          tussenbekleding voor planten&rdquo;. Kies of de prijs meetelt met de hoeveelheid
-          van dit product (per {productEenheid}) of dat de klant er zelf een apart aantal
-          van opgeeft (per stuk).
+          Optionele toevoegingen die de klant kan aanvinken, bijv. &ldquo;Extra
+          sterke scharnieren&rdquo;. Kies of de prijs meetelt met de hoeveelheid
+          van dit product (per {unitLabel(productEenheid)}) of dat de klant er zelf een apart
+          aantal van opgeeft (per stuk).
         </p>
       </div>
 
@@ -70,7 +71,7 @@ function ExtraOptionTypeSelect({
 }) {
   return (
     <Select id={id} name="type" defaultValue={defaultValue ?? "PER_EENHEID"}>
-      <option value="PER_EENHEID">Per {productEenheid} (schaalt mee)</option>
+      <option value="PER_EENHEID">Per {unitLabel(productEenheid)} (schaalt mee)</option>
       <option value="PER_STUK">Per stuk (apart aantal)</option>
     </Select>
   );
@@ -229,7 +230,7 @@ function ExtraOptionRow({
           <p className="text-sm font-medium text-foreground">{option.naam}</p>
           <p className="text-xs text-muted-foreground">
             {formatCurrency(option.prijs)} /{" "}
-            {option.type === "PER_STUK" ? "stuk" : productEenheid}
+            {option.type === "PER_STUK" ? "stuk" : unitLabel(productEenheid)}
           </p>
         </div>
       </div>

@@ -31,7 +31,7 @@ export default async function LoginPage({
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Nog geen account?{" "}
           <Link href="/registreren" className="font-medium text-primary hover:underline">
-            Registreer je hoveniersbedrijf
+            Registreer je bedrijf
           </Link>
         </p>
       </CardContent>

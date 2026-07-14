@@ -38,7 +38,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-// Curated, hovenier-relevant subset of lucide-react icons the hovenier can
+// Curated, vakman-relevant subset of lucide-react icons the vakman can
 // pick from for a dienst or product. Keys are stored as-is in the database
 // (Service.icoon / Product.icoon), so don't rename existing keys — that
 // would silently "unset" the icon for anyone who already picked it.

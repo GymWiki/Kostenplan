@@ -40,8 +40,8 @@ export function MaterialCategoriesManager({
       <div>
         <h2 className="font-semibold text-foreground">Materiaalcategorieën</h2>
         <p className="text-sm text-muted-foreground">
-          Onderdelen van dit product waarvoor de klant één materiaal kiest, bijv. &ldquo;Palen&rdquo;
-          of &ldquo;Tussenbekleding&rdquo;.
+          Onderdelen van dit product waarvoor de klant één materiaal kiest, bijv.
+          &ldquo;Kleur&rdquo; of &ldquo;Materiaalsoort&rdquo;.
         </p>
       </div>
 
@@ -396,7 +396,7 @@ function NewMaterialForm({
     <form action={formAction} className="flex flex-col gap-3 pt-1">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="new-material-naam">Naam</Label>
-        <Input id="new-material-naam" name="naam" placeholder="Bijv. Betonnen palen" required />
+        <Input id="new-material-naam" name="naam" placeholder="Bijv. Standaardkleur" required />
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="flex flex-col gap-1.5">

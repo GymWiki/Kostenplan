@@ -39,7 +39,7 @@ export default async function ProductenPage() {
           <h1 className="text-2xl font-semibold text-foreground">Producten</h1>
           <p className="mt-1 text-muted-foreground">
             Samengestelde producten met materiaalkeuzes, bijv. een schutting met palen en
-            tussenbekleding.
+            tussenbekleding, of een vloer met tegels en voegmateriaal.
           </p>
         </div>
         <NieuwItemButton href="/dashboard/producten/nieuw" label="Nieuw product" atLimit={atLimit} />

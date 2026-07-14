@@ -261,7 +261,7 @@ export function Calculator({
             <div className="flex flex-col gap-8 lg:order-1">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">
-                  Stel je tuinproject samen
+                  Stel je project samen
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {welkomstTekst ??

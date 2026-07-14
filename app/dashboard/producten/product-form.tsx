@@ -56,7 +56,7 @@ export function ProductForm({
         <Input
           id="naam"
           name="naam"
-          placeholder="Bijv. Schutting"
+          placeholder="Bijv. Vloertegels"
           defaultValue={product?.naam}
           required
         />

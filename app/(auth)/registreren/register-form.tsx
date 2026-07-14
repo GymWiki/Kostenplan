@@ -41,7 +41,7 @@ export function RegisterForm() {
         <Input
           id="bedrijfsnaam"
           name="bedrijfsnaam"
-          placeholder="Groenrijk Hoveniers"
+          placeholder="Bakker Vakwerk"
           value={bedrijfsnaam}
           onChange={(e) => setBedrijfsnaam(e.target.value)}
           required
@@ -59,7 +59,7 @@ export function RegisterForm() {
           name="email"
           type="email"
           autoComplete="email"
-          placeholder="jij@hovenier.nl"
+          placeholder="jij@jouwbedrijf.nl"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
