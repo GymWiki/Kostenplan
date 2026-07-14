@@ -28,6 +28,7 @@ export default async function PortaalPage({
     where: { slug },
     include: {
       costSettings: true,
+      branding: true,
       services: {
         where: { actief: true },
         orderBy: { order: "asc" },
@@ -61,6 +62,8 @@ export default async function PortaalPage({
       slug={slug}
       bedrijfsnaam={user.bedrijfsnaam}
       email={user.email}
+      subscriptionTier={user.subscriptionTier}
+      branding={user.branding}
       costSettings={user.costSettings}
       services={user.services}
       products={user.products}
