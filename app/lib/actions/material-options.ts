@@ -53,6 +53,7 @@ export async function createMaterialOptionAction(
 
   const category = await prisma.materialCategory.findFirst({
     where: { id: materialCategoryId, product: { userId: user.id } },
+    select: { productId: true },
   });
   if (!category) {
     return { error: "Categorie niet gevonden" };
@@ -88,7 +89,7 @@ export async function updateMaterialOptionAction(
 
   const option = await prisma.materialOption.findFirst({
     where: { id: materialOptionId, materialCategory: { product: { userId: user.id } } },
-    include: { materialCategory: true },
+    select: { foto: true, materialCategory: { select: { productId: true } } },
   });
   if (!option) {
     return { error: "Materiaal niet gevonden" };
@@ -116,7 +117,7 @@ export async function deleteMaterialOptionAction(formData: FormData) {
 
   const option = await prisma.materialOption.findFirst({
     where: { id: materialOptionId, materialCategory: { product: { userId: user.id } } },
-    include: { materialCategory: true },
+    select: { foto: true, materialCategory: { select: { productId: true } } },
   });
   if (!option) return;
 
@@ -135,7 +136,7 @@ export async function toggleMaterialOptionActiveAction(formData: FormData) {
 
   const option = await prisma.materialOption.findFirst({
     where: { id: materialOptionId, materialCategory: { product: { userId: user.id } } },
-    include: { materialCategory: true },
+    select: { materialCategory: { select: { productId: true } } },
   });
   if (!option) return;
 

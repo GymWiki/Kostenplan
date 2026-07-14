@@ -11,11 +11,12 @@ export default async function BrandingPage() {
   const user = await requireUser();
   const plan = effectiveTier(user);
 
-  const branding = await prisma.branding.upsert({
-    where: { userId: user.id },
-    create: { userId: user.id },
-    update: {},
-  });
+  // find-then-create (not upsert) so a plain page view never issues a
+  // write — upsert's update branch still touches the row (and its
+  // updatedAt) even with an empty payload, on every single visit.
+  const branding =
+    (await prisma.branding.findUnique({ where: { userId: user.id } })) ??
+    (await prisma.branding.create({ data: { userId: user.id } }));
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">

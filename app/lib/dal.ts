@@ -18,44 +18,42 @@ export const verifySupabaseUser = cache(async () => {
   return user;
 });
 
-async function ensureProfile(authUser: {
-  id: string;
-  email?: string;
-  user_metadata?: Record<string, unknown>;
-}) {
-  const existing = await prisma.user.findUnique({ where: { id: authUser.id } });
-  if (existing) return existing;
+// Cached per request: the dashboard layout and every nested dashboard page
+// each call requireUser() independently, so without this every single
+// dashboard page load would re-query the User row from Postgres twice (once
+// for the layout, once for the page) instead of once. Relies on
+// verifySupabaseUser() above also being cached and returning the same
+// object reference within a request, which is what cache() dedupes on.
+const ensureProfile = cache(
+  async (authUser: {
+    id: string;
+    email?: string;
+    user_metadata?: Record<string, unknown>;
+  }) => {
+    const existing = await prisma.user.findUnique({ where: { id: authUser.id } });
+    if (existing) return existing;
 
-  // Profile rows are normally created during sign-up (see
-  // app/lib/actions/auth.ts). This is a fallback for accounts that ended up
-  // in Supabase Auth without one (e.g. created directly in the dashboard).
-  const email = authUser.email ?? "";
-  const bedrijfsnaam =
-    (authUser.user_metadata?.bedrijfsnaam as string | undefined) ||
-    email.split("@")[0] ||
-    "Mijn bedrijf";
-  const slug = await generateUniqueSlug(bedrijfsnaam);
+    // Profile rows are normally created during sign-up (see
+    // app/lib/actions/auth.ts). This is a fallback for accounts that ended up
+    // in Supabase Auth without one (e.g. created directly in the dashboard).
+    const email = authUser.email ?? "";
+    const bedrijfsnaam =
+      (authUser.user_metadata?.bedrijfsnaam as string | undefined) ||
+      email.split("@")[0] ||
+      "Mijn bedrijf";
+    const slug = await generateUniqueSlug(bedrijfsnaam);
 
-  return prisma.user.create({
-    data: {
-      id: authUser.id,
-      email,
-      bedrijfsnaam,
-      slug,
-      costSettings: { create: {} },
-    },
-  });
-}
-
-export const getCurrentUser = cache(async () => {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  return ensureProfile(user);
-});
+    return prisma.user.create({
+      data: {
+        id: authUser.id,
+        email,
+        bedrijfsnaam,
+        slug,
+        costSettings: { create: {} },
+      },
+    });
+  }
+);
 
 export async function requireUser() {
   const authUser = await verifySupabaseUser();

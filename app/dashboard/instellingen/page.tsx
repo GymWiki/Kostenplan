@@ -8,11 +8,12 @@ export const metadata: Metadata = { title: "Kosteninstellingen" };
 export default async function InstellingenPage() {
   const user = await requireUser();
 
-  const costSettings = await prisma.costSettings.upsert({
-    where: { userId: user.id },
-    create: { userId: user.id },
-    update: {},
-  });
+  // find-then-create (not upsert): CostSettings is already created at
+  // sign-up, so this fallback almost never runs — but upsert's update
+  // branch would otherwise write to the row on every single page view.
+  const costSettings =
+    (await prisma.costSettings.findUnique({ where: { userId: user.id } })) ??
+    (await prisma.costSettings.create({ data: { userId: user.id } }));
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">

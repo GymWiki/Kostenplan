@@ -49,7 +49,10 @@ export async function createLeadAction(
     return { error: "Ongeldige aanvraag. Ververs de pagina en probeer het opnieuw." };
   }
 
-  const tenant = await prisma.user.findUnique({ where: { slug } });
+  const tenant = await prisma.user.findUnique({
+    where: { slug },
+    select: { id: true, subscriptionTier: true, overrideTier: true },
+  });
   if (!tenant) {
     return { error: "Dit klantenportaal bestaat niet (meer)." };
   }
@@ -102,7 +105,10 @@ export async function addLeadNoteAction(
     return { error: parsed.error.issues[0]?.message ?? "Ongeldige invoer" };
   }
 
-  const lead = await prisma.lead.findFirst({ where: { id: leadId, userId: user.id } });
+  const lead = await prisma.lead.findFirst({
+    where: { id: leadId, userId: user.id },
+    select: { id: true },
+  });
   if (!lead) return { error: "Lead niet gevonden" };
 
   await prisma.leadNote.create({ data: { leadId, tekst: parsed.data.tekst } });
@@ -125,6 +131,7 @@ export async function updateLeadNoteAction(
 
   const note = await prisma.leadNote.findFirst({
     where: { id: noteId, lead: { userId: user.id } },
+    select: { id: true },
   });
   if (!note) return { error: "Notitie niet gevonden" };
 
@@ -141,6 +148,7 @@ export async function deleteLeadNoteAction(formData: FormData) {
 
   const note = await prisma.leadNote.findFirst({
     where: { id: noteId, lead: { userId: user.id } },
+    select: { id: true },
   });
   if (!note) return;
 

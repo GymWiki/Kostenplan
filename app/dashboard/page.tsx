@@ -18,8 +18,14 @@ export default async function DashboardPage() {
     await Promise.all([
       prisma.service.count({ where: { userId: user.id } }),
       prisma.product.count({ where: { userId: user.id } }),
-      prisma.costSettings.findUnique({ where: { userId: user.id } }),
-      prisma.branding.findUnique({ where: { userId: user.id } }),
+      prisma.costSettings.findUnique({
+        where: { userId: user.id },
+        select: { arbeidEnabled: true, transportEnabled: true, voorrijEnabled: true, materiaalEnabled: true },
+      }),
+      prisma.branding.findUnique({
+        where: { userId: user.id },
+        select: { logoUrl: true, telefoonnummer: true },
+      }),
       getPortalUrl(user.slug),
       getEmbedCode(user.slug, user.bedrijfsnaam),
       prisma.lead.count({ where: { userId: user.id } }),
