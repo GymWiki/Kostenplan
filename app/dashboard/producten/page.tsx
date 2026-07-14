@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus, Pencil, Package } from "lucide-react";
+import { Pencil, Package } from "lucide-react";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { LinkButton } from "@/app/components/ui/button";
@@ -8,6 +8,8 @@ import { Badge } from "@/app/components/ui/badge";
 import { getProductIcon } from "@/app/lib/icons";
 import { ActiveToggle } from "@/app/components/dashboard/active-toggle";
 import { DeleteButton } from "@/app/components/dashboard/delete-button";
+import { NieuwItemButton } from "@/app/components/dashboard/nieuw-item-button";
+import { effectiveTier, GRATIS_CATALOGUS_LIMIET } from "@/app/lib/subscription";
 import {
   deleteProductAction,
   toggleProductActiveAction,
@@ -18,11 +20,16 @@ export const metadata: Metadata = { title: "Producten" };
 export default async function ProductenPage() {
   const user = await requireUser();
 
-  const products = await prisma.product.findMany({
-    where: { userId: user.id },
-    orderBy: { order: "asc" },
-    include: { _count: { select: { materiaalCategorieen: true, extraOpties: true } } },
-  });
+  const [products, serviceCount] = await Promise.all([
+    prisma.product.findMany({
+      where: { userId: user.id },
+      orderBy: { order: "asc" },
+      include: { _count: { select: { materiaalCategorieen: true, extraOpties: true } } },
+    }),
+    prisma.service.count({ where: { userId: user.id } }),
+  ]);
+  const atLimit =
+    effectiveTier(user) === "GRATIS" && products.length + serviceCount >= GRATIS_CATALOGUS_LIMIET;
 
   return (
     <div className="flex flex-col gap-6">
@@ -34,10 +41,7 @@ export default async function ProductenPage() {
             tussenbekleding.
           </p>
         </div>
-        <LinkButton href="/dashboard/producten/nieuw">
-          <Plus className="h-4 w-4" />
-          Nieuw product
-        </LinkButton>
+        <NieuwItemButton href="/dashboard/producten/nieuw" label="Nieuw product" atLimit={atLimit} />
       </div>
 
       {products.length === 0 ? (
@@ -52,10 +56,12 @@ export default async function ProductenPage() {
                 Voeg een product toe en richt daarna de materiaalcategorieën en extra opties in.
               </p>
             </div>
-            <LinkButton href="/dashboard/producten/nieuw" variant="secondary">
-              <Plus className="h-4 w-4" />
-              Nieuw product
-            </LinkButton>
+            <NieuwItemButton
+              href="/dashboard/producten/nieuw"
+              label="Nieuw product"
+              atLimit={atLimit}
+              variant="secondary"
+            />
           </CardContent>
         </Card>
       ) : (

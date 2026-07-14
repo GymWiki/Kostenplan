@@ -3,6 +3,7 @@ import { Wrench, Package, SlidersHorizontal } from "lucide-react";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { getPortalUrl, getEmbedCode } from "@/app/lib/url";
+import { effectiveTier, isProTier } from "@/app/lib/subscription";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { SharePortalCard } from "@/app/components/dashboard/share-portal-card";
 
@@ -42,7 +43,11 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <SharePortalCard portalUrl={portalUrl} embedCode={embedCode} />
+      <SharePortalCard
+        portalUrl={portalUrl}
+        embedCode={embedCode}
+        magEmbedden={isProTier(effectiveTier(user))}
+      />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <StatCard icon={Wrench} label="Diensten" value={servicesCount} href="/dashboard/diensten" />

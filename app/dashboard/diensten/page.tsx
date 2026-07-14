@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus, Pencil, Wrench } from "lucide-react";
+import { Pencil, Wrench } from "lucide-react";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { formatCurrency } from "@/app/lib/format";
@@ -8,6 +8,8 @@ import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { ActiveToggle } from "@/app/components/dashboard/active-toggle";
 import { DeleteButton } from "@/app/components/dashboard/delete-button";
+import { NieuwItemButton } from "@/app/components/dashboard/nieuw-item-button";
+import { effectiveTier, GRATIS_CATALOGUS_LIMIET } from "@/app/lib/subscription";
 import {
   deleteServiceAction,
   toggleServiceActiveAction,
@@ -18,10 +20,15 @@ export const metadata: Metadata = { title: "Diensten" };
 export default async function DienstenPage() {
   const user = await requireUser();
 
-  const services = await prisma.service.findMany({
-    where: { userId: user.id },
-    orderBy: { order: "asc" },
-  });
+  const [services, productCount] = await Promise.all([
+    prisma.service.findMany({
+      where: { userId: user.id },
+      orderBy: { order: "asc" },
+    }),
+    prisma.product.count({ where: { userId: user.id } }),
+  ]);
+  const atLimit =
+    effectiveTier(user) === "GRATIS" && services.length + productCount >= GRATIS_CATALOGUS_LIMIET;
 
   return (
     <div className="flex flex-col gap-6">
@@ -32,10 +39,7 @@ export default async function DienstenPage() {
             Werkzaamheden die draaien om arbeid: een uurtarief of een vaste projectprijs.
           </p>
         </div>
-        <LinkButton href="/dashboard/diensten/nieuw">
-          <Plus className="h-4 w-4" />
-          Nieuwe dienst
-        </LinkButton>
+        <NieuwItemButton href="/dashboard/diensten/nieuw" label="Nieuwe dienst" atLimit={atLimit} />
       </div>
 
       {services.length === 0 ? (
@@ -50,10 +54,12 @@ export default async function DienstenPage() {
                 Voeg je eerste dienst toe om te verschijnen in het klantenportaal.
               </p>
             </div>
-            <LinkButton href="/dashboard/diensten/nieuw" variant="secondary">
-              <Plus className="h-4 w-4" />
-              Nieuwe dienst
-            </LinkButton>
+            <NieuwItemButton
+              href="/dashboard/diensten/nieuw"
+              label="Nieuwe dienst"
+              atLimit={atLimit}
+              variant="secondary"
+            />
           </CardContent>
         </Card>
       ) : (

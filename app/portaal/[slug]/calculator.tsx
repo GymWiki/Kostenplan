@@ -68,6 +68,10 @@ export function Calculator({
   // het renderen (niet alleen in het dashboard), zodat een Gratis-tenant
   // nooit gepersonaliseerde kleuren te zien krijgt, wat er ook is opgeslagen.
   const magPersonaliserenUiterlijk = subscriptionTier !== "GRATIS";
+  // Lead capture ("Offerte aanvragen") is een Plus/Pro-feature — net als de
+  // personalisatie hierboven bij elke render opnieuw afgeleid, nooit
+  // rechtstreeks vertrouwd vanuit opgeslagen state.
+  const magOfferteAanvragen = subscriptionTier !== "GRATIS";
   const primaireKleur = magPersonaliserenUiterlijk
     ? (branding?.primaireKleur ?? STANDAARD_PRIMAIRE_KLEUR)
     : STANDAARD_PRIMAIRE_KLEUR;
@@ -253,6 +257,7 @@ export function Calculator({
                   bedrijfsnaam={bedrijfsnaam}
                   email={email}
                   bedankTekst={bedankTekst}
+                  magOfferteAanvragen={magOfferteAanvragen}
                 />
               </div>
             </div>
@@ -618,12 +623,14 @@ function Summary({
   bedrijfsnaam,
   email,
   bedankTekst,
+  magOfferteAanvragen,
 }: {
   breakdown: ReturnType<typeof calculateBreakdown>;
   costSettings: CostSettings;
   bedrijfsnaam: string;
   email: string;
   bedankTekst: string;
+  magOfferteAanvragen: boolean;
 }) {
   const [aangevraagd, setAangevraagd] = useState(false);
   const rows: { label: string; value: number }[] = [];
@@ -707,22 +714,24 @@ function Summary({
                   <Printer className="h-4 w-4" />
                   Bewaar als PDF
                 </Button>
-                <a
-                  href={`mailto:${email}?subject=${encodeURIComponent(
-                    `Offerte-aanvraag via kostencalculator`
-                  )}&body=${mailBody}`}
-                  className="flex-1"
-                  onClick={() => setAangevraagd(true)}
-                >
-                  <Button
-                    type="button"
-                    variant="primary"
-                    className="w-full border-transparent bg-[var(--brand-primary)] text-white hover:opacity-90"
+                {magOfferteAanvragen && (
+                  <a
+                    href={`mailto:${email}?subject=${encodeURIComponent(
+                      `Offerte-aanvraag via kostencalculator`
+                    )}&body=${mailBody}`}
+                    className="flex-1"
+                    onClick={() => setAangevraagd(true)}
                   >
-                    <Mail className="h-4 w-4" />
-                    Offerte aanvragen
-                  </Button>
-                </a>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      className="w-full border-transparent bg-[var(--brand-primary)] text-white hover:opacity-90"
+                    >
+                      <Mail className="h-4 w-4" />
+                      Offerte aanvragen
+                    </Button>
+                  </a>
+                )}
               </div>
             </>
           )}

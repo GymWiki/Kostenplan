@@ -26,13 +26,30 @@ enum ExtraOptionType {
   PER_STUK
 }
 
-// Er is nog geen echte betaalintegratie — dit veld is voor nu een simpel,
-// zelf-instelbaar veld (zie BrandingForm) dat de personalisatie-paywall
-// aan/uit zet. Wordt later gekoppeld aan een echte betaalprovider.
+// Bepaalt welke features ontgrendeld zijn — zie app/lib/subscription.ts
+// effectiveTier() voor hoe dit samen met User.overrideTier wordt bepaald.
 enum SubscriptionTier {
   GRATIS
   PLUS
   PRO
+}
+
+enum BillingInterval {
+  MAANDELIJKS
+  JAARLIJKS
+}
+
+// Mirrort Mollie's eigen subscription-statussen 1-op-1 (zie
+// @mollie/api-client SubscriptionStatus) om vertaalfouten in de
+// webhook-verwerking te voorkomen. GEEN = er is nog nooit een Mollie-
+// abonnement geweest (bijv. een Gratis-tenant die nooit heeft betaald).
+enum MollieSubscriptionStatus {
+  GEEN
+  PENDING
+  ACTIVE
+  CANCELED
+  SUSPENDED
+  COMPLETED
 }
 
 enum Lettertype {
@@ -54,12 +71,30 @@ model User {
   email        String   @unique
   bedrijfsnaam String
   slug         String   @unique
-  // Zie SubscriptionTier — bepaalt of de kleuren/lettertype-opties in
-  // Branding beschikbaar zijn en of de "Powered by Kostenplan"-badge
-  // verplicht getoond wordt op het klantenportaal.
+  // Het abonnement zoals Mollie-webhooks het bijhouden — zie effectiveTier().
   subscriptionTier SubscriptionTier @default(GRATIS)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  // Handmatige override — uitsluitend via Supabase Studio (Table editor of
+  // SQL Editor) te zetten, nooit via de app-UI, en nooit door de
+  // Mollie-webhook aangepast. Heeft absolute voorrang op subscriptionTier.
+  // Zet dit bijv. op PRO om iemand (support, demo, VIP-klant) volledig
+  // toegang te geven ongeacht hun daadwerkelijke betaalstatus:
+  //   update "User" set "overrideTier" = 'PRO' where email = '...';
+  // Terugzetten naar het echte, betaalde abonnement: zet het veld op NULL.
+  overrideTier SubscriptionTier?
+
+  // Mollie-koppeling. mollieCustomerId wordt aangemaakt bij de eerste
+  // checkout-poging; mollieSubscriptionId pas zodra de eerste betaling is
+  // geslaagd en er een doorlopend abonnement is aangemaakt.
+  mollieCustomerId     String?                  @unique
+  mollieSubscriptionId String?                  @unique
+  subscriptionStatus   MollieSubscriptionStatus @default(GEEN)
+  billingInterval      BillingInterval?
+  // Informatief: wanneer Mollie de eerstvolgende/laatst bekende
+  // termijnbetaling verwacht (subscription.nextPaymentDate).
+  huidigePeriodeEind DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   costSettings CostSettings?
   branding     Branding?
@@ -79,9 +114,10 @@ model Branding {
   logoUrl String?
 
   // Kleuren en lettertype: alleen te wijzigen/tonen op Plus/Pro (zie
-  // updateBrandingAction voor de server-side afdwinging). Gratis-tenants
-  // houden altijd de Kostenplan-standaardkleuren en het standaardlettertype,
-  // ongeacht wat hier is opgeslagen (bijv. na een downgrade).
+  // effectiveTier() in app/lib/subscription.ts en updateBrandingAction voor
+  // de server-side afdwinging). Gratis-tenants houden altijd de
+  // Kostenplan-standaardkleuren en het standaardlettertype, ongeacht wat
+  // hier is opgeslagen (bijv. na een downgrade).
   primaireKleur    String     @default("#15803d")
   achtergrondKleur String     @default("#f7faf8")
   lettertype       Lettertype @default(MODERN)

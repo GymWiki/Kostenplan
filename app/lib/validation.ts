@@ -148,6 +148,7 @@ export const brandingSchema = z.object({
   contactPositie: z.enum(["BOVENAAN", "ONDERAAN"], "Kies een positie"),
 });
 
-export const subscriptionTierSchema = z.object({
-  subscriptionTier: z.enum(["GRATIS", "PLUS", "PRO"], "Kies een abonnement"),
+export const checkoutSchema = z.object({
+  plan: z.enum(["GRATIS", "PLUS", "PRO"], "Kies een pakket"),
+  interval: z.enum(["MAANDELIJKS", "JAARLIJKS"], "Kies een betaalperiode"),
 });
