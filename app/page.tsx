@@ -62,7 +62,7 @@ export default function Home() {
           <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 sm:py-28">
             <div className="mx-auto max-w-2xl text-center">
               <span className="animate-fade-in-up inline-flex items-center rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-                Voor hoveniersbedrijven
+                Voor vakmensen
               </span>
               <h1
                 className="animate-fade-in-up mt-6 text-4xl font-bold tracking-tight text-balance text-foreground sm:text-5xl"

@@ -758,6 +758,18 @@ function Summary({
     rows.push({ label: "Voorrijkosten", value: breakdown.voorrijkosten });
   }
 
+  // Als een kostenpost wél meetelt in het totaal maar zijn eigen regel
+  // verborgen is (CostSettings.*Zichtbaar uit), mag het Subtotaal niet
+  // getoond worden: dat zou de klant alsnog in staat stellen de verborgen
+  // post te herleiden door de zichtbare regels van het subtotaal af te
+  // trekken. In dat geval tonen we alleen de wél-zichtbare regels en het
+  // eindtotaal, zonder subtotaal/btw-tussenstap.
+  const heeftVerborgenKostenpost =
+    (costSettings.arbeidEnabled && !costSettings.arbeidZichtbaar) ||
+    (costSettings.materiaalEnabled && !costSettings.materiaalZichtbaar) ||
+    (costSettings.transportEnabled && !costSettings.transportZichtbaar) ||
+    (costSettings.voorrijEnabled && !costSettings.voorrijZichtbaar);
+
   return (
     <>
       <Card className="border-[var(--brand-primary)]/30">
@@ -784,21 +796,25 @@ function Summary({
                       </span>
                     </div>
                   ))}
-                  <div className="my-1 border-t border-border" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Subtotaal</span>
-                    <span className="font-medium text-foreground">
-                      {formatCurrencyRange(breakdown.subtotaal)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">
-                      Btw ({costSettings.btwPercentage}%)
-                    </span>
-                    <span className="font-medium text-foreground">
-                      {formatCurrencyRange(breakdown.btw)}
-                    </span>
-                  </div>
+                  {!heeftVerborgenKostenpost && (
+                    <>
+                      <div className="my-1 border-t border-border" />
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Subtotaal</span>
+                        <span className="font-medium text-foreground">
+                          {formatCurrencyRange(breakdown.subtotaal)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">
+                          Btw ({costSettings.btwPercentage}%)
+                        </span>
+                        <span className="font-medium text-foreground">
+                          {formatCurrencyRange(breakdown.btw)}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
