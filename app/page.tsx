@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   ArrowRight,
   BadgeCheck,
@@ -8,33 +7,17 @@ import {
   MousePointerClick,
   Phone,
   Scale,
-  Sprout,
 } from "lucide-react";
 import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { ThemeToggle } from "@/app/components/ui/theme-toggle";
 import { Reveal } from "@/app/components/ui/reveal";
+import { SiteHeader } from "@/app/components/marketing/site-header";
+import { SiteFooter } from "@/app/components/marketing/site-footer";
 
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-foreground">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Sprout className="h-4 w-4" />
-            </span>
-            Kostenplan
-          </Link>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <LinkButton href="/login" variant="ghost" className="hidden sm:inline-flex">
-              Inloggen
-            </LinkButton>
-            <LinkButton href="/registreren">Start nu gratis</LinkButton>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="flex-1">
         {/* HERO */}
@@ -220,11 +203,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-border py-8">
-        <div className="mx-auto max-w-6xl px-4 text-center text-sm text-muted-foreground sm:px-6">
-          © {new Date().getFullYear()} Kostenplan. Alle rechten voorbehouden.
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
