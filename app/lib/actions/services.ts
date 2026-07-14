@@ -20,6 +20,11 @@ function parseServiceForm(formData: FormData) {
     uurtarief: formData.get("uurtarief") ?? 0,
     geschatteUren: formData.get("geschatteUren") ?? 0,
     vastePrijs: formData.get("vastePrijs") ?? 0,
+    bandbreedteType: formData.get("bandbreedteType") || "VAST",
+    geschatteUrenMin: formData.get("geschatteUrenMin"),
+    geschatteUrenMax: formData.get("geschatteUrenMax"),
+    vastePrijsMin: formData.get("vastePrijsMin"),
+    vastePrijsMax: formData.get("vastePrijsMax"),
     icoon: formData.get("icoon") ?? "",
     actief: formData.get("actief") === "on",
   });

@@ -12,6 +12,9 @@ function parseMaterialOptionForm(formData: FormData) {
   return materialOptionSchema.safeParse({
     naam: formData.get("naam"),
     prijs: formData.get("prijs"),
+    prijsType: formData.get("prijsType") || "VAST",
+    prijsMin: formData.get("prijsMin"),
+    prijsMax: formData.get("prijsMax"),
     stapgrootte: formData.get("stapgrootte"),
     actief: formData.get("actief") === "on" || formData.get("actief") === "true",
   });

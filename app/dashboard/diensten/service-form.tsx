@@ -22,6 +22,7 @@ export function ServiceForm({
   const [prijsType, setPrijsType] = useState<ServicePrijsType>(
     service?.prijsType ?? "UURTARIEF"
   );
+  const [bandbreedte, setBandbreedte] = useState(service?.bandbreedteType === "BANDBREEDTE");
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -89,18 +90,90 @@ export function ServiceForm({
               />
             </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="geschatteUren">Geschat aantal uren</Label>
-            <DecimalInput
-              id="geschatteUren"
-              name="geschatteUren"
-              defaultValue={service?.geschatteUren ?? 0}
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              Kostprijs = uurtarief × geschatte uren.
-            </p>
+          {bandbreedte ? (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="geschatteUrenMin">Geschat aantal uren (min – max)</Label>
+              <div className="flex items-center gap-2">
+                <DecimalInput
+                  id="geschatteUrenMin"
+                  name="geschatteUrenMin"
+                  placeholder="Min"
+                  defaultValue={service?.geschatteUrenMin ?? service?.geschatteUren ?? 0}
+                  required
+                />
+                <DecimalInput
+                  id="geschatteUrenMax"
+                  name="geschatteUrenMax"
+                  placeholder="Max"
+                  defaultValue={service?.geschatteUrenMax ?? service?.geschatteUren ?? 0}
+                  required
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Kostprijs = uurtarief × geschatte uren (bandbreedte).
+              </p>
+              <input type="hidden" name="geschatteUren" value={service?.geschatteUren ?? 0} />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="geschatteUren">Geschat aantal uren</Label>
+              <DecimalInput
+                id="geschatteUren"
+                name="geschatteUren"
+                defaultValue={service?.geschatteUren ?? 0}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Kostprijs = uurtarief × geschatte uren.
+              </p>
+              <input
+                type="hidden"
+                name="geschatteUrenMin"
+                value={service?.geschatteUrenMin ?? service?.geschatteUren ?? 0}
+              />
+              <input
+                type="hidden"
+                name="geschatteUrenMax"
+                value={service?.geschatteUrenMax ?? service?.geschatteUren ?? 0}
+              />
+            </div>
+          )}
+        </div>
+      ) : bandbreedte ? (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="vastePrijsMin">Vaste projectprijs (min – max)</Label>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                €
+              </span>
+              <DecimalInput
+                id="vastePrijsMin"
+                name="vastePrijsMin"
+                className="pl-7"
+                placeholder="Min"
+                defaultValue={service?.vastePrijsMin ?? service?.vastePrijs ?? 0}
+                required
+              />
+            </div>
+            <div className="relative flex-1">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                €
+              </span>
+              <DecimalInput
+                id="vastePrijsMax"
+                name="vastePrijsMax"
+                className="pl-7"
+                placeholder="Max"
+                defaultValue={service?.vastePrijsMax ?? service?.vastePrijs ?? 0}
+                required
+              />
+            </div>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Een bandbreedte voor deze dienst, ongeacht de omvang van het project.
+          </p>
+          <input type="hidden" name="vastePrijs" value={service?.vastePrijs ?? 0} />
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">
@@ -120,19 +193,37 @@ export function ServiceForm({
           <p className="text-xs text-muted-foreground">
             Eén vast bedrag voor deze dienst, ongeacht de omvang van het project.
           </p>
+          <input
+            type="hidden"
+            name="vastePrijsMin"
+            value={service?.vastePrijsMin ?? service?.vastePrijs ?? 0}
+          />
+          <input
+            type="hidden"
+            name="vastePrijsMax"
+            value={service?.vastePrijsMax ?? service?.vastePrijs ?? 0}
+          />
         </div>
       )}
 
+      <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <input
+          type="checkbox"
+          checked={bandbreedte}
+          onChange={(e) => setBandbreedte(e.target.checked)}
+          className="h-4 w-4 rounded border-input accent-primary"
+        />
+        Prijs is een bandbreedte in plaats van een vast bedrag
+      </label>
+      <input type="hidden" name="bandbreedteType" value={bandbreedte ? "BANDBREEDTE" : "VAST"} />
+
       {/* De niet-actieve prijsvorm blijft verborgen meegestuurd zodat het
-          zod-schema (dat altijd alle drie de velden verwacht) niet klaagt,
-          ook al toont de UI er maar één set. */}
+          zod-schema (dat altijd alle velden verwacht) niet klaagt, ook al
+          toont de UI er maar één set. */}
       {prijsType === "UURTARIEF" ? (
         <input type="hidden" name="vastePrijs" value={service?.vastePrijs ?? 0} />
       ) : (
-        <>
-          <input type="hidden" name="uurtarief" value={service?.uurtarief ?? 0} />
-          <input type="hidden" name="geschatteUren" value={service?.geschatteUren ?? 0} />
-        </>
+        <input type="hidden" name="uurtarief" value={service?.uurtarief ?? 0} />
       )}
 
       <div className="flex flex-col gap-1.5">

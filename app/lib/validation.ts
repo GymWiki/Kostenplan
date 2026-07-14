@@ -86,18 +86,58 @@ export const costSettingsSchema = z.object({
       .min(0, "Btw kan niet negatief zijn")
       .max(100, "Btw kan niet hoger zijn dan 100%")
   ),
+
+  bandbreedteModus: z.enum(["GEEN", "PER_PRODUCT", "TOTAAL"], "Kies een bandbreedte-modus"),
+  bandbreedteMargeOmlaag: z.preprocess(
+    normalizeDecimalInput,
+    z.coerce
+      .number("Vul een geldig percentage in")
+      .min(0, "Marge kan niet negatief zijn")
+      .max(50, "Marge kan niet hoger zijn dan 50%")
+  ),
+  bandbreedteMargeOmhoog: z.preprocess(
+    normalizeDecimalInput,
+    z.coerce
+      .number("Vul een geldig percentage in")
+      .min(0, "Marge kan niet negatief zijn")
+      .max(50, "Marge kan niet hoger zijn dan 50%")
+  ),
 });
 
-export const serviceSchema = z.object({
-  naam: z.string().trim().min(1, "Vul een naam in").max(120),
-  omschrijving: z.string().trim().max(500).optional().or(z.literal("")),
-  prijsType: z.enum(["UURTARIEF", "VASTE_PRIJS"], "Kies een prijsvorm"),
-  uurtarief: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
-  geschatteUren: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
-  vastePrijs: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
-  icoon: optionalIconName,
-  actief: z.boolean(),
-});
+export const serviceSchema = z
+  .object({
+    naam: z.string().trim().min(1, "Vul een naam in").max(120),
+    omschrijving: z.string().trim().max(500).optional().or(z.literal("")),
+    prijsType: z.enum(["UURTARIEF", "VASTE_PRIJS"], "Kies een prijsvorm"),
+    uurtarief: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
+    geschatteUren: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
+    vastePrijs: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
+    bandbreedteType: z.enum(["VAST", "BANDBREEDTE"], "Kies vast of bandbreedte"),
+    geschatteUrenMin: optionalNonNegativeNumber,
+    geschatteUrenMax: optionalNonNegativeNumber,
+    vastePrijsMin: optionalNonNegativeNumber,
+    vastePrijsMax: optionalNonNegativeNumber,
+    icoon: optionalIconName,
+    actief: z.boolean(),
+  })
+  .refine(
+    (data) =>
+      data.bandbreedteType !== "BANDBREEDTE" ||
+      data.prijsType !== "UURTARIEF" ||
+      (data.geschatteUrenMin != null &&
+        data.geschatteUrenMax != null &&
+        data.geschatteUrenMin <= data.geschatteUrenMax),
+    { message: "Minimum aantal uren moet kleiner of gelijk zijn aan maximum", path: ["geschatteUrenMax"] }
+  )
+  .refine(
+    (data) =>
+      data.bandbreedteType !== "BANDBREEDTE" ||
+      data.prijsType !== "VASTE_PRIJS" ||
+      (data.vastePrijsMin != null &&
+        data.vastePrijsMax != null &&
+        data.vastePrijsMin <= data.vastePrijsMax),
+    { message: "Minimumprijs moet kleiner of gelijk zijn aan maximumprijs", path: ["vastePrijsMax"] }
+  );
 
 export const productSchema = z.object({
   naam: z.string().trim().min(1, "Vul een naam in").max(120),
@@ -116,12 +156,22 @@ export const materialCategorySchema = z.object({
   verplicht: z.coerce.boolean().default(false),
 });
 
-export const materialOptionSchema = z.object({
-  naam: z.string().trim().min(1, "Vul een naam in").max(120),
-  prijs: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
-  stapgrootte: optionalPositiveNumber,
-  actief: z.boolean(),
-});
+export const materialOptionSchema = z
+  .object({
+    naam: z.string().trim().min(1, "Vul een naam in").max(120),
+    prijs: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
+    prijsType: z.enum(["VAST", "BANDBREEDTE"], "Kies vast of bandbreedte"),
+    prijsMin: optionalNonNegativeNumber,
+    prijsMax: optionalNonNegativeNumber,
+    stapgrootte: optionalPositiveNumber,
+    actief: z.boolean(),
+  })
+  .refine(
+    (data) =>
+      data.prijsType !== "BANDBREEDTE" ||
+      (data.prijsMin != null && data.prijsMax != null && data.prijsMin <= data.prijsMax),
+    { message: "Minimumprijs moet kleiner of gelijk zijn aan maximumprijs", path: ["prijsMax"] }
+  );
 
 export const extraOptionSchema = z.object({
   naam: z.string().trim().min(1, "Vul een naam in").max(120),

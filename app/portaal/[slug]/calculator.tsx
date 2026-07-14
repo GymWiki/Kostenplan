@@ -3,8 +3,13 @@
 import { useActionState, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Minus, Plus, Printer, Mail, Phone, Image as ImageIcon, Check } from "lucide-react";
-import { calculateBreakdown } from "@/app/lib/calculate";
-import { formatCurrency } from "@/app/lib/format";
+import {
+  bedragTop,
+  calculateBreakdownRange,
+  serviceVastePrijs,
+  type Bedrag,
+} from "@/app/lib/calculate";
+import { formatCurrency, formatCurrencyRange } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Logo } from "@/app/components/ui/logo";
 import { DecimalInput, Input, Label, Select } from "@/app/components/ui/input";
@@ -119,7 +124,7 @@ export function Calculator({
 
   const breakdown = useMemo(
     () =>
-      calculateBreakdown({
+      calculateBreakdownRange({
         services,
         products,
         serviceSelected,
@@ -158,10 +163,7 @@ export function Calculator({
       regels.push({
         naam: service.naam,
         type: "dienst",
-        prijs:
-          service.prijsType === "VASTE_PRIJS"
-            ? service.vastePrijs
-            : service.uurtarief * service.geschatteUren,
+        prijs: serviceVastePrijs(service),
       });
     }
 
@@ -192,13 +194,13 @@ export function Calculator({
 
     return {
       regels,
-      arbeidskosten: breakdown.arbeidskosten,
-      materiaalkosten: breakdown.materiaalkosten,
-      transportkosten: breakdown.transportkosten,
-      voorrijkosten: breakdown.voorrijkosten,
-      subtotaal: breakdown.subtotaal,
-      btw: breakdown.btw,
-      totaal: breakdown.totaal,
+      arbeidskosten: bedragTop(breakdown.arbeidskosten),
+      materiaalkosten: bedragTop(breakdown.materiaalkosten),
+      transportkosten: bedragTop(breakdown.transportkosten),
+      voorrijkosten: bedragTop(breakdown.voorrijkosten),
+      subtotaal: bedragTop(breakdown.subtotaal),
+      btw: bedragTop(breakdown.btw),
+      totaal: bedragTop(breakdown.totaal),
     };
   }, [services, products, serviceSelected, productQty, materialSelections, extraSelections, breakdown]);
 
@@ -399,10 +401,19 @@ function ServiceRow({
   selected: boolean;
   onToggle: (selected: boolean) => void;
 }) {
-  const prijs =
+  const heeftBandbreedte = service.bandbreedteType === "BANDBREEDTE";
+  const prijs: Bedrag =
     service.prijsType === "VASTE_PRIJS"
-      ? service.vastePrijs
-      : service.uurtarief * service.geschatteUren;
+      ? heeftBandbreedte && service.vastePrijsMin != null && service.vastePrijsMax != null
+        ? { min: service.vastePrijsMin, max: service.vastePrijsMax }
+        : service.vastePrijs
+      : heeftBandbreedte && service.geschatteUrenMin != null && service.geschatteUrenMax != null
+        ? {
+            min: service.uurtarief * service.geschatteUrenMin,
+            max: service.uurtarief * service.geschatteUrenMax,
+          }
+        : service.uurtarief * service.geschatteUren;
+  const prijsGetal = bedragTop(prijs);
   const ServiceIcon = getProductIcon(service.icoon);
 
   return (
@@ -432,13 +443,20 @@ function ServiceRow({
           <p className="mt-0.5 text-sm text-muted-foreground">{service.omschrijving}</p>
         )}
       </div>
-      {costSettings.arbeidEnabled && prijs > 0 && (
+      {costSettings.arbeidEnabled && prijsGetal > 0 && (
         <span className="shrink-0 text-sm font-medium text-muted-foreground">
-          {formatCurrency(prijs)}
+          {formatCurrencyRange(prijs)}
         </span>
       )}
     </label>
   );
+}
+
+function materiaalPrijsWeergave(material: MaterialOption): Bedrag {
+  if (material.prijsType === "BANDBREEDTE" && material.prijsMin != null && material.prijsMax != null) {
+    return { min: material.prijsMin, max: material.prijsMax };
+  }
+  return material.prijs;
 }
 
 function ProductCard({
@@ -554,7 +572,8 @@ function ProductCard({
                               {material.naam}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              {formatCurrency(material.prijs)} / {unitLabel(product.eenheid)}
+                              {formatCurrencyRange(materiaalPrijsWeergave(material))} /{" "}
+                              {unitLabel(product.eenheid)}
                             </span>
                           </button>
                         );
@@ -570,8 +589,8 @@ function ProductCard({
                       <option value="">Kies {category.naam.toLowerCase()}</option>
                       {category.materialen.map((material) => (
                         <option key={material.id} value={material.id}>
-                          {material.naam} — {formatCurrency(material.prijs)} /{" "}
-                          {unitLabel(product.eenheid)}
+                          {material.naam} — {formatCurrencyRange(materiaalPrijsWeergave(material))}{" "}
+                          / {unitLabel(product.eenheid)}
                         </option>
                       ))}
                     </Select>
@@ -708,7 +727,7 @@ function Summary({
   heeftOntbrekendeVerplichteMaterialen,
 }: {
   slug: string;
-  breakdown: ReturnType<typeof calculateBreakdown>;
+  breakdown: ReturnType<typeof calculateBreakdownRange>;
   snapshot: LeadSnapshot;
   costSettings: CostSettings;
   bedankTekst: string;
@@ -725,7 +744,7 @@ function Summary({
   const [leadEmail, setLeadEmail] = useState("");
   const [leadTelefoon, setLeadTelefoon] = useState("");
 
-  const rows: { label: string; value: number }[] = [];
+  const rows: { label: string; value: Bedrag }[] = [];
   if (costSettings.arbeidEnabled && costSettings.arbeidZichtbaar) {
     rows.push({ label: "Arbeidskosten", value: breakdown.arbeidskosten });
   }
@@ -761,7 +780,7 @@ function Summary({
                     <div key={row.label} className="flex items-center justify-between">
                       <span className="text-muted-foreground">{row.label}</span>
                       <span className="font-medium text-foreground">
-                        {formatCurrency(row.value)}
+                        {formatCurrencyRange(row.value)}
                       </span>
                     </div>
                   ))}
@@ -769,7 +788,7 @@ function Summary({
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Subtotaal</span>
                     <span className="font-medium text-foreground">
-                      {formatCurrency(breakdown.subtotaal)}
+                      {formatCurrencyRange(breakdown.subtotaal)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -777,7 +796,7 @@ function Summary({
                       Btw ({costSettings.btwPercentage}%)
                     </span>
                     <span className="font-medium text-foreground">
-                      {formatCurrency(breakdown.btw)}
+                      {formatCurrencyRange(breakdown.btw)}
                     </span>
                   </div>
                 </div>
@@ -786,9 +805,16 @@ function Summary({
               <div className="flex items-center justify-between rounded-lg bg-accent px-3 py-3">
                 <span className="font-semibold text-accent-foreground">Totaal (incl. btw)</span>
                 <span className="text-lg font-bold text-accent-foreground">
-                  {formatCurrency(breakdown.totaal)}
+                  {formatCurrencyRange(breakdown.totaal)}
                 </span>
               </div>
+              {breakdown.modus === "TOTAAL" &&
+                breakdown.margeOmlaag != null &&
+                breakdown.margeOmhoog != null && (
+                  <p className="text-xs text-muted-foreground">
+                    Indicatie −{breakdown.margeOmlaag}% / +{breakdown.margeOmhoog}%
+                  </p>
+                )}
 
               {heeftOntbrekendeVerplichteMaterialen && (
                 <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning">

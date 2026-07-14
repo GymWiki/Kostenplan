@@ -26,6 +26,29 @@ enum ExtraOptionType {
   PER_STUK
 }
 
+// Of een prijs een vast bedrag is, of een bandbreedte (min/max). Gebruikt
+// door MaterialOption en Service — zie de min/max-velden op die modellen.
+enum PrijsType {
+  VAST
+  BANDBREEDTE
+}
+
+// Per-berekening instelling (zie CostSettings.bandbreedteModus) die bepaalt
+// hoe bandbreedte-prijzen worden doorgerekend. De standen sluiten elkaar uit
+// — zie app/lib/calculate.ts calculateBreakdownRange() voor de doorrekening.
+enum BandbreedteModus {
+  // Huidig gedrag: één vast bedrag. Bandbreedte-prijzen (indien aanwezig)
+  // worden herleid tot hun gemiddelde van min/max.
+  GEEN
+  // Rekent twee keer door: eenmaal met alle minima, eenmaal met alle
+  // maxima van bandbreedte-producten/diensten. Vaste prijzen tellen in
+  // beide scenario's hetzelfde mee.
+  PER_PRODUCT
+  // Rekent één keer door met vaste bedragen (bandbreedte-prijzen herleid
+  // tot hun gemiddelde), en past daarna een marge toe op het eindtotaal.
+  TOTAAL
+}
+
 // Bepaalt welke features ontgrendeld zijn — zie app/lib/subscription.ts
 // effectiveTier() voor hoe dit samen met User.overrideTier wordt bepaald.
 enum SubscriptionTier {
@@ -196,6 +219,12 @@ model CostSettings {
 
   btwPercentage Float @default(21)
 
+  // Prijsbandbreedte — per berekening, sluit de drie standen wederzijds uit
+  // (zie BandbreedteModus). Marges gelden alleen voor modus TOTAAL.
+  bandbreedteModus        BandbreedteModus @default(GEEN)
+  bandbreedteMargeOmlaag  Float            @default(10)
+  bandbreedteMargeOmhoog  Float            @default(10)
+
   updatedAt DateTime @updatedAt
 }
 
@@ -217,6 +246,14 @@ model Service {
   geschatteUren Float            @default(0)
   // Bij VASTE_PRIJS: kostprijs = vastePrijs, ongeacht uren.
   vastePrijs    Float            @default(0)
+  // Vast (default) of bandbreedte — zie PrijsType. Bij BANDBREEDTE wordt,
+  // afhankelijk van prijsType hierboven, geschatteUrenMin/Max (UURTARIEF)
+  // of vastePrijsMin/Max (VASTE_PRIJS) gebruikt in plaats van het vaste veld.
+  bandbreedteType   PrijsType @default(VAST)
+  geschatteUrenMin  Float?
+  geschatteUrenMax  Float?
+  vastePrijsMin     Float?
+  vastePrijsMax     Float?
   // Naam van een lucide-react icoon uit app/lib/icons.ts, bijv. "Sprout".
   // Optioneel, puur decoratief.
   icoon         String?
@@ -305,6 +342,11 @@ model MaterialOption {
 
   naam        String
   prijs       Float   @default(0)
+  // Vast (default) of bandbreedte — zie PrijsType. Bij BANDBREEDTE wordt
+  // prijsMin/prijsMax gebruikt in plaats van het vaste `prijs`-veld.
+  prijsType   PrijsType @default(VAST)
+  prijsMin    Float?
+  prijsMax    Float?
   // Wordt verkocht per veelvoud van deze hoeveelheid (in de eenheid van het
   // product), bijv. 1.8 voor een paal die per 1,8 m wordt ingekocht. Leeg
   // betekent doorlopend geprijsd, zonder afronding.

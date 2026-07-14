@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Pencil, Wrench } from "lucide-react";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { formatCurrency } from "@/app/lib/format";
+import { formatCurrency, formatCurrencyRange } from "@/app/lib/format";
 import { getProductIcon } from "@/app/lib/icons";
 import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -90,9 +90,21 @@ export default async function DienstenPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {service.prijsType === "UURTARIEF"
-                        ? `${formatCurrency(service.uurtarief)}/uur × ${service.geschatteUren} uur`
-                        : `Vaste prijs: ${formatCurrency(service.vastePrijs)}`}
+                      {service.prijsType === "UURTARIEF" ? (
+                        service.bandbreedteType === "BANDBREEDTE" &&
+                        service.geschatteUrenMin != null &&
+                        service.geschatteUrenMax != null ? (
+                          `${formatCurrency(service.uurtarief)}/uur × ${service.geschatteUrenMin}–${service.geschatteUrenMax} uur`
+                        ) : (
+                          `${formatCurrency(service.uurtarief)}/uur × ${service.geschatteUren} uur`
+                        )
+                      ) : service.bandbreedteType === "BANDBREEDTE" &&
+                        service.vastePrijsMin != null &&
+                        service.vastePrijsMax != null ? (
+                        `Vaste prijs: ${formatCurrencyRange({ min: service.vastePrijsMin, max: service.vastePrijsMax })}`
+                      ) : (
+                        `Vaste prijs: ${formatCurrency(service.vastePrijs)}`
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <ActiveToggle

@@ -12,7 +12,7 @@ import { Switch } from "@/app/components/ui/switch";
 import { cn } from "@/app/lib/cn";
 import { Eye, Layers } from "lucide-react";
 import { arbeidEenheidEnkelvoud, arbeidEenheidMeervoud } from "@/app/lib/arbeid";
-import type { ArbeidStapEenheid, CostSettings } from "@/app/generated/prisma/client";
+import type { ArbeidStapEenheid, BandbreedteModus, CostSettings } from "@/app/generated/prisma/client";
 
 export function CostSettingsForm({
   costSettings,
@@ -31,6 +31,9 @@ export function CostSettingsForm({
   const [transportOn, setTransportOn] = useState(costSettings.transportEnabled);
   const [voorrijOn, setVoorrijOn] = useState(costSettings.voorrijEnabled);
   const [materiaalOn, setMateriaalOn] = useState(costSettings.materiaalEnabled);
+  const [bandbreedteModus, setBandbreedteModus] = useState<BandbreedteModus>(
+    costSettings.bandbreedteModus
+  );
 
   const fieldErrors = state?.fieldErrors;
 
@@ -170,6 +173,93 @@ export function CostSettingsForm({
           description="Sta toe dat een product een eigen opslagpercentage heeft, in plaats van steeds deze opslag."
         />
       </CostTypeCard>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Prijsbandbreedte</CardTitle>
+          <CardDescription>
+            Geef een indicatieve bandbreedte in plaats van één vast bedrag. De drie standen
+            sluiten elkaar uit.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <FieldRow>
+            <Field
+              label="Modus"
+              htmlFor="bandbreedteModus"
+              error={fieldErrors?.bandbreedteModus}
+            >
+              <Select
+                id="bandbreedteModus"
+                name="bandbreedteModus"
+                value={bandbreedteModus}
+                onChange={(e) => setBandbreedteModus(e.target.value as BandbreedteModus)}
+              >
+                <option value="GEEN">Geen bandbreedte — één vast bedrag</option>
+                <option value="PER_PRODUCT">Per product — optellen van min/max-prijzen</option>
+                <option value="TOTAAL">Over het totaal — marge op het eindtotaal</option>
+              </Select>
+            </Field>
+          </FieldRow>
+          {bandbreedteModus === "PER_PRODUCT" && (
+            <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
+              Producten en diensten met een bandbreedte-prijs (in te stellen bij het product of de
+              dienst zelf) tellen mee als bandbreedte. Items met een vaste prijs tellen in beide
+              scenario&apos;s hetzelfde mee.
+            </p>
+          )}
+          {bandbreedteModus === "TOTAAL" && (
+            <>
+              <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
+                Alle regels rekenen met hun vaste prijs; daarna wordt op het eindtotaal onderstaande
+                marge toegepast.
+              </p>
+              <FieldRow>
+                <Field
+                  label="Marge omlaag"
+                  htmlFor="bandbreedteMargeOmlaag"
+                  error={fieldErrors?.bandbreedteMargeOmlaag}
+                >
+                  <CurrencyInput
+                    id="bandbreedteMargeOmlaag"
+                    name="bandbreedteMargeOmlaag"
+                    defaultValue={costSettings.bandbreedteMargeOmlaag}
+                    suffix="%"
+                    symbol={false}
+                  />
+                </Field>
+                <Field
+                  label="Marge omhoog"
+                  htmlFor="bandbreedteMargeOmhoog"
+                  error={fieldErrors?.bandbreedteMargeOmhoog}
+                >
+                  <CurrencyInput
+                    id="bandbreedteMargeOmhoog"
+                    name="bandbreedteMargeOmhoog"
+                    defaultValue={costSettings.bandbreedteMargeOmhoog}
+                    suffix="%"
+                    symbol={false}
+                  />
+                </Field>
+              </FieldRow>
+            </>
+          )}
+          {bandbreedteModus !== "TOTAAL" && (
+            <>
+              <input
+                type="hidden"
+                name="bandbreedteMargeOmlaag"
+                value={costSettings.bandbreedteMargeOmlaag}
+              />
+              <input
+                type="hidden"
+                name="bandbreedteMargeOmhoog"
+                value={costSettings.bandbreedteMargeOmhoog}
+              />
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

@@ -37,6 +37,10 @@ export async function updateCostSettingsAction(
     materiaalMargePerProduct: formData.get("materiaalMargePerProduct") === "on",
 
     btwPercentage: formData.get("btwPercentage"),
+
+    bandbreedteModus: formData.get("bandbreedteModus") || "GEEN",
+    bandbreedteMargeOmlaag: formData.get("bandbreedteMargeOmlaag") ?? 10,
+    bandbreedteMargeOmhoog: formData.get("bandbreedteMargeOmhoog") ?? 10,
   };
 
   const parsed = costSettingsSchema.safeParse(raw);

@@ -20,9 +20,97 @@ import { DecimalInput, Input, Label } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { PhotoInput } from "@/app/components/ui/photo-input";
-import { formatCurrency } from "@/app/lib/format";
+import { formatCurrency, formatCurrencyRange } from "@/app/lib/format";
 import { unitLabel } from "@/app/lib/units";
 import type { MaterialCategory, MaterialOption } from "@/app/generated/prisma/client";
+
+// Gedeeld door het nieuw-materiaal-formulier en het bewerk-formulier: een
+// vaste prijs, of een bandbreedte (min/max) — zie PrijsType in het schema.
+// Bewust controlled (niet defaultValue) zodat de ingevoerde waarden een
+// mislukte submit overleven.
+function MaterialPrijsVeld({
+  idPrefix,
+  defaultPrijsType = "VAST",
+  defaultPrijs = 0,
+  defaultPrijsMin,
+  defaultPrijsMax,
+}: {
+  idPrefix: string;
+  defaultPrijsType?: "VAST" | "BANDBREEDTE";
+  defaultPrijs?: number;
+  defaultPrijsMin?: number | null;
+  defaultPrijsMax?: number | null;
+}) {
+  const [bandbreedte, setBandbreedte] = useState(defaultPrijsType === "BANDBREEDTE");
+  const [prijs, setPrijs] = useState(String(defaultPrijs));
+  const [prijsMin, setPrijsMin] = useState(String(defaultPrijsMin ?? defaultPrijs));
+  const [prijsMax, setPrijsMax] = useState(String(defaultPrijsMax ?? defaultPrijs));
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <Label htmlFor={`${idPrefix}-prijs`}>Prijs</Label>
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={bandbreedte}
+            onChange={(e) => setBandbreedte(e.target.checked)}
+            className="h-3.5 w-3.5 rounded border-input accent-primary"
+          />
+          Bandbreedte
+        </label>
+      </div>
+      <input type="hidden" name="prijsType" value={bandbreedte ? "BANDBREEDTE" : "VAST"} />
+      {bandbreedte ? (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+              €
+            </span>
+            <DecimalInput
+              id={`${idPrefix}-prijsMin`}
+              name="prijsMin"
+              placeholder="Min"
+              value={prijsMin}
+              onChange={(e) => setPrijsMin(e.target.value)}
+              required
+              className="pl-7"
+            />
+          </div>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+              €
+            </span>
+            <DecimalInput
+              id={`${idPrefix}-prijsMax`}
+              name="prijsMax"
+              placeholder="Max"
+              value={prijsMax}
+              onChange={(e) => setPrijsMax(e.target.value)}
+              required
+              className="pl-7"
+            />
+          </div>
+          <input type="hidden" name="prijs" value={prijsMin} />
+        </div>
+      ) : (
+        <div className="relative">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+            €
+          </span>
+          <DecimalInput
+            id={`${idPrefix}-prijs`}
+            name="prijs"
+            value={prijs}
+            onChange={(e) => setPrijs(e.target.value)}
+            required
+            className="pl-7"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
 
 type CategoryWithMaterials = MaterialCategory & { materialen: MaterialOption[] };
 
@@ -243,21 +331,13 @@ function MaterialRow({
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor={`prijs-${material.id}`}>Prijs</Label>
-              <div className="relative">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                  €
-                </span>
-                <DecimalInput
-                  id={`prijs-${material.id}`}
-                  name="prijs"
-                  defaultValue={material.prijs}
-                  required
-                  className="pl-7"
-                />
-              </div>
-            </div>
+            <MaterialPrijsVeld
+              idPrefix={`prijs-${material.id}`}
+              defaultPrijsType={material.prijsType}
+              defaultPrijs={material.prijs}
+              defaultPrijsMin={material.prijsMin}
+              defaultPrijsMax={material.prijsMax}
+            />
             <div className="flex flex-col gap-1.5">
               <Label htmlFor={`stapgrootte-${material.id}`}>Stapgrootte</Label>
               <div className="relative">
@@ -315,7 +395,11 @@ function MaterialRow({
         <div>
           <p className="text-sm font-medium text-foreground">{material.naam}</p>
           <p className="text-xs text-muted-foreground">
-            {formatCurrency(material.prijs)}
+            {material.prijsType === "BANDBREEDTE" &&
+            material.prijsMin != null &&
+            material.prijsMax != null
+              ? formatCurrencyRange({ min: material.prijsMin, max: material.prijsMax })
+              : formatCurrency(material.prijs)}
             {material.stapgrootte
               ? ` — per ${material.stapgrootte} ${unitLabel(productEenheid)}`
               : ""}
@@ -399,15 +483,7 @@ function NewMaterialForm({
         <Input id="new-material-naam" name="naam" placeholder="Bijv. Standaardkleur" required />
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="new-material-prijs">Prijs</Label>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              €
-            </span>
-            <DecimalInput id="new-material-prijs" name="prijs" placeholder="0" className="pl-7" />
-          </div>
-        </div>
+        <MaterialPrijsVeld idPrefix="new-material" />
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="new-material-stapgrootte">Stapgrootte</Label>
           <div className="relative">
