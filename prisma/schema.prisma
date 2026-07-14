@@ -103,6 +103,18 @@ model User {
   // termijnbetaling verwacht (subscription.nextPaymentDate).
   huidigePeriodeEind   DateTime?
 
+  // Onboarding-checklist op het dashboard (zie app/lib/onboarding.ts). De
+  // eerste twee stappen (bedrijfsgegevens, eerste catalogusitem) worden
+  // live afgeleid van bestaande data — nooit hier apart opgeslagen, dat zou
+  // stale kunnen raken (bijv. als iemand hun enige product weer verwijdert).
+  // "Portaal bekeken" heeft geen natuurlijk databaseer-spoor (een publiek,
+  // anoniem bezoek), dus die stap wordt hier wél expliciet vastgelegd zodra
+  // de link vanuit het dashboard wordt aangeklikt. onboardingVoltooid is de
+  // permanente vlag die de widget voorgoed verbergt zodra alle stappen ooit
+  // tegelijk voltooid zijn geweest.
+  onboardingPortaalBekeken Boolean @default(false)
+  onboardingVoltooid       Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
