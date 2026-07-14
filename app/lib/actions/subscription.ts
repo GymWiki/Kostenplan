@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { SequenceType } from "@mollie/api-client";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { getMollieClient } from "@/app/lib/mollie";
+import { getMollieClient, getMollieWebhookUrl } from "@/app/lib/mollie";
 import { getBaseUrl } from "@/app/lib/url";
 import { checkoutSchema } from "@/app/lib/validation";
 import { MOLLIE_INTERVAL, PRIJZEN } from "@/app/lib/subscription";
@@ -84,7 +84,7 @@ export async function startCheckoutAction(
     amount: { currency: "EUR", value: bedrag.toFixed(2) },
     description: `Kostenplan ${plan} (${intervalLabel})`,
     redirectUrl: `${baseUrl}/dashboard/abonnement?checkout=afgerond`,
-    webhookUrl: `${baseUrl}/api/mollie/webhook`,
+    webhookUrl: getMollieWebhookUrl(baseUrl),
     customerId,
     sequenceType: SequenceType.first,
     metadata: { userId: user.id, plan, interval },

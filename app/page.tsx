@@ -1,18 +1,47 @@
+import type { Metadata } from "next";
+import Link from "next/link";
 import {
   ArrowRight,
   BadgeCheck,
   Check,
+  Clock3,
   Filter,
   Frown,
+  Kanban,
+  Mail,
+  MessageCircle,
   MousePointerClick,
   Phone,
   Scale,
+  TrendingUp,
 } from "lucide-react";
 import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
 import { Reveal } from "@/app/components/ui/reveal";
 import { SiteHeader } from "@/app/components/marketing/site-header";
 import { SiteFooter } from "@/app/components/marketing/site-footer";
+import { FaqSection } from "@/app/components/marketing/faq-section";
+import { MarketingPricingTable } from "@/app/components/pricing/marketing-pricing-table";
+import { LEAD_STATUS_LABELS } from "@/app/lib/leads";
+
+export const metadata: Metadata = {
+  title: {
+    absolute: "Kostenplan | Offertecalculator voor Hoveniers — Bespaar Tijd op Offertes",
+  },
+  description:
+    "Automatiseer je offertetraject als hovenier of vakman. Laat klanten zelf een prijsindicatie berekenen, ontvang alleen serieuze aanvragen in je eigen leads-CRM en bespaar per week uren administratiewerk. Start gratis.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Kostenplan | Offertecalculator voor Hoveniers — Bespaar Tijd op Offertes",
+    description:
+      "Laat klanten zelf een prijsindicatie berekenen en ontvang alleen serieuze offerte-aanvragen. Inclusief leads-CRM. Start gratis binnen 5 minuten.",
+    url: "/",
+    siteName: "Kostenplan",
+    locale: "nl_NL",
+    type: "website",
+  },
+};
 
 export default function Home() {
   return (
@@ -117,22 +146,76 @@ export default function Home() {
                   icon={MousePointerClick}
                   title="Klant rekent het zelf uit"
                   description="Bezoekers klikken op jouw link of website hun wensen aan (materialen en diensten) en zien direct een realistische prijsindicatie. Ze hoeven jou hiervoor niet te bellen."
+                  winst="Direct 4 uur administratiewerk per week besparen."
                 />
                 <SolutionPoint
                   icon={Filter}
-                  title="Natuurlijke selectie"
+                  title="Prijsindicatie vooraf"
                   description="Past de prijs niet binnen hun budget? Dan klikken ze weg. Jij hebt er geen minuut tijd aan verspild."
+                  winst="Nooit meer in de auto stappen voor een klant zonder realistisch budget."
                 />
                 <SolutionPoint
                   icon={BadgeCheck}
                   title="Alleen warme leads"
                   description="Past de prijs wél? Dan vraagt de klant via de tool een officiële offerte aan. Jij weet nu zeker dat deze persoon jouw tarieven al heeft geaccepteerd en écht wil kopen."
+                  winst="Geen tijd meer kwijt aan offerte-shoppers die toch niet boeken."
                 />
               </div>
             </Reveal>
 
             <Reveal delay={150}>
               <CalculatorMockup />
+            </Reveal>
+          </div>
+        </section>
+
+        {/* LEADS / CRM */}
+        <section className="border-y border-border bg-secondary/40 py-20 sm:py-28">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16">
+            <Reveal className="lg:order-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
+                <Kanban className="h-3.5 w-3.5 text-primary" />
+                Leads &amp; Offertes
+              </span>
+              <h2 className="mt-4 text-2xl font-semibold text-balance text-foreground sm:text-3xl">
+                Nooit meer een aanvraag kwijt in je inbox.
+              </h2>
+              <p className="mt-4 text-muted-foreground">
+                Elke offerte-aanvraag vanuit je rekentool komt automatisch binnen in je eigen
+                mini-CRM. Geen losse e-mails meer bijhouden — één overzichtelijk Kanban-bord met
+                alle aanvragen en hun status.
+              </p>
+              <div className="mt-8 flex flex-col gap-6">
+                <SolutionPoint
+                  icon={Kanban}
+                  title="Overzichtelijk Kanban-bord"
+                  description="Sleep aanvragen eenvoudig van 'Nieuw' naar 'In behandeling', 'Offerte verstuurd', 'Gewonnen' of 'Verloren'. In één oogopslag zie je waar elke klant staat."
+                  winst="Geen enkele aanvraag raakt meer zoek tussen je e-mails."
+                />
+                <SolutionPoint
+                  icon={Clock3}
+                  title="Status en pipeline-waarde bijhouden"
+                  description="Zie direct de totale verwachte omzet van al je openstaande aanvragen, plus je conversieratio."
+                  winst="Altijd inzicht in hoeveel omzet er nog in je pijplijn zit."
+                />
+                <SolutionPoint
+                  icon={MessageCircle}
+                  title="Direct contact vanuit het dashboard"
+                  description="Bel, mail of open een WhatsApp-chat met één klik vanuit de aanvraag zelf — inclusief de exacte selectie en prijsindicatie van de klant."
+                  winst="Sneller reageren dan de concurrent, zonder telefoonnummers over te typen."
+                />
+              </div>
+              <p className="mt-6 text-sm text-muted-foreground">
+                Beschikbaar vanaf het{" "}
+                <Link href="/#prijzen" className="font-medium text-primary hover:underline">
+                  Plus-pakket
+                </Link>
+                .
+              </p>
+            </Reveal>
+
+            <Reveal delay={150} className="lg:order-1">
+              <LeadsMockup />
             </Reveal>
           </div>
         </section>
@@ -147,17 +230,27 @@ export default function Home() {
             </Reveal>
             <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
               <Reveal delay={0}>
-                <BenefitItem title="Professionele uitstraling">
-                  Je straalt direct transparantie en betrouwbaarheid uit naar je klanten.
+                <BenefitItem
+                  title="Professionele uitstraling"
+                  winst="Meer vertrouwen en hogere conversie op je serieuze offertes."
+                >
+                  Je straalt direct transparantie en betrouwbaarheid uit naar je klanten, met je
+                  eigen logo en huisstijl op de rekentool.
                 </BenefitItem>
               </Reveal>
               <Reveal delay={100}>
-                <BenefitItem title="Focus op het echte werk">
+                <BenefitItem
+                  title="Focus op het echte werk"
+                  winst="Meer omzet draaien met dezelfde uren, want minder tijd kwijt aan de laptop."
+                >
                   Minder tijd achter de computer, meer tijd in de tuin.
                 </BenefitItem>
               </Reveal>
               <Reveal delay={200}>
-                <BenefitItem title="Conversie gaat omhoog">
+                <BenefitItem
+                  title="Conversie gaat omhoog"
+                  winst="Minder offerte-uren verspild aan aanvragen die toch niets worden."
+                >
                   De offertes die je nog wél maakt, worden veel vaker geaccepteerd omdat het
                   budget al is afgestemd.
                 </BenefitItem>
@@ -165,6 +258,26 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* PRIJZEN */}
+        <section id="prijzen" className="border-y border-border bg-secondary/40 py-20 sm:py-28">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <Reveal className="mx-auto max-w-2xl text-center">
+              <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
+                Simpele, eerlijke prijzen
+              </h2>
+              <p className="mt-3 text-muted-foreground">
+                Begin gratis en groei mee. Maandelijks of jaarlijks opzegbaar, geen verplicht
+                contract.
+              </p>
+            </Reveal>
+            <div className="mt-12">
+              <MarketingPricingTable />
+            </div>
+          </div>
+        </section>
+
+        <FaqSection />
 
         {/* FINAL CTA */}
         <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
@@ -224,7 +337,7 @@ function PainCard({
           <Icon className="h-5 w-5" />
         </span>
         <div>
-          <p className="font-semibold text-foreground">{title}</p>
+          <h3 className="font-semibold text-foreground">{title}</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
         </div>
       </CardContent>
@@ -236,10 +349,12 @@ function SolutionPoint({
   icon: Icon,
   title,
   description,
+  winst,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;
+  winst?: string;
 }) {
   return (
     <div className="flex gap-4">
@@ -247,8 +362,16 @@ function SolutionPoint({
         <Icon className="h-5 w-5" />
       </span>
       <div>
-        <p className="font-semibold text-foreground">{title}</p>
+        <h3 className="font-semibold text-foreground">{title}</h3>
         <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{description}</p>
+        {winst && (
+          <p className="mt-2 flex items-start gap-1.5 text-sm font-medium text-primary">
+            <TrendingUp className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              <span className="font-semibold">Winst:</span> {winst}
+            </span>
+          </p>
+        )}
       </div>
     </div>
   );
@@ -256,20 +379,30 @@ function SolutionPoint({
 
 function BenefitItem({
   title,
+  winst,
   children,
 }: {
   title: string;
+  winst: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-full items-start gap-3 rounded-xl border border-border bg-card p-5 shadow-sm">
-      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-        <Check className="h-3.5 w-3.5" />
-      </span>
-      <div>
-        <p className="font-semibold text-foreground">{title}</p>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{children}</p>
+    <div className="flex h-full flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <Check className="h-3.5 w-3.5" />
+        </span>
+        <div>
+          <h3 className="font-semibold text-foreground">{title}</h3>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{children}</p>
+        </div>
       </div>
+      <p className="flex items-start gap-1.5 rounded-lg bg-primary/5 px-3 py-2 text-sm font-medium text-primary">
+        <TrendingUp className="mt-0.5 h-4 w-4 shrink-0" />
+        <span>
+          <span className="font-semibold">Winst:</span> {winst}
+        </span>
+      </p>
     </div>
   );
 }
@@ -334,6 +467,63 @@ function CalculatorMockup() {
             Offerte aanvragen
           </span>
         </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+const MOCKUP_KOLOMMEN: { status: "NIEUW" | "IN_BEHANDELING" | "OFFERTE_VERSTUURD"; naam: string; bedrag: string }[][] = [
+  [{ status: "NIEUW", naam: "Fam. de Vries", bedrag: "€ 890" }],
+  [{ status: "IN_BEHANDELING", naam: "J. Bakker", bedrag: "€ 1.240" }],
+  [
+    { status: "OFFERTE_VERSTUURD", naam: "Tuinstudio Peters", bedrag: "€ 2.100" },
+    { status: "OFFERTE_VERSTUURD", naam: "Fam. Willems", bedrag: "€ 3.200" },
+  ],
+];
+
+function LeadsMockup() {
+  return (
+    <div className="relative mx-auto max-w-md" aria-hidden="true">
+      <div className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-primary/10 blur-2xl" />
+      <Card className="overflow-hidden shadow-xl transition-transform duration-500 hover:rotate-0 sm:-rotate-1">
+        <div className="flex items-center gap-1.5 border-b border-border bg-secondary/60 px-4 py-3">
+          <span className="h-2.5 w-2.5 rounded-full bg-destructive/40" />
+          <span className="h-2.5 w-2.5 rounded-full bg-warning/50" />
+          <span className="h-2.5 w-2.5 rounded-full bg-primary/50" />
+          <span className="ml-2 truncate text-xs font-medium text-muted-foreground">
+            Leads &amp; Offertes
+          </span>
+        </div>
+        <CardContent className="grid grid-cols-3 gap-2">
+          {MOCKUP_KOLOMMEN.map((kolom, i) => (
+            <div key={i} className="flex flex-col gap-2">
+              <div className="flex items-center justify-between px-0.5">
+                <Badge variant="muted" className="text-[10px]">
+                  {LEAD_STATUS_LABELS[kolom[0].status]}
+                </Badge>
+              </div>
+              {kolom.map((kaart) => (
+                <div
+                  key={kaart.naam}
+                  className="rounded-lg border border-border bg-card p-2 shadow-sm"
+                >
+                  <p className="truncate text-[11px] font-medium text-foreground">{kaart.naam}</p>
+                  <p className="text-xs font-semibold text-primary">{kaart.bedrag}</p>
+                </div>
+              ))}
+            </div>
+          ))}
+        </CardContent>
+        <div className="flex items-center gap-3 border-t border-border px-4 py-3">
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Mail className="h-3.5 w-3.5" />
+            E-mail
+          </span>
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <MessageCircle className="h-3.5 w-3.5" />
+            WhatsApp
+          </span>
+        </div>
       </Card>
     </div>
   );

@@ -9,6 +9,10 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  // Basis-URL voor het resolven van relatieve canonical/OpenGraph-URL's (zie
+  // bijv. app/page.tsx's alternates.canonical: "/"). Zet NEXT_PUBLIC_APP_URL
+  // in Vercel op de echte productie-URL zodra die bekend is.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   title: {
     default: "Kostenplan — Kostencalculator voor hoveniers",
     template: "%s · Kostenplan",

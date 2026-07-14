@@ -5,7 +5,7 @@ import { Logo } from "@/app/components/ui/logo";
 const snelleLinks = [
   { href: "/", label: "Home" },
   { href: "/#voorbeeld", label: "Functionaliteiten" },
-  { href: "/prijzen", label: "Prijzen" },
+  { href: "/#prijzen", label: "Prijzen" },
   { href: "/login", label: "Inloggen" },
 ];
 
