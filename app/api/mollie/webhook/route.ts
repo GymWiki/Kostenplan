@@ -3,7 +3,8 @@ import type { Payment, Subscription } from "@mollie/api-client";
 import { getMollieClient, getMollieWebhookUrl } from "@/app/lib/mollie";
 import { prisma } from "@/app/lib/prisma";
 import { MOLLIE_INTERVAL, PRIJZEN } from "@/app/lib/subscription";
-import type { BillingInterval, MollieSubscriptionStatus, SubscriptionTier } from "@/app/generated/prisma/client";
+import { parseMollieMetadata, type ParsedMollieMetadata } from "@/app/lib/mollie-metadata";
+import type { MollieSubscriptionStatus, SubscriptionTier } from "@/app/generated/prisma/client";
 
 // Mollie calls this with a form-encoded body containing only the payment id
 // — never trust anything else in the payload, always re-fetch the payment
@@ -47,30 +48,9 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ received: true });
 }
 
-// Metadata bevat sinds de multi-company-migratie companyId. Abonnementen die
-// vóór die migratie zijn aangemaakt hebben permanent alleen userId in hun
-// Mollie-metadata (onveranderlijk na aanmaak bij Mollie) — die worden via
-// Company.migratedFromUserId naar hun (automatisch aangemaakte) company
-// vertaald. Zie ook de toelichting bij migratedFromUserId in schema.prisma.
-function parseMetadata(metadata: unknown) {
-  if (typeof metadata !== "object" || metadata === null) return null;
-  const { companyId, userId, plan, interval } = metadata as Record<string, unknown>;
-  if (
-    (typeof companyId !== "string" && typeof userId !== "string") ||
-    (plan !== "PLUS" && plan !== "PRO") ||
-    (interval !== "MAANDELIJKS" && interval !== "JAARLIJKS")
-  ) {
-    return null;
-  }
-  return {
-    companyId: typeof companyId === "string" ? companyId : null,
-    legacyUserId: typeof userId === "string" ? userId : null,
-    plan: plan as "PLUS" | "PRO",
-    interval: interval as BillingInterval,
-  };
-}
-
-async function resolveCompanyId(metadata: { companyId: string | null; legacyUserId: string | null }) {
+// Vertaalt geparste metadata (companyId óf legacy userId) naar een echt
+// companyId. Zie de toelichting bij migratedFromUserId in schema.prisma.
+async function resolveCompanyId(metadata: ParsedMollieMetadata) {
   if (metadata.companyId) return metadata.companyId;
   if (!metadata.legacyUserId) return null;
 
@@ -82,7 +62,7 @@ async function resolveCompanyId(metadata: { companyId: string | null; legacyUser
 }
 
 async function activateSubscription(payment: Payment, fallbackBaseUrl: string) {
-  const metadata = parseMetadata(payment.metadata);
+  const metadata = parseMollieMetadata(payment.metadata);
   if (!metadata || !payment.customerId || !payment.mandateId) {
     console.error("Mollie webhook: eerste betaling gemarkeerd betaald maar metadata/mandaat ontbreekt", {
       paymentId: payment.id,
@@ -143,7 +123,7 @@ const STATUS_MAP: Record<Subscription["status"], MollieSubscriptionStatus> = {
 // Company.
 async function syncSubscriptionStatus(mollieCustomerId: string, subscription: Subscription) {
   const status = STATUS_MAP[subscription.status];
-  const metadata = parseMetadata(subscription.metadata);
+  const metadata = parseMollieMetadata(subscription.metadata);
   const plan: SubscriptionTier = status === "ACTIVE" ? (metadata?.plan ?? "PLUS") : "GRATIS";
 
   await prisma.company.updateMany({

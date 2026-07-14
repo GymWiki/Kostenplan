@@ -33,7 +33,10 @@ export function CompanyCard({
   const plan = effectiveTier(company);
   const isOverridden = company.overrideTier !== null;
   const heeftLopendAbonnement = LOPEND_STATUSSEN.includes(company.subscriptionStatus);
-  const magOpzeggen = !isOverridden && company.subscriptionStatus === "ACTIVE";
+  // Ook opzegbaar bij PENDING/SUSPENDED (betaling loopt nog of is mislukt),
+  // niet alleen bij ACTIVE — anders zit een gebruiker met een mislukte
+  // betaling vast zonder enige manier om het abonnement te stoppen.
+  const magOpzeggen = !isOverridden && heeftLopendAbonnement;
   const huidigePeriodeEindLabel = company.huidigePeriodeEind
     ? new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long", year: "numeric" }).format(
         company.huidigePeriodeEind

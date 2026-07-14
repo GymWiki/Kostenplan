@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/server";
 import { prisma } from "@/app/lib/prisma";
 import { generateUniqueSlug } from "@/app/lib/slug";
+import { resolveActiveMembership } from "@/app/lib/active-company";
 
 // Onthoudt welk bedrijf de gebruiker laatst actief had gekozen (zie de
 // bedrijfsswitcher en switchActiveCompanyAction). Alleen relevant zodra
@@ -118,8 +119,7 @@ export const requireActiveCompany = cache(async () => {
 
   const cookieStore = await cookies();
   const gekozenId = cookieStore.get(ACTIEF_BEDRIJF_COOKIE)?.value;
-  const gekozenLidmaatschap = memberships.find((m) => m.companyId === gekozenId);
-  const actief = gekozenLidmaatschap ?? memberships[0];
+  const actief = resolveActiveMembership(memberships, gekozenId);
 
   return {
     user,
