@@ -21,6 +21,7 @@ export async function createMaterialCategoryAction(
 
   const product = await prisma.product.findFirst({
     where: { id: productId, userId: user.id },
+    select: { id: true },
   });
   if (!product) {
     return { error: "Product niet gevonden" };
@@ -51,6 +52,7 @@ export async function updateMaterialCategoryAction(
 
   const category = await prisma.materialCategory.findFirst({
     where: { id: materialCategoryId, product: { userId: user.id } },
+    select: { productId: true },
   });
   if (!category) {
     return { error: "Categorie niet gevonden" };
@@ -73,6 +75,7 @@ export async function deleteMaterialCategoryAction(formData: FormData) {
 
   const category = await prisma.materialCategory.findFirst({
     where: { id: materialCategoryId, product: { userId: user.id } },
+    select: { productId: true },
   });
   if (!category) return;
 

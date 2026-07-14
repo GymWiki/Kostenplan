@@ -59,7 +59,10 @@ export async function updateBrandingAction(
     return { fieldErrors };
   }
 
-  const existing = await prisma.branding.findUnique({ where: { userId: user.id } });
+  const existing = await prisma.branding.findUnique({
+    where: { userId: user.id },
+    select: { logoUrl: true },
+  });
 
   const logoResult = await resolveLogo(user.id, formData, existing?.logoUrl ?? null);
   if (logoResult.error) {

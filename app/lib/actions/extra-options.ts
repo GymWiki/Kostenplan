@@ -61,6 +61,7 @@ export async function createExtraOptionAction(
 
   const product = await prisma.product.findFirst({
     where: { id: productId, userId: user.id },
+    select: { id: true },
   });
   if (!product) {
     return { error: "Product niet gevonden" };
@@ -100,6 +101,7 @@ export async function updateExtraOptionAction(
 
   const option = await prisma.extraOption.findFirst({
     where: { id: extraOptionId, product: { userId: user.id } },
+    select: { foto: true, productId: true },
   });
   if (!option) {
     return { error: "Extra optie niet gevonden" };
@@ -127,6 +129,7 @@ export async function deleteExtraOptionAction(formData: FormData) {
 
   const option = await prisma.extraOption.findFirst({
     where: { id: extraOptionId, product: { userId: user.id } },
+    select: { foto: true, productId: true },
   });
   if (!option) return;
 
@@ -145,6 +148,7 @@ export async function toggleExtraOptionActiveAction(formData: FormData) {
 
   const option = await prisma.extraOption.findFirst({
     where: { id: extraOptionId, product: { userId: user.id } },
+    select: { productId: true },
   });
   if (!option) return;
 

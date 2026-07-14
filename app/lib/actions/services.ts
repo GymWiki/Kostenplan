@@ -39,19 +39,24 @@ export async function createServiceAction(
     return { fieldErrors };
   }
 
+  // Alvast opgehaald voor de Gratis-limietcheck hieronder — meteen ook
+  // hergebruikt voor "order" verderop, zodat dezelfde telling niet twee keer
+  // wordt uitgevoerd.
+  let serviceCount: number | undefined;
   if (effectiveTier(user) === "GRATIS") {
-    const [productCount, serviceCount] = await Promise.all([
+    const [productCount, count] = await Promise.all([
       prisma.product.count({ where: { userId: user.id } }),
       prisma.service.count({ where: { userId: user.id } }),
     ]);
-    if (productCount + serviceCount >= GRATIS_CATALOGUS_LIMIET) {
+    serviceCount = count;
+    if (productCount + count >= GRATIS_CATALOGUS_LIMIET) {
       return {
         error: `Je hebt de limiet van ${GRATIS_CATALOGUS_LIMIET} diensten en producten voor het Gratis-pakket bereikt. Upgrade naar Plus of Pro voor onbeperkt diensten en producten.`,
       };
     }
   }
 
-  const count = await prisma.service.count({ where: { userId: user.id } });
+  const count = serviceCount ?? (await prisma.service.count({ where: { userId: user.id } }));
 
   await prisma.service.create({
     data: {

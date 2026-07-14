@@ -225,6 +225,11 @@ model Service {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Postgres indexeert foreign keys niet automatisch — zonder dit is elke
+  // "diensten van deze tenant"-query (dashboardlijst, publiek portaal, de
+  // 10-item Gratis-limietcheck) een sequential scan over de hele tabel.
+  @@index([userId])
 }
 
 // Een samengesteld product, bijv. "Schutting". De klant kiest een
@@ -266,6 +271,8 @@ model Product {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // Onderdeel van een product waarvoor de klant één materiaal kiest,
@@ -281,6 +288,8 @@ model MaterialCategory {
   materialen MaterialOption[]
 
   createdAt DateTime @default(now())
+
+  @@index([productId])
 }
 
 // Een keuzeoptie binnen een materiaalcategorie, bijv. "Betonnen palen".
@@ -302,6 +311,8 @@ model MaterialOption {
   order       Int     @default(0)
 
   createdAt DateTime @default(now())
+
+  @@index([materialCategoryId])
 }
 
 // Optionele toevoeging op een product, bijv. "Metalen tussenbekleding
@@ -324,6 +335,8 @@ model ExtraOption {
   order        Int             @default(0)
 
   createdAt DateTime @default(now())
+
+  @@index([productId])
 }
 
 // Een offerte-aanvraag vanuit het publieke klantenportaal — de mini-CRM voor
@@ -370,4 +383,6 @@ model LeadNote {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([leadId])
 }
