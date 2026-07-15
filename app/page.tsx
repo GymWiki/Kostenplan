@@ -25,21 +25,26 @@ import { FaqSection } from "@/app/components/marketing/faq-section";
 import { MarketingPricingTable } from "@/app/components/pricing/marketing-pricing-table";
 import { LEAD_STATUS_LABELS } from "@/app/lib/leads";
 
+const TITLE = "Kostenplan | Offertecalculator voor Hoveniers en Vakmensen";
+const DESCRIPTION =
+  "Automatiseer je offertetraject: klanten berekenen zelf een prijsindicatie, jij ontvangt alleen serieuze aanvragen in je eigen leads-CRM. Start nu gratis.";
+
 export const metadata: Metadata = {
-  title: {
-    absolute: "Kostenplan | Offertecalculator voor Hoveniers — Bespaar Tijd op Offertes",
-  },
-  description:
-    "Automatiseer je offertetraject als hovenier of vakman. Laat klanten zelf een prijsindicatie berekenen, ontvang alleen serieuze aanvragen in je eigen leads-CRM en bespaar per week uren administratiewerk. Start gratis.",
+  title: { absolute: TITLE },
+  description: DESCRIPTION,
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Kostenplan | Offertecalculator voor Hoveniers — Bespaar Tijd op Offertes",
-    description:
-      "Laat klanten zelf een prijsindicatie berekenen en ontvang alleen serieuze offerte-aanvragen. Inclusief leads-CRM. Start gratis binnen 5 minuten.",
+    title: TITLE,
+    description: DESCRIPTION,
     url: "/",
     siteName: "Kostenplan",
     locale: "nl_NL",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
   },
 };
 

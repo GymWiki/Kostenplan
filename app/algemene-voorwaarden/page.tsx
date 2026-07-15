@@ -3,7 +3,12 @@ import { SiteHeader } from "@/app/components/marketing/site-header";
 import { SiteFooter } from "@/app/components/marketing/site-footer";
 import { LegalSection } from "@/app/components/marketing/legal-section";
 
-export const metadata: Metadata = { title: "Algemene Voorwaarden" };
+export const metadata: Metadata = {
+  title: "Algemene Voorwaarden",
+  description:
+    "Lees de algemene voorwaarden van Kostenplan, de offertecalculator voor hoveniers en andere vakmensen.",
+  alternates: { canonical: "/algemene-voorwaarden" },
+};
 
 export default function AlgemeneVoorwaardenPage() {
   return (

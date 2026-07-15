@@ -3,7 +3,12 @@ import { SiteHeader } from "@/app/components/marketing/site-header";
 import { SiteFooter } from "@/app/components/marketing/site-footer";
 import { LegalSection } from "@/app/components/marketing/legal-section";
 
-export const metadata: Metadata = { title: "Privacybeleid" };
+export const metadata: Metadata = {
+  title: "Privacybeleid",
+  description:
+    "Lees hoe Kostenplan omgaat met persoonsgegevens van gebruikers en de klanten die via het portaal een offerte aanvragen.",
+  alternates: { canonical: "/privacybeleid" },
+};
 
 export default function PrivacybeleidPage() {
   return (

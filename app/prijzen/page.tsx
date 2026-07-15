@@ -3,7 +3,27 @@ import { SiteHeader } from "@/app/components/marketing/site-header";
 import { SiteFooter } from "@/app/components/marketing/site-footer";
 import { MarketingPricingTable } from "@/app/components/pricing/marketing-pricing-table";
 
-export const metadata: Metadata = { title: "Prijzen" };
+export const metadata: Metadata = {
+  title: "Prijzen voor Hoveniers en Vakmensen",
+  description:
+    "Bekijk de prijzen van Kostenplan: gratis starten met tot 10 diensten en producten, of upgrade naar Plus of Pro voor onbeperkt gebruik en een leads-CRM.",
+  alternates: { canonical: "/prijzen" },
+  openGraph: {
+    title: "Prijzen voor Hoveniers en Vakmensen · Kostenplan",
+    description:
+      "Gratis starten met tot 10 diensten en producten, of upgrade naar Plus of Pro voor onbeperkt gebruik en een leads-CRM.",
+    url: "/prijzen",
+    siteName: "Kostenplan",
+    locale: "nl_NL",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Prijzen voor Hoveniers en Vakmensen · Kostenplan",
+    description:
+      "Gratis starten met tot 10 diensten en producten, of upgrade naar Plus of Pro voor onbeperkt gebruik en een leads-CRM.",
+  },
+};
 
 export default function PrijzenPage() {
   return (

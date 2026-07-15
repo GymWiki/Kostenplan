@@ -3,13 +3,18 @@ import type { Metadata } from "next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
 import { RegisterForm } from "./register-form";
 
-export const metadata: Metadata = { title: "Registreren" };
+export const metadata: Metadata = {
+  title: "Registreren",
+  description:
+    "Maak gratis je eigen offertecalculator op Kostenplan en ontvang binnen 1 minuut je eerste klantenportaal.",
+  alternates: { canonical: "/registreren" },
+};
 
 export default function RegisterPage() {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle className="text-xl">Start met Kostenplan</CardTitle>
+        <CardTitle as="h1" className="text-xl">Start met Kostenplan</CardTitle>
         <CardDescription>
           Maak in 1 minuut je eigen kostencalculator voor klanten.
         </CardDescription>
