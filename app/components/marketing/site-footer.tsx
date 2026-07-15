@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import { Logo } from "@/app/components/ui/logo";
+import { DOELGROEPEN } from "@/app/lib/doelgroepen";
 
 const snelleLinks = [
   { href: "/", label: "Home" },
@@ -8,6 +9,11 @@ const snelleLinks = [
   { href: "/#prijzen", label: "Prijzen" },
   { href: "/login", label: "Inloggen" },
 ];
+
+const doelgroepLinks = DOELGROEPEN.map((d) => ({
+  href: `/voor/${d.slug}`,
+  label: `Voor ${d.naamMeervoud}`,
+}));
 
 const juridischeLinks = [
   { href: "/algemene-voorwaarden", label: "Algemene Voorwaarden" },
@@ -18,8 +24,8 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-secondary/30">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-3">
-          <div>
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="sm:col-span-2 lg:col-span-1">
             <Link
               href="/"
               className="flex items-center gap-2 text-lg font-semibold text-foreground"
@@ -50,6 +56,7 @@ export function SiteFooter() {
           </div>
 
           <FooterColumn title="Snelle links" links={snelleLinks} />
+          <FooterColumn title="Voor wie" links={doelgroepLinks} />
           <FooterColumn title="Juridisch" links={juridischeLinks} />
         </div>
 

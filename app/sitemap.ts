@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/app/lib/prisma";
+import { DOELGROEPEN } from "@/app/lib/doelgroepen";
 
 // Hardcoded productie-domein — bewust niet NEXT_PUBLIC_APP_URL, want die
 // staat in .env/lokale ontwikkeling op localhost en een sitemap moet altijd
@@ -23,6 +24,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified, changeFrequency: "weekly", priority: 1 },
     { url: `${BASE_URL}/prijzen`, lastModified, changeFrequency: "monthly", priority: 0.8 },
+    ...DOELGROEPEN.map((d) => ({
+      url: `${BASE_URL}/voor/${d.slug}`,
+      lastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
     {
       url: `${BASE_URL}/algemene-voorwaarden`,
       lastModified,
