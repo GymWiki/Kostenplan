@@ -16,12 +16,14 @@ export const metadata: Metadata = {
     siteName: "Kostenplan",
     locale: "nl_NL",
     type: "website",
+    images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Prijzen voor Hoveniers en Vakmensen · Kostenplan",
     description:
       "Gratis starten met tot 10 diensten en producten, of upgrade naar Plus of Pro voor onbeperkt gebruik en een leads-CRM.",
+    images: ["/opengraph-image"],
   },
 };
 

@@ -40,11 +40,16 @@ export const metadata: Metadata = {
     siteName: "Kostenplan",
     locale: "nl_NL",
     type: "website",
+    // Een pagina die zelf een openGraph-object opgeeft, erft de
+    // opengraph-image.tsx-bestandsconventie niet betrouwbaar automatisch —
+    // expliciet verwijzen voorkomt dat social shares zonder afbeelding komen.
+    images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
+    images: ["/opengraph-image"],
   },
 };
 
