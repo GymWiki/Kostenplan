@@ -62,9 +62,29 @@ export async function generateMetadata({
   const { slug } = await params;
   const company = await getPortalData(slug);
   if (!company) return { title: "Kostencalculator" };
+
+  const title = `Kostencalculator ${company.naam}`;
+  const description = `Bereken direct een schatting van de kosten voor jouw project bij ${company.naam}.`;
+
   return {
-    title: `Kostencalculator ${company.naam}`,
-    description: `Bereken direct een schatting van de kosten voor jouw project bij ${company.naam}.`,
+    title,
+    description,
+    alternates: { canonical: `/portaal/${slug}` },
+    openGraph: {
+      title,
+      description,
+      url: `/portaal/${slug}`,
+      siteName: "Kostenplan",
+      locale: "nl_NL",
+      type: "website",
+      images: ["/opengraph-image"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["/opengraph-image"],
+    },
   };
 }
 
