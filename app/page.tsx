@@ -22,6 +22,7 @@ import { Reveal } from "@/app/components/ui/reveal";
 import { SiteHeader } from "@/app/components/marketing/site-header";
 import { SiteFooter } from "@/app/components/marketing/site-footer";
 import { FaqSection } from "@/app/components/marketing/faq-section";
+import { StructuredData } from "@/app/components/marketing/structured-data";
 import { MarketingPricingTable } from "@/app/components/pricing/marketing-pricing-table";
 import { LEAD_STATUS_LABELS } from "@/app/lib/leads";
 
@@ -56,6 +57,7 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <StructuredData />
       <SiteHeader />
 
       <main className="flex-1">
