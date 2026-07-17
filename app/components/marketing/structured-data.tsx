@@ -10,8 +10,8 @@ export function StructuredData() {
         "@type": "Organization",
         name: "Kostenplan",
         alternateName: "GymWiki",
-        url: "https://kostenplan.nl",
-        logo: "https://kostenplan.nl/icon.png",
+        url: "https://www.kostenplan.nl",
+        logo: "https://www.kostenplan.nl/icon.png",
         email: "gymwiki25@gmail.com",
       },
       {
@@ -19,7 +19,7 @@ export function StructuredData() {
         name: "Kostenplan",
         applicationCategory: "BusinessApplication",
         operatingSystem: "Web",
-        url: "https://kostenplan.nl",
+        url: "https://www.kostenplan.nl",
         description:
           "Offertecalculator voor hoveniers en andere vakmensen: klanten berekenen zelf een prijsindicatie, aanvragen komen binnen in een leads-CRM.",
         offers: {

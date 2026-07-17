@@ -25,7 +25,7 @@ export function getMollieClient(): MollieClient {
 // Vaste, publieke callback-URL die Mollie gebruikt om betaal-/abonnement-
 // statussen door te geven (POST naar /api/mollie/webhook — zie die route
 // voor de verwerking). Zet deze in Vercel op de productie-URL, bijv.
-// https://kostenplan.nl/api/mollie/webhook — dit moet een STABIELE URL zijn
+// https://www.kostenplan.nl/api/mollie/webhook — dit moet een STABIELE URL zijn
 // die Mollie altijd kan bereiken, niet iets dat per verzoek/preview-
 // deployment verschilt (in tegenstelling tot redirectUrl, die wél per
 // verzoek van de ingelogde gebruiker mag worden afgeleid).
@@ -45,6 +45,6 @@ export function getMollieWebhookUrl(fallbackBaseUrl?: string): string {
 
   throw new Error(
     "MOLLIE_WEBHOOK_URL ontbreekt en er is geen fallback-URL beschikbaar. Zet deze " +
-      "omgevingsvariabele (Vercel of .env) op bijv. https://kostenplan.nl/api/mollie/webhook."
+      "omgevingsvariabele (Vercel of .env) op bijv. https://www.kostenplan.nl/api/mollie/webhook."
   );
 }

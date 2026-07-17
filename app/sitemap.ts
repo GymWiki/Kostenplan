@@ -6,7 +6,7 @@ import { DOELGROEPEN } from "@/app/lib/doelgroepen";
 // staat in .env/lokale ontwikkeling op localhost en een sitemap moet altijd
 // de echte, publieke URL bevatten ongeacht de omgeving waarin hij gebouwd
 // wordt.
-const BASE_URL = "https://kostenplan.nl";
+const BASE_URL = "https://www.kostenplan.nl";
 
 // Zonder revalidate zou Next.js dit bestand bij build time statisch
 // genereren — nieuwe tenant-portalen zouden dan pas na de eerstvolgende
