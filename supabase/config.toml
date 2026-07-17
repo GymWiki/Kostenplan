@@ -5,12 +5,10 @@
 project_id = "kostenplan"
 
 [auth]
-# TODO: replace with the real production domain before running
-# `supabase config push` — this cannot be guessed and must be filled in.
-site_url = "https://your-production-domain.example"
+site_url = "https://kostenplan.nl"
 additional_redirect_urls = [
   "http://localhost:3000/auth/callback",
-  "https://your-production-domain.example/auth/callback",
+  "https://kostenplan.nl/auth/callback",
 ]
 
 [auth.email]
