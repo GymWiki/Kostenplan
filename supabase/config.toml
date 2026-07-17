@@ -5,9 +5,15 @@
 project_id = "kostenplan"
 
 [auth]
-site_url = "https://kostenplan.nl"
+# www, niet het kale domein: de site draait daadwerkelijk op
+# www.kostenplan.nl (geverifieerd doordat een mismatch hier de gebruiker
+# liet stranden op https://www.kostenplan.nl/?code=... in plaats van op
+# /auth/callback — Supabase valt terug op site_url zodra redirectTo niet op
+# de allowlist staat).
+site_url = "https://www.kostenplan.nl"
 additional_redirect_urls = [
   "http://localhost:3000/auth/callback",
+  "https://www.kostenplan.nl/auth/callback",
   "https://kostenplan.nl/auth/callback",
 ]
 
