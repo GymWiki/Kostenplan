@@ -13,9 +13,8 @@ export function RegisterForm() {
   );
   // Los bijgehouden (niet defaultValue): React reset uncontrolled velden na
   // elke form action, ook bij een fout. Zonder deze eigen state raakt de
-  // gebruiker bij bijv. een te zwak wachtwoord ook de al correct ingevulde
-  // bedrijfsnaam en e-mail kwijt en moet alles opnieuw intypen.
-  const [bedrijfsnaam, setBedrijfsnaam] = useState("");
+  // gebruiker bij bijv. een te zwak wachtwoord ook het al correct ingevulde
+  // e-mailadres kwijt en moet alles opnieuw intypen.
   const [email, setEmail] = useState("");
 
   return (
@@ -32,22 +31,6 @@ export function RegisterForm() {
             {state.error}
           </p>
         )}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="bedrijfsnaam">Bedrijfsnaam</Label>
-          <Input
-            id="bedrijfsnaam"
-            name="bedrijfsnaam"
-            placeholder="Bakker Vakwerk"
-            value={bedrijfsnaam}
-            onChange={(e) => setBedrijfsnaam(e.target.value)}
-            required
-          />
-          {state?.fieldErrors?.bedrijfsnaam && (
-            <p className="text-sm text-destructive">
-              {state.fieldErrors.bedrijfsnaam}
-            </p>
-          )}
-        </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">E-mailadres</Label>
           <Input

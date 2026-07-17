@@ -38,7 +38,6 @@ const optionalIconName = z.preprocess(
 );
 
 export const registerSchema = z.object({
-  bedrijfsnaam: z.string().trim().min(2, "Vul een bedrijfsnaam in").max(80),
   email: z.string().trim().email("Vul een geldig e-mailadres in"),
   password: z.string().min(8, "Wachtwoord moet minimaal 8 tekens zijn"),
 });

@@ -5,7 +5,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/server";
 import { prisma } from "@/app/lib/prisma";
-import { generateUniqueSlug } from "@/app/lib/slug";
 import { resolveActiveMembership } from "@/app/lib/active-company";
 
 // Onthoudt welk bedrijf de gebruiker laatst actief had gekozen (zie de
@@ -34,11 +33,12 @@ export const verifySupabaseUser = cache(async () => {
 // verifySupabaseUser() above also being cached and returning the same
 // object reference within a request, which is what cache() dedupes on.
 //
-// Bewust GEEN Company hier aanmaken: dat gebeurde vroeger automatisch, met
-// een bedrijfsnaam die viel op het stuk vóór de "@" in het e-mailadres
-// (vooral zichtbaar bij Google-login, waar er geen naam wordt ingevuld).
-// requireActiveCompany() hieronder stuurt een gebruiker zonder bedrijf naar
-// /onboarding/bedrijf, zodat die zelf een echte naam kiest.
+// Bewust GEEN Company hier aanmaken: de auth-actie (registerAction /
+// signInWithGoogleAction) maakt alleen het Supabase Auth-account aan, geen
+// Company — dat gebeurt pas op /onboarding/bedrijf, voor zowel Google- als
+// e-mail/wachtwoord-gebruikers. requireActiveCompany() hieronder stuurt een
+// gebruiker zonder bedrijf daar naartoe, waar createCompanyAction een echte,
+// door de gebruiker gekozen naam aan de Company hangt.
 const ensureProfile = cache(async (authUser: { id: string; email?: string }) => {
   return prisma.user.upsert({
     where: { id: authUser.id },
@@ -46,42 +46,6 @@ const ensureProfile = cache(async (authUser: { id: string; email?: string }) => 
     update: {},
   });
 });
-
-// Aangeroepen vanuit registerAction (bij sign-up) — maakt een gloednieuwe
-// User aan die nog geen enkel bedrijf heeft, en meteen hun eerste (owner)
-// Company erbij, inclusief lege CostSettings zodat de rekentool direct
-// werkt. Gebruikers zonder vooraf gekozen bedrijfsnaam (Google-login, of een
-// account dat rechtstreeks in Supabase Auth is aangemaakt) doorlopen in
-// plaats daarvan /onboarding/bedrijf, dat createCompanyAction gebruikt.
-export async function createUserWithFirstCompany(
-  userId: string,
-  email: string,
-  bedrijfsnaam: string
-) {
-  const slug = await generateUniqueSlug(bedrijfsnaam);
-
-  return prisma.user.upsert({
-    where: { id: userId },
-    create: {
-      id: userId,
-      email,
-      companyMemberships: {
-        create: {
-          rol: "owner",
-          company: {
-            create: {
-              naam: bedrijfsnaam,
-              slug,
-              createdBy: userId,
-              costSettings: { create: {} },
-            },
-          },
-        },
-      },
-    },
-    update: {},
-  });
-}
 
 export async function requireUser() {
   const authUser = await verifySupabaseUser();

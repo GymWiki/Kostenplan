@@ -2,7 +2,6 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/server";
-import { createUserWithFirstCompany } from "@/app/lib/dal";
 import { getBaseUrl } from "@/app/lib/url";
 import { registerSchema, loginSchema } from "@/app/lib/validation";
 
@@ -16,7 +15,6 @@ export async function registerAction(
   formData: FormData
 ): Promise<AuthFormState> {
   const raw = {
-    bedrijfsnaam: formData.get("bedrijfsnaam"),
     email: formData.get("email"),
     password: formData.get("password"),
   };
@@ -30,14 +28,10 @@ export async function registerAction(
     return { fieldErrors };
   }
 
-  const { bedrijfsnaam, email, password } = parsed.data;
+  const { email, password } = parsed.data;
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { bedrijfsnaam } },
-  });
+  const { data, error } = await supabase.auth.signUp({ email, password });
 
   if (error) {
     if (error.code === "user_already_exists") {
@@ -50,8 +44,9 @@ export async function registerAction(
     return { error: "Registreren is niet gelukt. Probeer het opnieuw." };
   }
 
-  await createUserWithFirstCompany(data.user.id, email, bedrijfsnaam);
-
+  // Geen Company hier — /onboarding/bedrijf (via requireActiveCompany() in
+  // dal.ts) vraagt die zodra de gebruiker voor het eerst een dashboardpagina
+  // bezoekt, hetzelfde pad als na Google-login.
   redirect("/dashboard");
 }
 
