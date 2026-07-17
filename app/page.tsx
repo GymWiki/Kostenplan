@@ -86,7 +86,12 @@ export default function Home() {
                 className="animate-fade-in-up mt-6 text-lg text-muted-foreground"
                 style={{ animationDelay: "160ms" }}
               >
-                Laat websitebezoekers zelf een prijsindicatie berekenen. Jij krijgt alleen nog
+                <strong className="font-semibold text-foreground">
+                  Kostenplan is een online offertecalculator voor hoveniers, stratenmakers,
+                  schilders en andere vakmensen
+                </strong>{" "}
+                waarmee je snel en nauwkeurig prijsindicaties en offertes opstelt. Laat
+                websitebezoekers zelf een prijsindicatie berekenen. Jij krijgt alleen nog
                 aanvragen van serieuze klanten met een realistisch budget. Geen nutteloze
                 belletjes, geen offerte-shoppers.
               </p>
