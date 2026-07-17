@@ -77,10 +77,10 @@ export default function PrivacybeleidPage() {
               verwijderen. Daarnaast kunt u bezwaar maken tegen de verwerking van uw gegevens.
               Verzoeken hiertoe kunt u richten aan{" "}
               <a
-                href="mailto:gymwiki25@gmail.com"
+                href="mailto:pieter@kostenplan.nl"
                 className="font-medium text-primary hover:underline"
               >
-                gymwiki25@gmail.com
+                pieter@kostenplan.nl
               </a>
               . Wij zullen zo snel mogelijk op uw verzoek reageren.
             </p>

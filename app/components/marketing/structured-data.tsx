@@ -12,7 +12,7 @@ export function StructuredData() {
         alternateName: "GymWiki",
         url: "https://www.kostenplan.nl",
         logo: "https://www.kostenplan.nl/icon.png",
-        email: "gymwiki25@gmail.com",
+        email: "pieter@kostenplan.nl",
       },
       {
         "@type": "SoftwareApplication",

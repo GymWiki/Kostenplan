@@ -47,11 +47,11 @@ export function SiteFooter() {
               </div>
             </dl>
             <a
-              href="mailto:gymwiki25@gmail.com"
+              href="mailto:pieter@kostenplan.nl"
               className="mt-4 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
             >
               <Mail className="h-3.5 w-3.5" />
-              gymwiki25@gmail.com
+              pieter@kostenplan.nl
             </a>
           </div>
 
