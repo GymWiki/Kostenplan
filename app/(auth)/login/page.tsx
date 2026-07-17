@@ -25,10 +25,10 @@ export default async function LoginPage({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {error === "confirmatie-mislukt" && (
+        {error === "google-mislukt" && (
           <p className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            De bevestigingslink is ongeldig of verlopen. Probeer opnieuw te registreren of vraag
-            een nieuwe link aan.
+            Inloggen met Google is niet gelukt. Probeer het opnieuw of log in met je
+            e-mailadres en wachtwoord.
           </p>
         )}
         <LoginForm />

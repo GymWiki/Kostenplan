@@ -9,13 +9,15 @@ project_id = "kostenplan"
 # `supabase config push` — this cannot be guessed and must be filled in.
 site_url = "https://your-production-domain.example"
 additional_redirect_urls = [
-  "http://localhost:3000/auth/confirm",
-  "https://your-production-domain.example/auth/confirm",
+  "http://localhost:3000/auth/callback",
+  "https://your-production-domain.example/auth/callback",
 ]
 
-[auth.email.template.confirmation]
-subject = "Bevestig je e-mailadres · Kostenplan"
-content_path = "./supabase/templates/confirmation.html"
+[auth.email]
+# Geen bevestigingsmail meer: signUp() geeft direct een sessie terug en de
+# gebruiker komt meteen in het dashboard, in plaats van eerst een link in
+# hun mailbox te moeten aanklikken.
+enable_confirmations = false
 
 # Supabase's built-in mailer always sends from a generic Supabase address —
 # to change the visible sender name/address, connect a custom SMTP provider
@@ -30,3 +32,13 @@ content_path = "./supabase/templates/confirmation.html"
 # pass = "env(SMTP_PASS)"
 # admin_email = "info@kostenplan.nl"
 # sender_name = "Kostenplan"
+
+# Google OAuth ("Doorgaan met Google" op /login en /registreren). Vul de
+# client-ID en -secret hieronder in als omgevingsvariabelen nadat je een
+# OAuth-clientadres hebt aangemaakt in de Google Cloud Console — zie de
+# uitleg in het bijbehorende commit-bericht / PR-omschrijving voor de exacte
+# stappen en de redirect-URI die je daar moet invullen.
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)"

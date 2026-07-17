@@ -8,7 +8,6 @@ import { registerSchema, loginSchema } from "@/app/lib/validation";
 
 export type AuthFormState = {
   error?: string;
-  info?: string;
   fieldErrors?: Record<string, string>;
 } | null;
 
@@ -33,15 +32,11 @@ export async function registerAction(
 
   const { bedrijfsnaam, email, password } = parsed.data;
 
-  const baseUrl = await getBaseUrl();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      data: { bedrijfsnaam },
-      emailRedirectTo: `${baseUrl}/auth/confirm`,
-    },
+    options: { data: { bedrijfsnaam } },
   });
 
   if (error) {
@@ -51,17 +46,11 @@ export async function registerAction(
     return { error: error.message };
   }
 
-  if (!data.user) {
+  if (!data.user || !data.session) {
     return { error: "Registreren is niet gelukt. Probeer het opnieuw." };
   }
 
   await createUserWithFirstCompany(data.user.id, email, bedrijfsnaam);
-
-  if (!data.session) {
-    return {
-      info: "Bijna klaar! Check je e-mail en klik op de bevestigingslink om in te loggen.",
-    };
-  }
 
   redirect("/dashboard");
 }
@@ -100,4 +89,24 @@ export async function logoutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+// Werkt voor zowel inloggen als registreren: Supabase maakt bij de eerste
+// keer automatisch een account aan op basis van het Google-profiel. De
+// eerste Company wordt daarna, net als bij e-mail/wachtwoord, aangemaakt
+// door de ensureProfile()-fallback in dal.ts zodra de gebruiker voor het
+// eerst een pagina bezoekt die requireUser() aanroept.
+export async function signInWithGoogleAction() {
+  const baseUrl = await getBaseUrl();
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${baseUrl}/auth/callback` },
+  });
+
+  if (error || !data.url) {
+    redirect("/login?error=google-mislukt");
+  }
+
+  redirect(data.url);
 }
