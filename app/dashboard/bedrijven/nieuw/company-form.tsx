@@ -5,7 +5,11 @@ import { Button, LinkButton } from "@/app/components/ui/button";
 import { Input, Label } from "@/app/components/ui/input";
 import { createCompanyAction, type CompanyFormState } from "@/app/lib/actions/companies";
 
-export function CompanyForm() {
+// cancelHref: null bij de onboarding-pagina (/onboarding/bedrijf) — een
+// gebruiker zonder bedrijf heeft nog geen dashboard om naar terug te
+// annuleren, dus verbergt dat de knop in plaats van naar "/dashboard" te
+// wijzen.
+export function CompanyForm({ cancelHref = "/dashboard" }: { cancelHref?: string | null }) {
   const [state, formAction, pending] = useActionState<CompanyFormState, FormData>(
     createCompanyAction,
     null
@@ -28,9 +32,11 @@ export function CompanyForm() {
       </div>
 
       <div className="flex justify-end gap-2">
-        <LinkButton href="/dashboard" variant="outline">
-          Annuleren
-        </LinkButton>
+        {cancelHref && (
+          <LinkButton href={cancelHref} variant="outline">
+            Annuleren
+          </LinkButton>
+        )}
         <Button type="submit" disabled={pending}>
           {pending ? "Aanmaken…" : "Bedrijf aanmaken"}
         </Button>

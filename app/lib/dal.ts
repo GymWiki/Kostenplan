@@ -33,34 +33,26 @@ export const verifySupabaseUser = cache(async () => {
 // for the layout, once for the page) instead of once. Relies on
 // verifySupabaseUser() above also being cached and returning the same
 // object reference within a request, which is what cache() dedupes on.
-const ensureProfile = cache(
-  async (authUser: {
-    id: string;
-    email?: string;
-    user_metadata?: Record<string, unknown>;
-  }) => {
-    const existing = await prisma.user.findUnique({ where: { id: authUser.id } });
-    if (existing) return existing;
+//
+// Bewust GEEN Company hier aanmaken: dat gebeurde vroeger automatisch, met
+// een bedrijfsnaam die viel op het stuk vóór de "@" in het e-mailadres
+// (vooral zichtbaar bij Google-login, waar er geen naam wordt ingevuld).
+// requireActiveCompany() hieronder stuurt een gebruiker zonder bedrijf naar
+// /onboarding/bedrijf, zodat die zelf een echte naam kiest.
+const ensureProfile = cache(async (authUser: { id: string; email?: string }) => {
+  return prisma.user.upsert({
+    where: { id: authUser.id },
+    create: { id: authUser.id, email: authUser.email ?? "" },
+    update: {},
+  });
+});
 
-    // Profile rows are normally created during sign-up (see
-    // app/lib/actions/auth.ts, which also creates the user's first Company).
-    // This is a fallback for accounts that ended up in Supabase Auth without
-    // one (e.g. created directly in the dashboard) — it creates both the
-    // User and their first Company, exactly like registerAction does.
-    const email = authUser.email ?? "";
-    const bedrijfsnaam =
-      (authUser.user_metadata?.bedrijfsnaam as string | undefined) ||
-      email.split("@")[0] ||
-      "Mijn bedrijf";
-
-    return createUserWithFirstCompany(authUser.id, email, bedrijfsnaam);
-  }
-);
-
-// Aangeroepen vanuit registerAction (bij sign-up) en de ensureProfile-
-// fallback hierboven — beide gevallen maken een gloednieuwe User aan die nog
-// geen enkel bedrijf heeft, dus krijgen ze meteen hun eerste (owner)
-// Company, inclusief lege CostSettings zodat de rekentool direct werkt.
+// Aangeroepen vanuit registerAction (bij sign-up) — maakt een gloednieuwe
+// User aan die nog geen enkel bedrijf heeft, en meteen hun eerste (owner)
+// Company erbij, inclusief lege CostSettings zodat de rekentool direct
+// werkt. Gebruikers zonder vooraf gekozen bedrijfsnaam (Google-login, of een
+// account dat rechtstreeks in Supabase Auth is aangemaakt) doorlopen in
+// plaats daarvan /onboarding/bedrijf, dat createCompanyAction gebruikt.
 export async function createUserWithFirstCompany(
   userId: string,
   email: string,
@@ -111,10 +103,12 @@ export const requireActiveCompany = cache(async () => {
     include: { company: true },
   });
 
-  // Kan zich in de praktijk niet voordoen: elke User krijgt bij aanmaak
-  // (registerAction / createUserWithFirstCompany) meteen een eerste Company.
+  // Gebruikers die niet via registerAction zijn binnengekomen (Google-login,
+  // of een account rechtstreeks aangemaakt in Supabase Auth) hebben nog geen
+  // Company — stuur ze naar de onboarding-pagina om er zelf één aan te maken
+  // in plaats van automatisch iets te verzinnen op basis van hun e-mailadres.
   if (memberships.length === 0) {
-    throw new Error(`Gebruiker ${user.id} heeft geen enkel bedrijf — dit hoort nooit voor te komen.`);
+    redirect("/onboarding/bedrijf");
   }
 
   const cookieStore = await cookies();

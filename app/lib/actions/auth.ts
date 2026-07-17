@@ -92,10 +92,10 @@ export async function logoutAction() {
 }
 
 // Werkt voor zowel inloggen als registreren: Supabase maakt bij de eerste
-// keer automatisch een account aan op basis van het Google-profiel. De
-// eerste Company wordt daarna, net als bij e-mail/wachtwoord, aangemaakt
-// door de ensureProfile()-fallback in dal.ts zodra de gebruiker voor het
-// eerst een pagina bezoekt die requireUser() aanroept.
+// keer automatisch een account aan op basis van het Google-profiel. Er is
+// dan nog geen Company — requireActiveCompany() (zie dal.ts) stuurt de
+// gebruiker naar /onboarding/bedrijf zodra die voor het eerst een
+// dashboardpagina bezoekt, zodat ze zelf een bedrijfsnaam kiezen.
 export async function signInWithGoogleAction() {
   const baseUrl = await getBaseUrl();
   const supabase = await createClient();
