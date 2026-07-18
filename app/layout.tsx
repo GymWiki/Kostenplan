@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { ThemeProvider } from "@/app/components/theme-provider";
+import { getSiteUrl } from "@/app/lib/url";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -10,9 +11,10 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   // Basis-URL voor het resolven van relatieve canonical/OpenGraph-URL's (zie
-  // bijv. app/page.tsx's alternates.canonical: "/"). Zet NEXT_PUBLIC_APP_URL
-  // in Vercel op de echte productie-URL zodra die bekend is.
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  // bijv. app/page.tsx's alternates.canonical: "/"). getSiteUrl() valt op
+  // Vercel automatisch terug op het echte productiedomein, ook als
+  // NEXT_PUBLIC_APP_URL niet gezet is — zie app/lib/url.ts.
+  metadataBase: new URL(getSiteUrl()),
   title: {
     default: "Kostenplan — Kostencalculator voor hoveniers",
     template: "%s · Kostenplan",

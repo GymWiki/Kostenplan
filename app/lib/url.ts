@@ -1,6 +1,23 @@
 import "server-only";
 import { headers } from "next/headers";
 
+// Statische site-URL voor Metadata-exports (bijv. metadataBase in
+// app/layout.tsx) — die worden op moduleniveau geëvalueerd, dus zonder
+// request en dus zonder headers(), in tegenstelling tot getBaseUrl()
+// hieronder. Volgorde: expliciete override (NEXT_PUBLIC_APP_URL) > Vercel's
+// eigen productiedomein zodra Vercel de build als productie markeert (juist
+// zonder dat iemand een env var hoeft te zetten of te onthouden bij een
+// nieuwe deploy) > de URL van de huidige preview/dev-deployment > localhost
+// voor lokale ontwikkeling zonder Vercel.
+export function getSiteUrl() {
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  if (process.env.VERCEL_ENV === "production" && process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
+
 export async function getBaseUrl() {
   const hdrs = await headers();
   const host = hdrs.get("host") ?? "localhost:3000";

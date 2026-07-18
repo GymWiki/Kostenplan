@@ -22,6 +22,7 @@ import { Reveal } from "@/app/components/ui/reveal";
 import { SiteHeader } from "@/app/components/marketing/site-header";
 import { SiteFooter } from "@/app/components/marketing/site-footer";
 import { FaqSection } from "@/app/components/marketing/faq-section";
+import { GoogleDataSection } from "@/app/components/marketing/google-data-section";
 import { StructuredData } from "@/app/components/marketing/structured-data";
 import { MarketingPricingTable } from "@/app/components/pricing/marketing-pricing-table";
 import { LEAD_STATUS_LABELS } from "@/app/lib/leads";
@@ -331,6 +332,8 @@ export default function Home() {
             </div>
           </Reveal>
         </section>
+
+        <GoogleDataSection />
       </main>
 
       <SiteFooter />
