@@ -5,8 +5,9 @@ import { DOELGROEPEN } from "@/app/lib/doelgroepen";
 // Hardcoded productie-domein — bewust niet NEXT_PUBLIC_APP_URL, want die
 // staat in .env/lokale ontwikkeling op localhost en een sitemap moet altijd
 // de echte, publieke URL bevatten ongeacht de omgeving waarin hij gebouwd
-// wordt.
-const BASE_URL = "https://www.kostenplan.nl";
+// wordt. Geëxporteerd zodat app/api/indexnow/route.ts hetzelfde domein
+// gebruikt voor het "host"-veld — één bron van waarheid.
+export const BASE_URL = "https://www.kostenplan.nl";
 
 // Zonder revalidate zou Next.js dit bestand bij build time statisch
 // genereren — nieuwe tenant-portalen zouden dan pas na de eerstvolgende

@@ -1,0 +1,29 @@
+name: IndexNow submit
+
+# Draait nadat Vercel's GitHub-integratie een succesvolle productie-deploy
+# meldt (niet op push zelf — dat zou de submit kunnen afvuren vóórdat de
+# nieuwe sitemap-content daadwerkelijk live staat). workflow_dispatch is
+# alleen voor handmatig testen vanuit de Actions-tab.
+on:
+  deployment_status:
+  workflow_dispatch:
+
+jobs:
+  submit:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment.environment == 'production')
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST naar /api/indexnow
+        run: |
+          status=$(curl -s -o /tmp/response.json -w "%{http_code}" -X POST \
+            "https://www.kostenplan.nl/api/indexnow" \
+            -H "Authorization: Bearer ${{ secrets.INDEXNOW_TRIGGER_SECRET }}")
+          echo "HTTP status: $status"
+          cat /tmp/response.json
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "::error::IndexNow submit gaf status $status terug"
+            exit 1
+          fi
