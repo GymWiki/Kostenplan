@@ -9,12 +9,14 @@ export function PhotoInput({
   label = "Foto",
   optioneel = true,
   thumbnailClassName,
+  accept = "image/jpeg,image/png,image/webp,image/gif",
 }: {
   currentUrl?: string | null;
   name?: string;
   label?: string;
   optioneel?: boolean;
   thumbnailClassName?: string;
+  accept?: string;
 }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [markedForRemoval, setMarkedForRemoval] = useState(false);
@@ -49,7 +51,7 @@ export function PhotoInput({
         <input
           type="file"
           name={name}
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept={accept}
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];

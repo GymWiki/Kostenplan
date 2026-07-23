@@ -27,18 +27,31 @@ export function BrandingForm({
   const [toonTelefoonnummer, setToonTelefoonnummer] = useState(branding.toonTelefoonnummer);
 
   // Gecontroleerd (i.p.v. de eerdere defaultValue/eigen-state-per-veld
-  // opzet) zodat "Toepassen" in AutoBranding hieronder deze drie velden
+  // opzet) zodat "Toepassen" in AutoBranding hieronder deze velden
   // programmatisch kan vullen — de gebruiker kan ze daarna nog gewoon met
-  // de hand bijstellen vóór het opslaan.
+  // de hand bijstellen vóór het opslaan. Alleen de aangevinkte velden in
+  // AutoBranding zitten in `result`, dus handleApply raakt nooit meer aan
+  // dan de gebruiker daar expliciet koos.
   const [primaireKleur, setPrimaireKleur] = useState(branding.primaireKleur);
   const [achtergrondKleur, setAchtergrondKleur] = useState(branding.achtergrondKleur);
   const [lettertype, setLettertype] = useState<Lettertype>(branding.lettertype);
+  const [customTitel, setCustomTitel] = useState(branding.customTitel ?? "");
+  const [welkomstTekst, setWelkomstTekst] = useState(branding.welkomstTekst ?? "");
+  // Los van branding.logoUrl: alleen gezet zodra AutoBranding een
+  // gevonden logo toepast (die staat al in onze eigen Supabase Storage —
+  // zie app/lib/branding-extract.ts). PhotoInput toont 'm via currentUrl,
+  // en het hidden veld hieronder laat updateBrandingAction 'm overnemen
+  // zonder dat er een echte file-upload aan te pas komt.
+  const [extractedLogoUrl, setExtractedLogoUrl] = useState<string | null>(null);
 
   const magPersonaliserenUiterlijk = subscriptionTier !== "GRATIS";
 
   function handleApply(result: AutoBrandingResult) {
-    setPrimaireKleur(result.primaireKleur);
-    setLettertype(result.lettertype);
+    if (result.primaireKleur) setPrimaireKleur(result.primaireKleur);
+    if (result.lettertype) setLettertype(result.lettertype);
+    if (result.customTitel !== undefined) setCustomTitel(result.customTitel);
+    if (result.welkomstTekst !== undefined) setWelkomstTekst(result.welkomstTekst);
+    if (result.logoUrl) setExtractedLogoUrl(result.logoUrl);
   }
 
   return (
@@ -65,14 +78,18 @@ export function BrandingForm({
           <div className="flex flex-col gap-1.5">
             <Label>Logo</Label>
             <PhotoInput
-              currentUrl={branding.logoUrl}
+              currentUrl={extractedLogoUrl ?? branding.logoUrl}
               name="logo"
               label="Logo"
               thumbnailClassName="h-16 w-16 shrink-0 rounded-md border border-border bg-white object-contain p-1"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
             />
+            {extractedLogoUrl && (
+              <input type="hidden" name="extractedLogoUrl" value={extractedLogoUrl} />
+            )}
             <p className="text-xs text-muted-foreground">
               Wordt getoond bovenaan je rekentool in plaats van het Kostenplan-merkteken. JPG,
-              PNG, WEBP of GIF, max 5MB.
+              PNG, WEBP, GIF of SVG, max 5MB.
             </p>
           </div>
 
@@ -142,7 +159,8 @@ export function BrandingForm({
               id="customTitel"
               name="customTitel"
               placeholder="Bereken uw project met {bedrijfsnaam}"
-              defaultValue={branding.customTitel ?? ""}
+              value={customTitel}
+              onChange={(e) => setCustomTitel(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
               Gebruik <code className="text-foreground">{"{bedrijfsnaam}"}</code> om automatisch
@@ -156,7 +174,8 @@ export function BrandingForm({
               id="welkomstTekst"
               name="welkomstTekst"
               placeholder="Fijn dat u een offerte overweegt! Stel hieronder uw project samen."
-              defaultValue={branding.welkomstTekst ?? ""}
+              value={welkomstTekst}
+              onChange={(e) => setWelkomstTekst(e.target.value)}
             />
           </div>
 

@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
   let result: Awaited<ReturnType<typeof extractBranding>>;
   try {
-    result = await extractBranding(url);
+    result = await extractBranding(url, company.id);
   } catch (error) {
     // Laatste vangnet — extractBranding() zelf vangt al elke verwachte
     // faalroute af, maar iets onvoorziens mag hier nooit als 500 naar

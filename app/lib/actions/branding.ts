@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { brandingSchema } from "@/app/lib/validation";
-import { uploadFoto, deleteFoto, isUploadedFile } from "@/app/lib/storage";
+import { uploadFoto, deleteFoto, isUploadedFile, isOwnStorageUrl } from "@/app/lib/storage";
 import { effectiveTier } from "@/app/lib/subscription";
 
 export type BrandingFormState = {
@@ -28,6 +28,17 @@ async function resolveLogo(
   if (formData.get("verwijderLogo") === "on" && currentLogo) {
     await deleteFoto(currentLogo);
     return { logoUrl: null };
+  }
+  // Auto-branding (zie app/dashboard/branding/auto-branding.tsx) heeft het
+  // logo al gevalideerd en naar onze eigen Storage geüpload vóórdat de
+  // gebruiker op "Toepassen" klikte — hier alleen nog checken dat het
+  // echt uit onze eigen bucket komt (nooit een client-aangeleverde URL
+  // blind vertrouwen), en het oude bestand opruimen zoals bij een normale
+  // upload.
+  const extracted = formData.get("extractedLogoUrl");
+  if (typeof extracted === "string" && extracted && isOwnStorageUrl(extracted)) {
+    if (currentLogo && currentLogo !== extracted) await deleteFoto(currentLogo);
+    return { logoUrl: extracted };
   }
   return { logoUrl: currentLogo };
 }

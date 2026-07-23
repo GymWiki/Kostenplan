@@ -21,6 +21,13 @@ import {
   extractFontFamilyFromGoogleFontsHref,
   extractFontFamilyFromCss,
   cssColorToHex,
+  isAcceptedLogoContentType,
+  validateLogoImage,
+  normalizeContentType,
+  pickSecondaryColor,
+  cleanCompanyName,
+  detectOnderwerp,
+  buildTitleSuggestions,
   type CssRule,
 } from "@/app/lib/branding-extract-utils";
 import type { Lettertype } from "@/app/generated/prisma/client";
@@ -32,18 +39,22 @@ export type ExtractResult =
   | {
       success: true;
       primaryColor: string;
-      accentColor: string | null;
+      secondaryColor?: string;
       textOnPrimary: string;
       fontFamily: string | null;
       lettertype: Lettertype;
       logoUrl: string | null;
+      companyName: string | null;
+      title: string;
+      titleAlternative?: string;
+      subtitle: string;
       source: ExtractSource;
       confidence: Confidence;
     }
   | { success: false; error: string; confidence: "low" };
 
 // ---------------------------------------------------------------------------
-// SSRF-preventie: elke fetch (hoofdpagina, stylesheets, logo-afbeelding) gaat
+// SSRF-preventie: elke fetch (hoofdpagina, stylesheets, logo-kandidaten) gaat
 // hier doorheen. Blokkeert private/interne IP-ranges, ook na het volgen van
 // een redirect — een aanvaller kan anders een publieke URL laten
 // doorverwijzen naar 127.0.0.1 of een cloud-metadata-endpoint (169.254...).
@@ -82,7 +93,8 @@ const BROWSER_USER_AGENT =
 // Volgt redirects handmatig (redirect: "manual") i.p.v. fetch dit automatisch
 // te laten doen, zodat elke tussenliggende hop opnieuw langs
 // assertPublicHost() gaat — anders zou een publieke URL alsnog naar een
-// intern adres kunnen redirecten zonder dat wij dat zien.
+// intern adres kunnen redirecten zonder dat wij dat zien. Gebruikt voor
+// zowel de hoofdpagina/stylesheets als elke logo-kandidaat hieronder.
 async function safeFetch(
   startUrl: string,
   maxBytes: number,
@@ -151,7 +163,56 @@ async function safeFetch(
 }
 
 // ---------------------------------------------------------------------------
-// Logo- en font-detectie uit de HTML
+// JSON-LD structured data (Organization / LocalBusiness)
+// ---------------------------------------------------------------------------
+
+function parseJsonLdBlocks($: CheerioAPI): Record<string, unknown>[] {
+  const blocks: Record<string, unknown>[] = [];
+  $('script[type="application/ld+json"]').each((_, el) => {
+    const raw = $(el).contents().text();
+    if (!raw.trim()) return undefined;
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      const graph = (parsed as { "@graph"?: unknown } | null)?.["@graph"];
+      if (Array.isArray(graph)) {
+        for (const entry of graph) if (entry && typeof entry === "object") blocks.push(entry as Record<string, unknown>);
+      } else if (Array.isArray(parsed)) {
+        for (const entry of parsed) if (entry && typeof entry === "object") blocks.push(entry as Record<string, unknown>);
+      } else if (parsed && typeof parsed === "object") {
+        blocks.push(parsed as Record<string, unknown>);
+      }
+    } catch {
+      // Ongeldige JSON-LD negeren — mag de rest van de extractie niet blokkeren.
+    }
+    return undefined;
+  });
+  return blocks;
+}
+
+function findJsonLdByType(
+  blocks: Record<string, unknown>[],
+  types: string[]
+): Record<string, unknown> | null {
+  for (const block of blocks) {
+    const t = block["@type"];
+    const typeList = Array.isArray(t) ? t : [t];
+    if (typeList.some((x) => typeof x === "string" && types.includes(x))) return block;
+  }
+  return null;
+}
+
+function extractJsonLdLogoUrl(orgBlock: Record<string, unknown> | null): string | null {
+  const logo = orgBlock?.["logo"];
+  if (typeof logo === "string") return logo;
+  if (logo && typeof logo === "object") {
+    const url = (logo as Record<string, unknown>)["url"];
+    if (typeof url === "string") return url;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Logo-kandidaten, in de voorgeschreven volgorde
 // ---------------------------------------------------------------------------
 
 function resolveUrl(maybeRelative: string, base: string): string | null {
@@ -162,41 +223,122 @@ function resolveUrl(maybeRelative: string, base: string): string | null {
   }
 }
 
-// Voor de logoUrl die we tónen (preview): og:image eerst, want dat is de
-// door de site zelf gekozen representatieve afbeelding, met header/nav/
-// class="logo" als fallback.
-function findDisplayLogoUrl($: CheerioAPI, baseUrl: string): string | null {
-  const og = $('meta[property="og:image"]').attr("content");
-  if (og) {
-    const resolved = resolveUrl(og, baseUrl);
-    if (resolved) return resolved;
-  }
-  return findScopedLogoUrl($, baseUrl);
-}
+// 1. header/nav <img> met "logo" in class/id/src/alt — SVG-bronnen eerst
+//    (schalen perfect). 2. JSON-LD Organization/LocalBusiness logo. 3.
+//    apple-touch-icon. 4. og:image, pas als laatste redmiddel: dat is op
+//    veel sites gewoon een hero-/contentfoto, geen logo — vandaar dat elke
+//    kandidaat hieronder nog los gevalideerd wordt (zie validateLogoImage)
+//    voordat 'm daadwerkelijk gebruikt wordt.
+function findLogoCandidates(
+  $: CheerioAPI,
+  baseUrl: string,
+  jsonLdBlocks: Record<string, unknown>[]
+): string[] {
+  const candidates: string[] = [];
 
-// Voor kleur-extractie via node-vibrant gebruiken we bewust NIET og:image —
-// dat is op veel sites gewoon een hero-/contentfoto (bijv. een tuinfoto),
-// geen logo, en zou dan een willekeurige fotokleur als "merkkleur"
-// opleveren. Alleen afbeeldingen die overduidelijk een logo zíjn (in
-// header/nav, of met "logo" in class/alt) worden voor kleuranalyse gebruikt.
-function findScopedLogoUrl($: CheerioAPI, baseUrl: string): string | null {
-  let found: string | null = null;
-  $("header img, nav img, img").each((_, el) => {
+  const headerNavImgs: { src: string; isSvg: boolean }[] = [];
+  $("header img, nav img").each((_, el) => {
     const $el = $(el);
+    const src = $el.attr("src");
+    if (!src) return undefined;
     const cls = ($el.attr("class") ?? "").toLowerCase();
+    const id = ($el.attr("id") ?? "").toLowerCase();
     const alt = ($el.attr("alt") ?? "").toLowerCase();
-    const scoped = $el.closest("header, nav").length > 0;
-    if (scoped || cls.includes("logo") || alt.includes("logo")) {
-      const src = $el.attr("src");
-      if (src) {
-        found = resolveUrl(src, baseUrl);
-        return false; // stop bij de eerste match
-      }
-    }
+    const looksLikeLogo =
+      cls.includes("logo") || id.includes("logo") || alt.includes("logo") || src.toLowerCase().includes("logo");
+    if (looksLikeLogo) headerNavImgs.push({ src, isSvg: src.toLowerCase().includes(".svg") });
     return undefined;
   });
-  return found;
+  headerNavImgs.sort((a, b) => Number(b.isSvg) - Number(a.isSvg));
+  for (const { src } of headerNavImgs) {
+    const resolved = resolveUrl(src, baseUrl);
+    if (resolved) candidates.push(resolved);
+  }
+
+  const orgBlock = findJsonLdByType(jsonLdBlocks, ["Organization", "LocalBusiness"]);
+  const jsonLdLogo = extractJsonLdLogoUrl(orgBlock);
+  if (jsonLdLogo) {
+    const resolved = resolveUrl(jsonLdLogo, baseUrl);
+    if (resolved) candidates.push(resolved);
+  }
+
+  const appleTouchIcon = $('link[rel="apple-touch-icon"]').attr("href");
+  if (appleTouchIcon) {
+    const resolved = resolveUrl(appleTouchIcon, baseUrl);
+    if (resolved) candidates.push(resolved);
+  }
+
+  const ogImage = $('meta[property="og:image"]').attr("content");
+  if (ogImage) {
+    const resolved = resolveUrl(ogImage, baseUrl);
+    if (resolved) candidates.push(resolved);
+  }
+
+  return candidates;
 }
+
+const MAX_LOGO_BYTES = 2 * 1024 * 1024;
+
+const EXTENSION_BY_CONTENT_TYPE: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/svg+xml": "svg",
+};
+
+async function uploadLogoToStorage(
+  companyId: string,
+  buffer: Buffer,
+  contentType: string
+): Promise<string | null> {
+  const ext = EXTENSION_BY_CONTENT_TYPE[contentType];
+  if (!ext) return null;
+  // File is een Node-builtin sinds Node 20 — geen extra dependency nodig om
+  // de gedownloade Buffer in hetzelfde formaat aan te bieden als de
+  // handmatige PhotoInput-upload (die een File uit FormData krijgt).
+  const file = new File([new Uint8Array(buffer)], `logo.${ext}`, { type: contentType });
+  // Dynamische import i.p.v. een top-level import: storage.ts gebruikt
+  // "server-only" (alleen bruikbaar binnen Next's eigen build). Zo blijft
+  // een falende module-load hier een awaited/catchbare promise — resolveLogo()
+  // hieronder vangt 'm dan gewoon op als "deze kandidaat mislukt, volgende
+  // proberen" i.p.v. dat het hele bestand (en daarmee elke aanroeper, incl.
+  // het standalone testscript) meteen crasht bij het laden.
+  const { uploadFoto } = await import("@/app/lib/storage");
+  const result = await uploadFoto(companyId, file);
+  return result.url ?? null;
+}
+
+type LogoResult = { url: string; buffer: Buffer } | null;
+
+// Probeert de kandidaten op volgorde; stopt bij de eerste die door de
+// validatie komt én succesvol geüpload wordt. Hotlinkt bewust nooit naar de
+// site van de vakman zelf (kan verdwijnen/blokkeren) — vandaar de upload
+// naar onze eigen Supabase Storage, dezelfde bucket/structuur als de
+// handmatige logo-upload (zie app/lib/storage.ts).
+async function resolveLogo(candidates: string[], companyId: string): Promise<LogoResult> {
+  for (const candidateUrl of candidates) {
+    try {
+      const image = await safeFetch(candidateUrl, MAX_LOGO_BYTES, "image/*");
+      const contentType = normalizeContentType(image.contentType);
+      if (!isAcceptedLogoContentType(contentType)) continue;
+
+      const validation = validateLogoImage(image.buffer, contentType);
+      if (!validation.ok) continue;
+
+      const uploadedUrl = await uploadLogoToStorage(companyId, image.buffer, contentType);
+      if (!uploadedUrl) continue;
+
+      return { url: uploadedUrl, buffer: image.buffer };
+    } catch {
+      continue; // deze kandidaat mislukt -> volgende proberen, geen harde fout
+    }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Font-herkenning
+// ---------------------------------------------------------------------------
 
 function extractFontFamily($: CheerioAPI, cssRules: CssRule[]): string | null {
   let googleFontHref: string | undefined;
@@ -213,26 +355,24 @@ function extractFontFamily($: CheerioAPI, cssRules: CssRule[]): string | null {
 }
 
 // ---------------------------------------------------------------------------
-// Node-vibrant kleurextractie uit een gedownloade logo-afbeelding
+// Node-vibrant kleurextractie uit het gevalideerde logo
 // ---------------------------------------------------------------------------
 
-async function extractFromLogoBuffer(
-  buffer: Buffer
-): Promise<{ primary: string; accent: string | null } | null> {
+// Sorteert op HSL-saturatie (niet op populatie — dat zou vaak de
+// achtergrondkleur van het logo opleveren) en filtert grijstinten weg.
+// Geeft de kleuren terug van meest naar minst verzadigd, zodat de
+// aanroeper element [0] als primary en [1] als secondary kan gebruiken.
+async function paletteFromLogoBuffer(buffer: Buffer): Promise<string[]> {
   try {
     const palette = await Vibrant.from(buffer).getPalette();
-    const withHex = Object.values(palette)
+    return Object.values(palette)
       .filter((swatch): swatch is NonNullable<typeof swatch> => swatch != null)
       .map((swatch) => ({ hex: swatch.hex.toLowerCase(), hsl: hexToHsl(swatch.hex) }))
       .filter((s): s is { hex: string; hsl: Hsl } => s.hsl !== null && !isGrayscale(s.hex))
-      // "Pak de meest verzadigde kleur" — sorteren op HSL-saturatie, niet op
-      // populatie (dat zou vaak de achtergrondkleur van het logo opleveren).
-      .sort((a, b) => b.hsl.s - a.hsl.s);
-
-    if (withHex.length === 0) return null;
-    return { primary: withHex[0].hex, accent: withHex[1]?.hex ?? null };
+      .sort((a, b) => b.hsl.s - a.hsl.s)
+      .map((s) => s.hex);
   } catch {
-    return null;
+    return [];
   }
 }
 
@@ -241,13 +381,12 @@ async function extractFromLogoBuffer(
 // ---------------------------------------------------------------------------
 
 const MAX_HTML_BYTES = 2 * 1024 * 1024;
-const MAX_LOGO_BYTES = 1 * 1024 * 1024;
 const MAX_STYLESHEETS = 3;
 
 function finalizeColors(
   primaryRaw: string,
-  accentRaw: string | null
-): { primaryColor: string; accentColor: string | null; textOnPrimary: string } {
+  secondaryCandidate: string | null
+): { primaryColor: string; secondaryColor: string | null; textOnPrimary: string } {
   const darkened = darkenUntilContrast(primaryRaw);
   const primaryColor = darkened?.hex ?? primaryRaw;
   // Zelfs na het maximale aantal donkerder-stappen niet genoeg contrast?
@@ -256,12 +395,14 @@ function finalizeColors(
   // witte tekst" bestaat (zie branding-form.tsx: die combinatie ligt vast).
   const textOnPrimary = darkened ? "#ffffff" : "#111827";
 
-  const accentColor = accentRaw && colorsAreDistinct(primaryColor, accentRaw) ? accentRaw : null;
+  const secondaryColor = secondaryCandidate && colorsAreDistinct(primaryColor, secondaryCandidate)
+    ? secondaryCandidate
+    : null;
 
-  return { primaryColor, accentColor, textOnPrimary };
+  return { primaryColor, secondaryColor, textOnPrimary };
 }
 
-export async function extractBranding(inputUrl: string): Promise<ExtractResult> {
+export async function extractBranding(inputUrl: string, companyId: string): Promise<ExtractResult> {
   let startUrl: string;
   try {
     startUrl = normalizeUrl(inputUrl);
@@ -284,63 +425,39 @@ export async function extractBranding(inputUrl: string): Promise<ExtractResult> 
   }
 
   const $ = cheerio.load(html);
-  const displayLogoUrl = findDisplayLogoUrl($, finalUrl);
+  const jsonLdBlocks = parseJsonLdBlocks($);
+  const orgBlock = findJsonLdByType(jsonLdBlocks, ["Organization", "LocalBusiness"]);
 
-  // Stap 1: <meta name="theme-color">
-  const themeColorRaw = $('meta[name="theme-color"]').attr("content");
-  if (themeColorRaw) {
-    const hex = cssColorToHex(themeColorRaw);
-    if (hex && !isGrayscale(hex)) {
-      const { primaryColor, accentColor, textOnPrimary } = finalizeColors(hex, null);
-      const fontFamily = extractFontFamily($, []);
-      return {
-        success: true,
-        primaryColor,
-        accentColor,
-        textOnPrimary,
-        fontFamily,
-        lettertype: fontFamily ? mapFontFamilyToLettertype(fontFamily) : "MODERN",
-        logoUrl: displayLogoUrl,
-        source: "theme-color",
-        confidence: "high",
-      };
-    }
-  }
+  // --- Bedrijfsnaam: JSON-LD name -> og:site_name -> <title> (opgeschoond) ---
+  const jsonLdName = typeof orgBlock?.["name"] === "string" ? (orgBlock["name"] as string).trim() : "";
+  const ogSiteName = $('meta[property="og:site_name"]').attr("content")?.trim() ?? "";
+  const pageTitle = $("title").first().text().trim();
+  const companyName =
+    jsonLdName || ogSiteName || (pageTitle ? cleanCompanyName(pageTitle) : "") || null;
 
-  // Stap 2: kleuren uit het logo (alleen een afbeelding die overduidelijk
-  // een logo is — zie findScopedLogoUrl — nooit een willekeurige og:image
-  // contentfoto).
-  const logoForColor = findScopedLogoUrl($, finalUrl);
-  if (logoForColor) {
-    try {
-      const logoImage = await safeFetch(logoForColor, MAX_LOGO_BYTES, "image/*");
-      const fromLogo = await extractFromLogoBuffer(logoImage.buffer);
-      if (fromLogo) {
-        const { primaryColor, accentColor, textOnPrimary } = finalizeColors(
-          fromLogo.primary,
-          fromLogo.accent
-        );
-        const fontFamily = extractFontFamily($, []);
-        return {
-          success: true,
-          primaryColor,
-          accentColor,
-          textOnPrimary,
-          fontFamily,
-          lettertype: fontFamily ? mapFontFamilyToLettertype(fontFamily) : "MODERN",
-          logoUrl: displayLogoUrl ?? logoForColor,
-          source: "logo",
-          confidence: "high",
-        };
-      }
-    } catch {
-      // Logo kon niet opgehaald/geanalyseerd worden — gewoon doorvallen naar
-      // de CSS-analyse hieronder, geen harde fout.
-    }
-  }
+  // --- Tekst verzamelen voor vakgebied-detectie + titleAlternative ---
+  const metaDescription = $('meta[name="description"]').attr("content")?.trim() ?? "";
+  const ogDescription = $('meta[property="og:description"]').attr("content")?.trim() ?? "";
+  const heroHeading = $("h1").first().text().trim() || $("h2").first().text().trim();
+  const combinedTextForVakgebied = [pageTitle, metaDescription, heroHeading, ogDescription]
+    .filter(Boolean)
+    .join(" ");
+  const onderwerp = detectOnderwerp(combinedTextForVakgebied);
+  const { title, titleAlternative, subtitle } = buildTitleSuggestions({
+    companyName,
+    onderwerp,
+    heroText: heroHeading || null,
+  });
 
-  // Stap 3: CSS-analyse (gelinkte stylesheets, zelfde host of bekende
-  // site-builder-CDN's, plus inline <style>).
+  // --- Logo: kandidaten proberen, eerste geldige uploaden naar onze eigen Storage ---
+  const logoCandidates = findLogoCandidates($, finalUrl, jsonLdBlocks);
+  const logo = await resolveLogo(logoCandidates, companyId);
+  const logoPalette = logo ? await paletteFromLogoBuffer(logo.buffer) : [];
+
+  // --- CSS-analyse (gelinkte stylesheets, zelfde host of bekende
+  // site-builder-CDN's, plus inline <style>) — altijd berekend, want dit is
+  // zowel de primary-fallback als de secondary-bron als er geen (bruikbaar)
+  // logo is. ---
   const host = new URL(finalUrl).hostname;
   const knownCdnSuffixes = ["wixstatic.com", "squarespace.com", "jouwweb.nl"];
   const stylesheetUrls: string[] = [];
@@ -366,32 +483,61 @@ export async function extractBranding(inputUrl: string): Promise<ExtractResult> 
       // Eén onbereikbare stylesheet mag de rest van de analyse niet blokkeren.
     }
   }
-
   const cssRules = splitCssRules(cssText);
-  const weighted = collectWeightedColors(cssRules);
-  const [primaryRaw, accentRaw] = topColors(weighted, 2);
+  const cssWeighted = topColors(collectWeightedColors(cssRules), 2);
 
-  if (primaryRaw) {
-    const { primaryColor, accentColor, textOnPrimary } = finalizeColors(primaryRaw, accentRaw ?? null);
-    const fontFamily = extractFontFamily($, cssRules);
+  // --- Primaire kleur: theme-color -> logo-palet -> CSS -> falen ---
+  const themeColorRaw = $('meta[name="theme-color"]').attr("content");
+  const themeColorHex = themeColorRaw ? cssColorToHex(themeColorRaw) : null;
+
+  let primaryRaw: string | null = null;
+  let source: ExtractSource = "fallback";
+  let confidence: Confidence = "low";
+  let secondaryCandidate: string | null = null;
+
+  if (themeColorHex && !isGrayscale(themeColorHex)) {
+    primaryRaw = themeColorHex;
+    source = "theme-color";
+    confidence = "high";
+    secondaryCandidate = logoPalette[0] ?? cssWeighted[0] ?? null;
+  } else if (logoPalette.length > 0) {
+    primaryRaw = logoPalette[0];
+    source = "logo";
+    confidence = "high";
+    secondaryCandidate = logoPalette[1] ?? cssWeighted[0] ?? null;
+  } else if (cssWeighted.length > 0) {
+    primaryRaw = cssWeighted[0];
+    source = "css";
+    confidence = "medium";
+    secondaryCandidate = cssWeighted[1] ?? null;
+  }
+
+  if (!primaryRaw) {
     return {
-      success: true,
-      primaryColor,
-      accentColor,
-      textOnPrimary,
-      fontFamily,
-      lettertype: fontFamily ? mapFontFamilyToLettertype(fontFamily) : "MODERN",
-      logoUrl: displayLogoUrl,
-      source: "css",
-      confidence: "medium",
+      success: false,
+      error:
+        "We konden geen duidelijke huisstijl vinden op deze website. Kies je kleuren hieronder handmatig.",
+      confidence: "low",
     };
   }
 
-  // Stap 4: niets bruikbaars gevonden.
+  const { primaryColor, secondaryColor, textOnPrimary } = finalizeColors(primaryRaw, secondaryCandidate);
+  const validSecondary = pickSecondaryColor(primaryColor, secondaryColor);
+  const fontFamily = extractFontFamily($, cssRules);
+
   return {
-    success: false,
-    error:
-      "We konden geen duidelijke huisstijl vinden op deze website. Kies je kleuren hieronder handmatig.",
-    confidence: "low",
+    success: true,
+    primaryColor,
+    ...(validSecondary ? { secondaryColor: validSecondary } : {}),
+    textOnPrimary,
+    fontFamily,
+    lettertype: fontFamily ? mapFontFamilyToLettertype(fontFamily) : "MODERN",
+    logoUrl: logo?.url ?? null,
+    companyName,
+    title,
+    ...(titleAlternative ? { titleAlternative } : {}),
+    subtitle,
+    source,
+    confidence,
   };
 }

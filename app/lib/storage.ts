@@ -14,6 +14,9 @@ const EXTENSION_BY_TYPE: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
   "image/gif": "gif",
+  // svg toegevoegd voor auto-branding (app/lib/branding-extract.ts), die
+  // SVG-logo's boven raster verkiest omdat die perfect schalen.
+  "image/svg+xml": "svg",
 };
 
 // Duck-types a FormData entry as an uploaded file instead of `instanceof
@@ -37,7 +40,7 @@ export async function uploadFoto(
 ): Promise<{ url: string; error?: undefined } | { url?: undefined; error: string }> {
   const ext = EXTENSION_BY_TYPE[file.type];
   if (!ext) {
-    return { error: "Alleen JPG, PNG, WEBP of GIF-afbeeldingen zijn toegestaan." };
+    return { error: "Alleen JPG, PNG, WEBP, GIF of SVG-afbeeldingen zijn toegestaan." };
   }
   if (file.size > MAX_FILE_SIZE) {
     return { error: "Afbeelding is te groot (max 5MB)." };
@@ -69,4 +72,13 @@ export async function deleteFoto(url: string) {
 
   const supabase = await createClient();
   await supabase.storage.from(BUCKET).remove([path]);
+}
+
+// Sanity-check voor logoUrl-waarden die niet via een echte file-upload
+// binnenkomen (zie extractedLogoUrl in app/lib/actions/branding.ts) — een
+// client-aangeleverde URL-string mag nooit blind vertrouwd worden, maar
+// hier gaat het altijd om een URL die onze eigen extractie-route zelf al
+// naar deze bucket heeft geüpload, dus is een marker-check voldoende.
+export function isOwnStorageUrl(url: string): boolean {
+  return url.includes(`/object/public/${BUCKET}/`);
 }

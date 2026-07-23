@@ -9,7 +9,29 @@ import {
   isSystemFont,
   extractFontFamilyFromGoogleFontsHref,
   extractFontFamilyFromCss,
+  isAcceptedLogoContentType,
+  normalizeContentType,
+  validateLogoImage,
+  pickSecondaryColor,
+  cleanCompanyName,
+  capitalizeSentence,
+  truncateAtWordBoundary,
+  detectOnderwerp,
+  buildTitleSuggestions,
 } from "./branding-extract-utils";
+
+// Handgeschreven, minimale PNG-buffer — image-size leest alleen de
+// signature, de "IHDR"-marker op byte 12 en width/height op byte 16/20, dus
+// dit hoeft geen echt renderbare afbeelding te zijn.
+function makePng(width: number, height: number): Buffer {
+  const buf = Buffer.alloc(24);
+  buf.write("\x89PNG\r\n\x1a\n", 0, "binary");
+  buf.writeUInt32BE(13, 8);
+  buf.write("IHDR", 12, "ascii");
+  buf.writeUInt32BE(width, 16);
+  buf.writeUInt32BE(height, 20);
+  return buf;
+}
 
 describe("isPrivateIp — SSRF-preventie", () => {
   it("blokkeert loopback, private en link-local IPv4-ranges", () => {
@@ -159,5 +181,220 @@ describe("font-herkenning", () => {
   it("negeert een system-stack font-family op body", () => {
     const rules = splitCssRules("body { font-family: -apple-system, sans-serif; }");
     expect(extractFontFamilyFromCss(rules)).toBeNull();
+  });
+});
+
+describe("normalizeContentType / isAcceptedLogoContentType", () => {
+  it("negeert charset-parameters", () => {
+    expect(normalizeContentType("image/svg+xml; charset=utf-8")).toBe("image/svg+xml");
+  });
+
+  it("accepteert png/jpeg/webp/svg, niet gif of onbekend", () => {
+    expect(isAcceptedLogoContentType("image/png")).toBe(true);
+    expect(isAcceptedLogoContentType("image/jpeg")).toBe(true);
+    expect(isAcceptedLogoContentType("image/webp")).toBe(true);
+    expect(isAcceptedLogoContentType("image/svg+xml")).toBe(true);
+    expect(isAcceptedLogoContentType("image/gif")).toBe(false);
+    expect(isAcceptedLogoContentType("text/html")).toBe(false);
+    expect(isAcceptedLogoContentType(null)).toBe(false);
+  });
+});
+
+describe("validateLogoImage", () => {
+  it("keurt SVG altijd goed zonder afmetingen te checken", () => {
+    expect(validateLogoImage(Buffer.from("<svg/>"), "image/svg+xml")).toEqual({ ok: true });
+  });
+
+  it("keurt een normaal formaat logo goed", () => {
+    expect(validateLogoImage(makePng(300, 120), "image/png")).toEqual({ ok: true });
+  });
+
+  it("wijst favicon-formaten af (te klein)", () => {
+    const result = validateLogoImage(makePng(32, 32), "image/png");
+    expect(result.ok).toBe(false);
+  });
+
+  it("wijst extreem langgerekte afbeeldingen af (ratio > 4:1)", () => {
+    const result = validateLogoImage(makePng(1000, 100), "image/png");
+    expect(result.ok).toBe(false);
+  });
+
+  it("wijst brede ~16:9 hero-foto's af", () => {
+    const result = validateLogoImage(makePng(1600, 900), "image/png");
+    expect(result.ok).toBe(false);
+  });
+
+  it("staat een kleinere 16:9-achtige afbeelding (geen hero-foto) wel toe", () => {
+    // Zelfde ratio als hierboven, maar onder de 1200px-breedtegrens.
+    expect(validateLogoImage(makePng(400, 225), "image/png")).toEqual({ ok: true });
+  });
+
+  it("wijst een ongeldig bestandstype af", () => {
+    const result = validateLogoImage(makePng(300, 120), "application/pdf");
+    expect(result.ok).toBe(false);
+  });
+
+  it("wijst onleesbare afbeeldingsdata af", () => {
+    const result = validateLogoImage(Buffer.from("niet een echte afbeelding"), "image/png");
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("pickSecondaryColor", () => {
+  it("wijst een grijstint af", () => {
+    expect(pickSecondaryColor("#15803d", "#888888")).toBeNull();
+  });
+
+  it("wijst een kleur die te dicht bij primary ligt af", () => {
+    expect(pickSecondaryColor("#15803d", "#16813e")).toBeNull();
+  });
+
+  it("wijst een kleur die bijna gelijk is aan de achtergrondkleur af", () => {
+    expect(pickSecondaryColor("#15803d", "#f8f9fa", "#f7f8f9")).toBeNull();
+  });
+
+  it("accepteert een duidelijk onderscheiden, verzadigde kleur", () => {
+    expect(pickSecondaryColor("#15803d", "#e8a020")).toBe("#e8a020");
+  });
+
+  it("geeft null als er geen kandidaat is", () => {
+    expect(pickSecondaryColor("#15803d", null)).toBeNull();
+  });
+});
+
+describe("cleanCompanyName", () => {
+  it("pakt het eerste zinvolle segment bij een gescheiden titel", () => {
+    expect(cleanCompanyName("Vincent Kok Tuinen | Hoveniersbedrijf")).toBe("Vincent Kok Tuinen");
+  });
+
+  it("negeert generieke segmenten als 'Home'", () => {
+    expect(cleanCompanyName("Home | Jansen Hoveniers")).toBe("Jansen Hoveniers");
+  });
+
+  it("strip 'Welkom bij' als prefix", () => {
+    expect(cleanCompanyName("Welkom bij De Groene Vingers")).toBe("De Groene Vingers");
+  });
+
+  it("laat een hyphen binnen een bedrijfsnaam intact (splitst niet op kale '-')", () => {
+    expect(cleanCompanyName("Jansen-de Boer Tuinen")).toBe("Jansen-de Boer Tuinen");
+  });
+
+  it("laat een titel zonder scheidingsteken ongewijzigd", () => {
+    expect(cleanCompanyName("Tuinbedrijf Verhoeven")).toBe("Tuinbedrijf Verhoeven");
+  });
+});
+
+describe("capitalizeSentence", () => {
+  it("zet de eerste letter in hoofdletter", () => {
+    expect(capitalizeSentence("bereken direct uw prijs")).toBe("Bereken direct uw prijs");
+  });
+
+  it("zet ALL CAPS-tekst om naar leesbare zin-case", () => {
+    expect(capitalizeSentence("BEREKEN DIRECT UW PRIJS")).toBe("Bereken direct uw prijs");
+  });
+
+  it("laat normale gemengde casing verder ongemoeid", () => {
+    expect(capitalizeSentence("welkom bij TuinCo")).toBe("Welkom bij TuinCo");
+  });
+});
+
+describe("truncateAtWordBoundary", () => {
+  it("laat korte tekst ongewijzigd", () => {
+    expect(truncateAtWordBoundary("Bereken direct uw prijs", 60)).toBe("Bereken direct uw prijs");
+  });
+
+  it("kapt af op de laatste woordgrens vóór de limiet", () => {
+    expect(truncateAtWordBoundary("Bereken direct de kosten van uw prachtige nieuwe tuin", 30)).toBe(
+      "Bereken direct de kosten van"
+    );
+  });
+});
+
+describe("detectOnderwerp", () => {
+  it("herkent alle vier de bestaande doelgroepen", () => {
+    expect(detectOnderwerp("Hoveniersbedrijf voor tuinaanleg")).toBe("uw tuin");
+    expect(detectOnderwerp("Specialist in bestrating en oprit")).toBe("uw bestrating");
+    expect(detectOnderwerp("Schilder voor al uw schilderwerk")).toBe("uw schilderwerk");
+    expect(detectOnderwerp("Klusbedrijf voor elke verbouwing")).toBe("uw klus");
+  });
+
+  it("herkent de extra vakgebieden uit de opdracht", () => {
+    expect(detectOnderwerp("Dakdekker gespecialiseerd in dakkapellen")).toBe("uw dak");
+    expect(detectOnderwerp("Badkamer en sanitair vernieuwen")).toBe("uw badkamer");
+    expect(detectOnderwerp("Kozijnen en glaszetter")).toBe("uw kozijnen");
+  });
+
+  it("geeft null als er geen vakgebied herkend wordt", () => {
+    expect(detectOnderwerp("Een willekeurige webshop voor elektronica")).toBeNull();
+  });
+});
+
+describe("buildTitleSuggestions", () => {
+  it("bouwt de standaardtitel met herkend vakgebied", () => {
+    const result = buildTitleSuggestions({
+      companyName: "Vincent Kok Tuinen",
+      onderwerp: "uw tuin",
+      heroText: null,
+    });
+    expect(result.title).toBe("Bereken direct de kosten van uw tuin");
+    expect(result.subtitle).toBe("Vraag vrijblijvend een prijsindicatie aan bij Vincent Kok Tuinen");
+    expect(result.titleAlternative).toBeNull();
+  });
+
+  it("valt terug op generieke titel/subtitel zonder vakgebied of bedrijfsnaam", () => {
+    const result = buildTitleSuggestions({ companyName: null, onderwerp: null, heroText: null });
+    expect(result.title).toBe("Bereken direct uw prijs");
+    expect(result.subtitle).toBe("Vraag vrijblijvend een prijsindicatie aan");
+  });
+
+  it("geeft een bruikbare hero-tekst terug als titleAlternative", () => {
+    const result = buildTitleSuggestions({
+      companyName: "Vincent Kok Tuinen",
+      onderwerp: "uw tuin",
+      heroText: "Uw droomtuin binnen handbereik",
+    });
+    expect(result.titleAlternative).toBe("Uw droomtuin binnen handbereik");
+  });
+
+  it("verwerpt een te korte, te lange, 'Welkom'-achtige of afgekapte hero-tekst", () => {
+    expect(
+      buildTitleSuggestions({ companyName: null, onderwerp: null, heroText: "Kort" }).titleAlternative
+    ).toBeNull();
+    expect(
+      buildTitleSuggestions({
+        companyName: null,
+        onderwerp: null,
+        heroText: "Welkom op de website van ons prachtige bedrijf",
+      }).titleAlternative
+    ).toBeNull();
+    expect(
+      buildTitleSuggestions({
+        companyName: null,
+        onderwerp: null,
+        heroText: "Dit is een veel te lange hero-tekst die duidelijk ver boven de zestig tekens grens uitkomt",
+      }).titleAlternative
+    ).toBeNull();
+    expect(
+      buildTitleSuggestions({ companyName: null, onderwerp: null, heroText: "Een tekst die afbreekt..." })
+        .titleAlternative
+    ).toBeNull();
+  });
+
+  it("verwerpt hero-tekst die de bedrijfsnaam herhaalt", () => {
+    const result = buildTitleSuggestions({
+      companyName: "TuinCo",
+      onderwerp: null,
+      heroText: "Welkom bij TuinCo, uw tuinspecialist",
+    });
+    expect(result.titleAlternative).toBeNull();
+  });
+
+  it("kapt een te lange titel/subtitel af op woordgrens", () => {
+    const result = buildTitleSuggestions({
+      companyName: "Een Heel Erg Lange Bedrijfsnaam Die De Limiet Van Honderdtwintig Tekens Ruim Overschrijdt Voor Deze Test",
+      onderwerp: "uw tuin",
+      heroText: null,
+    });
+    expect(result.subtitle.length).toBeLessThanOrEqual(120);
   });
 });
