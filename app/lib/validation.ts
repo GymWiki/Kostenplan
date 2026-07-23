@@ -216,6 +216,10 @@ export const brandingSchema = z.object({
   contactPositie: z.enum(["BOVENAAN", "ONDERAAN"], "Kies een positie"),
 });
 
+export const brandingExtractSchema = z.object({
+  url: z.string().trim().min(1, "Vul een website-URL in").max(2048),
+});
+
 export const checkoutSchema = z.object({
   plan: z.enum(["GRATIS", "PLUS", "PRO"], "Kies een pakket"),
   interval: z.enum(["MAANDELIJKS", "JAARLIJKS"], "Kies een betaalperiode"),

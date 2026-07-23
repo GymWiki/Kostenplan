@@ -10,7 +10,9 @@ import { Switch } from "@/app/components/ui/switch";
 import { PhotoInput } from "@/app/components/ui/photo-input";
 import { cn } from "@/app/lib/cn";
 import { lettertypeOpties } from "@/app/lib/fonts";
-import type { Branding, SubscriptionTier } from "@/app/generated/prisma/client";
+import { contrastAgainstWhite } from "@/app/lib/color";
+import { AutoBranding, type AutoBrandingResult } from "./auto-branding";
+import type { Branding, Lettertype, SubscriptionTier } from "@/app/generated/prisma/client";
 
 export function BrandingForm({
   branding,
@@ -24,7 +26,20 @@ export function BrandingForm({
   const [state, formAction, pending] = useActionState(updateBrandingAction, null);
   const [toonTelefoonnummer, setToonTelefoonnummer] = useState(branding.toonTelefoonnummer);
 
+  // Gecontroleerd (i.p.v. de eerdere defaultValue/eigen-state-per-veld
+  // opzet) zodat "Toepassen" in AutoBranding hieronder deze drie velden
+  // programmatisch kan vullen — de gebruiker kan ze daarna nog gewoon met
+  // de hand bijstellen vóór het opslaan.
+  const [primaireKleur, setPrimaireKleur] = useState(branding.primaireKleur);
+  const [achtergrondKleur, setAchtergrondKleur] = useState(branding.achtergrondKleur);
+  const [lettertype, setLettertype] = useState<Lettertype>(branding.lettertype);
+
   const magPersonaliserenUiterlijk = subscriptionTier !== "GRATIS";
+
+  function handleApply(result: AutoBrandingResult) {
+    setPrimaireKleur(result.primaireKleur);
+    setLettertype(result.lettertype);
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -38,6 +53,8 @@ export function BrandingForm({
           Branding opgeslagen.
         </p>
       )}
+
+      {magPersonaliserenUiterlijk && <AutoBranding onApply={handleApply} />}
 
       <Card>
         <CardHeader>
@@ -76,14 +93,16 @@ export function BrandingForm({
             <ColorField
               label="Primaire kleur"
               name="primaireKleur"
-              defaultValue={branding.primaireKleur}
+              value={primaireKleur}
+              onChange={setPrimaireKleur}
               helper="Gebruikt voor knoppen, de header en acties — met witte tekst erop."
               warnLightAgainstWhite
             />
             <ColorField
               label="Achtergrondkleur"
               name="achtergrondKleur"
-              defaultValue={branding.achtergrondKleur}
+              value={achtergrondKleur}
+              onChange={setAchtergrondKleur}
               helper="De paginaondergrond van je rekentool."
             />
           </div>
@@ -95,7 +114,12 @@ export function BrandingForm({
             )}
           >
             <Label htmlFor="lettertype">Lettertype</Label>
-            <Select id="lettertype" name="lettertype" defaultValue={branding.lettertype}>
+            <Select
+              id="lettertype"
+              name="lettertype"
+              value={lettertype}
+              onChange={(e) => setLettertype(e.target.value as Lettertype)}
+            >
               {lettertypeOpties.map((optie) => (
                 <option key={optie.value} value={optie.value}>
                   {optie.label}
@@ -209,33 +233,21 @@ export function BrandingForm({
   );
 }
 
-// Relative luminance per WCAG — used to warn when white text (the header
-// and CTA button always use white) would be hard to read on a very light
-// primary color. Not a hard block: it's the tenant's own choice, just a
-// nudge in the right direction.
-function contrastAgainstWhite(hex: string) {
-  const match = /^#([0-9a-fA-F]{6})$/.exec(hex);
-  if (!match) return null;
-  const rgb = [0, 2, 4].map((i) => parseInt(match[1].slice(i, i + 2), 16) / 255);
-  const [r, g, b] = rgb.map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
-  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  return (1 + 0.05) / (luminance + 0.05);
-}
-
 function ColorField({
   label,
   name,
-  defaultValue,
+  value,
+  onChange,
   helper,
   warnLightAgainstWhite = false,
 }: {
   label: string;
   name: string;
-  defaultValue: string;
+  value: string;
+  onChange: (value: string) => void;
   helper: string;
   warnLightAgainstWhite?: boolean;
 }) {
-  const [value, setValue] = useState(defaultValue);
   const swatchValue = /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#000000";
   const contrast = warnLightAgainstWhite ? contrastAgainstWhite(value) : null;
   const laagContrast = contrast !== null && contrast < 2;
@@ -247,7 +259,7 @@ function ColorField({
         <input
           type="color"
           value={swatchValue}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           aria-label={`${label} kiezen`}
           className="h-11 w-11 shrink-0 cursor-pointer rounded-md border border-input bg-card p-1"
         />
@@ -255,7 +267,7 @@ function ColorField({
           id={name}
           name={name}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           maxLength={7}
           className="font-mono uppercase"
         />

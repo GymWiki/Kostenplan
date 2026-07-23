@@ -114,6 +114,23 @@ model User {
   // automatisch aangemaakte bedrijf; bij een nieuw bedrijf (zie
   // company_members) de daadwerkelijke aanmaker.
   createdCompanies   Company[] @relation("CompanyCreator")
+
+  brandingExtractionAttempts BrandingExtractionAttempt[]
+}
+
+// Eén rij per aanroep van /api/branding/extract — puur voor de rate-limit
+// (max 10/uur/gebruiker, zie de route) en lichte observability. Bewust geen
+// volledig geëxtraheerd resultaat opslaan, alleen wat nodig is om misbruik
+// te herkennen en een falende extractie te kunnen nazien.
+model BrandingExtractionAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceUrl String
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 // Eén bedrijf/tenant. Alles wat vroeger op User stond (bedrijfsnaam, slug,

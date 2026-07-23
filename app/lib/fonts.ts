@@ -1,6 +1,8 @@
 import { Lora, Oswald, Plus_Jakarta_Sans, Poppins } from "next/font/google";
 import type { Lettertype } from "@/app/generated/prisma/client";
 
+export { mapFontFamilyToLettertype } from "@/app/lib/font-mapping";
+
 // One font per Lettertype option, each with its own CSS variable.
 // preload: false is deliberate — a portal page only ever uses ONE of these
 // four at a time (picked at render time via fontFamilyFor() below), so
