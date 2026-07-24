@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { ChevronDown, Plus } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/app/components/ui/badge";
+import { HelpTip } from "@/app/components/ui/help-tip";
 import { switchActiveCompanyAction } from "@/app/lib/actions/companies";
 import { effectiveTier, PLAN_LABELS } from "@/app/lib/subscription";
 import type { SubscriptionTier } from "@/app/generated/prisma/client";
@@ -27,16 +28,17 @@ export function CompanySwitcher({
   const actief = companies.find((c) => c.id === activeCompanyId) ?? companies[0];
 
   return (
-    <div className="relative min-w-0 flex-1">
+    <div className="relative flex min-w-0 flex-1 items-center gap-1">
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Bedrijf wisselen"
-        className="flex w-full min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-secondary cursor-pointer"
+        className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-secondary cursor-pointer"
       >
         <span className="min-w-0 truncate text-sm font-medium text-foreground">{actief.naam}</span>
         <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
       </button>
+      <HelpTip contentKey="dashboard.companySwitcher" />
 
       {open &&
         createPortal(

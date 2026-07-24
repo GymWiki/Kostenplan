@@ -20,6 +20,7 @@ import { DecimalInput, Input, Label } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { PhotoInput } from "@/app/components/ui/photo-input";
+import { HelpTip } from "@/app/components/ui/help-tip";
 import { formatCurrency, formatCurrencyRange } from "@/app/lib/format";
 import { unitLabel } from "@/app/lib/units";
 import type { MaterialCategory, MaterialOption } from "@/app/generated/prisma/client";
@@ -50,15 +51,18 @@ function MaterialPrijsVeld({
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
         <Label htmlFor={`${idPrefix}-prijs`}>Prijs</Label>
-        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={bandbreedte}
-            onChange={(e) => setBandbreedte(e.target.checked)}
-            className="h-3.5 w-3.5 rounded border-input accent-primary"
-          />
-          Bandbreedte
-        </label>
+        <span className="flex items-center gap-1.5">
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={bandbreedte}
+              onChange={(e) => setBandbreedte(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-input accent-primary"
+            />
+            Bandbreedte
+          </label>
+          <HelpTip contentKey="producten.materiaalBandbreedte" />
+        </span>
       </div>
       <input type="hidden" name="prijsType" value={bandbreedte ? "BANDBREEDTE" : "VAST"} />
       {bandbreedte ? (

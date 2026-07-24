@@ -7,6 +7,7 @@ import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { PricingTable } from "@/app/components/pricing/pricing-table";
+import { HelpTip } from "@/app/components/ui/help-tip";
 import { PLAN_LABELS, SUBSCRIPTION_STATUS_LABELS } from "@/app/lib/subscription";
 import type {
   BillingInterval,
@@ -59,7 +60,12 @@ export function AbonnementView({
             <p className="font-semibold text-foreground">
               Huidig pakket: {PLAN_LABELS[effectivePlan]}
             </p>
-            {isOverridden && <Badge variant="default">Handmatig toegekend</Badge>}
+            {isOverridden && (
+              <span className="flex items-center gap-1.5">
+                <Badge variant="default">Handmatig toegekend</Badge>
+                <HelpTip contentKey="abonnement.overrideTier" />
+              </span>
+            )}
             {!isOverridden && actualPlan !== "GRATIS" && (
               <Badge variant={isActiveSubscription ? "success" : "warning"}>
                 {SUBSCRIPTION_STATUS_LABELS[subscriptionStatus]}
@@ -82,6 +88,11 @@ export function AbonnementView({
           )}
         </CardContent>
       </Card>
+
+      <h2 className="flex items-center gap-2 font-semibold text-foreground">
+        Kies je pakket
+        <HelpTip contentKey="abonnement.upgradeDowngrade" />
+      </h2>
 
       <PricingTable
         currentPlan={effectivePlan}

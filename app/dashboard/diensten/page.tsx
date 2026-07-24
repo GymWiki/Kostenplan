@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/app/components/ui/card";
 import { ActiveToggle } from "@/app/components/dashboard/active-toggle";
 import { DeleteButton } from "@/app/components/dashboard/delete-button";
 import { NieuwItemButton } from "@/app/components/dashboard/nieuw-item-button";
+import { HelpTip } from "@/app/components/ui/help-tip";
 import { effectiveTier, GRATIS_CATALOGUS_LIMIET } from "@/app/lib/subscription";
 import {
   deleteServiceAction,
@@ -34,7 +35,10 @@ export default async function DienstenPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Diensten</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold text-foreground">
+            Diensten
+            <HelpTip contentKey="producten.productVsDienst" />
+          </h1>
           <p className="mt-1 text-muted-foreground">
             Werkzaamheden die draaien om arbeid: een uurtarief of een vaste projectprijs.
           </p>

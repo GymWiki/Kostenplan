@@ -6,11 +6,13 @@ import { cn } from "@/app/lib/cn";
 import { formatCurrency } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { LinkButton } from "@/app/components/ui/button";
+import { HelpTip } from "@/app/components/ui/help-tip";
 import { KanbanBoard } from "./kanban-board";
 import { LeadsTable } from "./leads-table";
 import { LeadDetailDrawer } from "./lead-detail-drawer";
 import type { Lead, LeadNote } from "@/app/generated/prisma/client";
 import type { LeadSnapshot } from "@/app/lib/leads";
+import type { HelpContentKey } from "@/app/lib/helpContent";
 
 export type LeadWithNotes = Omit<Lead, "snapshot"> & {
   snapshot: LeadSnapshot;
@@ -80,33 +82,36 @@ export function LeadsView({
             Offerte-aanvragen vanuit je klantenportaal, op één plek.
           </p>
         </div>
-        <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
-          <button
-            type="button"
-            onClick={() => setView("kanban")}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
-              view === "kanban"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <LayoutGrid className="h-4 w-4" />
-            Bord
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("lijst")}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
-              view === "lijst"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <List className="h-4 w-4" />
-            Lijst
-          </button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
+            <button
+              type="button"
+              onClick={() => setView("kanban")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
+                view === "kanban"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              Bord
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("lijst")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
+                view === "lijst"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <List className="h-4 w-4" />
+              Lijst
+            </button>
+          </div>
+          <HelpTip contentKey="leads.statusKolommen" />
         </div>
       </div>
 
@@ -116,6 +121,7 @@ export function LeadsView({
           label="Pipeline waarde"
           value={formatCurrency(pipelineWaarde)}
           hint="Actieve aanvragen"
+          help="leads.pipelineWaarde"
         />
         <KpiCard icon={Users} label="Actieve aanvragen" value={String(actieveCount)} />
         <KpiCard icon={Trophy} label="Gewonnen" value={String(gewonnenCount)} />
@@ -155,11 +161,13 @@ function KpiCard({
   label,
   value,
   hint,
+  help,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
   hint?: string;
+  help?: HelpContentKey;
 }) {
   return (
     <Card>
@@ -167,6 +175,7 @@ function KpiCard({
         <div className="flex items-center gap-2 text-muted-foreground">
           <Icon className="h-4 w-4" />
           <span className="text-sm">{label}</span>
+          {help && <HelpTip contentKey={help} />}
         </div>
         <p className="text-2xl font-bold text-foreground">{value}</p>
         {hint && <p className="text-xs text-muted-foreground">{hint}</p>}

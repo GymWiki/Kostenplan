@@ -14,6 +14,7 @@ import { DecimalInput, Input, Label, Select, Textarea } from "@/app/components/u
 import { Switch } from "@/app/components/ui/switch";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { PhotoInput } from "@/app/components/ui/photo-input";
+import { HelpTip } from "@/app/components/ui/help-tip";
 import { formatCurrency } from "@/app/lib/format";
 import { unitLabel } from "@/app/lib/units";
 import type { ExtraOption } from "@/app/generated/prisma/client";
@@ -107,7 +108,10 @@ function NewExtraOptionForm({
           </div>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="new-extra-type">Type</Label>
+          <span className="flex items-center gap-1.5">
+            <Label htmlFor="new-extra-type">Type</Label>
+            <HelpTip contentKey="producten.extraOptieType" />
+          </span>
           <ExtraOptionTypeSelect id="new-extra-type" productEenheid={productEenheid} />
         </div>
       </div>

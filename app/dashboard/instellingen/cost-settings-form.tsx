@@ -9,9 +9,11 @@ import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
 import { DecimalInput, Label, Select } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
+import { HelpTip } from "@/app/components/ui/help-tip";
 import { cn } from "@/app/lib/cn";
 import { Eye, Layers } from "lucide-react";
 import { arbeidEenheidEnkelvoud, arbeidEenheidMeervoud } from "@/app/lib/arbeid";
+import type { HelpContentKey } from "@/app/lib/helpContent";
 import type { ArbeidStapEenheid, BandbreedteModus, CostSettings } from "@/app/generated/prisma/client";
 
 export function CostSettingsForm({
@@ -67,6 +69,7 @@ export function CostSettingsForm({
             label="Reken in"
             htmlFor="arbeidStapEenheid"
             error={fieldErrors?.arbeidStapEenheid}
+            help="kosteninstellingen.rekenEenheid"
           >
             <Select
               id="arbeidStapEenheid"
@@ -176,7 +179,10 @@ export function CostSettingsForm({
 
       <Card>
         <CardHeader>
-          <CardTitle>Prijsbandbreedte</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Prijsbandbreedte
+            <HelpTip contentKey="kosteninstellingen.bandbreedteModus" />
+          </CardTitle>
           <CardDescription>
             Geef een indicatieve bandbreedte in plaats van één vast bedrag. De drie standen
             sluiten elkaar uit.
@@ -272,6 +278,7 @@ export function CostSettingsForm({
               label="BTW-percentage"
               htmlFor="btwPercentage"
               error={fieldErrors?.btwPercentage}
+              help="kosteninstellingen.btw"
             >
               <CurrencyInput
                 id="btwPercentage"
@@ -331,19 +338,22 @@ function CostTypeCard({
         inert={!enabled}
       >
         {children}
-        <label className="flex items-center gap-2 border-t border-border pt-4 text-sm text-foreground">
-          <input
-            type="checkbox"
-            name={visibleName}
-            defaultChecked={visibleDefault}
-            className="h-4 w-4 rounded border-input accent-primary"
-          />
-          <Eye className="h-4 w-4 text-muted-foreground" />
-          Zichtbaar voor klant
-          <span className="text-muted-foreground">
-            — telt mee in het totaal, maar de aparte regel wordt verborgen als je dit uitzet.
-          </span>
-        </label>
+        <div className="flex items-center gap-1.5 border-t border-border pt-4">
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <input
+              type="checkbox"
+              name={visibleName}
+              defaultChecked={visibleDefault}
+              className="h-4 w-4 rounded border-input accent-primary"
+            />
+            <Eye className="h-4 w-4 text-muted-foreground" />
+            Zichtbaar voor klant
+            <span className="text-muted-foreground">
+              — telt mee in het totaal, maar de aparte regel wordt verborgen als je dit uitzet.
+            </span>
+          </label>
+          <HelpTip contentKey="kosteninstellingen.zichtbaarVsActief" />
+        </div>
       </CardContent>
     </Card>
   );
@@ -386,15 +396,20 @@ function Field({
   htmlFor,
   children,
   error,
+  help,
 }: {
   label: string;
   htmlFor: string;
   children: React.ReactNode;
   error?: string;
+  help?: HelpContentKey;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={htmlFor}>{label}</Label>
+      <span className="flex items-center gap-1.5">
+        <Label htmlFor={htmlFor}>{label}</Label>
+        {help && <HelpTip contentKey={help} />}
+      </span>
       {children}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>

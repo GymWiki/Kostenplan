@@ -5,6 +5,7 @@ import { Button, LinkButton } from "@/app/components/ui/button";
 import { DecimalInput, Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { IconPicker } from "@/app/components/ui/icon-picker";
+import { HelpTip } from "@/app/components/ui/help-tip";
 import type { ServiceFormState } from "@/app/lib/actions/services";
 import type { Service, ServicePrijsType } from "@/app/generated/prisma/client";
 
@@ -206,15 +207,18 @@ export function ServiceForm({
         </div>
       )}
 
-      <label className="flex items-center gap-2 text-sm text-muted-foreground">
-        <input
-          type="checkbox"
-          checked={bandbreedte}
-          onChange={(e) => setBandbreedte(e.target.checked)}
-          className="h-4 w-4 rounded border-input accent-primary"
-        />
-        Prijs is een bandbreedte in plaats van een vast bedrag
-      </label>
+      <span className="flex items-center gap-1.5">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={bandbreedte}
+            onChange={(e) => setBandbreedte(e.target.checked)}
+            className="h-4 w-4 rounded border-input accent-primary"
+          />
+          Prijs is een bandbreedte in plaats van een vast bedrag
+        </label>
+        <HelpTip contentKey="diensten.bandbreedte" />
+      </span>
       <input type="hidden" name="bandbreedteType" value={bandbreedte ? "BANDBREEDTE" : "VAST"} />
 
       {/* De niet-actieve prijsvorm blijft verborgen meegestuurd zodat het

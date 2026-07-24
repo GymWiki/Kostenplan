@@ -5,6 +5,7 @@ import { Loader2, Sparkles, Info } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
+import { HelpTip } from "@/app/components/ui/help-tip";
 import { lettertypeOpties } from "@/app/lib/fonts";
 import type { Lettertype } from "@/app/generated/prisma/client";
 
@@ -88,6 +89,7 @@ export function AutoBranding({ onApply }: { onApply: (result: AutoBrandingResult
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
           Automatisch ophalen van je website
+          <HelpTip contentKey="branding.autoDetect" />
         </CardTitle>
         <CardDescription>
           Vul je website-URL in en wij stellen logo, kleuren, lettertype en teksten voor op basis

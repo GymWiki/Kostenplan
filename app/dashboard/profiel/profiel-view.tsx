@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { LinkButton } from "@/app/components/ui/button";
+import { HelpTip } from "@/app/components/ui/help-tip";
 import { AccountForm } from "./account-form";
 import { CompanyCard } from "./company-card";
 import { effectiveTier, isBetaaldTier, PRIJZEN } from "@/app/lib/subscription";
@@ -52,7 +53,10 @@ export function ProfielView({
 
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-foreground">Mijn bedrijven</h2>
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            Mijn bedrijven
+            <HelpTip contentKey="profiel.multiCompany" />
+          </h2>
           <LinkButton href="/dashboard/bedrijven/nieuw" size="sm" variant="outline">
             <Plus className="h-4 w-4" />
             Nieuw bedrijf toevoegen
