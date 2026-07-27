@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Lock } from "lucide-react";
+import { ExternalLink, Lock, BookOpen } from "lucide-react";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { LinkButton } from "@/app/components/ui/button";
 import { CopyButton } from "@/app/components/dashboard/copy-link";
@@ -78,8 +78,12 @@ export function SharePortalCard({
             <pre className="max-h-48 overflow-auto rounded-lg border border-border bg-card p-3 text-xs text-foreground">
               <code>{embedCode}</code>
             </pre>
-            <div>
+            <div className="flex flex-wrap items-center gap-3">
               <CopyButton text={embedCode} label="Kopieer embedcode" className="w-full sm:w-auto" />
+              <LinkButton href="/dashboard/insluiten" variant="ghost" size="sm">
+                <BookOpen className="h-4 w-4" />
+                Installatie-instructies per platform
+              </LinkButton>
             </div>
           </div>
         ) : (
