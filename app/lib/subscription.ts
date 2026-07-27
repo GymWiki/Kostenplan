@@ -9,7 +9,7 @@ import type {
 // Mollie), so they can never drift apart.
 export const PRIJZEN: Record<"PLUS" | "PRO", Record<BillingInterval, number>> = {
   PLUS: { MAANDELIJKS: 29, JAARLIJKS: 299 },
-  PRO: { MAANDELIJKS: 69, JAARLIJKS: 700 },
+  PRO: { MAANDELIJKS: 69, JAARLIJKS: 699 },
 };
 
 export const PLAN_LABELS: Record<SubscriptionTier, string> = {
@@ -38,7 +38,7 @@ export const MOLLIE_INTERVAL: Record<BillingInterval, string> = {
 
 // The actual savings percentage of paying jaarlijks vs. 12x maandelijks.
 // Computed rather than hardcoded "15%" — €299/jaar vs €29 x 12 is really
-// ~14.1% off, and €700/jaar vs €69 x 12 is ~15.5% off; a single flat
+// ~14.1% off, and €699/jaar vs €69 x 12 is ~15.6% off; a single flat
 // "15% korting" label would be slightly wrong for both plans.
 export function jaarlijkseBesparing(plan: "PLUS" | "PRO") {
   const maandelijksPerJaar = PRIJZEN[plan].MAANDELIJKS * 12;
