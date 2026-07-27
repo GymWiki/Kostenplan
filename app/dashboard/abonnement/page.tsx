@@ -14,6 +14,7 @@ export default async function AbonnementPage({
 
   return (
     <AbonnementView
+      companyId={company.id}
       effectivePlan={effectiveTier(company)}
       isOverridden={company.overrideTier !== null}
       actualPlan={company.subscriptionTier}

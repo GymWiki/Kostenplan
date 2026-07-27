@@ -56,6 +56,15 @@ export const deleteCompanySchema = z.object({
   bevestigingsNaam: z.string().trim().min(1, "Typ de bedrijfsnaam ter bevestiging"),
 });
 
+export const pauseSubscriptionSchema = z.object({
+  maanden: z.coerce.number().int().min(1).max(3),
+});
+
+export const cancelSubscriptionSchema = z.object({
+  reden: z.enum(["TE_DUUR", "GEBRUIK_TE_WEINIG", "MIST_FUNCTIE", "ANDERS"]).optional(),
+  toelichting: z.string().trim().max(500).optional(),
+});
+
 export const changePasswordSchema = z.object({
   password: z.string().min(8, "Wachtwoord moet minimaal 8 tekens zijn"),
 });

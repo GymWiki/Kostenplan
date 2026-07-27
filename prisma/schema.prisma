@@ -133,6 +133,33 @@ model BrandingExtractionAttempt {
   @@index([userId, createdAt])
 }
 
+// Reden die een gebruiker optioneel opgeeft bij het opzeggen van een
+// abonnement (zie de retentie-flow in app/components/dashboard/
+// cancel-retention-modal.tsx) — puur voor patroonherkenning, nooit gebruikt
+// om opzeggen te blokkeren of te vertragen.
+enum OpzegReden {
+  TE_DUUR
+  GEBRUIK_TE_WEINIG
+  MIST_FUNCTIE
+  ANDERS
+}
+
+// Eén rij per daadwerkelijk uitgevoerde opzegging (niet bij pauzeren of
+// downgraden, alleen bij de definitieve keuze voor Gratis). Bewust los van
+// Company i.p.v. een veld erop: een bedrijf kan in theorie meerdere keren
+// opzeggen (opnieuw abonneren, later weer opzeggen), en elke reden blijft zo
+// een eigen tijdgebonden rij.
+model CancellationFeedback {
+  id         String     @id @default(cuid())
+  companyId  String
+  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  reden      OpzegReden
+  toelichting String?
+  createdAt  DateTime   @default(now())
+
+  @@index([companyId])
+}
+
 // Eén bedrijf/tenant. Alles wat vroeger op User stond (bedrijfsnaam, slug,
 // abonnement, catalogus) hoort hier nu bij — een gebruiker kan lid zijn van
 // meerdere companies (zie CompanyMember), elk met een eigen catalogus,
@@ -180,6 +207,15 @@ model Company {
   // termijnbetaling verwacht (subscription.nextPaymentDate).
   huidigePeriodeEind   DateTime?
 
+  // Retentie-alternatief voor volledig opzeggen (zie pauseSubscriptionAction
+  // in app/lib/actions/companies.ts): het Mollie-abonnement wordt meteen
+  // beëindigd (geen betalingen meer), maar subscriptionTier blijft ongewijzigd
+  // tot deze datum, zodat de klant zijn/haar betaalde functies gewoon kan
+  // blijven gebruiken tijdens de pauze. requireActiveCompany() (zie
+  // app/lib/dal.ts) zet subscriptionTier lazy terug naar GRATIS zodra dit
+  // moment is verstreken — geen aparte cronjob nodig.
+  gepauzeerdTot DateTime?
+
   // Onboarding-checklist op het dashboard (zie app/lib/onboarding.ts). De
   // eerste twee stappen (bedrijfsgegevens, eerste catalogusitem) worden
   // live afgeleid van bestaande data — nooit hier apart opgeslagen, dat zou
@@ -195,12 +231,13 @@ model Company {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members      CompanyMember[]
-  costSettings CostSettings?
-  branding     Branding?
-  services     Service[]
-  products     Product[]
-  leads        Lead[]
+  members              CompanyMember[]
+  costSettings         CostSettings?
+  branding             Branding?
+  services             Service[]
+  products             Product[]
+  leads                Lead[]
+  cancellationFeedback CancellationFeedback[]
 }
 
 // Koppelt een User aan een Company waar die toegang toe heeft. `rol` is

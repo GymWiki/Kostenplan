@@ -11,6 +11,8 @@ import {
   companySchema,
   companyDetailsSchema,
   deleteCompanySchema,
+  pauseSubscriptionSchema,
+  cancelSubscriptionSchema,
 } from "@/app/lib/validation";
 
 export type CompanyFormState = { error?: string; fieldErrors?: Record<string, string> } | null;
@@ -154,9 +156,14 @@ export async function updateCompanyDetailsAction(
 // einde van de betaalperiode (ongewijzigd overgenomen, zie Fase 4). Los
 // gehouden van startCheckoutAction omdat dit een expliciet gekozen
 // (mogelijk niet-actief) bedrijf betreft, niet per se het actieve bedrijf.
+//
+// Aangeroepen vanuit de laatste stap van CancelRetentionModal — de reden is
+// optioneel en vertraagt/blokkeert het opzeggen zelf op geen enkele manier,
+// puur voor patroonherkenning achteraf (zie CancellationFeedback).
 export async function cancelSubscriptionAction(
   companyId: string,
-  _prevState: CompanyFormState
+  _prevState: CompanyFormState,
+  formData: FormData
 ): Promise<CompanyFormState> {
   const user = await requireMembership(companyId);
   if (!user) return { error: "Bedrijf niet gevonden" };
@@ -173,16 +180,78 @@ export async function cancelSubscriptionAction(
     });
   }
 
+  const parsed = cancelSubscriptionSchema.safeParse({
+    reden: formData.get("reden") || undefined,
+    toelichting: formData.get("toelichting") || undefined,
+  });
+
   await prisma.company.update({
     where: { id: companyId },
     data: {
       subscriptionTier: "GRATIS",
       subscriptionStatus: company.mollieSubscriptionId ? "CANCELED" : "GEEN",
+      gepauzeerdTot: null,
+    },
+  });
+
+  if (parsed.success && parsed.data.reden) {
+    await prisma.cancellationFeedback.create({
+      data: {
+        companyId,
+        reden: parsed.data.reden,
+        toelichting: parsed.data.toelichting || null,
+      },
+    });
+  }
+
+  revalidatePath("/dashboard/profiel");
+  revalidatePath("/dashboard/abonnement");
+  return { error: undefined };
+}
+
+// Retentie-alternatief: stopt de Mollie-facturering meteen (net als
+// opzeggen), maar behoudt de huidige subscriptionTier tot gepauzeerdTot —
+// zie de toelichting op dat veld in schema.prisma en de lazy-flip in
+// requireActiveCompany() (app/lib/dal.ts).
+export async function pauseSubscriptionAction(
+  companyId: string,
+  _prevState: CompanyFormState,
+  formData: FormData
+): Promise<CompanyFormState> {
+  const user = await requireMembership(companyId);
+  if (!user) return { error: "Bedrijf niet gevonden" };
+
+  const parsed = pauseSubscriptionSchema.safeParse({ maanden: formData.get("maanden") });
+  if (!parsed.success) {
+    return { error: "Kies een geldige pauzeduur (1, 2 of 3 maanden)." };
+  }
+
+  const company = await prisma.company.findUniqueOrThrow({
+    where: { id: companyId },
+    select: { mollieSubscriptionId: true, mollieCustomerId: true },
+  });
+
+  if (company.mollieSubscriptionId && company.mollieCustomerId) {
+    const mollie = getMollieClient();
+    await mollie.customerSubscriptions.cancel(company.mollieSubscriptionId, {
+      customerId: company.mollieCustomerId,
+    });
+  }
+
+  const gepauzeerdTot = new Date();
+  gepauzeerdTot.setMonth(gepauzeerdTot.getMonth() + parsed.data.maanden);
+
+  await prisma.company.update({
+    where: { id: companyId },
+    data: {
+      subscriptionStatus: company.mollieSubscriptionId ? "CANCELED" : "GEEN",
+      gepauzeerdTot,
     },
   });
 
   revalidatePath("/dashboard/profiel");
-  return null;
+  revalidatePath("/dashboard/abonnement");
+  return { error: undefined };
 }
 
 // Alleen mogelijk zonder lopend (actief/wachtend/opgeschort) abonnement en

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { startCheckoutAction, type CheckoutFormState } from "@/app/lib/actions/subscription";
 import { Button } from "@/app/components/ui/button";
@@ -8,6 +8,7 @@ import { Badge } from "@/app/components/ui/badge";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { PricingTable } from "@/app/components/pricing/pricing-table";
 import { HelpTip } from "@/app/components/ui/help-tip";
+import { CancelRetentionModal } from "@/app/components/dashboard/cancel-retention-modal";
 import { PLAN_LABELS, SUBSCRIPTION_STATUS_LABELS } from "@/app/lib/subscription";
 import type {
   BillingInterval,
@@ -16,6 +17,7 @@ import type {
 } from "@/app/generated/prisma/client";
 
 export function AbonnementView({
+  companyId,
   effectivePlan,
   isOverridden,
   actualPlan,
@@ -25,6 +27,7 @@ export function AbonnementView({
   gewijzigd,
   checkoutAfgerond,
 }: {
+  companyId: string;
   effectivePlan: SubscriptionTier;
   isOverridden: boolean;
   actualPlan: SubscriptionTier;
@@ -99,6 +102,7 @@ export function AbonnementView({
         defaultInterval={actualInterval ?? "MAANDELIJKS"}
         renderCta={(plan, interval) => (
           <CheckoutButton
+            companyId={companyId}
             plan={plan}
             interval={interval}
             actualPlan={actualPlan}
@@ -112,12 +116,14 @@ export function AbonnementView({
 }
 
 function CheckoutButton({
+  companyId,
   plan,
   interval,
   actualPlan,
   actualInterval,
   isActiveSubscription,
 }: {
+  companyId: string;
   plan: SubscriptionTier;
   interval: BillingInterval;
   actualPlan: SubscriptionTier;
@@ -128,6 +134,7 @@ function CheckoutButton({
     startCheckoutAction,
     null
   );
+  const [retentieOpen, setRetentieOpen] = useState(false);
 
   const isHuidig =
     plan === actualPlan &&
@@ -145,6 +152,27 @@ function CheckoutButton({
     label = interval === "JAARLIJKS" ? "Wijzig naar jaarlijks" : "Wijzig naar maandelijks";
   } else {
     label = `Kies ${PLAN_LABELS[plan]}`;
+  }
+
+  // Downgraden naar Gratis vanaf een betaald pakket = opzeggen — daar hangt
+  // de retentie-flow tussenin, in plaats van meteen te submitten. Alle
+  // andere knoppen (upgraden, wisselen van interval, of Gratis kiezen als
+  // je al Gratis bent) blijven een gewone directe submit.
+  if (plan === "GRATIS" && actualPlan !== "GRATIS" && !isHuidig) {
+    return (
+      <>
+        <Button type="button" variant={variant} onClick={() => setRetentieOpen(true)} className="w-full">
+          {label}
+        </Button>
+        <CancelRetentionModal
+          open={retentieOpen}
+          onClose={() => setRetentieOpen(false)}
+          companyId={companyId}
+          actualPlan={actualPlan}
+          actualInterval={actualInterval}
+        />
+      </>
+    );
   }
 
   return (

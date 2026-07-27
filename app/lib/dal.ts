@@ -79,10 +79,22 @@ export const requireActiveCompany = cache(async () => {
   const gekozenId = cookieStore.get(ACTIEF_BEDRIJF_COOKIE)?.value;
   const actief = resolveActiveMembership(memberships, gekozenId);
 
+  // Lazy einde-van-pauze-check (zie Company.gepauzeerdTot): een gepauzeerd
+  // abonnement heeft geen cronjob die op tijd afloopt, dus dit is het moment
+  // waarop we dat inhalen — bij de eerstvolgende keer dat iemand van dit
+  // bedrijf iets in het dashboard opent nadat de pauze is verstreken.
+  let company = actief.company;
+  if (company.gepauzeerdTot && company.gepauzeerdTot < new Date()) {
+    company = await prisma.company.update({
+      where: { id: company.id },
+      data: { subscriptionTier: "GRATIS", gepauzeerdTot: null },
+    });
+  }
+
   return {
     user,
-    company: actief.company,
-    alleBedrijven: memberships.map((m) => m.company),
+    company,
+    alleBedrijven: memberships.map((m) => (m.company.id === company.id ? company : m.company)),
   };
 });
 

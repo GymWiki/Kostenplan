@@ -5,8 +5,8 @@ import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Input, Label } from "@/app/components/ui/input";
+import { CancelRetentionModal } from "@/app/components/dashboard/cancel-retention-modal";
 import {
-  cancelSubscriptionAction,
   deleteCompanyAction,
   switchActiveCompanyAction,
   updateCompanyDetailsAction,
@@ -29,6 +29,7 @@ export function CompanyCard({
   const [editing, setEditing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const actualPlan = company.subscriptionTier;
 
   const plan = effectiveTier(company);
   const isOverridden = company.overrideTier !== null;
@@ -128,11 +129,16 @@ export function CompanyCard({
         )}
 
         {editing && <EditForm company={company} onDone={() => setEditing(false)} />}
-        {cancelling && magOpzeggen && (
-          <CancelForm companyId={company.id} onCancel={() => setCancelling(false)} />
-        )}
         {deleting && <DeleteForm company={company} />}
       </CardContent>
+
+      <CancelRetentionModal
+        open={cancelling && magOpzeggen}
+        onClose={() => setCancelling(false)}
+        companyId={company.id}
+        actualPlan={actualPlan}
+        actualInterval={company.billingInterval}
+      />
     </Card>
   );
 }
@@ -173,32 +179,6 @@ function EditForm({ company, onDone }: { company: Company; onDone: () => void })
         </Button>
         <Button type="submit" size="sm" disabled={pending}>
           {pending ? "Opslaan…" : "Opslaan"}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-function CancelForm({ companyId, onCancel }: { companyId: string; onCancel: () => void }) {
-  const action = cancelSubscriptionAction.bind(null, companyId);
-  const [state, formAction, pending] = useActionState<CompanyFormState, FormData>(action, null);
-
-  return (
-    <form
-      action={formAction}
-      className="flex flex-col gap-3 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm"
-    >
-      <p className="text-foreground">
-        Weet je zeker dat je wilt opzeggen? Het betaalde pakket wordt direct beëindigd en dit
-        bedrijf valt terug op Gratis.
-      </p>
-      {state?.error && <p className="text-destructive">{state.error}</p>}
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
-          Nee, terug
-        </Button>
-        <Button type="submit" variant="destructive" size="sm" disabled={pending}>
-          {pending ? "Bezig…" : "Ja, opzeggen"}
         </Button>
       </div>
     </form>
