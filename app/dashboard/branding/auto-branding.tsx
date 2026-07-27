@@ -6,6 +6,7 @@ import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { HelpTip } from "@/app/components/ui/help-tip";
+import { cn } from "@/app/lib/cn";
 import { lettertypeOpties } from "@/app/lib/fonts";
 import type { Lettertype } from "@/app/generated/prisma/client";
 
@@ -41,7 +42,17 @@ type ExtractApiResponse =
 
 type SuccessResult = Extract<ExtractApiResponse, { success: true }>;
 
-export function AutoBranding({ onApply }: { onApply: (result: AutoBrandingResult) => void }) {
+export function AutoBranding({
+  onApply,
+  magPersonaliserenUiterlijk,
+}: {
+  onApply: (result: AutoBrandingResult) => void;
+  // Extractie zelf is gratis voor iedereen — kleuren/lettertype blijven een
+  // Plus/Pro-feature, dus die twee voorstel-checkboxes verbergen we voor een
+  // Gratis-tenant i.p.v. iets te laten "toepassen" dat bij het opslaan toch
+  // stilzwijgend wordt genegeerd (zie updateBrandingAction).
+  magPersonaliserenUiterlijk: boolean;
+}) {
   const [url, setUrl] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -134,6 +145,7 @@ export function AutoBranding({ onApply }: { onApply: (result: AutoBrandingResult
             onApply={onApply}
             onApplied={handleApplied}
             onCancel={handleCancel}
+            magPersonaliserenUiterlijk={magPersonaliserenUiterlijk}
           />
         )}
       </CardContent>
@@ -147,21 +159,24 @@ function AutoBrandingPreview({
   onApply,
   onApplied,
   onCancel,
+  magPersonaliserenUiterlijk,
 }: {
   result: SuccessResult;
   applied: boolean;
   onApply: (result: AutoBrandingResult) => void;
   onApplied: () => void;
   onCancel: () => void;
+  magPersonaliserenUiterlijk: boolean;
 }) {
   const lettertypeLabel =
     lettertypeOpties.find((o) => o.value === result.lettertype)?.label ?? result.lettertype;
 
   // Elk gevonden veld is los toepasbaar (standaard aan) — zo overschrijft
   // bijv. een matige logo-detectie niet een logo dat de vakman al
-  // zorgvuldig had geüpload, als die het vinkje uitzet.
-  const [applyPrimary, setApplyPrimary] = useState(true);
-  const [applyLettertype, setApplyLettertype] = useState(true);
+  // zorgvuldig had geüpload, als die het vinkje uitzet. Kleuren/lettertype
+  // staan standaard uit (en zijn uitgeschakeld) zonder Plus/Pro.
+  const [applyPrimary, setApplyPrimary] = useState(magPersonaliserenUiterlijk);
+  const [applyLettertype, setApplyLettertype] = useState(magPersonaliserenUiterlijk);
   const [applyLogo, setApplyLogo] = useState(Boolean(result.logoUrl));
   const [applyTitle, setApplyTitle] = useState(true);
   const [applySubtitle, setApplySubtitle] = useState(true);
@@ -191,14 +206,26 @@ function AutoBrandingPreview({
 
       <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
         <div className="flex flex-col gap-4">
-          <CheckField checked={applyPrimary} onChange={setApplyPrimary} label="Kleuren">
+          <CheckField
+            checked={applyPrimary}
+            onChange={setApplyPrimary}
+            label="Kleuren"
+            disabled={!magPersonaliserenUiterlijk}
+            disabledHint={!magPersonaliserenUiterlijk ? "Vanaf Plus" : undefined}
+          >
             <div className="flex gap-4">
               <Swatch label="Primair" hex={result.primaryColor} />
               {result.secondaryColor && <Swatch label="Secundair" hex={result.secondaryColor} />}
             </div>
           </CheckField>
 
-          <CheckField checked={applyLettertype} onChange={setApplyLettertype} label="Lettertype">
+          <CheckField
+            checked={applyLettertype}
+            onChange={setApplyLettertype}
+            label="Lettertype"
+            disabled={!magPersonaliserenUiterlijk}
+            disabledHint={!magPersonaliserenUiterlijk ? "Vanaf Plus" : undefined}
+          >
             <p className="text-sm text-foreground">
               {lettertypeLabel}
               {result.fontFamily && (
@@ -281,22 +308,30 @@ function CheckField({
   onChange,
   label,
   children,
+  disabled = false,
+  disabledHint,
 }: {
   checked: boolean;
   onChange: (value: boolean) => void;
   label: string;
   children: React.ReactNode;
+  disabled?: boolean;
+  disabledHint?: string;
 }) {
   return (
-    <label className="flex items-start gap-2.5">
+    <label className={cn("flex items-start gap-2.5", disabled && "opacity-60")}>
       <input
         type="checkbox"
         checked={checked}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
         className="mt-1 h-4 w-4 shrink-0 rounded border-input"
       />
       <span className="flex flex-col gap-1">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+          {disabledHint && <span className="ml-1.5 normal-case text-primary">({disabledHint})</span>}
+        </span>
         {children}
       </span>
     </label>

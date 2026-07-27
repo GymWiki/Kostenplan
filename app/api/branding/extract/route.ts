@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { effectiveTier, isBetaaldTier } from "@/app/lib/subscription";
 import { brandingExtractSchema } from "@/app/lib/validation";
 import { extractBranding } from "@/app/lib/branding-extract";
 
@@ -9,22 +8,15 @@ export const dynamic = "force-dynamic";
 
 const RATE_LIMIT_PER_HOUR = 10;
 
+// Auto-branding is gratis voor iedereen (ook tijdens onboarding, zie
+// /onboarding/huisstijl) — geen tier-check meer hier. Rate-limiting hieronder
+// blijft staan, dat is misbruikpreventie, los van de betaalmuur-vraag.
+//
 // Nooit een 500 op verwachte foutpaden (ongeldige URL, time-out, 403, intern
-// IP, tier-limiet) — die komen als nette JSON terug, ook als de HTTP-status
-// niet 200 is. Alleen de auth-check zelf kan een "harde" 401 geven.
+// IP, limiet) — die komen als nette JSON terug, ook als de HTTP-status niet
+// 200 is. Alleen de auth-check zelf kan een "harde" 401 geven.
 export async function POST(request: NextRequest) {
   const { user, company } = await requireActiveCompany();
-
-  // Kleuren/lettertype zijn een Plus/Pro-feature (zie updateBrandingAction)
-  // — de extractie zelf kost ons externe fetches + beeldverwerking, dus die
-  // poort hier al dicht i.p.v. Gratis-gebruikers te laten proberen en dan
-  // pas bij het opslaan tegen de muur te laten lopen.
-  if (!isBetaaldTier(effectiveTier(company))) {
-    return NextResponse.json(
-      { success: false, error: "Automatische huisstijl is een Plus/Pro-feature.", confidence: "low" },
-      { status: 403 }
-    );
-  }
 
   let body: unknown;
   try {

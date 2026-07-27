@@ -229,6 +229,17 @@ export const brandingExtractSchema = z.object({
   url: z.string().trim().min(1, "Vul een website-URL in").max(2048),
 });
 
+// Losse, kleinere schema dan brandingSchema — de onboarding-stap past alleen
+// toe wat de auto-detectie vond en de gebruiker aangevinkt liet staan, nooit
+// alle brandingvelden tegelijk (zie applyOnboardingBrandingAction).
+export const onboardingBrandingSchema = z.object({
+  primaireKleur: hexColor.optional().or(z.literal("")),
+  lettertype: z.enum(["MODERN", "KLASSIEK", "VRIENDELIJK", "STOER"]).optional().or(z.literal("")),
+  logoUrl: z.string().trim().max(2048).optional().or(z.literal("")),
+  customTitel: z.string().trim().max(120).optional().or(z.literal("")),
+  welkomstTekst: z.string().trim().max(500).optional().or(z.literal("")),
+});
+
 export const checkoutSchema = z.object({
   plan: z.enum(["GRATIS", "PLUS", "PRO"], "Kies een pakket"),
   interval: z.enum(["MAANDELIJKS", "JAARLIJKS"], "Kies een betaalperiode"),

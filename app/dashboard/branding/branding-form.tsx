@@ -67,7 +67,7 @@ export function BrandingForm({
         </p>
       )}
 
-      {magPersonaliserenUiterlijk && <AutoBranding onApply={handleApply} />}
+      <AutoBranding onApply={handleApply} magPersonaliserenUiterlijk={magPersonaliserenUiterlijk} />
 
       <Card>
         <CardHeader>
