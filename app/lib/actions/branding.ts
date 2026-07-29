@@ -60,6 +60,9 @@ export async function updateBrandingAction(
     telefoonnummer: formData.get("telefoonnummer") ?? "",
     toonEmail: formData.get("toonEmail") === "on",
     contactPositie: formData.get("contactPositie"),
+    offerteIntroTekst: formData.get("offerteIntroTekst") ?? "",
+    offerteVoorwaardenTekst: formData.get("offerteVoorwaardenTekst") ?? "",
+    offerteGeldigheidsdagen: formData.get("offerteGeldigheidsdagen"),
   });
 
   if (!parsed.success) {
@@ -94,6 +97,9 @@ export async function updateBrandingAction(
     telefoonnummer: parsed.data.telefoonnummer || null,
     toonEmail: parsed.data.toonEmail,
     contactPositie: parsed.data.contactPositie,
+    offerteIntroTekst: parsed.data.offerteIntroTekst || null,
+    offerteVoorwaardenTekst: parsed.data.offerteVoorwaardenTekst || null,
+    offerteGeldigheidsdagen: parsed.data.offerteGeldigheidsdagen,
     ...(magPersonaliserenUiterlijk
       ? { primaireKleur: parsed.data.primaireKleur, achtergrondKleur: parsed.data.achtergrondKleur, lettertype: parsed.data.lettertype }
       : {}),

@@ -290,6 +290,12 @@ model Branding {
   toonEmail          Boolean        @default(false)
   contactPositie     ContactPositie @default(BOVENAAN)
 
+  // Offerte-standaarden (zie Offerte hieronder) — vullen alleen een nieuw
+  // offerteconcept vóór, blijven daarna per offerte los overschrijfbaar.
+  offerteIntroTekst       String?
+  offerteVoorwaardenTekst String?
+  offerteGeldigheidsdagen Int     @default(30)
+
   updatedAt DateTime @updatedAt
 }
 
@@ -521,6 +527,7 @@ model Lead {
   totaalIndicatie Float
 
   notities LeadNote[]
+  offerte  Offerte?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -541,4 +548,63 @@ model LeadNote {
   updatedAt DateTime @updatedAt
 
   @@index([leadId])
+}
+
+// Levenscyclus van een Offerte (zie hieronder). Nooit automatisch van
+// CONCEPT naar VERSTUURD — dat gebeurt uitsluitend via de expliciete
+// "genereer offerte om te delen"-actie van de vakman zelf.
+enum OfferteStatus {
+  CONCEPT
+  VERSTUURD
+  GEACCEPTEERD
+  AFGEWEZEN
+  VERLOPEN
+}
+
+// Eén (bewerkbaar) offerte-object per Lead — losstaand van eventuele latere
+// klant-communicatie (bewust geen ingebouwd chatkanaal in deze fase, zie
+// app/lib/actions/offertes.ts): delen gebeurt via een link/PDF die de
+// vakman zelf verspreidt. 1-op-1 met Lead (leadId @unique) i.p.v. een
+// geschiedenis van meerdere offertes — een vakman past een bestaand concept
+// aan en genereert desnoods een nieuwe link, in plaats van een nieuwe rij
+// aan te maken.
+model Offerte {
+  id     String @id @default(cuid())
+  leadId String @unique
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  status OfferteStatus @default(CONCEPT)
+
+  // Vrij bewerkbare regels — vooraf gevuld vanuit Lead.snapshot (zie
+  // prefillOfferteRegels in app/lib/offertes.ts), daarna volledig los van de
+  // oorspronkelijke berekening. Vorm: OfferteRegel[] in app/lib/offertes.ts.
+  regels Json
+
+  // Beide vooraf gevuld vanuit Branding.offerteIntroTekst/
+  // offerteVoorwaardenTekst op het moment van aanmaken, maar per offerte
+  // altijd los aanpasbaar — een latere wijziging van de standaardtekst raakt
+  // bestaande offertes dus nooit met terugwerkende kracht.
+  introTekst       String?
+  voorwaardenTekst String?
+
+  geldigTot DateTime
+
+  // Pas gezet zodra de vakman daadwerkelijk op "genereer offerte om te
+  // delen" klikt (zie genereerDeelLinkAction, die zelf crypto.randomUUID()
+  // aanroept) — vóór dat moment bestaat er geen publieke URL, ongeacht de
+  // status. Nooit een oplopend/voorspelbaar ID, altijd 122 bits echte
+  // willekeur, dus onraadbaar.
+  deelToken String? @unique
+  pdfUrl    String?
+
+  verstuurdOp   DateTime?
+  gereageerdOp  DateTime?
+  klantReactie  String?
+  // Voor de in-app "klant heeft gereageerd"-melding op de aanvragenpagina —
+  // false zodra de klant akkoord/niet akkoord geeft, weer true zodra de
+  // vakman de offerte (opnieuw) opent.
+  reactieGezien Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

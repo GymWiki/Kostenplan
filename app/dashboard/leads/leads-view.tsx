@@ -10,13 +10,15 @@ import { HelpTip } from "@/app/components/ui/help-tip";
 import { KanbanBoard } from "./kanban-board";
 import { LeadsTable } from "./leads-table";
 import { LeadDetailDrawer } from "./lead-detail-drawer";
-import type { Lead, LeadNote } from "@/app/generated/prisma/client";
+import type { Lead, LeadNote, Offerte } from "@/app/generated/prisma/client";
 import type { LeadSnapshot } from "@/app/lib/leads";
+import type { OfferteRegel } from "@/app/lib/offertes";
 import type { HelpContentKey } from "@/app/lib/helpContent";
 
 export type LeadWithNotes = Omit<Lead, "snapshot"> & {
   snapshot: LeadSnapshot;
   notities: LeadNote[];
+  offerte: (Omit<Offerte, "regels"> & { regels: OfferteRegel[] }) | null;
 };
 
 type View = "kanban" | "lijst";

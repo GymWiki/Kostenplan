@@ -74,6 +74,31 @@ export async function deleteFoto(url: string) {
   await supabase.storage.from(BUCKET).remove([path]);
 }
 
+// Offerte-PDF's (zie app/lib/offerte-pdf.tsx) — server-side gegenereerd als
+// Buffer, dus geen File/uploadFoto()-pad. Vast pad per offerte (upsert:
+// true) zodat opnieuw delen de vorige PDF gewoon overschrijft in plaats van
+// oude versies te laten rondslingeren.
+export async function uploadOffertePdf(
+  companyId: string,
+  offerteId: string,
+  bestand: Buffer
+): Promise<{ url: string; error?: undefined } | { url?: undefined; error: string }> {
+  const supabase = await createClient();
+  const path = `${companyId}/offertes/${offerteId}.pdf`;
+
+  const { error } = await supabase.storage.from(BUCKET).upload(path, bestand, {
+    contentType: "application/pdf",
+    upsert: true,
+  });
+  if (error) {
+    console.error("Supabase Storage upload (offerte-pdf) failed:", error);
+    return { error: "PDF opslaan is mislukt." };
+  }
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return { url: data.publicUrl };
+}
+
 // Sanity-check voor logoUrl-waarden die niet via een echte file-upload
 // binnenkomen (zie extractedLogoUrl in app/lib/actions/branding.ts) — een
 // client-aangeleverde URL-string mag nooit blind vertrouwd worden, maar

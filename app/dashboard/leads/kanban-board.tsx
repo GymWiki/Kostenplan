@@ -15,6 +15,7 @@ import { formatCurrency } from "@/app/lib/format";
 import { Badge } from "@/app/components/ui/badge";
 import { updateLeadStatusAction } from "@/app/lib/actions/leads";
 import { LEAD_STATUSSEN, LEAD_STATUS_LABELS } from "@/app/lib/leads";
+import { OfferteStatusBadge } from "./offerte-status-badge";
 import type { LeadWithNotes } from "./leads-view";
 import type { LeadStatus } from "@/app/generated/prisma/client";
 
@@ -127,14 +128,25 @@ function LeadCard({ lead, onClick }: { lead: LeadWithNotes; onClick: () => void 
       {...attributes}
       onClick={onClick}
       className={cn(
-        "cursor-grab touch-none rounded-lg border border-border bg-card p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing",
+        "relative cursor-grab touch-none rounded-lg border border-border bg-card p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing",
         isDragging && "z-10 opacity-70 shadow-lg"
       )}
     >
+      {lead.offerte && !lead.offerte.reactieGezien && (
+        <span
+          className="animate-soft-pulse absolute -top-1.5 -right-1.5 h-3 w-3 rounded-full bg-accent"
+          aria-label="Klant heeft gereageerd"
+        />
+      )}
       <p className="truncate font-medium text-foreground">{lead.naam}</p>
       <p className="mt-1 text-sm font-semibold text-primary">
         {formatCurrency(lead.totaalIndicatie)}
       </p>
+      {lead.offerte && (
+        <div className="mt-1.5">
+          <OfferteStatusBadge offerte={lead.offerte} />
+        </div>
+      )}
       <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
         <span>{dateFormatter.format(lead.createdAt)}</span>
         {lead.notities.length > 0 && <span>{lead.notities.length} notitie(s)</span>}

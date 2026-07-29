@@ -243,6 +243,49 @@ export function BrandingForm({
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Offerte-standaarden</CardTitle>
+          <CardDescription>
+            Vullen een nieuw offerteconcept vast in — per offerte daarna nog gewoon aan te passen.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="offerteIntroTekst">Standaard introtekst</Label>
+            <Textarea
+              id="offerteIntroTekst"
+              name="offerteIntroTekst"
+              placeholder="Bedankt voor uw aanvraag! Hierbij onze offerte."
+              defaultValue={branding.offerteIntroTekst ?? ""}
+              rows={3}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="offerteVoorwaardenTekst">Standaard voorwaarden</Label>
+            <Textarea
+              id="offerteVoorwaardenTekst"
+              name="offerteVoorwaardenTekst"
+              placeholder="Prijzen zijn inclusief btw. Deze offerte is vrijblijvend."
+              defaultValue={branding.offerteVoorwaardenTekst ?? ""}
+              rows={3}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="offerteGeldigheidsdagen">Standaard geldigheidsduur (dagen)</Label>
+            <Input
+              id="offerteGeldigheidsdagen"
+              name="offerteGeldigheidsdagen"
+              type="number"
+              min={1}
+              max={365}
+              defaultValue={branding.offerteGeldigheidsdagen}
+              className="max-w-32"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>
           {pending ? "Opslaan…" : "Branding opslaan"}

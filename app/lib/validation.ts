@@ -223,6 +223,9 @@ export const brandingSchema = z.object({
   telefoonnummer: z.string().trim().max(30).optional().or(z.literal("")),
   toonEmail: z.boolean(),
   contactPositie: z.enum(["BOVENAAN", "ONDERAAN"], "Kies een positie"),
+  offerteIntroTekst: z.string().trim().max(2000).optional().or(z.literal("")),
+  offerteVoorwaardenTekst: z.string().trim().max(4000).optional().or(z.literal("")),
+  offerteGeldigheidsdagen: z.coerce.number().int().min(1).max(365),
 });
 
 export const brandingExtractSchema = z.object({
@@ -277,6 +280,28 @@ export const leadContactSchema = z.object({
 
 export const leadNoteSchema = z.object({
   tekst: z.string().trim().min(1, "Vul een notitie in").max(2000),
+});
+
+const offerteRegelSchema = z.object({
+  id: z.string().min(1),
+  omschrijving: z.string().trim().min(1, "Vul een omschrijving in").max(300),
+  aantal: z.number().nonnegative(),
+  eenheid: z.string().trim().min(1).max(30),
+  prijsPerEenheid: z.number(),
+});
+
+// Regels komen als JSON-string binnen (net als leadSnapshotSchema hierboven)
+// — client-side vrij bewerkbare array, server ziet alleen toe op de vorm.
+export const offerteUpdateSchema = z.object({
+  regels: z.array(offerteRegelSchema).min(1, "Voeg minimaal één regel toe"),
+  introTekst: z.string().trim().max(2000).optional().or(z.literal("")),
+  voorwaardenTekst: z.string().trim().max(4000).optional().or(z.literal("")),
+  geldigTot: z.string().trim().min(1, "Kies een geldigheidsdatum"),
+});
+
+export const offerteReactieSchema = z.object({
+  beslissing: z.enum(["GEACCEPTEERD", "AFGEWEZEN"], "Ongeldige keuze"),
+  opmerking: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
 export const leadStatusSchema = z.object({

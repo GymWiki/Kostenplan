@@ -2,11 +2,11 @@
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { X, Mail, MessageCircle, Pencil, Trash2, Check, Plus } from "lucide-react";
+import { X, Mail, MessageCircle, Pencil, Trash2, Check, Plus, FileText } from "lucide-react";
 import { formatCurrency } from "@/app/lib/format";
 import { unitLabel } from "@/app/lib/units";
 import { cn } from "@/app/lib/cn";
-import { Button } from "@/app/components/ui/button";
+import { Button, LinkButton } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/input";
 import {
   addLeadNoteAction,
@@ -14,8 +14,10 @@ import {
   deleteLeadNoteAction,
   type LeadFormState,
 } from "@/app/lib/actions/leads";
+import { omzettenNaarOfferteAction, markOffertReactieGezienAction } from "@/app/lib/actions/offertes";
 import { whatsappLink } from "@/app/lib/leads";
 import { StatusSelect } from "./status-select";
+import { OfferteStatusBadge } from "./offerte-status-badge";
 import type { LeadWithNotes } from "./leads-view";
 import type { LeadNote } from "@/app/generated/prisma/client";
 
@@ -47,6 +49,15 @@ export function LeadDetailDrawer({
       document.body.style.overflow = "";
     };
   }, [lead, onClose]);
+
+  // De vakman "ziet" een klantreactie door de aanvraag te openen — dooft de
+  // pulserende stip op de kanban-kaart/lijstregel (zie kanban-board.tsx).
+  useEffect(() => {
+    if (lead?.offerte && !lead.offerte.reactieGezien) {
+      markOffertReactieGezienAction(lead.offerte.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lead?.id]);
 
   if (!lead) return null;
 
@@ -106,6 +117,24 @@ export function LeadDetailDrawer({
                 </a>
               )}
             </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <h3 className="text-sm font-semibold text-foreground">Offerte</h3>
+            {lead.offerte ? (
+              <LinkButton href={`/dashboard/leads/${lead.id}/offerte`} variant="secondary" className="w-full">
+                <FileText className="h-4 w-4" />
+                Offerte bekijken/bewerken
+                <OfferteStatusBadge offerte={lead.offerte} />
+              </LinkButton>
+            ) : (
+              <form action={omzettenNaarOfferteAction.bind(null, lead.id)}>
+                <Button type="submit" variant="secondary" className="w-full">
+                  <FileText className="h-4 w-4" />
+                  Omzetten naar offerte
+                </Button>
+              </form>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">

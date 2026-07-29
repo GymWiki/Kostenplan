@@ -3,6 +3,7 @@ import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { effectiveTier } from "@/app/lib/subscription";
 import { telItMeeVoorPipeline, type LeadSnapshot } from "@/app/lib/leads";
+import type { OfferteRegel } from "@/app/lib/offertes";
 import { LeadsView, type LeadWithNotes } from "./leads-view";
 
 export const metadata: Metadata = { title: "Leads" };
@@ -28,13 +29,16 @@ export default async function LeadsPage() {
 
   const rawLeads = await prisma.lead.findMany({
     where: { companyId: company.id },
-    include: { notities: { orderBy: { createdAt: "asc" } } },
+    include: { notities: { orderBy: { createdAt: "asc" } }, offerte: true },
     orderBy: { createdAt: "desc" },
   });
 
   const leads: LeadWithNotes[] = rawLeads.map((lead) => ({
     ...lead,
     snapshot: lead.snapshot as unknown as LeadSnapshot,
+    offerte: lead.offerte
+      ? { ...lead.offerte, regels: lead.offerte.regels as unknown as OfferteRegel[] }
+      : null,
   }));
 
   const actief = leads.filter((lead) => telItMeeVoorPipeline(lead.status));

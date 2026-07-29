@@ -3,6 +3,7 @@
 import { formatCurrency } from "@/app/lib/format";
 import { Card } from "@/app/components/ui/card";
 import { StatusSelect } from "./status-select";
+import { OfferteStatusBadge } from "./offerte-status-badge";
 import type { LeadWithNotes } from "./leads-view";
 
 const dateFormatter = new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "short", year: "numeric" });
@@ -22,6 +23,7 @@ export function LeadsTable({
             <tr className="border-b border-border bg-muted/50 text-left text-muted-foreground">
               <th className="px-4 py-3 font-medium">Naam</th>
               <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Offerte</th>
               <th className="px-4 py-3 font-medium">Pipeline waarde</th>
               <th className="px-4 py-3 font-medium">Aangemaakt</th>
             </tr>
@@ -39,6 +41,21 @@ export function LeadsTable({
                 </td>
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                   <StatusSelect leadId={lead.id} status={lead.status} className="h-9 w-auto min-w-40" />
+                </td>
+                <td className="px-4 py-3">
+                  {lead.offerte ? (
+                    <div className="flex items-center gap-1.5">
+                      <OfferteStatusBadge offerte={lead.offerte} />
+                      {!lead.offerte.reactieGezien && (
+                        <span
+                          className="animate-soft-pulse h-2 w-2 rounded-full bg-accent"
+                          aria-label="Klant heeft gereageerd"
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 font-medium text-foreground">
                   {formatCurrency(lead.totaalIndicatie)}
