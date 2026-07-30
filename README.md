@@ -87,8 +87,14 @@ is mislukt."
    aan — de foto's moeten zonder inloggen zichtbaar zijn in het klantenportaal.
 3. Ga naar **Storage** → **Policies** (of **Authentication** → **Policies** → tabel
    `storage.objects`, afhankelijk van je Supabase-versie) en voeg voor de bucket `product-fotos`
-   de volgende policies toe. Elke policy scoped op de eigen map van de gebruiker
-   (`{auth.uid()}/...`), zodat een hovenier alleen zijn eigen foto's kan uploaden/verwijderen:
+   de volgende policies toe. Elke policy scoped op de map van de company (`{companyId}/...`, zie
+   `uploadFoto()` in `app/lib/storage.ts`), zodat alleen ingelogde leden van díe company foto's
+   van dat bedrijf kunnen uploaden/verwijderen — **niet** `{auth.uid()}/...`: sinds de
+   multi-company-migratie is de map-naam een `Company.id`, niet de user-id, dus een policy die
+   rechtstreeks tegen `auth.uid()` vergelijkt matcht nooit (zie
+   `prisma/migrations/20260730054400_fix_storage_policy_company_scoped`). Omdat `CompanyMember`
+   zelf RLS aan heeft zonder eigen policies, gaat de lidmaatschapscheck via een
+   `SECURITY DEFINER`-functie in plaats van een rechtstreekse subquery:
 
    ```sql
    -- Bucket (opnieuw) aanmaken als public, ook als hij al bestond
@@ -96,31 +102,51 @@ is mislukt."
    values ('product-fotos', 'product-fotos', true)
    on conflict (id) do update set public = true;
 
+   -- Company-lidmaatschap bevragen zonder CompanyMember zelf bloot te leggen
+   -- aan de "authenticated"-rol (die tabel is verder uitsluitend via Prisma
+   -- bereikbaar).
+   create or replace function public.is_company_member(company_id text)
+   returns boolean
+   language sql
+   security definer
+   set search_path = public
+   stable
+   as $$
+     select exists (
+       select 1 from "CompanyMember"
+       where "companyId" = company_id
+         and "userId" = auth.uid()::text
+     );
+   $$;
+
+   revoke all on function public.is_company_member(text) from public;
+   grant execute on function public.is_company_member(text) to authenticated;
+
    -- Uploaden
-   create policy "Eigen fotos uploaden"
+   create policy "Company-fotos uploaden"
    on storage.objects for insert
    to authenticated
    with check (
      bucket_id = 'product-fotos'
-     and (storage.foldername(name))[1] = auth.uid()::text
+     and public.is_company_member((storage.foldername(name))[1])
    );
 
    -- Vervangen (upsert)
-   create policy "Eigen fotos vervangen"
+   create policy "Company-fotos vervangen"
    on storage.objects for update
    to authenticated
    using (
      bucket_id = 'product-fotos'
-     and (storage.foldername(name))[1] = auth.uid()::text
+     and public.is_company_member((storage.foldername(name))[1])
    );
 
    -- Verwijderen
-   create policy "Eigen fotos verwijderen"
+   create policy "Company-fotos verwijderen"
    on storage.objects for delete
    to authenticated
    using (
      bucket_id = 'product-fotos'
-     and (storage.foldername(name))[1] = auth.uid()::text
+     and public.is_company_member((storage.foldername(name))[1])
    );
    ```
 
