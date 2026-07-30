@@ -8,7 +8,13 @@ export default defineConfig({
   migrations: {
     path: "prisma/migrations",
   },
+  // Migrate/introspectie gebruiken DIRECT_URL (Supabase session pooler, poort
+  // 5432) i.p.v. DATABASE_URL (transaction pooler, poort 6543) — transaction-
+  // mode pooling ondersteunt niet de advisory locks/prepared statements die
+  // Migrate nodig heeft. De draaiende app gebruikt nog steeds DATABASE_URL,
+  // via de PrismaPg-adapter in app/lib/prisma.ts — dat loopt volledig los
+  // van deze CLI-only configuratie hier.
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: process.env["DIRECT_URL"],
   },
 });

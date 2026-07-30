@@ -8,6 +8,10 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // Geen url/directUrl hier — Prisma 7 verbiedt datasource-URLs in het
+  // schema-bestand zelf (P1012: "no longer supported in schema files").
+  // Runtime-verbinding loopt via de PrismaPg-adapter in app/lib/prisma.ts;
+  // de verbinding die Migrate gebruikt staat in prisma.config.ts.
 }
 
 enum ServicePrijsType {
