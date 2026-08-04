@@ -131,6 +131,7 @@ export function calculateBreakdown({
   products,
   serviceSelected,
   productQty,
+  productRegelsBedrag = {},
   materialSelections,
   extraSelections,
   costSettings,
@@ -139,6 +140,13 @@ export function calculateBreakdown({
   products: CalcProduct[];
   serviceSelected: Record<string, boolean>;
   productQty: Record<string, number>;
+  // Alleen voor sjabloon ARTIKELREGELS (zie sjablonen.ts): elke regel heeft
+  // een eigen prijs, dus geen los qty × prijsPerEenheid — de klant-kant heeft
+  // de som van alle regelbedragen al berekend (SjabloonResultaat soort
+  // "regels") en geeft die hier per product-id mee, los van productQty (dat
+  // voor dit sjabloon wél gebruikt blijft, maar dan voor arbeidskosten: de
+  // totale hoeveelheid over alle regels heen).
+  productRegelsBedrag?: Record<string, number>;
   materialSelections: Record<string, string>;
   extraSelections: Record<string, number>;
   costSettings: CalcCostSettings;
@@ -173,7 +181,8 @@ export function calculateBreakdown({
 
   for (const product of products) {
     const qty = productQty[product.id] ?? 0;
-    if (qty <= 0) continue;
+    const regelsBedrag = productRegelsBedrag[product.id] ?? 0;
+    if (qty <= 0 && regelsBedrag <= 0) continue;
     itemCount += 1;
 
     if (product.arbeidsCapaciteit && product.arbeidsCapaciteit > 0) {
@@ -213,6 +222,11 @@ export function calculateBreakdown({
           prijsPerEenheidBedrag = Math.max(prijsPerEenheidBedrag, product.minimumprijs);
         }
         productMateriaalkosten += prijsPerEenheidBedrag;
+      }
+
+      if (regelsBedrag > 0) {
+        productMateriaalkosten +=
+          product.minimumprijs != null ? Math.max(regelsBedrag, product.minimumprijs) : regelsBedrag;
       }
 
       const materiaalMarge =
@@ -380,6 +394,7 @@ export function calculateBreakdownRange(args: {
   products: CalcProduct[];
   serviceSelected: Record<string, boolean>;
   productQty: Record<string, number>;
+  productRegelsBedrag?: Record<string, number>;
   materialSelections: Record<string, string>;
   extraSelections: Record<string, number>;
   costSettings: CalcCostSettings;

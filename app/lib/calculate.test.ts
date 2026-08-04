@@ -637,6 +637,94 @@ describe("calculateBreakdown — prijsPerEenheid (sjablonen fase 1)", () => {
   });
 });
 
+describe("calculateBreakdown — productRegelsBedrag (sjabloon ARTIKELREGELS)", () => {
+  it("telt het al-berekende regelsbedrag op bij materiaalkosten, los van prijsPerEenheid", () => {
+    const product = maakProduct({ arbeidsCapaciteit: null, materiaalCategorieen: [] });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: {},
+      productRegelsBedrag: { "product-1": 700 },
+      materialSelections: {},
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(result.materiaalkosten).toBe(700);
+    expect(result.heeftSelectie).toBe(true);
+  });
+
+  it("gebruikt productQty voor arbeidskosten, onafhankelijk van het regelsbedrag", () => {
+    const product = maakProduct({ materiaalCategorieen: [] });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 20 }, // arbeidsCapaciteit: 10 -> 2 dagdelen -> 400
+      productRegelsBedrag: { "product-1": 700 },
+      materialSelections: {},
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(result.arbeidskosten).toBe(400);
+    expect(result.materiaalkosten).toBe(700);
+  });
+
+  it("licht het regelsbedrag op tot minimumprijs, indien lager", () => {
+    const product = maakProduct({
+      arbeidsCapaciteit: null,
+      materiaalCategorieen: [],
+      minimumprijs: 500,
+    });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: {},
+      productRegelsBedrag: { "product-1": 120 },
+      materialSelections: {},
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(result.materiaalkosten).toBe(500);
+  });
+
+  it("telt niet mee zonder qty én zonder regelsbedrag", () => {
+    const product = maakProduct({ arbeidsCapaciteit: null, materiaalCategorieen: [] });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: {},
+      productRegelsBedrag: {},
+      materialSelections: {},
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(result.materiaalkosten).toBe(0);
+    expect(result.heeftSelectie).toBe(false);
+  });
+
+  it("blijft ongewijzigd voor bestaande aanroepen zonder productRegelsBedrag-argument", () => {
+    const product = maakProduct();
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 12 },
+      materialSelections: { "categorie-1": "materiaal-1" },
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(result.materiaalkosten).toBe(240);
+  });
+});
+
 describe("calculateBreakdownRange — bandbreedte op prijsPerEenheid", () => {
   it("rekent een BANDBREEDTE-prijsPerEenheid door als min/max-paar (modus PER_PRODUCT)", () => {
     const product = maakProduct({

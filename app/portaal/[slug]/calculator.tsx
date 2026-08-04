@@ -5,10 +5,23 @@ import Link from "next/link";
 import { Minus, Plus, Printer, Mail, Phone, Image as ImageIcon, Check } from "lucide-react";
 import {
   bedragTop,
+  berekenGestaffeldBedrag,
   calculateBreakdownRange,
   serviceVastePrijs,
   type Bedrag,
 } from "@/app/lib/calculate";
+import {
+  berekenHoeveelheidVoorSjabloon,
+  coerceVeldWaarden,
+  hoeveelheidUitResultaat,
+  klantVeldenVoorSjabloon,
+  parseGetal,
+  type GetalVeld,
+  type JaNeeVeld,
+  type KeuzeVeld,
+  type RegelgroepVeld,
+  type TekstVeld,
+} from "@/app/lib/sjablonen";
 import { formatCurrency, formatCurrencyRange } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Logo } from "@/app/components/ui/logo";
@@ -68,9 +81,45 @@ export function Calculator({
   products,
 }: Props) {
   const [serviceSelected, setServiceSelected] = useState<Record<string, boolean>>({});
+  // Rechtstreeks door de klant bijgehouden hoeveelheid — alleen gebruikt voor
+  // sjabloon ENKELE_HOEVEELHEID (de QuantityStepper). Voor de andere
+  // sjablonen (Afmetingen/Ruimtes/Artikelregels) wordt de hoeveelheid
+  // afgeleid uit productSjabloonInvoer hieronder, zie effectiveProductQty.
   const [productQty, setProductQty] = useState<Record<string, number>>({});
+  // Ruwe klantinvoer per sjabloon-veld (bijv. lengte/breedte, of de
+  // ruimtes/artikelregels-lijst) — zie sjablonen.ts's klantVelden().
+  const [productSjabloonInvoer, setProductSjabloonInvoer] = useState<
+    Record<string, Record<string, unknown>>
+  >({});
   const [materialSelections, setMaterialSelections] = useState<Record<string, string>>({});
   const [extraSelections, setExtraSelections] = useState<Record<string, number>>({});
+
+  // Leidt voor elk niet-ENKELE_HOEVEELHEID product de hoeveelheid (voor
+  // arbeidskosten) en, alleen bij Artikelregels, het al-geprijsde
+  // regelsbedrag af uit de ruwe klantinvoer — zie calculate.ts's
+  // productRegelsBedrag-parameter. ENKELE_HOEVEELHEID-producten komen
+  // ongewijzigd uit productQty (de QuantityStepper).
+  const { effectiveProductQty, productRegelsBedrag } = useMemo(() => {
+    const qtyMap: Record<string, number> = { ...productQty };
+    const regelsMap: Record<string, number> = {};
+    for (const product of products) {
+      if (product.sjabloon === "ENKELE_HOEVEELHEID") continue;
+      const config = (product.sjabloonConfig as Record<string, unknown> | null) ?? {};
+      const velden = klantVeldenVoorSjabloon(product.sjabloon, config);
+      const invoer = coerceVeldWaarden(velden, productSjabloonInvoer[product.id] ?? {});
+      const resultaat = berekenHoeveelheidVoorSjabloon(product.sjabloon, config, invoer);
+      if (resultaat.soort === "hoeveelheid") {
+        qtyMap[product.id] = resultaat.waarde;
+      } else {
+        qtyMap[product.id] = hoeveelheidUitResultaat(resultaat);
+        regelsMap[product.id] = resultaat.regels.reduce(
+          (som, regel) => som + regel.aantal * regel.prijsPerEenheid,
+          0
+        );
+      }
+    }
+    return { effectiveProductQty: qtyMap, productRegelsBedrag: regelsMap };
+  }, [products, productQty, productSjabloonInvoer]);
 
   // Kleuren en lettertype zijn een Plus/Pro-feature — opnieuw afdwingen bij
   // het renderen (niet alleen in het dashboard), zodat een Gratis-tenant
@@ -130,12 +179,22 @@ export function Calculator({
         services,
         products,
         serviceSelected,
-        productQty,
+        productQty: effectiveProductQty,
+        productRegelsBedrag,
         materialSelections,
         extraSelections,
         costSettings,
       }),
-    [services, products, serviceSelected, productQty, materialSelections, extraSelections, costSettings]
+    [
+      services,
+      products,
+      serviceSelected,
+      effectiveProductQty,
+      productRegelsBedrag,
+      materialSelections,
+      extraSelections,
+      costSettings,
+    ]
   );
 
   // Een verplichte materiaalcategorie zonder keuze houdt de prijsindicatie
@@ -144,13 +203,13 @@ export function Calculator({
   const heeftOntbrekendeVerplichteMaterialen = useMemo(
     () =>
       products.some((product) => {
-        const qty = productQty[product.id] ?? 0;
-        if (qty <= 0) return false;
+        const qty = effectiveProductQty[product.id] ?? 0;
+        if (qty <= 0 && (productRegelsBedrag[product.id] ?? 0) <= 0) return false;
         return product.materiaalCategorieen.some(
           (category) => category.verplicht && !materialSelections[category.id]
         );
       }),
-    [products, productQty, materialSelections]
+    [products, effectiveProductQty, productRegelsBedrag, materialSelections]
   );
 
   // Bevroren "wat had de klant aangevinkt" voor de leads-CRM (zie
@@ -170,8 +229,8 @@ export function Calculator({
     }
 
     for (const product of products) {
-      const qty = productQty[product.id] ?? 0;
-      if (qty <= 0) continue;
+      const qty = effectiveProductQty[product.id] ?? 0;
+      if (qty <= 0 && (productRegelsBedrag[product.id] ?? 0) <= 0) continue;
 
       const materiaalNamen = product.materiaalCategorieen
         .map((category) =>
@@ -204,7 +263,16 @@ export function Calculator({
       btw: bedragTop(breakdown.btw),
       totaal: bedragTop(breakdown.totaal),
     };
-  }, [services, products, serviceSelected, productQty, materialSelections, extraSelections, breakdown]);
+  }, [
+    services,
+    products,
+    serviceSelected,
+    effectiveProductQty,
+    productRegelsBedrag,
+    materialSelections,
+    extraSelections,
+    breakdown,
+  ]);
 
   const isEmpty = services.length === 0 && products.length === 0;
 
@@ -304,10 +372,15 @@ export function Calculator({
                       <ProductCard
                         key={product.id}
                         product={product}
-                        qty={productQty[product.id] ?? 0}
+                        qty={effectiveProductQty[product.id] ?? 0}
                         onQtyChange={(qty) =>
                           setProductQty((prev) => ({ ...prev, [product.id]: qty }))
                         }
+                        sjabloonInvoer={productSjabloonInvoer[product.id] ?? {}}
+                        onSjabloonInvoerChange={(waarden) =>
+                          setProductSjabloonInvoer((prev) => ({ ...prev, [product.id]: waarden }))
+                        }
+                        regelsBedrag={productRegelsBedrag[product.id] ?? 0}
                         materialSelections={materialSelections}
                         onMaterialSelect={(categoryId, materialOptionId) =>
                           setMaterialSelections((prev) => ({
@@ -465,6 +538,9 @@ function ProductCard({
   product,
   qty,
   onQtyChange,
+  sjabloonInvoer,
+  onSjabloonInvoerChange,
+  regelsBedrag,
   materialSelections,
   onMaterialSelect,
   extraSelections,
@@ -473,16 +549,22 @@ function ProductCard({
   product: ProductWithDetails;
   qty: number;
   onQtyChange: (qty: number) => void;
+  sjabloonInvoer: Record<string, unknown>;
+  onSjabloonInvoerChange: (waarden: Record<string, unknown>) => void;
+  regelsBedrag: number;
   materialSelections: Record<string, string>;
   onMaterialSelect: (categoryId: string, materialOptionId: string) => void;
   extraSelections: Record<string, number>;
   onExtraChange: (extraOptionId: string, aantal: number) => void;
 }) {
-  const active = qty > 0;
+  const isEnkeleHoeveelheid = product.sjabloon === "ENKELE_HOEVEELHEID";
+  const active = isEnkeleHoeveelheid ? qty > 0 : qty > 0 || regelsBedrag > 0;
   const categoriesWithOptions = product.materiaalCategorieen.filter(
     (category) => category.materialen.length > 0
   );
   const ProductIcon = getProductIcon(product.icoon);
+
+  const eigenPrijs = eigenProductPrijs(product, qty, regelsBedrag);
 
   return (
     <Card
@@ -506,13 +588,27 @@ function ProductCard({
               )}
             </div>
           </div>
-          <QuantityStepper
-            naam={product.naam}
-            eenheid={unitLabel(product.eenheid)}
-            qty={qty}
-            onChange={onQtyChange}
-          />
+          {isEnkeleHoeveelheid ? (
+            <QuantityStepper
+              naam={product.naam}
+              eenheid={unitLabel(product.eenheid)}
+              qty={qty}
+              onChange={onQtyChange}
+            />
+          ) : (
+            eigenPrijs > 0 && (
+              <span className="shrink-0 text-sm font-semibold text-foreground">
+                ≈ {formatCurrency(eigenPrijs)}
+              </span>
+            )
+          )}
         </div>
+
+        {!isEnkeleHoeveelheid && (
+          <div className="border-t border-border pt-4">
+            <SjabloonInvoer product={product} invoer={sjabloonInvoer} onInvoerChange={onSjabloonInvoerChange} />
+          </div>
+        )}
 
         {active && (categoriesWithOptions.length > 0 || product.extraOpties.length > 0) && (
           <div className="flex flex-col gap-4 border-t border-border pt-4">
@@ -671,6 +767,222 @@ function ProductCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// Prijsindicatie van dit ene product — bij Artikelregels is het regelsbedrag
+// al kant-en-klaar geprijsd per artikeltype (zie sjablonen.ts), bij de
+// andere sjablonen is het de vertrouwde hoeveelheid × prijsPerEenheid (met
+// eventuele staffels), net als calculate.ts zelf toepast. Bewust een lichte
+// benadering (geen bandbreedte-min/max hier) — puur een indicatie op de kaart
+// zelf, de Summary hiernaast blijft de bron van waarheid.
+function eigenProductPrijs(product: ProductWithDetails, qty: number, regelsBedrag: number): number {
+  if (regelsBedrag > 0) {
+    return product.minimumprijs != null ? Math.max(regelsBedrag, product.minimumprijs) : regelsBedrag;
+  }
+  if (product.prijsPerEenheid == null || qty <= 0) return 0;
+  let bedrag =
+    product.staffels.length > 0
+      ? berekenGestaffeldBedrag(qty, product.prijsPerEenheid, product.staffels)
+      : qty * product.prijsPerEenheid;
+  if (product.minimumprijs != null) bedrag = Math.max(bedrag, product.minimumprijs);
+  return bedrag;
+}
+
+// Rendert de klantvelden van het gekozen sjabloon (Afmetingen/Ruimtes/
+// Artikelregels) — ENKELE_HOEVEELHEID heeft hier bewust geen velden (zie
+// sjablonen.ts) en blijft de bestaande QuantityStepper gebruiken.
+function SjabloonInvoer({
+  product,
+  invoer,
+  onInvoerChange,
+}: {
+  product: ProductWithDetails;
+  invoer: Record<string, unknown>;
+  onInvoerChange: (waarden: Record<string, unknown>) => void;
+}) {
+  const config = (product.sjabloonConfig as Record<string, unknown> | null) ?? {};
+  const velden = klantVeldenVoorSjabloon(product.sjabloon, config);
+
+  function setVeldWaarde(key: string, waarde: unknown) {
+    onInvoerChange({ ...invoer, [key]: waarde });
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {velden.map((veld) =>
+        veld.soort === "regelgroep" ? (
+          <SjabloonRegelgroep
+            key={veld.key}
+            veld={veld}
+            regels={Array.isArray(invoer[veld.key]) ? (invoer[veld.key] as Record<string, unknown>[]) : []}
+            onChange={(regels) => setVeldWaarde(veld.key, regels)}
+          />
+        ) : (
+          <SjabloonEenvoudigVeld
+            key={veld.key}
+            veld={veld}
+            waarde={invoer[veld.key]}
+            onChange={(waarde) => setVeldWaarde(veld.key, waarde)}
+          />
+        )
+      )}
+    </div>
+  );
+}
+
+function SjabloonEenvoudigVeld({
+  veld,
+  waarde,
+  onChange,
+}: {
+  veld: GetalVeld | TekstVeld | KeuzeVeld | JaNeeVeld;
+  waarde: unknown;
+  onChange: (waarde: unknown) => void;
+}) {
+  if (veld.soort === "getal") {
+    return (
+      <div className="flex items-center justify-between gap-3">
+        <Label htmlFor={`sv-${veld.key}`}>{veld.label}</Label>
+        <div className="flex items-center gap-1.5">
+          <DecimalField
+            id={`sv-${veld.key}`}
+            value={typeof waarde === "number" ? waarde : parseGetal(waarde, 0)}
+            onChange={onChange}
+            placeholder="0"
+            className="h-10 w-24 text-right"
+          />
+          {veld.eenheid && <span className="text-xs text-muted-foreground">{veld.eenheid}</span>}
+        </div>
+      </div>
+    );
+  }
+
+  if (veld.soort === "janee") {
+    return (
+      <label className="flex items-center justify-between gap-3 text-sm">
+        <span className="text-foreground">{veld.label}</span>
+        <input
+          type="checkbox"
+          className="h-5 w-5 rounded border-input accent-[var(--brand-primary)]"
+          checked={Boolean(waarde)}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+      </label>
+    );
+  }
+
+  if (veld.soort === "keuze") {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <Label>{veld.label}</Label>
+        <Select value={typeof waarde === "string" ? waarde : ""} onChange={(e) => onChange(e.target.value)}>
+          {veld.opties.map((optie) => (
+            <option key={optie.waarde} value={optie.waarde}>
+              {optie.label}
+            </option>
+          ))}
+        </Select>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label>{veld.label}</Label>
+      <Input
+        value={typeof waarde === "string" ? waarde : ""}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={veld.placeholder}
+      />
+    </div>
+  );
+}
+
+function SjabloonRegelgroep({
+  veld,
+  regels,
+  onChange,
+}: {
+  veld: RegelgroepVeld;
+  regels: Record<string, unknown>[];
+  onChange: (regels: Record<string, unknown>[]) => void;
+}) {
+  function updateRegel(index: number, kolomKey: string, waarde: unknown) {
+    onChange(regels.map((regel, i) => (i === index ? { ...regel, [kolomKey]: waarde } : regel)));
+  }
+
+  function verwijderRegel(index: number) {
+    onChange(regels.filter((_, i) => i !== index));
+  }
+
+  function voegRegelToe() {
+    const nieuweRegel: Record<string, unknown> = {};
+    for (const kolom of veld.kolommen) {
+      nieuweRegel[kolom.key] = kolom.soort === "keuze" ? (kolom.standaardWaarde ?? kolom.opties[0]?.waarde ?? "") : "";
+    }
+    onChange([...regels, nieuweRegel]);
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {regels.map((regel, index) => (
+        <div
+          key={index}
+          className="flex flex-wrap items-end gap-2 rounded-md border border-border bg-card p-3"
+        >
+          {veld.kolommen.map((kolom) => {
+            if (veld.zichtbaarAls && !veld.zichtbaarAls(kolom.key, regel)) return null;
+            return (
+              <div key={kolom.key} className="flex min-w-[6.5rem] flex-1 flex-col gap-1">
+                <span className="text-xs text-muted-foreground">{kolom.label}</span>
+                {kolom.soort === "getal" ? (
+                  <DecimalField
+                    value={typeof regel[kolom.key] === "number" ? (regel[kolom.key] as number) : parseGetal(regel[kolom.key], 0)}
+                    onChange={(waarde) => updateRegel(index, kolom.key, waarde)}
+                    placeholder="0"
+                    className="h-10"
+                  />
+                ) : kolom.soort === "keuze" ? (
+                  <Select
+                    value={typeof regel[kolom.key] === "string" ? (regel[kolom.key] as string) : ""}
+                    onChange={(e) => updateRegel(index, kolom.key, e.target.value)}
+                  >
+                    {kolom.opties.map((optie) => (
+                      <option key={optie.waarde} value={optie.waarde}>
+                        {optie.label}
+                      </option>
+                    ))}
+                  </Select>
+                ) : (
+                  <Input
+                    value={typeof regel[kolom.key] === "string" ? (regel[kolom.key] as string) : ""}
+                    onChange={(e) => updateRegel(index, kolom.key, e.target.value)}
+                    placeholder={kolom.placeholder}
+                  />
+                )}
+              </div>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => verwijderRegel(index)}
+            aria-label="Regel verwijderen"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive cursor-pointer"
+          >
+            <Minus className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={voegRegelToe}
+        className="flex items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--brand-primary)]/40 py-2 text-sm font-medium text-[var(--brand-primary)] transition-colors hover:bg-[var(--brand-primary)]/10 cursor-pointer"
+      >
+        <Plus className="h-4 w-4" />
+        {veld.toevoegLabel}
+      </button>
+    </div>
   );
 }
 
