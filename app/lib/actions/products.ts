@@ -195,6 +195,101 @@ export async function deleteProductAction(formData: FormData) {
   revalidatePath(`/portaal/${company.slug}`);
 }
 
+// "Kopieer bestaand product" (zie producten-lijst): slaat de wizard over en
+// stuurt direct door naar het bewerkscherm van de kopie — alle instellingen
+// (sjabloon, prijs, staffels, materiaalcategorieën, extra opties) komen mee,
+// alleen actief staat uit zodat de kopie niet ongemerkt live gaat voor de
+// klant terwijl de vakman 'm nog aan het aanpassen is.
+export async function copyProductAction(formData: FormData) {
+  const { company } = await requireActiveCompany();
+  const productId = formData.get("productId");
+  if (typeof productId !== "string") return;
+
+  const origineel = await prisma.product.findFirst({
+    where: { id: productId, companyId: company.id },
+    include: {
+      staffels: true,
+      materiaalCategorieen: { include: { materialen: true } },
+      extraOpties: true,
+    },
+  });
+  if (!origineel) return;
+
+  if (effectiveTier(company) === "GRATIS") {
+    const [count, serviceCount] = await Promise.all([
+      prisma.product.count({ where: { companyId: company.id } }),
+      prisma.service.count({ where: { companyId: company.id } }),
+    ]);
+    if (count + serviceCount >= GRATIS_CATALOGUS_LIMIET) return;
+  }
+
+  const count = await prisma.product.count({ where: { companyId: company.id } });
+
+  const kopie = await prisma.product.create({
+    data: {
+      companyId: company.id,
+      naam: `${origineel.naam} (kopie)`,
+      omschrijving: origineel.omschrijving,
+      eenheid: origineel.eenheid,
+      sjabloon: origineel.sjabloon,
+      sjabloonConfig: origineel.sjabloonConfig as Prisma.InputJsonValue,
+      prijsPerEenheid: origineel.prijsPerEenheid,
+      prijsPerEenheidType: origineel.prijsPerEenheidType,
+      prijsPerEenheidMin: origineel.prijsPerEenheidMin,
+      prijsPerEenheidMax: origineel.prijsPerEenheidMax,
+      minimumprijs: origineel.minimumprijs,
+      arbeidsCapaciteit: origineel.arbeidsCapaciteit,
+      arbeidTariefOverride: origineel.arbeidTariefOverride,
+      materiaalMargeOverride: origineel.materiaalMargeOverride,
+      transportkosten: origineel.transportkosten,
+      icoon: origineel.icoon,
+      actief: false,
+      order: count,
+      staffels: {
+        create: origineel.staffels.map(({ vanaf, prijsPerEenheid, order }) => ({
+          vanaf,
+          prijsPerEenheid,
+          order,
+        })),
+      },
+      materiaalCategorieen: {
+        create: origineel.materiaalCategorieen.map((categorie) => ({
+          naam: categorie.naam,
+          verplicht: categorie.verplicht,
+          order: categorie.order,
+          materialen: {
+            create: categorie.materialen.map((materiaal) => ({
+              naam: materiaal.naam,
+              prijs: materiaal.prijs,
+              prijsType: materiaal.prijsType,
+              prijsMin: materiaal.prijsMin,
+              prijsMax: materiaal.prijsMax,
+              stapgrootte: materiaal.stapgrootte,
+              foto: materiaal.foto,
+              actief: materiaal.actief,
+              order: materiaal.order,
+            })),
+          },
+        })),
+      },
+      extraOpties: {
+        create: origineel.extraOpties.map((extra) => ({
+          naam: extra.naam,
+          omschrijving: extra.omschrijving,
+          prijs: extra.prijs,
+          type: extra.type,
+          foto: extra.foto,
+          actief: extra.actief,
+          order: extra.order,
+        })),
+      },
+    },
+  });
+
+  revalidatePath("/dashboard/producten");
+  redirect(`/dashboard/producten/${kopie.id}/bewerken`);
+}
+
 export async function toggleProductActiveAction(formData: FormData) {
   const { company } = await requireActiveCompany();
   const productId = formData.get("productId");

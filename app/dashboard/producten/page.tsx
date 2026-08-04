@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Pencil, Package } from "lucide-react";
+import { Pencil, Copy, Package } from "lucide-react";
 import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { LinkButton } from "@/app/components/ui/button";
+import { Button, LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import { getProductIcon } from "@/app/lib/icons";
@@ -13,6 +13,7 @@ import { NieuwItemButton } from "@/app/components/dashboard/nieuw-item-button";
 import { HelpTip } from "@/app/components/ui/help-tip";
 import { effectiveTier, GRATIS_CATALOGUS_LIMIET } from "@/app/lib/subscription";
 import {
+  copyProductAction,
   deleteProductAction,
   toggleProductActiveAction,
 } from "@/app/lib/actions/products";
@@ -128,6 +129,12 @@ export default async function ProductenPage() {
                         >
                           <Pencil className="h-4 w-4" />
                         </LinkButton>
+                        <form action={copyProductAction}>
+                          <input type="hidden" name="productId" value={product.id} />
+                          <Button variant="ghost" size="icon" type="submit" aria-label="Kopiëren" disabled={atLimit}>
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </form>
                         <DeleteButton
                           action={deleteProductAction}
                           id={product.id}
