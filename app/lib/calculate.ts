@@ -44,6 +44,7 @@ export type CalcService = {
 
 export type CalcMaterialOption = {
   id: string;
+  naam: string;
   // Volledige verkoopprijs per eenheid — inclusief de marge van de vakman.
   // Geen aparte opslaglaag meer (zie CostSettings).
   prijs: number;
@@ -60,6 +61,7 @@ export type CalcMaterialOption = {
 
 export type CalcMaterialCategory = {
   id: string;
+  naam: string;
   materialen: CalcMaterialOption[];
 };
 
@@ -120,6 +122,69 @@ export function geselecteerdeMateriaalOptieId(
 ): string | null {
   if (category.materialen.length === 1) return category.materialen[0].id;
   return materialSelections[category.id] ?? null;
+}
+
+export type MateriaalRegel = {
+  categorieId: string;
+  categorieNaam: string;
+  optieId: string;
+  optieNaam: string;
+  // Effectieve hoeveelheid ván déze regel — gelijk aan de hoofdhoeveelheid,
+  // tenzij de gekozen optie een stapgrootte heeft (dan naar boven afgerond
+  // op een veelvoud daarvan, bijv. palen per 1,8 m). Dat is de enige manier
+  // waarop een categorie een van de hoofdhoeveelheid afwijkende hoeveelheid
+  // kan hebben.
+  hoeveelheid: number;
+  prijsPerEenheid: number;
+  bedrag: number;
+};
+
+// Som van alle materiaalcategorieën van een product, elk met de daar
+// geselecteerde (of bij precies 1 optie: automatisch gekozen) optie — één
+// regel per categorie, nooit alleen de eerste. Gedeeld door
+// calculateBreakdown() hieronder (de motor achter de mandje-berekening) en
+// door het bewerkscherm/de wizard voor het live voorbeeld
+// (KostenUitsplitsing), zodat een categorie nooit op de ene plek wél en op
+// de andere plek niet meetelt.
+//
+// `valtTerugOpEersteOptie`: alleen voor het vakman-voorbeeld — daar is geen
+// klant die kiest, dus previewen we een categorie zonder eenduidige keuze
+// met de eerste optie in plaats van 'm over te slaan. De echte
+// klant-berekening (calculateBreakdown) gebruikt dit nooit: een categorie
+// zonder keuze telt daar terecht niet mee (zie heeftOntbrekendeVerplichteMaterialen).
+export function berekenMateriaalRegels(
+  categorieen: CalcMaterialCategory[],
+  hoeveelheid: number,
+  materialSelections: Record<string, string>,
+  { valtTerugOpEersteOptie = false }: { valtTerugOpEersteOptie?: boolean } = {}
+): { regels: MateriaalRegel[]; totaal: number; primaireOptie: CalcMaterialOption | undefined } {
+  const regels: MateriaalRegel[] = [];
+  let primaireOptie: CalcMaterialOption | undefined;
+
+  categorieen.forEach((categorie, index) => {
+    const selectedId =
+      geselecteerdeMateriaalOptieId(categorie, materialSelections) ??
+      (valtTerugOpEersteOptie ? (categorie.materialen[0]?.id ?? null) : null);
+    if (!selectedId) return;
+    const optie = categorie.materialen.find((m) => m.id === selectedId);
+    if (!optie) return;
+    if (index === 0) primaireOptie = optie;
+
+    const effectieveHoeveelheid =
+      optie.stapgrootte && optie.stapgrootte > 0 ? roundUpToStep(hoeveelheid, optie.stapgrootte) : hoeveelheid;
+    const bedrag = effectieveHoeveelheid * optie.prijs;
+    regels.push({
+      categorieId: categorie.id,
+      categorieNaam: categorie.naam,
+      optieId: optie.id,
+      optieNaam: optie.naam,
+      hoeveelheid: effectieveHoeveelheid,
+      prijsPerEenheid: optie.prijs,
+      bedrag,
+    });
+  });
+
+  return { regels, totaal: regels.reduce((som, regel) => som + regel.bedrag, 0), primaireOptie };
 }
 
 export type ProductKostenBlokken = {
@@ -254,18 +319,12 @@ export function calculateBreakdown({
     // Materiaalkosten (blok 1) — som over alle categorieën. De eerste
     // (primaire) categorie levert ook de eventuele productiviteitOverride
     // voor blok 2 hieronder — "productiviteit kan per materiaal afwijken".
-    let productMateriaalkosten = 0;
-    let primaireOptie: CalcMaterialOption | undefined;
-    product.materiaalCategorieen.forEach((category, index) => {
-      const selectedId = geselecteerdeMateriaalOptieId(category, materialSelections);
-      if (!selectedId) return;
-      const option = category.materialen.find((m) => m.id === selectedId);
-      if (!option) return;
-      if (index === 0) primaireOptie = option;
-      const effectiveQty =
-        option.stapgrootte && option.stapgrootte > 0 ? roundUpToStep(qty, option.stapgrootte) : qty;
-      productMateriaalkosten += effectiveQty * option.prijs;
-    });
+    const { totaal: materiaalCategorieenTotaal, primaireOptie } = berekenMateriaalRegels(
+      product.materiaalCategorieen,
+      qty,
+      materialSelections
+    );
+    let productMateriaalkosten = materiaalCategorieenTotaal;
 
     for (const extra of product.extraOpties) {
       const aantal = extraSelections[extra.id] ?? 0;

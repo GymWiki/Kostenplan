@@ -8,7 +8,7 @@ import {
   updateMaterialOptionAction,
   type MaterialOptionFormState,
 } from "@/app/lib/actions/material-options";
-import { berekenProductKosten } from "@/app/lib/calculate";
+import { berekenProductKosten, type MateriaalRegel } from "@/app/lib/calculate";
 import { formatCurrency } from "@/app/lib/format";
 import { unitLabel } from "@/app/lib/units";
 import type { MaterialOption } from "@/app/generated/prisma/client";
@@ -200,7 +200,7 @@ export function KostenUitsplitsing({
   naam,
   hoeveelheid,
   eenheid,
-  materiaalPrijsPerEenheid,
+  materiaalRegels,
   materiaalEnabled,
   productiviteit,
   arbeidTarief,
@@ -216,7 +216,10 @@ export function KostenUitsplitsing({
   naam: string;
   hoeveelheid: number;
   eenheid: string;
-  materiaalPrijsPerEenheid: number;
+  // Eén regel per materiaalcategorie — nooit maar de eerste (zie
+  // berekenMateriaalRegels in calculate.ts, dezelfde functie die
+  // calculateBreakdown() ook gebruikt voor de echte klant-berekening).
+  materiaalRegels: MateriaalRegel[];
   materiaalEnabled: boolean;
   productiviteit: number | null;
   arbeidTarief: number;
@@ -229,8 +232,9 @@ export function KostenUitsplitsing({
   voorrijMeeschalend: boolean;
   voorrijEnabled: boolean;
 }) {
+  const materiaalTotaal = materiaalRegels.reduce((som, regel) => som + regel.bedrag, 0);
   const kosten = berekenProductKosten({
-    materiaalkosten: hoeveelheid * materiaalPrijsPerEenheid,
+    materiaalkosten: materiaalTotaal,
     materiaalEnabled,
     hoeveelheid,
     productiviteit,
@@ -249,11 +253,13 @@ export function KostenUitsplitsing({
 
   const regels: { label: string; omschrijving: string; bedrag: number }[] = [];
   if (materiaalEnabled) {
-    regels.push({
-      label: "Materiaal",
-      omschrijving: `${hoeveelheid} ${unitLabel(eenheid)} × ${formatCurrency(materiaalPrijsPerEenheid)}`,
-      bedrag: kosten.materiaal,
-    });
+    for (const materiaalRegel of materiaalRegels) {
+      regels.push({
+        label: materiaalRegels.length > 1 ? `Materiaal — ${materiaalRegel.categorieNaam}` : "Materiaal",
+        omschrijving: `${materiaalRegel.hoeveelheid} ${unitLabel(eenheid)} × ${formatCurrency(materiaalRegel.prijsPerEenheid)}`,
+        bedrag: materiaalRegel.bedrag,
+      });
+    }
   }
   if (arbeidEnabled && kosten.arbeid > 0) {
     regels.push({ label: "Arbeid", omschrijving: "", bedrag: kosten.arbeid });
@@ -271,8 +277,8 @@ export function KostenUitsplitsing({
         {naam || "Dit product"} van {hoeveelheid} {unitLabel(eenheid)}
       </p>
       <div className="flex flex-col gap-1 text-sm">
-        {regels.map((regel) => (
-          <div key={regel.label} className="flex items-center justify-between gap-3">
+        {regels.map((regel, index) => (
+          <div key={`${regel.label}-${index}`} className="flex items-center justify-between gap-3">
             <span className="text-muted-foreground">
               {regel.label}
               {regel.omschrijving && (

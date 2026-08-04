@@ -12,7 +12,7 @@ import { VeldenRenderer, VeldInputEnkel } from "./velden/veld-form";
 import { OverrideVeld, MateriaalkostenVeld, KostenUitsplitsing } from "./velden/kosten-blok";
 import type { ProductFormState } from "@/app/lib/actions/products";
 import { arbeidEenheidEnkelvoud } from "@/app/lib/arbeid";
-import { arbeidTariefVoorStapEenheid } from "@/app/lib/calculate";
+import { arbeidTariefVoorStapEenheid, berekenMateriaalRegels } from "@/app/lib/calculate";
 import {
   berekenHoeveelheidVoorSjabloon,
   coerceVeldWaarden,
@@ -126,6 +126,22 @@ export function ProductForm({
     : hoeveelheidUitResultaat(
         berekenHoeveelheidVoorSjabloon(sjabloon, sjabloonConfig, coerceVeldWaarden(klantVelden, voorbeeldInvoer))
       );
+
+  // Eén regel per materiaalcategorie (niet alleen de eerste) — de primaire
+  // categorie (blok 1 hierboven) reflecteert de nog niet opgeslagen,
+  // live-getypte materiaalPrijs; de overige categorieën gebruiken hun
+  // opgeslagen prijs, met een fallback op de eerste optie zodat een
+  // categorie zonder eenduidige keuze niet uit het voorbeeld verdwijnt.
+  const materiaalRegels = berekenMateriaalRegels(
+    product?.materiaalCategorieen ?? [],
+    voorbeeldHoeveelheid,
+    {},
+    { valtTerugOpEersteOptie: true }
+  ).regels.map((regel) =>
+    primaireCategorie && regel.categorieId === primaireCategorie.id
+      ? { ...regel, prijsPerEenheid: parseGetal(materiaalPrijs, 0), bedrag: regel.hoeveelheid * parseGetal(materiaalPrijs, 0) }
+      : regel
+  );
 
   function handleKiesSjabloon(nieuw: ProductSjabloon) {
     if (nieuw === sjabloon) return;
@@ -405,7 +421,7 @@ export function ProductForm({
                 naam={naam}
                 hoeveelheid={voorbeeldHoeveelheid}
                 eenheid={effectieveEenheid}
-                materiaalPrijsPerEenheid={parseGetal(materiaalPrijs, 0)}
+                materiaalRegels={materiaalRegels}
                 materiaalEnabled={pricingSettings.materiaalEnabled}
                 productiviteit={parseGetal(productiviteit, 0) > 0 ? parseGetal(productiviteit, 0) : null}
                 arbeidTarief={parseGetal(arbeidTarief, 0)}

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   arbeidTariefVoorStapEenheid,
   bedragTop,
+  berekenMateriaalRegels,
   berekenProductKosten,
   calculateBreakdown,
   calculateBreakdownRange,
@@ -62,9 +63,11 @@ function maakProduct(overrides: Partial<CalcProduct> = {}): CalcProduct {
     materiaalCategorieen: [
       {
         id: "categorie-1",
+        naam: "Categorie",
         materialen: [
           {
             id: "materiaal-1",
+            naam: "Materiaal",
             prijs: 20,
             prijsType: "VAST",
             prijsMin: null,
@@ -110,9 +113,11 @@ describe("calculateBreakdown (basispad)", () => {
       materiaalCategorieen: [
         {
           id: "categorie-1",
+        naam: "Categorie",
           materialen: [
             {
               id: "materiaal-1",
+            naam: "Materiaal",
               prijs: 20,
               prijsType: "VAST",
               prijsMin: null,
@@ -173,9 +178,10 @@ describe("calculateBreakdown (basispad)", () => {
       materiaalCategorieen: [
         {
           id: "categorie-1",
+          naam: "Categorie",
           materialen: [
-            { id: "a", prijs: 20, prijsType: "VAST", prijsMin: null, prijsMax: null, stapgrootte: null, productiviteitOverride: null },
-            { id: "b", prijs: 30, prijsType: "VAST", prijsMin: null, prijsMax: null, stapgrootte: null, productiviteitOverride: null },
+            { id: "a", naam: "A", prijs: 20, prijsType: "VAST", prijsMin: null, prijsMax: null, stapgrootte: null, productiviteitOverride: null },
+            { id: "b", naam: "B", prijs: 30, prijsType: "VAST", prijsMin: null, prijsMax: null, stapgrootte: null, productiviteitOverride: null },
           ],
         },
       ],
@@ -192,6 +198,60 @@ describe("calculateBreakdown (basispad)", () => {
 
     expect(result.materiaalkosten).toBe(0);
   });
+
+  it("telt materiaalkosten van alle categorieën op, niet alleen de eerste (regressie)", () => {
+    // Schutting met twee materiaalcategorieën: paneel (65/m¹) en palen
+    // (15/m¹), elk met precies 1 optie (dus automatisch geselecteerd).
+    const product = maakProduct({
+      productiviteit: null,
+      materiaalCategorieen: [
+        {
+          id: "categorie-paneel",
+          naam: "Paneel",
+          materialen: [
+            {
+              id: "paneel-1",
+              naam: "Paneel douglas",
+              prijs: 65,
+              prijsType: "VAST",
+              prijsMin: null,
+              prijsMax: null,
+              stapgrootte: null,
+              productiviteitOverride: null,
+            },
+          ],
+        },
+        {
+          id: "categorie-palen",
+          naam: "Palen",
+          materialen: [
+            {
+              id: "paal-1",
+              naam: "Paal standaard",
+              prijs: 15,
+              prijsType: "VAST",
+              prijsMin: null,
+              prijsMax: null,
+              stapgrootte: null,
+              productiviteitOverride: null,
+            },
+          ],
+        },
+      ],
+    });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 20 },
+      materialSelections: {},
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    // 20*65 (paneel) + 20*15 (palen) = 1300 + 300 = 1600 — niet slechts 1300.
+    expect(result.materiaalkosten).toBe(1600);
+  });
 });
 
 describe("calculateBreakdown — productiviteit per materiaal", () => {
@@ -201,9 +261,11 @@ describe("calculateBreakdown — productiviteit per materiaal", () => {
       materiaalCategorieen: [
         {
           id: "categorie-1",
+        naam: "Categorie",
           materialen: [
             {
               id: "materiaal-1",
+            naam: "Materiaal",
               prijs: 20,
               prijsType: "VAST",
               prijsMin: null,
@@ -387,9 +449,11 @@ describe("calculateBreakdownRange — modus GEEN", () => {
       materiaalCategorieen: [
         {
           id: "categorie-1",
+        naam: "Categorie",
           materialen: [
             {
               id: "materiaal-1",
+            naam: "Materiaal",
               prijs: 0,
               prijsType: "BANDBREEDTE",
               prijsMin: 15,
@@ -425,9 +489,11 @@ describe("calculateBreakdownRange — modus PER_PRODUCT", () => {
       materiaalCategorieen: [
         {
           id: "categorie-1",
+        naam: "Categorie",
           materialen: [
             {
               id: "materiaal-1",
+            naam: "Materiaal",
               prijs: 0,
               prijsType: "BANDBREEDTE",
               prijsMin: 15,
@@ -568,9 +634,11 @@ describe("calculateBreakdownRange — modus TOTAAL", () => {
       materiaalCategorieen: [
         {
           id: "categorie-1",
+        naam: "Categorie",
           materialen: [
             {
               id: "materiaal-1",
+            naam: "Materiaal",
               prijs: 0,
               prijsType: "BANDBREEDTE",
               prijsMin: 15,
@@ -618,9 +686,11 @@ describe("wederzijdse uitsluiting van de drie modi", () => {
     materiaalCategorieen: [
       {
         id: "categorie-1",
+        naam: "Categorie",
         materialen: [
           {
             id: "materiaal-1",
+            naam: "Materiaal",
             prijs: 0,
             prijsType: "BANDBREEDTE",
             prijsMin: 15,
@@ -708,19 +778,114 @@ describe("arbeidTariefVoorStapEenheid", () => {
 
 describe("geselecteerdeMateriaalOptieId", () => {
   it("selecteert automatisch de enige optie van een categorie", () => {
-    const categorie = { id: "cat-1", materialen: [{ id: "opt-1" } as never] };
+    const categorie = { id: "cat-1", naam: "Categorie", materialen: [{ id: "opt-1" } as never] };
     expect(geselecteerdeMateriaalOptieId(categorie, {})).toBe("opt-1");
   });
 
   it("vereist een expliciete keuze zodra er meerdere opties zijn", () => {
-    const categorie = { id: "cat-1", materialen: [{ id: "a" } as never, { id: "b" } as never] };
+    const categorie = {
+      id: "cat-1",
+      naam: "Categorie",
+      materialen: [{ id: "a" } as never, { id: "b" } as never],
+    };
     expect(geselecteerdeMateriaalOptieId(categorie, {})).toBeNull();
     expect(geselecteerdeMateriaalOptieId(categorie, { "cat-1": "b" })).toBe("b");
   });
 
   it("geeft null terug voor een lege categorie", () => {
-    const categorie = { id: "cat-1", materialen: [] };
+    const categorie = { id: "cat-1", naam: "Categorie", materialen: [] };
     expect(geselecteerdeMateriaalOptieId(categorie, {})).toBeNull();
+  });
+});
+
+describe("berekenMateriaalRegels", () => {
+  const paneel = {
+    id: "categorie-paneel",
+    naam: "Paneel",
+    materialen: [
+      {
+        id: "paneel-1",
+        naam: "Paneel douglas",
+        prijs: 65,
+        prijsType: "VAST" as const,
+        prijsMin: null,
+        prijsMax: null,
+        stapgrootte: null,
+        productiviteitOverride: null,
+      },
+    ],
+  };
+  const palen = {
+    id: "categorie-palen",
+    naam: "Palen",
+    materialen: [
+      {
+        id: "paal-1",
+        naam: "Paal standaard",
+        prijs: 15,
+        prijsType: "VAST" as const,
+        prijsMin: null,
+        prijsMax: null,
+        stapgrootte: null,
+        productiviteitOverride: null,
+      },
+    ],
+  };
+
+  it("geeft één regel per categorie terug, niet alleen de eerste", () => {
+    const { regels, totaal } = berekenMateriaalRegels([paneel, palen], 20, {});
+
+    expect(regels).toHaveLength(2);
+    expect(regels[0]).toMatchObject({ categorieNaam: "Paneel", hoeveelheid: 20, prijsPerEenheid: 65, bedrag: 1300 });
+    expect(regels[1]).toMatchObject({ categorieNaam: "Palen", hoeveelheid: 20, prijsPerEenheid: 15, bedrag: 300 });
+    expect(totaal).toBe(1600);
+  });
+
+  it("gebruikt per regel de eigen (stapgrootte-afgeronde) hoeveelheid, niet de hoofdhoeveelheid", () => {
+    const palenMetStapgrootte = {
+      ...palen,
+      materialen: [{ ...palen.materialen[0], stapgrootte: 2 }],
+    };
+    // hoofdhoeveelheid 20, palen per stap van 2 -> effectieve hoeveelheid
+    // blijft hier toevallig 20 (al een veelvoud); met 21 wordt het 22.
+    const { regels } = berekenMateriaalRegels([paneel, palenMetStapgrootte], 21, {});
+    expect(regels[0].hoeveelheid).toBe(21); // paneel: geen stapgrootte
+    expect(regels[1].hoeveelheid).toBe(22); // palen: ceil(21/2)*2 = 22
+  });
+
+  it("slaat een categorie zonder eenduidige keuze over (klant-modus, geen fallback)", () => {
+    const meerdereOpties = {
+      id: "categorie-kleur",
+      naam: "Kleur",
+      materialen: [
+        { id: "rood", naam: "Rood", prijs: 5, prijsType: "VAST" as const, prijsMin: null, prijsMax: null, stapgrootte: null, productiviteitOverride: null },
+        { id: "groen", naam: "Groen", prijs: 6, prijsType: "VAST" as const, prijsMin: null, prijsMax: null, stapgrootte: null, productiviteitOverride: null },
+      ],
+    };
+    const { regels, totaal } = berekenMateriaalRegels([paneel, meerdereOpties], 20, {});
+    expect(regels).toHaveLength(1);
+    expect(regels[0].categorieNaam).toBe("Paneel");
+    expect(totaal).toBe(1300);
+  });
+
+  it("valt terug op de eerste optie voor het vakman-voorbeeld als dat expliciet gevraagd wordt", () => {
+    const meerdereOpties = {
+      id: "categorie-kleur",
+      naam: "Kleur",
+      materialen: [
+        { id: "rood", naam: "Rood", prijs: 5, prijsType: "VAST" as const, prijsMin: null, prijsMax: null, stapgrootte: null, productiviteitOverride: null },
+        { id: "groen", naam: "Groen", prijs: 6, prijsType: "VAST" as const, prijsMin: null, prijsMax: null, stapgrootte: null, productiviteitOverride: null },
+      ],
+    };
+    const { regels, totaal } = berekenMateriaalRegels([paneel, meerdereOpties], 20, {}, { valtTerugOpEersteOptie: true });
+    expect(regels).toHaveLength(2);
+    expect(regels[1]).toMatchObject({ optieNaam: "Rood", bedrag: 100 });
+    expect(totaal).toBe(1400);
+  });
+
+  it("geeft de eerste categorie als primaireOptie terug", () => {
+    const { primaireOptie } = berekenMateriaalRegels([paneel, palen], 20, {});
+    expect(primaireOptie?.id).toBe("paneel-1");
   });
 });
 
@@ -814,9 +979,11 @@ describe("migratie: gelijkblijvende uitkomst voor bestaande producten", () => {
     materiaalCategorieen: [
       {
         id: "materiaal-cat",
+        naam: "Materiaal",
         materialen: [
           {
             id: "standaard-optie",
+            naam: "Standaard",
             prijs: 48, // was Product.prijsPerEenheid vóór de migratie
             prijsType: "VAST",
             prijsMin: null,

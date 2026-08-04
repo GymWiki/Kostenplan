@@ -6,6 +6,7 @@ import { Minus, Plus, Printer, Mail, Phone, Image as ImageIcon, Check } from "lu
 import {
   arbeidTariefVoorStapEenheid,
   bedragTop,
+  berekenMateriaalRegels,
   berekenProductKosten,
   calculateBreakdownRange,
   geselecteerdeMateriaalOptieId,
@@ -793,16 +794,11 @@ function eigenProductPrijs(
   if (regelsBedrag > 0) return regelsBedrag;
   if (qty <= 0) return 0;
 
-  let materiaalkosten = 0;
-  let primaireOptie: MaterialOption | undefined;
-  product.materiaalCategorieen.forEach((category, index) => {
-    const selectedId = geselecteerdeMateriaalOptieId(category, materialSelections);
-    if (!selectedId) return;
-    const optie = category.materialen.find((m) => m.id === selectedId);
-    if (!optie) return;
-    if (index === 0) primaireOptie = optie;
-    materiaalkosten += qty * optie.prijs;
-  });
+  const { totaal: materiaalkosten, primaireOptie } = berekenMateriaalRegels(
+    product.materiaalCategorieen,
+    qty,
+    materialSelections
+  );
 
   const productiviteit = primaireOptie?.productiviteitOverride ?? product.productiviteit;
   const arbeidTarief =

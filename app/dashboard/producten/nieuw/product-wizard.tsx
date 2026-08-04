@@ -14,7 +14,7 @@ import {
   type ProductFormState,
 } from "@/app/lib/actions/products";
 import { updateMaterialOptionAction } from "@/app/lib/actions/material-options";
-import { arbeidTariefVoorStapEenheid } from "@/app/lib/calculate";
+import { arbeidTariefVoorStapEenheid, type MateriaalRegel } from "@/app/lib/calculate";
 import {
   berekenHoeveelheidVoorSjabloon,
   coerceVeldWaarden,
@@ -88,6 +88,22 @@ export function ProductWizard({ pricingSettings }: { pricingSettings: WizardPric
     : hoeveelheidUitResultaat(
         berekenHoeveelheidVoorSjabloon(sjabloon, sjabloonConfig, coerceVeldWaarden(klantVelden, voorbeeldInvoer))
       );
+
+  // De wizard maakt altijd precies 1 materiaalcategorie aan (zie stap 1) —
+  // dus één regel, met de live-getypte prijs. Extra categorieën stel je pas
+  // in het bewerkscherm in, waar het voorbeeld al zijn materiaalregels toont.
+  const materiaalPrijsGetal = parseGetal(materiaalPrijs, 0);
+  const materiaalRegels: MateriaalRegel[] = [
+    {
+      categorieId: "primair",
+      categorieNaam: "Materiaal",
+      optieId: materiaalOptieId ?? "",
+      optieNaam: "Standaard",
+      hoeveelheid: voorbeeldHoeveelheid,
+      prijsPerEenheid: materiaalPrijsGetal,
+      bedrag: voorbeeldHoeveelheid * materiaalPrijsGetal,
+    },
+  ];
 
   function bouwProductFormData() {
     const fd = new FormData();
@@ -369,7 +385,7 @@ export function ProductWizard({ pricingSettings }: { pricingSettings: WizardPric
                   naam={naam}
                   hoeveelheid={voorbeeldHoeveelheid}
                   eenheid={eenheid}
-                  materiaalPrijsPerEenheid={parseGetal(materiaalPrijs, 0)}
+                  materiaalRegels={materiaalRegels}
                   materiaalEnabled
                   productiviteit={parseGetal(productiviteit, 0) > 0 ? parseGetal(productiviteit, 0) : null}
                   arbeidTarief={parseGetal(arbeidTarief, 0)}
@@ -414,7 +430,7 @@ export function ProductWizard({ pricingSettings }: { pricingSettings: WizardPric
               naam={naam}
               hoeveelheid={voorbeeldHoeveelheid}
               eenheid={eenheid}
-              materiaalPrijsPerEenheid={parseGetal(materiaalPrijs, 0)}
+              materiaalRegels={materiaalRegels}
               materiaalEnabled
               productiviteit={parseGetal(productiviteit, 0) > 0 ? parseGetal(productiviteit, 0) : null}
               arbeidTarief={parseGetal(arbeidTarief, 0)}
