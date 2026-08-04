@@ -27,7 +27,6 @@ export default async function BewerkProductPage({
           include: { materialen: { orderBy: { order: "asc" } } },
         },
         extraOpties: { orderBy: { order: "asc" } },
-        staffels: { orderBy: { order: "asc" } },
       },
     }),
     getProductPricingSettings(company.id),
@@ -47,29 +46,23 @@ export default async function BewerkProductPage({
       <ProductForm
         action={updateProductAction.bind(null, product.id)}
         product={product}
-        arbeidStapEenheid={pricingSettings.arbeidStapEenheid}
-        arbeidTarief={pricingSettings.arbeidTarief}
-        arbeidTariefPerProduct={pricingSettings.arbeidTariefPerProduct}
-        materiaalMarge={pricingSettings.materiaalMarge}
-        materiaalMargePerProduct={pricingSettings.materiaalMargePerProduct}
-        btwPercentage={pricingSettings.btwPercentage}
-        verfijningTellingen={{
-          extraOpties: product.extraOpties.length,
-          materiaalCategorieen: product.materiaalCategorieen.length,
-        }}
-      >
-        <MaterialCategoriesManager
-          productId={product.id}
-          productEenheid={product.eenheid}
-          categories={product.materiaalCategorieen}
-        />
-
-        <ExtraOptionsManager
-          productId={product.id}
-          productEenheid={product.eenheid}
-          extraOpties={product.extraOpties}
-        />
-      </ProductForm>
+        pricingSettings={pricingSettings}
+        verfijningTellingen={{ extraOpties: product.extraOpties.length }}
+        materialenSectie={
+          <MaterialCategoriesManager
+            productId={product.id}
+            productEenheid={product.eenheid}
+            categories={product.materiaalCategorieen}
+          />
+        }
+        extraOptiesSectie={
+          <ExtraOptionsManager
+            productId={product.id}
+            productEenheid={product.eenheid}
+            extraOpties={product.extraOpties}
+          />
+        }
+      />
     </div>
   );
 }

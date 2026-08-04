@@ -21,11 +21,14 @@ export async function updateCostSettingsAction(
     arbeidEnabled: formData.get("arbeidEnabled") === "on",
     arbeidZichtbaar: formData.get("arbeidZichtbaar") === "on",
     arbeidStapEenheid: formData.get("arbeidStapEenheid"),
-    arbeidTarief: formData.get("arbeidTarief"),
-    arbeidTariefPerProduct: formData.get("arbeidTariefPerProduct") === "on",
+    arbeidTariefUur: formData.get("arbeidTariefUur"),
+    arbeidTariefDagdeel: formData.get("arbeidTariefDagdeel"),
+    arbeidTariefDag: formData.get("arbeidTariefDag"),
+    arbeidAfronden: formData.get("arbeidAfronden") === "on",
 
     transportEnabled: formData.get("transportEnabled") === "on",
     transportZichtbaar: formData.get("transportZichtbaar") === "on",
+    transportTarief: formData.get("transportTarief"),
 
     voorrijEnabled: formData.get("voorrijEnabled") === "on",
     voorrijZichtbaar: formData.get("voorrijZichtbaar") === "on",
@@ -33,8 +36,6 @@ export async function updateCostSettingsAction(
 
     materiaalEnabled: formData.get("materiaalEnabled") === "on",
     materiaalZichtbaar: formData.get("materiaalZichtbaar") === "on",
-    materiaalMarge: formData.get("materiaalMarge"),
-    materiaalMargePerProduct: formData.get("materiaalMargePerProduct") === "on",
 
     btwPercentage: formData.get("btwPercentage"),
 

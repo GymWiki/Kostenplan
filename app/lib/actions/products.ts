@@ -20,16 +20,12 @@ function parseProductForm(formData: FormData) {
     eenheid: formData.get("eenheid"),
     sjabloon: formData.get("sjabloon") ?? "ENKELE_HOEVEELHEID",
     sjabloonConfig: formData.get("sjabloonConfig") ?? "{}",
-    prijsPerEenheid: formData.get("prijsPerEenheid"),
-    prijsPerEenheidType: formData.get("prijsPerEenheidType") ?? "VAST",
-    prijsPerEenheidMin: formData.get("prijsPerEenheidMin"),
-    prijsPerEenheidMax: formData.get("prijsPerEenheidMax"),
-    minimumprijs: formData.get("minimumprijs"),
-    staffels: formData.get("staffels") ?? "[]",
-    arbeidsCapaciteit: formData.get("arbeidsCapaciteit"),
+    productiviteit: formData.get("productiviteit"),
     arbeidTariefOverride: formData.get("arbeidTariefOverride"),
-    materiaalMargeOverride: formData.get("materiaalMargeOverride"),
-    transportkosten: formData.get("transportkosten") ?? 0,
+    transportkostenOverride: formData.get("transportkostenOverride"),
+    transportMeeschalend: formData.get("transportMeeschalend") === "on",
+    voorrijkostenOverride: formData.get("voorrijkostenOverride"),
+    voorrijMeeschalend: formData.get("voorrijMeeschalend") === "on",
     icoon: formData.get("icoon") ?? "",
     actief: formData.get("actief") === "on",
   });
@@ -38,7 +34,7 @@ function parseProductForm(formData: FormData) {
 type ActiveCompany = Awaited<ReturnType<typeof requireActiveCompany>>["company"];
 
 type CreateProductResult =
-  | { success: true; productId: string }
+  | { success: true; productId: string; materiaalOptieId: string }
   | { success: false; state: ProductFormState };
 
 // Gedeelde kernlogica van "nieuw product aanmaken" — los van of de aanroeper
@@ -77,20 +73,33 @@ async function createProduct(company: ActiveCompany, formData: FormData): Promis
 
   const count = productCount ?? (await prisma.product.count({ where: { companyId: company.id } }));
 
-  const { staffels, ...productData } = parsed.data;
+  // Elk product krijgt meteen een standaard-materiaalcategorie met één optie
+  // — blok 1 (materiaalkosten) heeft altijd iets om een prijs aan te hangen,
+  // zowel in de wizard als het bewerkscherm. De vakman kan 'm hernoemen of
+  // uitbreiden bij Materialen.
   const product = await prisma.product.create({
     data: {
-      ...productData,
-      sjabloonConfig: productData.sjabloonConfig as Prisma.InputJsonValue,
+      ...parsed.data,
+      sjabloonConfig: parsed.data.sjabloonConfig as Prisma.InputJsonValue,
       companyId: company.id,
       order: count,
-      staffels: { create: staffels.map((s, order) => ({ ...s, order })) },
+      materiaalCategorieen: {
+        create: [
+          {
+            naam: "Materiaal",
+            verplicht: true,
+            order: 0,
+            materialen: { create: [{ naam: "Standaard", prijs: 0, order: 0 }] },
+          },
+        ],
+      },
     },
+    include: { materiaalCategorieen: { include: { materialen: true } } },
   });
 
   revalidatePath("/dashboard/producten");
   revalidatePath(`/portaal/${company.slug}`);
-  return { success: true, productId: product.id };
+  return { success: true, productId: product.id, materiaalOptieId: product.materiaalCategorieen[0].materialen[0].id };
 }
 
 export async function createProductAction(
@@ -106,7 +115,9 @@ export async function createProductAction(
 // Voor de wizard (nieuw/product-wizard.tsx): maakt het product aan zonder
 // door te sturen, zodat de wizard op dezelfde pagina met stap 2 verder kan —
 // "elke wizardstap slaat direct op als concept" uit de opdracht.
-export type CreateProductDraftState = { error?: string; fieldErrors?: Record<string, string>; productId?: string } | null;
+export type CreateProductDraftState =
+  | { error?: string; fieldErrors?: Record<string, string>; productId?: string; materiaalOptieId?: string }
+  | null;
 
 export async function createProductDraftAction(
   _prevState: CreateProductDraftState,
@@ -115,7 +126,7 @@ export async function createProductDraftAction(
   const { company } = await requireActiveCompany();
   const result = await createProduct(company, formData);
   if (!result.success) return result.state;
-  return { productId: result.productId };
+  return { productId: result.productId, materiaalOptieId: result.materiaalOptieId };
 }
 
 type SaveProductResult = { success: true } | { success: false; state: ProductFormState };
@@ -140,17 +151,11 @@ async function saveProduct(
   });
   if (!existing) return { success: false, state: { error: "Product niet gevonden." } };
 
-  const { staffels, ...productData } = parsed.data;
-  // Nested relaties kunnen niet via updateMany (die ondersteunt geen
-  // relatie-writes) — vandaar update() op het al geverifieerde id. Staffels
-  // volledig vervangen (deleteMany + create) is simpeler en robuuster dan
-  // los diffen, en dit is een kleine, zelden gewijzigde lijst.
   await prisma.product.update({
     where: { id: productId },
     data: {
-      ...productData,
-      sjabloonConfig: productData.sjabloonConfig as Prisma.InputJsonValue,
-      staffels: { deleteMany: {}, create: staffels.map((s, order) => ({ ...s, order })) },
+      ...parsed.data,
+      sjabloonConfig: parsed.data.sjabloonConfig as Prisma.InputJsonValue,
     },
   });
 
@@ -197,7 +202,7 @@ export async function deleteProductAction(formData: FormData) {
 
 // "Kopieer bestaand product" (zie producten-lijst): slaat de wizard over en
 // stuurt direct door naar het bewerkscherm van de kopie — alle instellingen
-// (sjabloon, prijs, staffels, materiaalcategorieën, extra opties) komen mee,
+// (sjabloon, kostenopbouw, materiaalcategorieën, extra opties) komen mee,
 // alleen actief staat uit zodat de kopie niet ongemerkt live gaat voor de
 // klant terwijl de vakman 'm nog aan het aanpassen is.
 export async function copyProductAction(formData: FormData) {
@@ -208,7 +213,6 @@ export async function copyProductAction(formData: FormData) {
   const origineel = await prisma.product.findFirst({
     where: { id: productId, companyId: company.id },
     include: {
-      staffels: true,
       materiaalCategorieen: { include: { materialen: true } },
       extraOpties: true,
     },
@@ -233,25 +237,15 @@ export async function copyProductAction(formData: FormData) {
       eenheid: origineel.eenheid,
       sjabloon: origineel.sjabloon,
       sjabloonConfig: origineel.sjabloonConfig as Prisma.InputJsonValue,
-      prijsPerEenheid: origineel.prijsPerEenheid,
-      prijsPerEenheidType: origineel.prijsPerEenheidType,
-      prijsPerEenheidMin: origineel.prijsPerEenheidMin,
-      prijsPerEenheidMax: origineel.prijsPerEenheidMax,
-      minimumprijs: origineel.minimumprijs,
-      arbeidsCapaciteit: origineel.arbeidsCapaciteit,
+      productiviteit: origineel.productiviteit,
       arbeidTariefOverride: origineel.arbeidTariefOverride,
-      materiaalMargeOverride: origineel.materiaalMargeOverride,
-      transportkosten: origineel.transportkosten,
+      transportkostenOverride: origineel.transportkostenOverride,
+      transportMeeschalend: origineel.transportMeeschalend,
+      voorrijkostenOverride: origineel.voorrijkostenOverride,
+      voorrijMeeschalend: origineel.voorrijMeeschalend,
       icoon: origineel.icoon,
       actief: false,
       order: count,
-      staffels: {
-        create: origineel.staffels.map(({ vanaf, prijsPerEenheid, order }) => ({
-          vanaf,
-          prijsPerEenheid,
-          order,
-        })),
-      },
       materiaalCategorieen: {
         create: origineel.materiaalCategorieen.map((categorie) => ({
           naam: categorie.naam,
@@ -265,6 +259,7 @@ export async function copyProductAction(formData: FormData) {
               prijsMin: materiaal.prijsMin,
               prijsMax: materiaal.prijsMax,
               stapgrootte: materiaal.stapgrootte,
+              productiviteitOverride: materiaal.productiviteitOverride,
               foto: materiaal.foto,
               actief: materiaal.actief,
               order: materiaal.order,

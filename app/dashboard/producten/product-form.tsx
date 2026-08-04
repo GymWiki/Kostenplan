@@ -8,55 +8,73 @@ import { Switch } from "@/app/components/ui/switch";
 import { IconPicker } from "@/app/components/ui/icon-picker";
 import { CollapsibleSection } from "@/app/components/ui/collapsible";
 import { SjabloonPicker } from "./velden/sjabloon-picker";
-import { VeldenRenderer } from "./velden/veld-form";
-import { LiveVoorbeeld } from "./velden/live-voorbeeld";
-import { StaffelsInput, type StaffelRij } from "./velden/staffels-input";
+import { VeldenRenderer, VeldInputEnkel } from "./velden/veld-form";
+import { OverrideVeld, MateriaalkostenVeld, KostenUitsplitsing } from "./velden/kosten-blok";
 import type { ProductFormState } from "@/app/lib/actions/products";
 import { arbeidEenheidEnkelvoud } from "@/app/lib/arbeid";
-import { formatCurrency } from "@/app/lib/format";
+import { arbeidTariefVoorStapEenheid } from "@/app/lib/calculate";
 import {
+  berekenHoeveelheidVoorSjabloon,
   coerceVeldWaarden,
+  hoeveelheidUitResultaat,
   instelVeldenVoorSjabloon,
+  klantVeldenVoorSjabloon,
+  parseGetal,
   standaardConfigVoorSjabloon,
   standaardKlantInvoerVoorSjabloon,
   vasteEenheidVoorSjabloon,
 } from "@/app/lib/sjablonen";
 import { CUSTOM_UNIT_VALUE, UNIT_GROUPS, isKnownUnit, unitLabel } from "@/app/lib/units";
-import type { ArbeidStapEenheid, Product, ProductSjabloon, ProductStaffel } from "@/app/generated/prisma/client";
+import type {
+  ArbeidStapEenheid,
+  MaterialCategory,
+  MaterialOption,
+  Product,
+  ProductSjabloon,
+} from "@/app/generated/prisma/client";
 
-type ProductMetSjabloon = Product & { staffels?: ProductStaffel[] };
+type ProductMetRelaties = Product & {
+  materiaalCategorieen: (MaterialCategory & { materialen: MaterialOption[] })[];
+};
+
+export type PricingSettings = {
+  arbeidEnabled: boolean;
+  arbeidStapEenheid: ArbeidStapEenheid;
+  arbeidTariefUur: number;
+  arbeidTariefDagdeel: number;
+  arbeidTariefDag: number;
+  arbeidAfronden: boolean;
+  transportEnabled: boolean;
+  transportTarief: number;
+  voorrijEnabled: boolean;
+  voorrijTarief: number;
+  materiaalEnabled: boolean;
+  btwPercentage: number;
+};
 
 export function ProductForm({
   action,
   product,
-  arbeidStapEenheid,
-  arbeidTarief,
-  arbeidTariefPerProduct,
-  materiaalMarge,
-  materiaalMargePerProduct,
-  btwPercentage,
+  pricingSettings,
   verfijningTellingen,
-  children,
+  materialenSectie,
+  extraOptiesSectie,
 }: {
   action: (state: ProductFormState, formData: FormData) => Promise<ProductFormState>;
-  product?: ProductMetSjabloon;
-  arbeidStapEenheid: ArbeidStapEenheid;
-  arbeidTarief: number;
-  arbeidTariefPerProduct: boolean;
-  materiaalMarge: number;
-  materiaalMargePerProduct: boolean;
-  btwPercentage: number;
-  // Aantal toeslagen/materiaalcategorieën — komt van de pagina (children is
-  // een ondoorzichtige ReactNode), alleen gebruikt voor de Verfijning-
-  // samenvattingsregel wanneer je 'm dichtgeklapt hebt.
-  verfijningTellingen?: { extraOpties: number; materiaalCategorieen: number };
-  children?: React.ReactNode;
+  product?: ProductMetRelaties;
+  pricingSettings: PricingSettings;
+  // Aantal toeslagen — voor de Verfijning-samenvattingsregel wanneer je 'm
+  // dichtgeklapt hebt.
+  verfijningTellingen?: { extraOpties: number };
+  materialenSectie?: React.ReactNode;
+  extraOptiesSectie?: React.ReactNode;
 }) {
   const [state, formAction, pending] = useActionState<ProductFormState, FormData>(
     action,
     null
   );
 
+  const [naam, setNaam] = useState(product?.naam ?? "");
   const [eenheid, setEenheid] = useState(product?.eenheid ?? "m1");
   // Een bestaand product met een eenheid die niet in de standaardlijst staat
   // (bijv. eerder via "eigen eenheid" aangemaakt) opent meteen in eigen-modus,
@@ -69,38 +87,45 @@ export function ProductForm({
   const [sjabloonConfigRaw, setSjabloonConfigRaw] = useState<Record<string, unknown>>(
     () => (product?.sjabloonConfig as Record<string, unknown> | null) ?? standaardConfigVoorSjabloon(sjabloon)
   );
-  const [klantVoorbeeldInvoer, setKlantVoorbeeldInvoer] = useState<Record<string, unknown>>(() =>
+  const [voorbeeldInvoer, setVoorbeeldInvoer] = useState<Record<string, unknown>>(() =>
     standaardKlantInvoerVoorSjabloon(sjabloon, sjabloonConfigRaw)
   );
 
-  const [prijsPerEenheid, setPrijsPerEenheid] = useState(
-    product?.prijsPerEenheid != null ? String(product.prijsPerEenheid) : ""
+  const primaireCategorie = product?.materiaalCategorieen?.[0];
+  const primaireOptie = primaireCategorie?.materialen?.[0];
+  const [materiaalPrijs, setMateriaalPrijs] = useState(primaireOptie ? String(primaireOptie.prijs) : "0");
+
+  const [productiviteit, setProductiviteit] = useState(
+    product?.productiviteit != null ? String(product.productiviteit) : ""
   );
-  const [bandbreedte, setBandbreedte] = useState(product?.prijsPerEenheidType === "BANDBREEDTE");
-  const [prijsPerEenheidMin, setPrijsPerEenheidMin] = useState(
-    product?.prijsPerEenheidMin != null ? String(product.prijsPerEenheidMin) : ""
+  const companyArbeidTarief = arbeidTariefVoorStapEenheid(pricingSettings, pricingSettings.arbeidStapEenheid);
+  const [arbeidTarief, setArbeidTarief] = useState(
+    String(product?.arbeidTariefOverride ?? companyArbeidTarief)
   );
-  const [prijsPerEenheidMax, setPrijsPerEenheidMax] = useState(
-    product?.prijsPerEenheidMax != null ? String(product.prijsPerEenheidMax) : ""
+  const [transportBedrag, setTransportBedrag] = useState(
+    String(product?.transportkostenOverride ?? pricingSettings.transportTarief)
   );
-  const [minimumprijs, setMinimumprijs] = useState(
-    product?.minimumprijs != null ? String(product.minimumprijs) : ""
+  const [transportMeeschalend, setTransportMeeschalend] = useState(product?.transportMeeschalend ?? false);
+  const [voorrijBedrag, setVoorrijBedrag] = useState(
+    String(product?.voorrijkostenOverride ?? pricingSettings.voorrijTarief)
   );
-  const [staffels, setStaffels] = useState<StaffelRij[]>(
-    () =>
-      product?.staffels?.map((s) => ({ vanaf: String(s.vanaf), prijsPerEenheid: String(s.prijsPerEenheid) })) ?? []
-  );
+  const [voorrijMeeschalend, setVoorrijMeeschalend] = useState(product?.voorrijMeeschalend ?? false);
 
   const [verfijningOpen, setVerfijningOpen] = useState(false);
 
   const instelVelden = instelVeldenVoorSjabloon(sjabloon);
   const sjabloonConfig = coerceVeldWaarden(instelVelden, sjabloonConfigRaw);
   const vasteEenheid = vasteEenheidVoorSjabloon(sjabloon, sjabloonConfig);
+  const effectieveEenheid = vasteEenheid ?? eenheid;
   const isArtikelregels = sjabloon === "ARTIKELREGELS";
+  const isEnkel = sjabloon === "ENKELE_HOEVEELHEID";
+  const klantVelden = isEnkel ? [] : klantVeldenVoorSjabloon(sjabloon, sjabloonConfig);
 
-  const staffelsAlsGetallen = staffels
-    .map((s) => ({ vanaf: Number(s.vanaf.replace(",", ".")), prijsPerEenheid: Number(s.prijsPerEenheid.replace(",", ".")) }))
-    .filter((s) => Number.isFinite(s.vanaf) && Number.isFinite(s.prijsPerEenheid) && s.vanaf > 0);
+  const voorbeeldHoeveelheid = isEnkel
+    ? parseGetal(voorbeeldInvoer.hoeveelheid, 20)
+    : hoeveelheidUitResultaat(
+        berekenHoeveelheidVoorSjabloon(sjabloon, sjabloonConfig, coerceVeldWaarden(klantVelden, voorbeeldInvoer))
+      );
 
   function handleKiesSjabloon(nieuw: ProductSjabloon) {
     if (nieuw === sjabloon) return;
@@ -115,7 +140,7 @@ export function ProductForm({
     const nieuweConfig = standaardConfigVoorSjabloon(nieuw);
     setSjabloon(nieuw);
     setSjabloonConfigRaw(nieuweConfig);
-    setKlantVoorbeeldInvoer(standaardKlantInvoerVoorSjabloon(nieuw, nieuweConfig));
+    setVoorbeeldInvoer(standaardKlantInvoerVoorSjabloon(nieuw, nieuweConfig));
     const nieuweVasteEenheid = vasteEenheidVoorSjabloon(nieuw, nieuweConfig);
     if (nieuweVasteEenheid) {
       setEenheid(nieuweVasteEenheid);
@@ -123,13 +148,10 @@ export function ProductForm({
     }
   }
 
-  const verfijningSamenvatting = berekenVerfijningSamenvatting({
-    minimumprijs,
-    aantalStaffels: staffels.length,
-    bandbreedte,
-    extraOpties: verfijningTellingen?.extraOpties ?? 0,
-    materiaalCategorieen: verfijningTellingen?.materiaalCategorieen ?? 0,
-  });
+  const verfijningSamenvatting =
+    (verfijningTellingen?.extraOpties ?? 0) > 0
+      ? `${verfijningTellingen!.extraOpties} ${verfijningTellingen!.extraOpties === 1 ? "toeslag" : "toeslagen"}`
+      : "Geen toeslagen";
 
   return (
     <div className="flex flex-col gap-8">
@@ -146,7 +168,8 @@ export function ProductForm({
           id="naam"
           name="naam"
           placeholder="Bijv. Vloertegels"
-          defaultValue={product?.naam}
+          value={naam}
+          onChange={(e) => setNaam(e.target.value)}
           required
         />
         {state?.fieldErrors?.naam && (
@@ -214,37 +237,6 @@ export function ProductForm({
           )}
           <p className="text-xs text-muted-foreground">
             De hoeveelheid die de klant opgeeft, bijv. m² beplanting of uur timmerwerk.
-            Materiaalprijzen en extra opties worden hiermee vermenigvuldigd.
-          </p>
-        </div>
-      )}
-
-      {isArtikelregels ? (
-        <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
-          Bij Artikelregels stel je hieronder per artikeltype een eigen prijs in.
-        </p>
-      ) : (
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="prijsPerEenheid">Wat vraag je per {unitLabel(vasteEenheid ?? eenheid)}?</Label>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              €
-            </span>
-            <DecimalInput
-              id="prijsPerEenheid"
-              name="prijsPerEenheid"
-              value={prijsPerEenheid}
-              onChange={(e) => setPrijsPerEenheid(e.target.value)}
-              placeholder="Bijv. 45"
-              className="pl-7"
-            />
-          </div>
-          {state?.fieldErrors?.prijsPerEenheid && (
-            <p className="text-sm text-destructive">{state.fieldErrors.prijsPerEenheid}</p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Laat leeg als je de prijs liever via materiaalcategorieën instelt (bij Verfijning
-            hieronder).
           </p>
         </div>
       )}
@@ -252,8 +244,8 @@ export function ProductForm({
       <div className="flex flex-col gap-1.5">
         <Label>Btw</Label>
         <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
-          {btwPercentage}% — geldt voor alle producten, in te stellen bij{" "}
-          <Link href="/dashboard/kosteninstellingen" className="underline hover:text-foreground">
+          {pricingSettings.btwPercentage}% — geldt voor alle producten, in te stellen bij{" "}
+          <Link href="/dashboard/instellingen" className="underline hover:text-foreground">
             Kosteninstellingen
           </Link>
           .
@@ -280,161 +272,156 @@ export function ProductForm({
             idPrefix="instel"
           />
         )}
-
-        <LiveVoorbeeld
-          sjabloon={sjabloon}
-          sjabloonConfig={sjabloonConfig}
-          klantInvoer={klantVoorbeeldInvoer}
-          onKlantInvoerChange={(key, waarde) => setKlantVoorbeeldInvoer((prev) => ({ ...prev, [key]: waarde }))}
-          eenheid={vasteEenheid ?? eenheid}
-          prijsPerEenheid={prijsPerEenheid}
-          staffels={staffelsAlsGetallen}
-          minimumprijs={minimumprijs}
-        />
       </div>
 
-      <CollapsibleSection title="Verfijning" summary={verfijningSamenvatting} open={verfijningOpen} onOpenChange={setVerfijningOpen}>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="minimumprijs">Minimumprijs (optioneel)</Label>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              €
-            </span>
-            <DecimalInput
-              id="minimumprijs"
-              name="minimumprijs"
-              value={minimumprijs}
-              onChange={(e) => setMinimumprijs(e.target.value)}
-              placeholder="Bijv. 250"
-              className="pl-7"
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            De prijs voor dit product komt nooit lager uit dan dit bedrag, ook niet bij een kleine
-            hoeveelheid.
-          </p>
-        </div>
+      <div className="flex flex-col gap-4 rounded-md border border-border p-4">
+        <p className="text-sm font-medium text-foreground">Kosten</p>
 
-        {!isArtikelregels && (
+        {isArtikelregels ? (
+          <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
+            Artikelregels heeft per artikeltype een eigen prijs, ingesteld bij Hoeveelheid hierboven.
+          </p>
+        ) : (
           <>
-            <input type="hidden" name="staffels" value={JSON.stringify(staffelsAlsGetallen)} />
-            <StaffelsInput eenheid={vasteEenheid ?? eenheid} staffels={staffels} onChange={setStaffels} />
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Voorbeeld
+              </p>
+              {isEnkel ? (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="voorbeeld-hoeveelheid">Hoeveelheid ({unitLabel(effectieveEenheid)})</Label>
+                  <VeldInputEnkel
+                    id="voorbeeld-hoeveelheid"
+                    veld={{ key: "hoeveelheid", soort: "getal", label: "Hoeveelheid" }}
+                    waarde={voorbeeldInvoer.hoeveelheid ?? "20"}
+                    onChange={(w) => setVoorbeeldInvoer((prev) => ({ ...prev, hoeveelheid: w }))}
+                  />
+                </div>
+              ) : (
+                klantVelden.length > 0 && (
+                  <VeldenRenderer
+                    velden={klantVelden}
+                    waarden={voorbeeldInvoer}
+                    onChange={(key, waarde) => setVoorbeeldInvoer((prev) => ({ ...prev, [key]: waarde }))}
+                    idPrefix="voorbeeld"
+                  />
+                )
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2 border-t border-border pt-4">
+              <p className="text-sm font-medium text-foreground">1. Materiaalkosten</p>
+              <MateriaalkostenVeld
+                eenheid={effectieveEenheid}
+                primaireCategorie={primaireCategorie}
+                prijs={materiaalPrijs}
+                onPrijsChange={setMateriaalPrijs}
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-border pt-4">
+              <p className="text-sm font-medium text-foreground">2. Arbeidskosten</p>
+              <OverrideVeld
+                titel="Tarief"
+                name="arbeidTariefOverride"
+                companyWaarde={companyArbeidTarief}
+                companyWaardeTekst={`per ${arbeidEenheidEnkelvoud(pricingSettings.arbeidStapEenheid)}`}
+                defaultOverrideValue={product?.arbeidTariefOverride ?? null}
+                instellingenHref="/dashboard/instellingen"
+                waarde={arbeidTarief}
+                onWaardeChange={setArbeidTarief}
+                error={state?.fieldErrors?.arbeidTariefOverride}
+              />
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="productiviteit">
+                  Hoeveel {unitLabel(effectieveEenheid)} zet je per{" "}
+                  {arbeidEenheidEnkelvoud(pricingSettings.arbeidStapEenheid)}?
+                </Label>
+                <DecimalInput
+                  id="productiviteit"
+                  name="productiviteit"
+                  placeholder="Bijv. 5"
+                  value={productiviteit}
+                  onChange={(e) => setProductiviteit(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Laat leeg als dit product geen arbeidstijd kost.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-border pt-4">
+              <p className="text-sm font-medium text-foreground">3. Transportkosten</p>
+              <OverrideVeld
+                titel="Transportkosten"
+                name="transportkostenOverride"
+                companyWaarde={pricingSettings.transportTarief}
+                companyWaardeTekst="per project"
+                defaultOverrideValue={product?.transportkostenOverride ?? null}
+                instellingenHref="/dashboard/instellingen"
+                waarde={transportBedrag}
+                onWaardeChange={setTransportBedrag}
+                error={state?.fieldErrors?.transportkostenOverride}
+              />
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <input
+                  type="checkbox"
+                  name="transportMeeschalend"
+                  checked={transportMeeschalend}
+                  onChange={(e) => setTransportMeeschalend(e.target.checked)}
+                  className="h-4 w-4 rounded border-input accent-primary"
+                />
+                Schaalt mee met de hoeveelheid (in plaats van een vaste post per project)
+              </label>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-border pt-4">
+              <p className="text-sm font-medium text-foreground">4. Voorrijkosten</p>
+              <OverrideVeld
+                titel="Voorrijkosten"
+                name="voorrijkostenOverride"
+                companyWaarde={pricingSettings.voorrijTarief}
+                companyWaardeTekst="per project"
+                defaultOverrideValue={product?.voorrijkostenOverride ?? null}
+                instellingenHref="/dashboard/instellingen"
+                waarde={voorrijBedrag}
+                onWaardeChange={setVoorrijBedrag}
+                error={state?.fieldErrors?.voorrijkostenOverride}
+              />
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <input
+                  type="checkbox"
+                  name="voorrijMeeschalend"
+                  checked={voorrijMeeschalend}
+                  onChange={(e) => setVoorrijMeeschalend(e.target.checked)}
+                  className="h-4 w-4 rounded border-input accent-primary"
+                />
+                Schaalt mee met de hoeveelheid (in plaats van een vaste post per project)
+              </label>
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <KostenUitsplitsing
+                naam={naam}
+                hoeveelheid={voorbeeldHoeveelheid}
+                eenheid={effectieveEenheid}
+                materiaalPrijsPerEenheid={parseGetal(materiaalPrijs, 0)}
+                materiaalEnabled={pricingSettings.materiaalEnabled}
+                productiviteit={parseGetal(productiviteit, 0) > 0 ? parseGetal(productiviteit, 0) : null}
+                arbeidTarief={parseGetal(arbeidTarief, 0)}
+                arbeidEnabled={pricingSettings.arbeidEnabled}
+                arbeidAfronden={pricingSettings.arbeidAfronden}
+                transportBedrag={parseGetal(transportBedrag, 0)}
+                transportMeeschalend={transportMeeschalend}
+                transportEnabled={pricingSettings.transportEnabled}
+                voorrijBedrag={parseGetal(voorrijBedrag, 0)}
+                voorrijMeeschalend={voorrijMeeschalend}
+                voorrijEnabled={pricingSettings.voorrijEnabled}
+              />
+            </div>
           </>
         )}
-
-        {!isArtikelregels && (
-          <div className="flex flex-col gap-1.5">
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              <input
-                type="checkbox"
-                checked={bandbreedte}
-                onChange={(e) => setBandbreedte(e.target.checked)}
-                className="h-4 w-4 rounded border-input accent-primary"
-              />
-              Prijs als bandbreedte tonen (bijv. &ldquo;€ 40 – € 55&rdquo;) in plaats van een vast
-              bedrag
-            </label>
-            <input type="hidden" name="prijsPerEenheidType" value={bandbreedte ? "BANDBREEDTE" : "VAST"} />
-            {bandbreedte && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                    €
-                  </span>
-                  <DecimalInput
-                    name="prijsPerEenheidMin"
-                    placeholder="Min"
-                    value={prijsPerEenheidMin}
-                    onChange={(e) => setPrijsPerEenheidMin(e.target.value)}
-                    className="pl-7"
-                    required
-                  />
-                </div>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                    €
-                  </span>
-                  <DecimalInput
-                    name="prijsPerEenheidMax"
-                    placeholder="Max"
-                    value={prijsPerEenheidMax}
-                    onChange={(e) => setPrijsPerEenheidMax(e.target.value)}
-                    className="pl-7"
-                    required
-                  />
-                </div>
-              </div>
-            )}
-            {state?.fieldErrors?.prijsPerEenheidMax && (
-              <p className="text-sm text-destructive">{state.fieldErrors.prijsPerEenheidMax}</p>
-            )}
-          </div>
-        )}
-
-        <div className="flex flex-col gap-1.5 border-t border-border pt-4">
-          <Label htmlFor="arbeidsCapaciteit">
-            Aantal {unitLabel(vasteEenheid ?? eenheid)} per {arbeidEenheidEnkelvoud(arbeidStapEenheid)} (optioneel)
-          </Label>
-          <DecimalInput
-            id="arbeidsCapaciteit"
-            name="arbeidsCapaciteit"
-            placeholder="Bijv. 5"
-            defaultValue={product?.arbeidsCapaciteit ?? ""}
-          />
-          <p className="text-xs text-muted-foreground">
-            Hoeveel {unitLabel(vasteEenheid ?? eenheid)} jij of je team plaatst per{" "}
-            {arbeidEenheidEnkelvoud(arbeidStapEenheid)}. Bepaalt de arbeidskosten van dit product.
-            Laat leeg als dit product geen arbeidstijd kost.
-          </p>
-        </div>
-
-        <OverrideField
-          label="Arbeidstarief voor dit product"
-          name="arbeidTariefOverride"
-          perProductEnabled={arbeidTariefPerProduct}
-          defaultOverrideValue={product?.arbeidTariefOverride ?? ""}
-          placeholder={`Standaard: ${formatCurrency(arbeidTarief)} per ${arbeidEenheidEnkelvoud(arbeidStapEenheid)}`}
-          helperWhenEditable={`Leeg = het standaardtarief van ${formatCurrency(arbeidTarief)} per ${arbeidEenheidEnkelvoud(arbeidStapEenheid)} uit Kosteninstellingen.`}
-          helperWhenFixed={`Alle producten gebruiken het arbeidstarief uit Kosteninstellingen (${formatCurrency(arbeidTarief)} per ${arbeidEenheidEnkelvoud(arbeidStapEenheid)}). Wil je voor dit product een ander tarief? Zet "Tarief per product instelbaar" aan bij Kosteninstellingen.`}
-          error={state?.fieldErrors?.arbeidTariefOverride}
-        />
-
-        <OverrideField
-          label="Opslag op materiaalkosten voor dit product"
-          name="materiaalMargeOverride"
-          perProductEnabled={materiaalMargePerProduct}
-          defaultOverrideValue={product?.materiaalMargeOverride ?? ""}
-          placeholder={`Standaard: ${materiaalMarge}%`}
-          suffix="%"
-          helperWhenEditable={`Leeg = de standaardopslag van ${materiaalMarge}% uit Kosteninstellingen.`}
-          helperWhenFixed={`Alle producten gebruiken de opslag uit Kosteninstellingen (${materiaalMarge}%). Wil je voor dit product een andere opslag? Zet "Opslag per product instelbaar" aan bij Kosteninstellingen.`}
-          error={state?.fieldErrors?.materiaalMargeOverride}
-        />
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="transportkosten">Transportkosten voor dit product</Label>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              €
-            </span>
-            <DecimalInput
-              id="transportkosten"
-              name="transportkosten"
-              className="pl-7"
-              defaultValue={product?.transportkosten ?? 0}
-              required
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Vast bedrag om materiaal voor dit product te vervoeren. Telt één keer mee zodra de
-            klant dit product kiest, en wordt bij de offerte opgeteld bij de transportkosten van
-            andere gekozen producten. Standaard €0.
-          </p>
-          {state?.fieldErrors?.transportkosten && (
-            <p className="text-sm text-destructive">{state.fieldErrors.transportkosten}</p>
-          )}
-        </div>
-      </CollapsibleSection>
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <p className="text-sm font-medium text-foreground">Icoon</p>
@@ -453,9 +440,13 @@ export function ProductForm({
 
       </form>
 
-      {verfijningOpen && children && (
-        <div className="flex flex-col gap-6 rounded-md border border-border p-4">{children}</div>
+      {materialenSectie && (
+        <div className="flex flex-col gap-4 rounded-md border border-border p-4">{materialenSectie}</div>
       )}
+
+      <CollapsibleSection title="Verfijning" summary={verfijningSamenvatting} open={verfijningOpen} onOpenChange={setVerfijningOpen}>
+        {extraOptiesSectie}
+      </CollapsibleSection>
 
       <div className="sticky bottom-4 z-20 flex justify-end gap-2 sm:bottom-6">
         <LinkButton href="/dashboard/producten" variant="outline" className="shadow-lg">
@@ -465,85 +456,6 @@ export function ProductForm({
           {pending ? "Opslaan…" : "Product opslaan"}
         </Button>
       </div>
-    </div>
-  );
-}
-
-function berekenVerfijningSamenvatting({
-  minimumprijs,
-  aantalStaffels,
-  bandbreedte,
-  extraOpties,
-  materiaalCategorieen,
-}: {
-  minimumprijs: string;
-  aantalStaffels: number;
-  bandbreedte: boolean;
-  extraOpties: number;
-  materiaalCategorieen: number;
-}): string {
-  const delen: string[] = [];
-  if (minimumprijs.trim() !== "") delen.push(`minimumprijs €${minimumprijs}`);
-  if (aantalStaffels > 0) delen.push(`${aantalStaffels} ${aantalStaffels === 1 ? "staffel" : "staffels"}`);
-  if (bandbreedte) delen.push("bandbreedte");
-  if (extraOpties > 0) delen.push(`${extraOpties} ${extraOpties === 1 ? "toeslag" : "toeslagen"}`);
-  if (materiaalCategorieen > 0) {
-    delen.push(`${materiaalCategorieen} materiaalcategorie${materiaalCategorieen === 1 ? "" : "ën"}`);
-  }
-  return delen.length > 0 ? delen.join(" · ") : "Standaardinstellingen";
-}
-
-function OverrideField({
-  label,
-  name,
-  perProductEnabled,
-  defaultOverrideValue,
-  placeholder,
-  suffix,
-  helperWhenEditable,
-  helperWhenFixed,
-  error,
-}: {
-  label: string;
-  name: string;
-  perProductEnabled: boolean;
-  defaultOverrideValue: number | string;
-  placeholder: string;
-  suffix?: string;
-  helperWhenEditable: string;
-  helperWhenFixed: string;
-  error?: string;
-}) {
-  if (!perProductEnabled) {
-    return (
-      <>
-        <input type="hidden" name={name} value={defaultOverrideValue} />
-        <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
-          {helperWhenFixed}
-        </p>
-      </>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={name}>{label} (optioneel)</Label>
-      <div className="relative">
-        <DecimalInput
-          id={name}
-          name={name}
-          placeholder={placeholder}
-          defaultValue={defaultOverrideValue}
-          className={suffix ? "pr-10" : undefined}
-        />
-        {suffix && (
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-            {suffix}
-          </span>
-        )}
-      </div>
-      <p className="text-xs text-muted-foreground">{helperWhenEditable}</p>
-      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   );
 }

@@ -329,34 +329,39 @@ model CostSettings {
   companyId String  @unique
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  // Arbeidskosten — geldt alleen voor Producten (arbeidsCapaciteit). Diensten
-  // hebben hun eigen uurtarief/vaste projectprijs, los van deze instelling.
-  arbeidEnabled          Boolean           @default(true)
-  arbeidZichtbaar        Boolean           @default(true)
-  arbeidStapEenheid      ArbeidStapEenheid @default(UUR)
-  arbeidTarief           Float             @default(45)
-  // Als true mag elk product een eigen Product.arbeidTariefOverride hebben
-  // die dit tarief vervangt.
-  arbeidTariefPerProduct Boolean           @default(false)
+  // Arbeidskosten — geldt alleen voor Producten (Product.productiviteit).
+  // Diensten hebben hun eigen uurtarief/vaste projectprijs, los van deze
+  // instelling. Drie losse tarieven (i.p.v. één) zodat het wisselen van
+  // arbeidStapEenheid nooit een bestaand tarief herinterpreteert als een
+  // bedrag voor een andere tijdseenheid.
+  arbeidEnabled       Boolean           @default(true)
+  arbeidZichtbaar     Boolean           @default(true)
+  arbeidStapEenheid   ArbeidStapEenheid @default(UUR)
+  arbeidTariefUur     Float             @default(45)
+  arbeidTariefDagdeel Float             @default(180)
+  arbeidTariefDag     Float             @default(360)
+  // Rond de arbeidstijd van een product af op hele arbeidStapEenheid-stappen
+  // (bijv. altijd hele dagdelen) i.p.v. 'm continu (lineair) door te rekenen.
+  // Uit (continu) is de standaard — zie calculate.ts.
+  arbeidAfronden      Boolean           @default(false)
 
-  // Transportkosten — alleen aan/uit en zichtbaarheid; het bedrag wordt per
-  // product ingesteld (Product.transportkosten) en hier opgeteld.
+  // Transportkosten — company-brede standaard, per product te overschrijven
+  // (Product.transportkostenOverride) en optioneel meeschalend met de
+  // hoeveelheid (Product.transportMeeschalend, standaard uit).
   transportEnabled   Boolean @default(true)
   transportZichtbaar Boolean @default(true)
+  transportTarief    Float   @default(0)
 
-  // Voorrijkosten
+  // Voorrijkosten — zelfde opzet als transport hierboven.
   voorrijEnabled   Boolean @default(true)
   voorrijZichtbaar Boolean @default(true)
   voorrijTarief    Float   @default(35)
 
-  // Materiaalkosten — geldt alleen voor Producten. Diensten hebben geen
-  // materiaalkosten meer.
-  materiaalEnabled         Boolean @default(true)
-  materiaalZichtbaar       Boolean @default(true)
-  materiaalMarge           Float   @default(0)
-  // Als true mag elk product een eigen Product.materiaalMargeOverride
-  // hebben die deze opslag vervangt.
-  materiaalMargePerProduct Boolean @default(false)
+  // Materiaalkosten — geldt alleen voor Producten (materiaalCategorieen).
+  // Geen aparte marge-/opslaglaag meer: elke ingevulde materiaalprijs is al
+  // een verkoopprijs, inclusief de marge van de vakman.
+  materiaalEnabled   Boolean @default(true)
+  materiaalZichtbaar Boolean @default(true)
 
   btwPercentage Float @default(21)
 
@@ -418,31 +423,39 @@ model Product {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  naam                   String
-  omschrijving           String?
-  eenheid                String  @default("m1")
-  // Aantal eenheden dat in één arbeidsstap (zie CostSettings.arbeidStapEenheid)
-  // geplaatst kan worden, bijv. 5 (m1 schutting per dagdeel). Leeg betekent
-  // dat dit product geen arbeidstijd kost.
-  arbeidsCapaciteit      Float?
-  // Vervangt CostSettings.arbeidTarief voor dit product, maar alleen als
-  // CostSettings.arbeidTariefPerProduct aanstaat. Leeg = gebruik het tarief
-  // uit Kosteninstellingen.
-  arbeidTariefOverride   Float?
-  // Vervangt CostSettings.materiaalMarge voor dit product, maar alleen als
-  // CostSettings.materiaalMargePerProduct aanstaat. Leeg = gebruik de opslag
-  // uit Kosteninstellingen.
-  materiaalMargeOverride Float?
-  // Vast transportbedrag voor dit product. Wordt, als het product een
-  // hoeveelheid > 0 heeft, één keer meegeteld (niet vermenigvuldigd met de
-  // hoeveelheid) en samen met die van andere geselecteerde producten
-  // opgeteld tot één transporttotaal.
-  transportkosten        Float   @default(0)
+  naam         String
+  omschrijving String?
+  eenheid      String  @default("m1")
+
+  // Kostenopbouw, blok 2 (arbeid) — materiaalkosten lopen via
+  // materiaalCategorieen hieronder, transport/voorrij hierna. Zie
+  // app/lib/calculate.ts voor hoe deze vier blokken samenkomen.
+  // Aantal eenheden dat de vakman (of zijn team) haalt per
+  // CostSettings.arbeidStapEenheid (bijv. 5 m schutting per dagdeel). Leeg
+  // betekent dat dit product geen arbeidstijd kost.
+  productiviteit       Float?
+  // Vervangt het company-tarief (CostSettings.arbeidTariefUur/Dagdeel/Dag,
+  // welke van de drie hangt af van arbeidStapEenheid) voor dit product.
+  // Leeg = gebruik het tarief uit Kosteninstellingen.
+  arbeidTariefOverride Float?
+
+  // Kostenopbouw, blok 3 (transport). Vervangt CostSettings.transportTarief
+  // voor dit product; leeg = gebruik het bedrag uit Kosteninstellingen.
+  transportkostenOverride Float?
+  // Telt transport één keer mee per project (uit, standaard) in plaats van
+  // vermenigvuldigd met de hoeveelheid (aan).
+  transportMeeschalend    Boolean @default(false)
+
+  // Kostenopbouw, blok 4 (voorrijkosten) — zelfde opzet als transport
+  // hierboven.
+  voorrijkostenOverride Float?
+  voorrijMeeschalend    Boolean @default(false)
+
   // Naam van een lucide-react icoon uit app/lib/icons.ts, bijv. "Fence".
   // Optioneel, puur decoratief.
-  icoon                  String?
-  actief                 Boolean @default(true)
-  order                  Int     @default(0)
+  icoon  String?
+  actief Boolean @default(true)
+  order  Int     @default(0)
 
   // Bepaalt hoe de klant tot een hoeveelheid komt — zie ProductSjabloon.
   // Default ENKELE_HOEVEELHEID zodat bestaande producten (en de migratie
@@ -455,48 +468,17 @@ model Product {
   // hier — hier alleen opslag.
   sjabloonConfig Json?
 
-  // De simpele basisprijs uit de wizard: hoeveelheid × prijsPerEenheid,
-  // los van (en naast) de geavanceerde materiaalCategorieen hieronder.
-  // Leeg voor producten die uitsluitend via materiaalcategorieën geprijsd
-  // worden (het gedrag van vóór sjablonen, zie ook createProductAction).
-  prijsPerEenheid     Float?
-  // Vast (default) of bandbreedte — zelfde patroon als MaterialOption.
-  // Bij BANDBREEDTE wordt prijsPerEenheidMin/Max gebruikt i.p.v. het vaste
-  // prijsPerEenheid-veld.
-  prijsPerEenheidType PrijsType @default(VAST)
-  prijsPerEenheidMin  Float?
-  prijsPerEenheidMax  Float?
-  // Ondergrens voor de prijsPerEenheid-bijdrage van dít product (vóór
-  // materiaalMarge) — "ik reken nooit minder dan dit voor dit product".
-  minimumprijs        Float?
-
+  // Kostenopbouw, blok 1 (materiaal) — altijd via materiaalCategorieen: elk
+  // product heeft er na aanmaken minstens één met minstens één optie in.
+  // Heeft die ene categorie precies één optie, dan kiest de klant niets en
+  // telt die optie automatisch mee (zie calculator.tsx).
   materiaalCategorieen MaterialCategory[]
   extraOpties          ExtraOption[]
-  staffels             ProductStaffel[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([companyId])
-}
-
-// Gestaffelde prijs voor het prijsPerEenheid-deel van een product — cumulatief
-// doorgerekend zoals belastingschijven: elke eenheid telt tegen het tarief
-// van de schijf waar hij in valt, niet de hele hoeveelheid tegen het hoogst
-// bereikte tarief. Product.prijsPerEenheid dekt de eerste schijf (0 tot de
-// laagste `vanaf` hier); elke staffel dekt daarna vanaf zijn eigen `vanaf`
-// tot de volgende staffel (of oneindig voor de hoogste). Zie
-// berekenGestaffeldBedrag() in app/lib/calculate.ts.
-model ProductStaffel {
-  id        String  @id @default(cuid())
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  vanaf           Float
-  prijsPerEenheid Float
-  order           Int    @default(0)
-
-  @@index([productId])
 }
 
 // Onderdeel van een product waarvoor de klant één materiaal kiest,
@@ -521,7 +503,10 @@ model MaterialCategory {
 }
 
 // Een keuzeoptie binnen een materiaalcategorie, bijv. "Betonnen palen".
-// De prijs is per eenheid van het bijbehorende product.
+// `prijs` is de volledige verkoopprijs per eenheid van het bijbehorende
+// product — wat de vakman de klant hiervoor rekent, inclusief zijn eigen
+// marge. Geen meerprijs bovenop een aparte basisprijs (dat model is
+// vervallen) en geen aparte opslaglaag: dit ís het verkooptarief.
 model MaterialOption {
   id                 String           @id @default(cuid())
   materialCategoryId String
@@ -538,6 +523,10 @@ model MaterialOption {
   // product), bijv. 1.8 voor een paal die per 1,8 m wordt ingekocht. Leeg
   // betekent doorlopend geprijsd, zonder afronding.
   stapgrootte Float?
+  // Vervangt Product.productiviteit voor dit ene materiaal — sommige
+  // materialen (bijv. natuursteen t.o.v. betontegel) leggen trager. Leeg =
+  // gebruik de productiviteit van het product.
+  productiviteitOverride Float?
   // Publieke URL van een foto in Supabase Storage. Optioneel.
   foto        String?
   actief      Boolean @default(true)

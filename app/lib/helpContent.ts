@@ -18,7 +18,7 @@ export const helpContent = {
     opbouw: {
       title: "Opbouw van een product",
       description:
-        "Een product bestaat uit een basisprijs, optionele materiaalcategorieën en extra opties. De rekentool telt dit automatisch bij elkaar op tot een totaalprijs voor de klant.",
+        "De prijs van een product wordt berekend uit vier blokken: materiaalkosten, arbeidskosten, transportkosten en voorrijkosten. Je vult per blok in wat je normaal rekent — de rekentool telt dit automatisch bij elkaar op tot een totaalprijs voor de klant.",
     },
     productVsDienst: {
       title: "Product versus dienst",

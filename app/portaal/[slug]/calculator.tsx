@@ -4,9 +4,11 @@ import { useActionState, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Minus, Plus, Printer, Mail, Phone, Image as ImageIcon, Check } from "lucide-react";
 import {
+  arbeidTariefVoorStapEenheid,
   bedragTop,
-  berekenGestaffeldBedrag,
+  berekenProductKosten,
   calculateBreakdownRange,
+  geselecteerdeMateriaalOptieId,
   serviceVastePrijs,
   type Bedrag,
 } from "@/app/lib/calculate";
@@ -41,7 +43,6 @@ import type {
   MaterialCategory,
   MaterialOption,
   Product,
-  ProductStaffel,
   Service,
   SubscriptionTier,
 } from "@/app/generated/prisma/client";
@@ -49,7 +50,6 @@ import type {
 type ProductWithDetails = Product & {
   materiaalCategorieen: (MaterialCategory & { materialen: MaterialOption[] })[];
   extraOpties: ExtraOption[];
-  staffels: ProductStaffel[];
 };
 
 type Props = {
@@ -206,7 +206,7 @@ export function Calculator({
         const qty = effectiveProductQty[product.id] ?? 0;
         if (qty <= 0 && (productRegelsBedrag[product.id] ?? 0) <= 0) return false;
         return product.materiaalCategorieen.some(
-          (category) => category.verplicht && !materialSelections[category.id]
+          (category) => category.verplicht && !geselecteerdeMateriaalOptieId(category, materialSelections)
         );
       }),
     [products, effectiveProductQty, productRegelsBedrag, materialSelections]
@@ -233,9 +233,10 @@ export function Calculator({
       if (qty <= 0 && (productRegelsBedrag[product.id] ?? 0) <= 0) continue;
 
       const materiaalNamen = product.materiaalCategorieen
-        .map((category) =>
-          category.materialen.find((m) => m.id === materialSelections[category.id])
-        )
+        .map((category) => {
+          const selectedId = geselecteerdeMateriaalOptieId(category, materialSelections);
+          return category.materialen.find((m) => m.id === selectedId);
+        })
         .filter((option): option is NonNullable<typeof option> => Boolean(option))
         .map((option) => option.naam);
 
@@ -372,6 +373,7 @@ export function Calculator({
                       <ProductCard
                         key={product.id}
                         product={product}
+                        costSettings={costSettings}
                         qty={effectiveProductQty[product.id] ?? 0}
                         onQtyChange={(qty) =>
                           setProductQty((prev) => ({ ...prev, [product.id]: qty }))
@@ -536,6 +538,7 @@ function materiaalPrijsWeergave(material: MaterialOption): Bedrag {
 
 function ProductCard({
   product,
+  costSettings,
   qty,
   onQtyChange,
   sjabloonInvoer,
@@ -547,6 +550,7 @@ function ProductCard({
   onExtraChange,
 }: {
   product: ProductWithDetails;
+  costSettings: CostSettings;
   qty: number;
   onQtyChange: (qty: number) => void;
   sjabloonInvoer: Record<string, unknown>;
@@ -559,12 +563,15 @@ function ProductCard({
 }) {
   const isEnkeleHoeveelheid = product.sjabloon === "ENKELE_HOEVEELHEID";
   const active = isEnkeleHoeveelheid ? qty > 0 : qty > 0 || regelsBedrag > 0;
+  // Categorieën met precies 1 optie hebben niets te kiezen — die optie telt
+  // automatisch mee (zie geselecteerdeMateriaalOptieId in calculate.ts) en
+  // wordt hier dus niet als keuze getoond.
   const categoriesWithOptions = product.materiaalCategorieen.filter(
-    (category) => category.materialen.length > 0
+    (category) => category.materialen.length > 1
   );
   const ProductIcon = getProductIcon(product.icoon);
 
-  const eigenPrijs = eigenProductPrijs(product, qty, regelsBedrag);
+  const eigenPrijs = eigenProductPrijs(product, qty, regelsBedrag, materialSelections, costSettings);
 
   return (
     <Card
@@ -772,21 +779,53 @@ function ProductCard({
 
 // Prijsindicatie van dit ene product — bij Artikelregels is het regelsbedrag
 // al kant-en-klaar geprijsd per artikeltype (zie sjablonen.ts), bij de
-// andere sjablonen is het de vertrouwde hoeveelheid × prijsPerEenheid (met
-// eventuele staffels), net als calculate.ts zelf toepast. Bewust een lichte
-// benadering (geen bandbreedte-min/max hier) — puur een indicatie op de kaart
-// zelf, de Summary hiernaast blijft de bron van waarheid.
-function eigenProductPrijs(product: ProductWithDetails, qty: number, regelsBedrag: number): number {
-  if (regelsBedrag > 0) {
-    return product.minimumprijs != null ? Math.max(regelsBedrag, product.minimumprijs) : regelsBedrag;
-  }
-  if (product.prijsPerEenheid == null || qty <= 0) return 0;
-  let bedrag =
-    product.staffels.length > 0
-      ? berekenGestaffeldBedrag(qty, product.prijsPerEenheid, product.staffels)
-      : qty * product.prijsPerEenheid;
-  if (product.minimumprijs != null) bedrag = Math.max(bedrag, product.minimumprijs);
-  return bedrag;
+// andere sjablonen zijn het de vier kostenblokken, net als calculate.ts
+// zelf toepast (zonder stapgrootte-afronding — bewust een lichte
+// benadering, puur een indicatie op de kaart zelf; de Summary hiernaast
+// blijft de bron van waarheid).
+function eigenProductPrijs(
+  product: ProductWithDetails,
+  qty: number,
+  regelsBedrag: number,
+  materialSelections: Record<string, string>,
+  costSettings: CostSettings
+): number {
+  if (regelsBedrag > 0) return regelsBedrag;
+  if (qty <= 0) return 0;
+
+  let materiaalkosten = 0;
+  let primaireOptie: MaterialOption | undefined;
+  product.materiaalCategorieen.forEach((category, index) => {
+    const selectedId = geselecteerdeMateriaalOptieId(category, materialSelections);
+    if (!selectedId) return;
+    const optie = category.materialen.find((m) => m.id === selectedId);
+    if (!optie) return;
+    if (index === 0) primaireOptie = optie;
+    materiaalkosten += qty * optie.prijs;
+  });
+
+  const productiviteit = primaireOptie?.productiviteitOverride ?? product.productiviteit;
+  const arbeidTarief =
+    product.arbeidTariefOverride ?? arbeidTariefVoorStapEenheid(costSettings, costSettings.arbeidStapEenheid);
+  const transportBedrag = product.transportkostenOverride ?? costSettings.transportTarief;
+  const voorrijBedrag = product.voorrijkostenOverride ?? costSettings.voorrijTarief;
+
+  const kosten = berekenProductKosten({
+    materiaalkosten,
+    materiaalEnabled: costSettings.materiaalEnabled,
+    hoeveelheid: qty,
+    productiviteit,
+    arbeidTarief,
+    arbeidEnabled: costSettings.arbeidEnabled,
+    arbeidAfronden: costSettings.arbeidAfronden,
+    transportBedrag,
+    transportMeeschalend: product.transportMeeschalend,
+    transportEnabled: costSettings.transportEnabled,
+    voorrijBedrag,
+    voorrijMeeschalend: product.voorrijMeeschalend,
+    voorrijEnabled: costSettings.voorrijEnabled,
+  });
+  return kosten.totaal;
 }
 
 // Rendert de klantvelden van het gekozen sjabloon (Afmetingen/Ruimtes/

@@ -362,6 +362,19 @@ function MaterialRow({
           <p className="text-xs text-muted-foreground">
             Stapgrootte (optioneel): wordt verkocht per veelvoud van deze hoeveelheid.
           </p>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`productiviteit-${material.id}`}>Eigen productiviteit (optioneel)</Label>
+            <DecimalInput
+              id={`productiviteit-${material.id}`}
+              name="productiviteitOverride"
+              placeholder="Bijv. 8"
+              defaultValue={material.productiviteitOverride ?? ""}
+            />
+            <p className="text-xs text-muted-foreground">
+              Legt dit materiaal trager of sneller dan gemiddeld? Vul hier een eigen productiviteit
+              in — leeg laat de productiviteit van het product gelden.
+            </p>
+          </div>
           <PhotoInput currentUrl={material.foto} />
           <div className="flex justify-end gap-2">
             <Button
@@ -406,6 +419,9 @@ function MaterialRow({
               : formatCurrency(material.prijs)}
             {material.stapgrootte
               ? ` — per ${material.stapgrootte} ${unitLabel(productEenheid)}`
+              : ""}
+            {material.productiviteitOverride != null
+              ? ` — eigen productiviteit: ${material.productiviteitOverride}`
               : ""}
           </p>
         </div>
@@ -502,6 +518,18 @@ function NewMaterialForm({
             </span>
           </div>
         </div>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="new-material-productiviteit">Eigen productiviteit (optioneel)</Label>
+        <DecimalInput
+          id="new-material-productiviteit"
+          name="productiviteitOverride"
+          placeholder="Bijv. 8"
+        />
+        <p className="text-xs text-muted-foreground">
+          Legt dit materiaal trager of sneller dan gemiddeld? Leeg laat de productiviteit van het
+          product gelden.
+        </p>
       </div>
       <input type="hidden" name="actief" value="on" />
       <PhotoInput />

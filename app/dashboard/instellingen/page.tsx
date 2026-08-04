@@ -11,9 +11,13 @@ export default async function InstellingenPage() {
   // find-then-create (not upsert): CostSettings is already created at
   // sign-up, so this fallback almost never runs — but upsert's update
   // branch would otherwise write to the row on every single page view.
-  const costSettings =
-    (await prisma.costSettings.findUnique({ where: { companyId: company.id } })) ??
-    (await prisma.costSettings.create({ data: { companyId: company.id } }));
+  const [costSettings, totaal, arbeidOverrides, transportOverrides, voorrijOverrides] = await Promise.all([
+    prisma.costSettings.findUnique({ where: { companyId: company.id } }),
+    prisma.product.count({ where: { companyId: company.id } }),
+    prisma.product.count({ where: { companyId: company.id, arbeidTariefOverride: { not: null } } }),
+    prisma.product.count({ where: { companyId: company.id, transportkostenOverride: { not: null } } }),
+    prisma.product.count({ where: { companyId: company.id, voorrijkostenOverride: { not: null } } }),
+  ]);
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -25,7 +29,10 @@ export default async function InstellingenPage() {
           Bepaal welke kostenposten meetellen in de calculator en welke tarieven je hanteert.
         </p>
       </div>
-      <CostSettingsForm costSettings={costSettings} />
+      <CostSettingsForm
+        costSettings={costSettings ?? (await prisma.costSettings.create({ data: { companyId: company.id } }))}
+        productCounts={{ totaal, arbeidOverrides, transportOverrides, voorrijOverrides }}
+      />
     </div>
   );
 }

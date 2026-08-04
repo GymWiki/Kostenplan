@@ -106,27 +106,41 @@ export async function getArbeidStapEenheid(companyId: string) {
   return costSettings?.arbeidStapEenheid ?? "UUR";
 }
 
-// Cost-settings fields the product form needs to decide whether to show
-// per-product override inputs, and what default/fallback values to display.
+// Cost-settings fields de "Kosten"-sectie van het productformulier nodig
+// heeft: wat de company-brede standaardtarieven zijn (om te tonen als het
+// product niet afwijkt) en waar de link naar Kosteninstellingen naartoe
+// wijst.
 export async function getProductPricingSettings(companyId: string) {
   const costSettings = await prisma.costSettings.findUnique({
     where: { companyId },
     select: {
+      arbeidEnabled: true,
       arbeidStapEenheid: true,
-      arbeidTarief: true,
-      arbeidTariefPerProduct: true,
-      materiaalMarge: true,
-      materiaalMargePerProduct: true,
+      arbeidTariefUur: true,
+      arbeidTariefDagdeel: true,
+      arbeidTariefDag: true,
+      arbeidAfronden: true,
+      transportEnabled: true,
+      transportTarief: true,
+      voorrijEnabled: true,
+      voorrijTarief: true,
+      materiaalEnabled: true,
       btwPercentage: true,
     },
   });
   return (
     costSettings ?? {
+      arbeidEnabled: true,
       arbeidStapEenheid: "UUR" as const,
-      arbeidTarief: 45,
-      arbeidTariefPerProduct: false,
-      materiaalMarge: 0,
-      materiaalMargePerProduct: false,
+      arbeidTariefUur: 45,
+      arbeidTariefDagdeel: 180,
+      arbeidTariefDag: 360,
+      arbeidAfronden: false,
+      transportEnabled: true,
+      transportTarief: 0,
+      voorrijEnabled: true,
+      voorrijTarief: 35,
+      materiaalEnabled: true,
       btwPercentage: 21,
     }
   );

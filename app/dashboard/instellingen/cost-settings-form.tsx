@@ -11,15 +11,27 @@ import { DecimalInput, Label, Select } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { HelpTip } from "@/app/components/ui/help-tip";
 import { cn } from "@/app/lib/cn";
-import { Eye, Layers } from "lucide-react";
-import { arbeidEenheidEnkelvoud, arbeidEenheidMeervoud } from "@/app/lib/arbeid";
+import { Eye } from "lucide-react";
+import { arbeidEenheidMeervoud } from "@/app/lib/arbeid";
 import type { HelpContentKey } from "@/app/lib/helpContent";
 import type { ArbeidStapEenheid, BandbreedteModus, CostSettings } from "@/app/generated/prisma/client";
 
+// Aantal producten dat een eigen override heeft voor een kostenpost — laat
+// vooraf zien hoeveel producten een wijziging hier raakt (die zónder eigen
+// override) vóórdat de vakman opslaat.
+export type ProductCounts = {
+  totaal: number;
+  arbeidOverrides: number;
+  transportOverrides: number;
+  voorrijOverrides: number;
+};
+
 export function CostSettingsForm({
   costSettings,
+  productCounts,
 }: {
   costSettings: CostSettings;
+  productCounts: ProductCounts;
 }) {
   const [state, formAction, pending] = useActionState<
     CostSettingsFormState,
@@ -38,6 +50,9 @@ export function CostSettingsForm({
   );
 
   const fieldErrors = state?.fieldErrors;
+  const geraaktDoorArbeid = productCounts.totaal - productCounts.arbeidOverrides;
+  const geraaktDoorTransport = productCounts.totaal - productCounts.transportOverrides;
+  const geraaktDoorVoorrij = productCounts.totaal - productCounts.voorrijOverrides;
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -57,77 +72,117 @@ export function CostSettingsForm({
 
       <CostTypeCard
         title="Arbeidskosten"
-        description="Het standaardtarief voor arbeidstijd van producten. Diensten hebben hun eigen uurtarief of vaste projectprijs."
+        description="De standaardtarieven voor arbeidstijd van producten. Diensten hebben hun eigen uurtarief of vaste projectprijs."
         enabled={arbeidOn}
         onToggle={setArbeidOn}
         toggleName="arbeidEnabled"
         visibleName="arbeidZichtbaar"
         visibleDefault={costSettings.arbeidZichtbaar}
       >
-        <FieldRow>
-          <Field
-            label="Reken in"
-            htmlFor="arbeidStapEenheid"
-            error={fieldErrors?.arbeidStapEenheid}
-            help="kosteninstellingen.rekenEenheid"
+        <Field
+          label="Reken in"
+          htmlFor="arbeidStapEenheid"
+          error={fieldErrors?.arbeidStapEenheid}
+          help="kosteninstellingen.rekenEenheid"
+        >
+          <Select
+            id="arbeidStapEenheid"
+            name="arbeidStapEenheid"
+            value={arbeidStapEenheid}
+            onChange={(e) => setArbeidStapEenheid(e.target.value as ArbeidStapEenheid)}
           >
-            <Select
-              id="arbeidStapEenheid"
-              name="arbeidStapEenheid"
-              value={arbeidStapEenheid}
-              onChange={(e) => setArbeidStapEenheid(e.target.value as ArbeidStapEenheid)}
-            >
-              <option value="UUR">Uren</option>
-              <option value="DAGDEEL">Dagdelen</option>
-              <option value="DAG">Dagen</option>
-            </Select>
-          </Field>
-          <Field
-            label={`Tarief per ${arbeidEenheidEnkelvoud(arbeidStapEenheid)}`}
-            htmlFor="arbeidTarief"
-            error={fieldErrors?.arbeidTarief}
-          >
+            <option value="UUR">Uren</option>
+            <option value="DAGDEEL">Dagdelen</option>
+            <option value="DAG">Dagen</option>
+          </Select>
+        </Field>
+        <p className="text-xs text-muted-foreground">
+          Nieuwe producten gebruiken standaard dit tarief. Vul voor de zekerheid alle drie de
+          tarieven in — een product kan altijd in een andere eenheid rekenen dan hierboven gekozen.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Tarief per uur" htmlFor="arbeidTariefUur" error={fieldErrors?.arbeidTariefUur}>
             <CurrencyInput
-              id="arbeidTarief"
-              name="arbeidTarief"
-              defaultValue={costSettings.arbeidTarief}
-              suffix={`/ ${arbeidEenheidEnkelvoud(arbeidStapEenheid)}`}
+              id="arbeidTariefUur"
+              name="arbeidTariefUur"
+              defaultValue={costSettings.arbeidTariefUur}
+              suffix="/ uur"
             />
           </Field>
-        </FieldRow>
-        {arbeidStapEenheid !== "UUR" && (
-          <p className="text-xs text-muted-foreground">
-            De totale arbeidstijd van alle diensten en producten samen wordt naar boven afgerond
-            op hele {arbeidEenheidMeervoud(arbeidStapEenheid)}.
-          </p>
-        )}
-        <PerProductRow
-          name="arbeidTariefPerProduct"
-          defaultChecked={costSettings.arbeidTariefPerProduct}
-          label="Tarief per product instelbaar"
-          description="Sta toe dat een product een eigen arbeidstarief heeft, in plaats van steeds dit tarief."
-        />
+          <Field
+            label="Tarief per dagdeel"
+            htmlFor="arbeidTariefDagdeel"
+            error={fieldErrors?.arbeidTariefDagdeel}
+          >
+            <CurrencyInput
+              id="arbeidTariefDagdeel"
+              name="arbeidTariefDagdeel"
+              defaultValue={costSettings.arbeidTariefDagdeel}
+              suffix="/ dagdeel"
+            />
+          </Field>
+          <Field label="Tarief per dag" htmlFor="arbeidTariefDag" error={fieldErrors?.arbeidTariefDag}>
+            <CurrencyInput
+              id="arbeidTariefDag"
+              name="arbeidTariefDag"
+              defaultValue={costSettings.arbeidTariefDag}
+              suffix="/ dag"
+            />
+          </Field>
+        </div>
+        <label className="flex items-start gap-2 border-t border-border pt-4 text-sm text-foreground">
+          <input
+            type="checkbox"
+            name="arbeidAfronden"
+            defaultChecked={costSettings.arbeidAfronden}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-input accent-primary"
+          />
+          <span>
+            Arbeidstijd afronden op hele {arbeidEenheidMeervoud(arbeidStapEenheid)}
+            <span className="block font-normal text-muted-foreground">
+              Standaard reken je continu door (bijv. 1,2 {arbeidEenheidMeervoud(arbeidStapEenheid)}
+              ). Zet dit aan om per product altijd naar boven af te ronden op hele{" "}
+              {arbeidEenheidMeervoud(arbeidStapEenheid)}.
+            </span>
+          </span>
+        </label>
+        <p className="border-t border-border pt-4 text-xs text-muted-foreground">
+          Geldt voor {geraaktDoorArbeid} van de {productCounts.totaal} producten — de rest heeft een
+          eigen arbeidstarief.
+        </p>
       </CostTypeCard>
 
       <CostTypeCard
         title="Transportkosten"
-        description="Kosten voor het vervoeren van materiaal naar de klant."
+        description="Standaardbedrag voor het vervoeren van materiaal naar de klant."
         enabled={transportOn}
         onToggle={setTransportOn}
         toggleName="transportEnabled"
         visibleName="transportZichtbaar"
         visibleDefault={costSettings.transportZichtbaar}
       >
-        <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
-          Transportkosten verschillen per product (denk aan zware materialen die apart vervoerd
-          moeten worden). Stel per product een bedrag in bij het bewerken van dat product — hier
-          bepaal je alleen of transportkosten meetellen en zichtbaar zijn voor de klant.
+        <FieldRow>
+          <Field label="Transportkosten" htmlFor="transportTarief" error={fieldErrors?.transportTarief}>
+            <CurrencyInput
+              id="transportTarief"
+              name="transportTarief"
+              defaultValue={costSettings.transportTarief}
+            />
+          </Field>
+        </FieldRow>
+        <p className="text-xs text-muted-foreground">
+          Wijkt het bij een product af (bijv. zware materialen die apart vervoerd moeten worden)?
+          Stel dat per product in bij het bewerken van dat product.
+        </p>
+        <p className="border-t border-border pt-4 text-xs text-muted-foreground">
+          Geldt voor {geraaktDoorTransport} van de {productCounts.totaal} producten — de rest heeft
+          een eigen transportbedrag.
         </p>
       </CostTypeCard>
 
       <CostTypeCard
         title="Voorrijkosten"
-        description="Vast bedrag dat je in rekening brengt om bij de klant langs te komen."
+        description="Standaardbedrag dat je in rekening brengt om bij de klant langs te komen."
         enabled={voorrijOn}
         onToggle={setVoorrijOn}
         toggleName="voorrijEnabled"
@@ -143,38 +198,28 @@ export function CostSettingsForm({
             />
           </Field>
         </FieldRow>
+        <p className="text-xs text-muted-foreground">
+          Wijkt het bij een product af? Stel dat per product in bij het bewerken van dat product.
+        </p>
+        <p className="border-t border-border pt-4 text-xs text-muted-foreground">
+          Geldt voor {geraaktDoorVoorrij} van de {productCounts.totaal} producten — de rest heeft
+          een eigen voorrijbedrag.
+        </p>
       </CostTypeCard>
 
       <CostTypeCard
         title="Materiaalkosten"
-        description="Kosten van materialen en producten, met eventueel een opslagpercentage."
+        description="Kosten van de materialen die je bij een product instelt."
         enabled={materiaalOn}
         onToggle={setMateriaalOn}
         toggleName="materiaalEnabled"
         visibleName="materiaalZichtbaar"
         visibleDefault={costSettings.materiaalZichtbaar}
       >
-        <FieldRow>
-          <Field
-            label="Opslag op materiaalkosten"
-            htmlFor="materiaalMarge"
-            error={fieldErrors?.materiaalMarge}
-          >
-            <CurrencyInput
-              id="materiaalMarge"
-              name="materiaalMarge"
-              defaultValue={costSettings.materiaalMarge}
-              suffix="%"
-              symbol={false}
-            />
-          </Field>
-        </FieldRow>
-        <PerProductRow
-          name="materiaalMargePerProduct"
-          defaultChecked={costSettings.materiaalMargePerProduct}
-          label="Opslag per product instelbaar"
-          description="Sta toe dat een product een eigen opslagpercentage heeft, in plaats van steeds deze opslag."
-        />
+        <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
+          De prijs per materiaal stel je in bij het product zelf — dat is al de volledige prijs die
+          je de klant rekent, inclusief jouw marge. Geen apart opslagpercentage meer hier.
+        </p>
       </CostTypeCard>
 
       <Card>
@@ -361,34 +406,6 @@ function CostTypeCard({
 
 function FieldRow({ children }: { children: React.ReactNode }) {
   return <div className="grid gap-4 sm:grid-cols-2">{children}</div>;
-}
-
-function PerProductRow({
-  name,
-  defaultChecked,
-  label,
-  description,
-}: {
-  name: string;
-  defaultChecked: boolean;
-  label: string;
-  description: string;
-}) {
-  return (
-    <label className="flex items-start gap-2 border-t border-border pt-4 text-sm text-foreground">
-      <input
-        type="checkbox"
-        name={name}
-        defaultChecked={defaultChecked}
-        className="mt-0.5 h-4 w-4 shrink-0 rounded border-input accent-primary"
-      />
-      <Layers className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-      <span>
-        {label}
-        <span className="block font-normal text-muted-foreground">{description}</span>
-      </span>
-    </label>
-  );
 }
 
 function Field({

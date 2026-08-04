@@ -16,6 +16,7 @@ function parseMaterialOptionForm(formData: FormData) {
     prijsMin: formData.get("prijsMin"),
     prijsMax: formData.get("prijsMax"),
     stapgrootte: formData.get("stapgrootte"),
+    productiviteitOverride: formData.get("productiviteitOverride"),
     actief: formData.get("actief") === "on" || formData.get("actief") === "true",
   });
 }

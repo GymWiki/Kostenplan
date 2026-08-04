@@ -1,27 +1,33 @@
 import { describe, expect, it } from "vitest";
 import {
+  arbeidTariefVoorStapEenheid,
   bedragTop,
-  berekenGestaffeldBedrag,
+  berekenProductKosten,
   calculateBreakdown,
   calculateBreakdownRange,
+  geselecteerdeMateriaalOptieId,
   serviceVastePrijs,
   type CalcCostSettings,
   type CalcProduct,
-  type CalcProductStaffel,
   type CalcService,
 } from "./calculate";
 
+// arbeidAfronden staat hier bewust aan (i.p.v. de nieuwe standaard uit) zodat
+// de bestaande, hier al lang aanwezige testverwachtingen (bijv. 1.2 dagdeel
+// -> 2 dagdelen) geldig blijven — het continue (niet-afgeronde) gedrag heeft
+// zijn eigen describe-blok hieronder.
 const baseCostSettings: CalcCostSettings = {
   arbeidEnabled: true,
   arbeidStapEenheid: "DAGDEEL",
-  arbeidTarief: 200,
-  arbeidTariefPerProduct: false,
+  arbeidTariefUur: 50,
+  arbeidTariefDagdeel: 200,
+  arbeidTariefDag: 380,
+  arbeidAfronden: true,
   transportEnabled: true,
+  transportTarief: 0,
   voorrijEnabled: true,
   voorrijTarief: 35,
   materiaalEnabled: true,
-  materiaalMarge: 0,
-  materiaalMargePerProduct: false,
   btwPercentage: 21,
   bandbreedteModus: "GEEN",
   bandbreedteMargeOmlaag: 10,
@@ -47,10 +53,12 @@ function maakDienst(overrides: Partial<CalcService> = {}): CalcService {
 function maakProduct(overrides: Partial<CalcProduct> = {}): CalcProduct {
   return {
     id: "product-1",
-    arbeidsCapaciteit: 10,
+    productiviteit: 10,
     arbeidTariefOverride: null,
-    materiaalMargeOverride: null,
-    transportkosten: 25,
+    transportkostenOverride: 25,
+    transportMeeschalend: false,
+    voorrijkostenOverride: null,
+    voorrijMeeschalend: false,
     materiaalCategorieen: [
       {
         id: "categorie-1",
@@ -62,22 +70,17 @@ function maakProduct(overrides: Partial<CalcProduct> = {}): CalcProduct {
             prijsMin: null,
             prijsMax: null,
             stapgrootte: null,
+            productiviteitOverride: null,
           },
         ],
       },
     ],
     extraOpties: [],
-    prijsPerEenheid: null,
-    prijsPerEenheidType: "VAST",
-    prijsPerEenheidMin: null,
-    prijsPerEenheidMax: null,
-    minimumprijs: null,
-    staffels: [],
     ...overrides,
   };
 }
 
-describe("calculateBreakdown (modus GEEN, bestaand rekenpad)", () => {
+describe("calculateBreakdown (basispad)", () => {
   it("rekent arbeid, materiaal, transport en voorrijkosten correct op", () => {
     const product = maakProduct();
     const result = calculateBreakdown({
@@ -92,7 +95,7 @@ describe("calculateBreakdown (modus GEEN, bestaand rekenpad)", () => {
 
     // arbeidstijd = 12/10 = 1.2 dagdeel -> ceil naar 2 dagdelen -> 2*200=400
     expect(result.arbeidskosten).toBe(400);
-    // materiaalkosten = 12 * 20 = 240 (geen stapgrootte)
+    // materiaalkosten = 12 * 20 = 240 (geen stapgrootte, geen marge meer)
     expect(result.materiaalkosten).toBe(240);
     expect(result.transportkosten).toBe(25);
     expect(result.voorrijkosten).toBe(35);
@@ -115,6 +118,7 @@ describe("calculateBreakdown (modus GEEN, bestaand rekenpad)", () => {
               prijsMin: null,
               prijsMax: null,
               stapgrootte: 1.8,
+              productiviteitOverride: null,
             },
           ],
         },
@@ -147,6 +151,210 @@ describe("calculateBreakdown (modus GEEN, bestaand rekenpad)", () => {
     expect(result.heeftSelectie).toBe(false);
     expect(result.totaal).toBe(0);
     expect(result.voorrijkosten).toBe(0);
+  });
+
+  it("materiaalcategorie met precies één optie wordt automatisch geselecteerd", () => {
+    const product = maakProduct();
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 12 },
+      materialSelections: {}, // geen expliciete keuze — er is maar 1 optie
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(result.materiaalkosten).toBe(240);
+  });
+
+  it("een categorie met meerdere opties telt niet mee zonder expliciete keuze", () => {
+    const product = maakProduct({
+      materiaalCategorieen: [
+        {
+          id: "categorie-1",
+          materialen: [
+            { id: "a", prijs: 20, prijsType: "VAST", prijsMin: null, prijsMax: null, stapgrootte: null, productiviteitOverride: null },
+            { id: "b", prijs: 30, prijsType: "VAST", prijsMin: null, prijsMax: null, stapgrootte: null, productiviteitOverride: null },
+          ],
+        },
+      ],
+    });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 12 },
+      materialSelections: {},
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(result.materiaalkosten).toBe(0);
+  });
+});
+
+describe("calculateBreakdown — productiviteit per materiaal", () => {
+  it("gebruikt de productiviteitOverride van de geselecteerde primaire optie i.p.v. die van het product", () => {
+    const product = maakProduct({
+      productiviteit: 10,
+      materiaalCategorieen: [
+        {
+          id: "categorie-1",
+          materialen: [
+            {
+              id: "materiaal-1",
+              prijs: 20,
+              prijsType: "VAST",
+              prijsMin: null,
+              prijsMax: null,
+              stapgrootte: null,
+              productiviteitOverride: 5, // legt trager — halve productiviteit
+            },
+          ],
+        },
+      ],
+    });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 10 },
+      materialSelections: { "categorie-1": "materiaal-1" },
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    // 10 / 5 = 2 dagdelen (geen afronding nodig) * 200 = 400
+    expect(result.arbeidskosten).toBe(400);
+  });
+
+  it("valt terug op de productiviteit van het product als het materiaal geen override heeft", () => {
+    const product = maakProduct({ productiviteit: 10 });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 10 },
+      materialSelections: { "categorie-1": "materiaal-1" },
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    // 10 / 10 = 1 dagdeel * 200 = 200
+    expect(result.arbeidskosten).toBe(200);
+  });
+});
+
+describe("calculateBreakdown — transport en voorrijkosten (meeschalend of vast)", () => {
+  it("telt transport en voorrij als vaste post per project (standaard, niet meeschalend)", () => {
+    const product = maakProduct({
+      productiviteit: null,
+      transportkostenOverride: 25,
+      voorrijkostenOverride: 15,
+    });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 100 }, // grote hoeveelheid, mag niets uitmaken
+      materialSelections: { "categorie-1": "materiaal-1" },
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(result.transportkosten).toBe(25);
+    expect(result.voorrijkosten).toBe(15);
+  });
+
+  it("schaalt transport en voorrij mee met de hoeveelheid als dat aanstaat", () => {
+    const product = maakProduct({
+      productiviteit: null,
+      transportkostenOverride: 2,
+      transportMeeschalend: true,
+      voorrijkostenOverride: 1,
+      voorrijMeeschalend: true,
+    });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 12 },
+      materialSelections: { "categorie-1": "materiaal-1" },
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(result.transportkosten).toBe(24); // 12 * 2
+    expect(result.voorrijkosten).toBe(12); // 12 * 1
+  });
+
+  it("valt terug op de company-instelling als het product geen eigen bedrag heeft", () => {
+    const product = maakProduct({
+      productiviteit: null,
+      transportkostenOverride: null,
+      voorrijkostenOverride: null,
+    });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 12 },
+      materialSelections: { "categorie-1": "materiaal-1" },
+      extraSelections: {},
+      costSettings: { ...baseCostSettings, transportTarief: 50 },
+    });
+
+    expect(result.transportkosten).toBe(50);
+    expect(result.voorrijkosten).toBe(35);
+  });
+
+  it("rekent voorrijkosten één keer voor een dienst-alleen mandje, onafhankelijk van producten", () => {
+    const result = calculateBreakdown({
+      services: [maakDienst()],
+      products: [],
+      serviceSelected: { "dienst-1": true },
+      productQty: {},
+      materialSelections: {},
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(result.voorrijkosten).toBe(35);
+  });
+});
+
+describe("calculateBreakdown — arbeid afronden (aan/uit)", () => {
+  it("rekent continu door als arbeidAfronden uitstaat (standaard)", () => {
+    const product = maakProduct({ productiviteit: 10 });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 12 },
+      materialSelections: { "categorie-1": "materiaal-1" },
+      extraSelections: {},
+      costSettings: { ...baseCostSettings, arbeidAfronden: false },
+    });
+
+    // 12/10 = 1.2 dagdeel * 200 = 240 (geen afronding)
+    expect(result.arbeidskosten).toBe(240);
+  });
+
+  it("rondt naar boven af op hele stappen als arbeidAfronden aanstaat", () => {
+    const product = maakProduct({ productiviteit: 10 });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 12 },
+      materialSelections: { "categorie-1": "materiaal-1" },
+      extraSelections: {},
+      costSettings: { ...baseCostSettings, arbeidAfronden: true },
+    });
+
+    // 12/10 = 1.2 -> ceil naar 2 dagdelen * 200 = 400
+    expect(result.arbeidskosten).toBe(400);
   });
 });
 
@@ -187,6 +395,7 @@ describe("calculateBreakdownRange — modus GEEN", () => {
               prijsMin: 15,
               prijsMax: 25,
               stapgrootte: null,
+              productiviteitOverride: null,
             },
           ],
         },
@@ -224,6 +433,7 @@ describe("calculateBreakdownRange — modus PER_PRODUCT", () => {
               prijsMin: 15,
               prijsMax: 25,
               stapgrootte: null,
+              productiviteitOverride: null,
             },
           ],
         },
@@ -366,6 +576,7 @@ describe("calculateBreakdownRange — modus TOTAAL", () => {
               prijsMin: 15,
               prijsMax: 25,
               stapgrootte: null,
+              productiviteitOverride: null,
             },
           ],
         },
@@ -415,6 +626,7 @@ describe("wederzijdse uitsluiting van de drie modi", () => {
             prijsMin: 15,
             prijsMax: 25,
             stapgrootte: null,
+            productiviteitOverride: null,
           },
         ],
       },
@@ -484,289 +696,172 @@ describe("serviceVastePrijs", () => {
   });
 });
 
-describe("berekenGestaffeldBedrag", () => {
-  const staffels: CalcProductStaffel[] = [
-    { vanaf: 10, prijsPerEenheid: 45 },
-    { vanaf: 50, prijsPerEenheid: 40 },
-  ];
+describe("arbeidTariefVoorStapEenheid", () => {
+  const settings = { arbeidTariefUur: 50, arbeidTariefDagdeel: 200, arbeidTariefDag: 380 };
 
-  it("gebruikt alleen de basisprijs als de hoeveelheid onder de eerste staffel blijft", () => {
-    expect(berekenGestaffeldBedrag(8, 50, staffels)).toBe(400); // 8 * 50
-  });
-
-  it("rekent cumulatief door de schijven heen, zoals belastingschijven", () => {
-    // 0-10 (10) * 50 = 500, 10-50 (40) * 45 = 1800, 50-70 (20) * 40 = 800
-    expect(berekenGestaffeldBedrag(70, 50, staffels)).toBe(3100);
-  });
-
-  it("werkt met staffels die niet al gesorteerd zijn aangeleverd", () => {
-    const ongesorteerd: CalcProductStaffel[] = [
-      { vanaf: 50, prijsPerEenheid: 40 },
-      { vanaf: 10, prijsPerEenheid: 45 },
-    ];
-    expect(berekenGestaffeldBedrag(70, 50, ongesorteerd)).toBe(3100);
-  });
-
-  it("geeft 0 terug voor een hoeveelheid van 0 of minder", () => {
-    expect(berekenGestaffeldBedrag(0, 50, staffels)).toBe(0);
-    expect(berekenGestaffeldBedrag(-5, 50, staffels)).toBe(0);
-  });
-
-  it("werkt zonder staffels als platte hoeveelheid × basisprijs", () => {
-    expect(berekenGestaffeldBedrag(12, 50, [])).toBe(600);
+  it("geeft het juiste tarief terug voor elke tijdseenheid", () => {
+    expect(arbeidTariefVoorStapEenheid(settings, "UUR")).toBe(50);
+    expect(arbeidTariefVoorStapEenheid(settings, "DAGDEEL")).toBe(200);
+    expect(arbeidTariefVoorStapEenheid(settings, "DAG")).toBe(380);
   });
 });
 
-describe("calculateBreakdown — prijsPerEenheid (sjablonen fase 1)", () => {
-  it("telt hoeveelheid × prijsPerEenheid op bij materiaalkosten, naast materiaalCategorieen", () => {
-    const product = maakProduct({
-      arbeidsCapaciteit: null,
-      materiaalCategorieen: [],
-      prijsPerEenheid: 48,
-    });
-    const result = calculateBreakdown({
-      services: [],
-      products: [product],
-      serviceSelected: {},
-      productQty: { "product-1": 20 },
-      materialSelections: {},
-      extraSelections: {},
-      costSettings: baseCostSettings,
-    });
-
-    expect(result.arbeidskosten).toBe(0);
-    expect(result.materiaalkosten).toBe(960); // 20 * 48
+describe("geselecteerdeMateriaalOptieId", () => {
+  it("selecteert automatisch de enige optie van een categorie", () => {
+    const categorie = { id: "cat-1", materialen: [{ id: "opt-1" } as never] };
+    expect(geselecteerdeMateriaalOptieId(categorie, {})).toBe("opt-1");
   });
 
-  it("past materiaalMarge ook toe op de prijsPerEenheid-bijdrage", () => {
-    const product = maakProduct({
-      arbeidsCapaciteit: null,
-      materiaalCategorieen: [],
-      prijsPerEenheid: 48,
-    });
-    const result = calculateBreakdown({
-      services: [],
-      products: [product],
-      serviceSelected: {},
-      productQty: { "product-1": 20 },
-      materialSelections: {},
-      extraSelections: {},
-      costSettings: { ...baseCostSettings, materiaalMarge: 10 },
-    });
-
-    expect(result.materiaalkosten).toBeCloseTo(960 * 1.1, 6);
+  it("vereist een expliciete keuze zodra er meerdere opties zijn", () => {
+    const categorie = { id: "cat-1", materialen: [{ id: "a" } as never, { id: "b" } as never] };
+    expect(geselecteerdeMateriaalOptieId(categorie, {})).toBeNull();
+    expect(geselecteerdeMateriaalOptieId(categorie, { "cat-1": "b" })).toBe("b");
   });
 
-  it("gebruikt de gestaffelde prijs zodra het product staffels heeft", () => {
-    const product = maakProduct({
-      arbeidsCapaciteit: null,
-      materiaalCategorieen: [],
-      prijsPerEenheid: 50,
-      staffels: [
-        { vanaf: 10, prijsPerEenheid: 45 },
-        { vanaf: 50, prijsPerEenheid: 40 },
-      ],
-    });
-    const result = calculateBreakdown({
-      services: [],
-      products: [product],
-      serviceSelected: {},
-      productQty: { "product-1": 70 },
-      materialSelections: {},
-      extraSelections: {},
-      costSettings: baseCostSettings,
-    });
+  it("geeft null terug voor een lege categorie", () => {
+    const categorie = { id: "cat-1", materialen: [] };
+    expect(geselecteerdeMateriaalOptieId(categorie, {})).toBeNull();
+  });
+});
 
-    expect(result.materiaalkosten).toBe(3100);
+describe("berekenProductKosten", () => {
+  const basisArgs = {
+    materiaalkosten: 280,
+    materiaalEnabled: true,
+    hoeveelheid: 10,
+    productiviteit: 10 as number | null,
+    arbeidTarief: 240,
+    arbeidEnabled: true,
+    arbeidAfronden: false,
+    transportBedrag: 45,
+    transportMeeschalend: false,
+    transportEnabled: true,
+    voorrijBedrag: 35,
+    voorrijMeeschalend: false,
+    voorrijEnabled: true,
+  };
+
+  it("berekent het voorbeeld uit de opdracht: 10 m schutting in douglas", () => {
+    // Materiaal 10 × €28 = €280, Arbeid 1 dagdeel × €240 = €240,
+    // Transport €45, Voorrijkosten €35 -> totaal €600
+    const kosten = berekenProductKosten(basisArgs);
+    expect(kosten.materiaal).toBe(280);
+    expect(kosten.arbeid).toBe(240);
+    expect(kosten.transport).toBe(45);
+    expect(kosten.voorrijkosten).toBe(35);
+    expect(kosten.totaal).toBe(600);
   });
 
-  it("licht de prijsPerEenheid-bijdrage op tot minimumprijs, indien lager", () => {
-    const product = maakProduct({
-      arbeidsCapaciteit: null,
-      materiaalCategorieen: [],
-      prijsPerEenheid: 48,
-      minimumprijs: 500,
-    });
-    const result = calculateBreakdown({
-      services: [],
-      products: [product],
-      serviceSelected: {},
-      productQty: { "product-1": 2 }, // 2 * 48 = 96, onder de minimumprijs
-      materialSelections: {},
-      extraSelections: {},
-      costSettings: baseCostSettings,
-    });
-
-    expect(result.materiaalkosten).toBe(500);
+  it("laat materiaalprijs en arbeidstarief volledig los van elkaar staan", () => {
+    // Een duurder materiaal verhoogt het arbeidsbedrag niet.
+    const goedkoop = berekenProductKosten({ ...basisArgs, materiaalkosten: 100 });
+    const duur = berekenProductKosten({ ...basisArgs, materiaalkosten: 900 });
+    expect(goedkoop.arbeid).toBe(duur.arbeid);
   });
 
-  it("raakt minimumprijs niet aan als de berekende prijs er al boven zit", () => {
-    const product = maakProduct({
-      arbeidsCapaciteit: null,
-      materiaalCategorieen: [],
-      prijsPerEenheid: 48,
-      minimumprijs: 100,
+  it("telt niets mee voor een uitgeschakeld blok", () => {
+    const kosten = berekenProductKosten({
+      ...basisArgs,
+      materiaalEnabled: false,
+      arbeidEnabled: false,
+      transportEnabled: false,
+      voorrijEnabled: false,
     });
-    const result = calculateBreakdown({
-      services: [],
-      products: [product],
-      serviceSelected: {},
-      productQty: { "product-1": 20 }, // 20 * 48 = 960
-      materialSelections: {},
-      extraSelections: {},
-      costSettings: baseCostSettings,
-    });
-
-    expect(result.materiaalkosten).toBe(960);
+    expect(kosten).toEqual({ materiaal: 0, arbeid: 0, transport: 0, voorrijkosten: 0, totaal: 0 });
   });
 
-  it("bestaande producten (prijsPerEenheid null) blijven ongewijzigd — geen extra bijdrage", () => {
-    const product = maakProduct(); // prijsPerEenheid: null via de default
+  it("rekent zonder arbeidstijd (geen productiviteit) geen arbeidskosten", () => {
+    const kosten = berekenProductKosten({ ...basisArgs, productiviteit: null });
+    expect(kosten.arbeid).toBe(0);
+  });
+
+  it("schaalt transport/voorrij mee met de hoeveelheid als dat aanstaat", () => {
+    const kosten = berekenProductKosten({
+      ...basisArgs,
+      transportBedrag: 2,
+      transportMeeschalend: true,
+      voorrijBedrag: 1,
+      voorrijMeeschalend: true,
+    });
+    expect(kosten.transport).toBe(20); // 10 * 2
+    expect(kosten.voorrijkosten).toBe(10); // 10 * 1
+  });
+
+  it("rondt arbeidstijd af op hele stappen als arbeidAfronden aanstaat", () => {
+    const kosten = berekenProductKosten({
+      ...basisArgs,
+      hoeveelheid: 12,
+      productiviteit: 10,
+      arbeidAfronden: true,
+    });
+    // 12/10 = 1.2 -> ceil naar 2 * 240 = 480
+    expect(kosten.arbeid).toBe(480);
+  });
+});
+
+describe("migratie: gelijkblijvende uitkomst voor bestaande producten", () => {
+  // Een product zoals het vóór deze opdracht bestond: een handmatig
+  // ingevulde prijsPerEenheid (hier 48) en verder geen materiaalcategorieën,
+  // gewone arbeidsCapaciteit/transportkosten, geen eigen voorrijbedrag. De
+  // migratie zet die 48 om in de prijs van een nieuw aangemaakte
+  // materiaalcategorie/-optie (zie migration.sql) — dit bewijst dat de
+  // resulterende totaalprijs identiek blijft aan de oude formule
+  // (qty × prijsPerEenheid, zonder marge want die stond hier standaard op 0%).
+  const gemigreerdProduct = maakProduct({
+    productiviteit: 10,
+    transportkostenOverride: 25,
+    voorrijkostenOverride: null,
+    materiaalCategorieen: [
+      {
+        id: "materiaal-cat",
+        materialen: [
+          {
+            id: "standaard-optie",
+            prijs: 48, // was Product.prijsPerEenheid vóór de migratie
+            prijsType: "VAST",
+            prijsMin: null,
+            prijsMax: null,
+            stapgrootte: null,
+            productiviteitOverride: null,
+          },
+        ],
+      },
+    ],
+  });
+
+  it("berekent hetzelfde totaal als de oude prijsPerEenheid-formule, voor een reeks hoeveelheden", () => {
+    for (const qty of [1, 2.5, 12, 20, 100]) {
+      const result = calculateBreakdown({
+        services: [],
+        products: [gemigreerdProduct],
+        serviceSelected: {},
+        productQty: { "product-1": qty },
+        materialSelections: {}, // geen keuze nodig — categorie heeft precies 1 optie
+        extraSelections: {},
+        costSettings: baseCostSettings,
+      });
+
+      // Oude formule: materiaalkosten = qty * prijsPerEenheid (48), geen marge.
+      expect(result.materiaalkosten).toBeCloseTo(qty * 48, 6);
+    }
+  });
+
+  it("laat arbeids- en transportkosten van vóór de migratie ongewijzigd (niet op 0 gezet)", () => {
     const result = calculateBreakdown({
       services: [],
-      products: [product],
+      products: [gemigreerdProduct],
       serviceSelected: {},
       productQty: { "product-1": 12 },
-      materialSelections: { "categorie-1": "materiaal-1" },
-      extraSelections: {},
-      costSettings: baseCostSettings,
-    });
-
-    // Zelfde uitkomst als de allereerste test in dit bestand.
-    expect(result.materiaalkosten).toBe(240);
-  });
-});
-
-describe("calculateBreakdown — productRegelsBedrag (sjabloon ARTIKELREGELS)", () => {
-  it("telt het al-berekende regelsbedrag op bij materiaalkosten, los van prijsPerEenheid", () => {
-    const product = maakProduct({ arbeidsCapaciteit: null, materiaalCategorieen: [] });
-    const result = calculateBreakdown({
-      services: [],
-      products: [product],
-      serviceSelected: {},
-      productQty: {},
-      productRegelsBedrag: { "product-1": 700 },
       materialSelections: {},
       extraSelections: {},
       costSettings: baseCostSettings,
     });
 
-    expect(result.materiaalkosten).toBe(700);
-    expect(result.heeftSelectie).toBe(true);
-  });
-
-  it("gebruikt productQty voor arbeidskosten, onafhankelijk van het regelsbedrag", () => {
-    const product = maakProduct({ materiaalCategorieen: [] });
-    const result = calculateBreakdown({
-      services: [],
-      products: [product],
-      serviceSelected: {},
-      productQty: { "product-1": 20 }, // arbeidsCapaciteit: 10 -> 2 dagdelen -> 400
-      productRegelsBedrag: { "product-1": 700 },
-      materialSelections: {},
-      extraSelections: {},
-      costSettings: baseCostSettings,
-    });
-
+    // productiviteit 10, 12/10 -> ceil naar 2 dagdelen * 200 = 400 (ongewijzigd
+    // t.o.v. vóór de migratie — arbeidsCapaciteit/arbeidTarief zijn nooit
+    // aangeraakt door de migratie).
     expect(result.arbeidskosten).toBe(400);
-    expect(result.materiaalkosten).toBe(700);
-  });
-
-  it("licht het regelsbedrag op tot minimumprijs, indien lager", () => {
-    const product = maakProduct({
-      arbeidsCapaciteit: null,
-      materiaalCategorieen: [],
-      minimumprijs: 500,
-    });
-    const result = calculateBreakdown({
-      services: [],
-      products: [product],
-      serviceSelected: {},
-      productQty: {},
-      productRegelsBedrag: { "product-1": 120 },
-      materialSelections: {},
-      extraSelections: {},
-      costSettings: baseCostSettings,
-    });
-
-    expect(result.materiaalkosten).toBe(500);
-  });
-
-  it("telt niet mee zonder qty én zonder regelsbedrag", () => {
-    const product = maakProduct({ arbeidsCapaciteit: null, materiaalCategorieen: [] });
-    const result = calculateBreakdown({
-      services: [],
-      products: [product],
-      serviceSelected: {},
-      productQty: {},
-      productRegelsBedrag: {},
-      materialSelections: {},
-      extraSelections: {},
-      costSettings: baseCostSettings,
-    });
-
-    expect(result.materiaalkosten).toBe(0);
-    expect(result.heeftSelectie).toBe(false);
-  });
-
-  it("blijft ongewijzigd voor bestaande aanroepen zonder productRegelsBedrag-argument", () => {
-    const product = maakProduct();
-    const result = calculateBreakdown({
-      services: [],
-      products: [product],
-      serviceSelected: {},
-      productQty: { "product-1": 12 },
-      materialSelections: { "categorie-1": "materiaal-1" },
-      extraSelections: {},
-      costSettings: baseCostSettings,
-    });
-
-    expect(result.materiaalkosten).toBe(240);
-  });
-});
-
-describe("calculateBreakdownRange — bandbreedte op prijsPerEenheid", () => {
-  it("rekent een BANDBREEDTE-prijsPerEenheid door als min/max-paar (modus PER_PRODUCT)", () => {
-    const product = maakProduct({
-      arbeidsCapaciteit: null,
-      materiaalCategorieen: [],
-      prijsPerEenheid: 0,
-      prijsPerEenheidType: "BANDBREEDTE",
-      prijsPerEenheidMin: 40,
-      prijsPerEenheidMax: 60,
-    });
-    const range = calculateBreakdownRange({
-      services: [],
-      products: [product],
-      serviceSelected: {},
-      productQty: { "product-1": 10 },
-      materialSelections: {},
-      extraSelections: {},
-      costSettings: { ...baseCostSettings, bandbreedteModus: "PER_PRODUCT" },
-    });
-
-    expect(range.materiaalkosten).toEqual({ min: 400, max: 600 });
-  });
-
-  it("herleidt een BANDBREEDTE-prijsPerEenheid tot het gemiddelde (modus GEEN)", () => {
-    const product = maakProduct({
-      arbeidsCapaciteit: null,
-      materiaalCategorieen: [],
-      prijsPerEenheid: 0,
-      prijsPerEenheidType: "BANDBREEDTE",
-      prijsPerEenheidMin: 40,
-      prijsPerEenheidMax: 60,
-    });
-    const range = calculateBreakdownRange({
-      services: [],
-      products: [product],
-      serviceSelected: {},
-      productQty: { "product-1": 10 },
-      materialSelections: {},
-      extraSelections: {},
-      costSettings: baseCostSettings,
-    });
-
-    expect(range.materiaalkosten).toBe(500); // 10 * ((40+60)/2)
+    // transportkostenOverride is de 1-op-1 overgenomen oude Product.transportkosten.
+    expect(result.transportkosten).toBe(25);
   });
 });

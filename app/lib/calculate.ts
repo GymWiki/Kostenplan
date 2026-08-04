@@ -3,14 +3,17 @@ export type ArbeidStapEenheid = "UUR" | "DAGDEEL" | "DAG";
 export type CalcCostSettings = {
   arbeidEnabled: boolean;
   arbeidStapEenheid: ArbeidStapEenheid;
-  arbeidTarief: number;
-  arbeidTariefPerProduct: boolean;
+  arbeidTariefUur: number;
+  arbeidTariefDagdeel: number;
+  arbeidTariefDag: number;
+  // Rond de arbeidstijd van een product af op hele arbeidStapEenheid-stappen
+  // i.p.v. 'm continu (lineair) door te rekenen. Uit = continu (standaard).
+  arbeidAfronden: boolean;
   transportEnabled: boolean;
+  transportTarief: number;
   voorrijEnabled: boolean;
   voorrijTarief: number;
   materiaalEnabled: boolean;
-  materiaalMarge: number;
-  materiaalMargePerProduct: boolean;
   btwPercentage: number;
   bandbreedteModus: BandbreedteModus;
   bandbreedteMargeOmlaag: number;
@@ -22,7 +25,7 @@ export type BandbreedteModus = "GEEN" | "PER_PRODUCT" | "TOTAAL";
 
 // Een Dienst draait om arbeid: óf een uurtarief × geschatte uren, óf één
 // vaste projectprijs. De klant vinkt hem simpelweg aan/uit — geen
-// hoeveelheid, geen materiaalkosten, los van CostSettings.arbeidTarief.
+// hoeveelheid, geen materiaalkosten, los van CostSettings.
 export type CalcService = {
   id: string;
   prijsType: "UURTARIEF" | "VASTE_PRIJS";
@@ -41,11 +44,18 @@ export type CalcService = {
 
 export type CalcMaterialOption = {
   id: string;
+  // Volledige verkoopprijs per eenheid — inclusief de marge van de vakman.
+  // Geen aparte opslaglaag meer (zie CostSettings).
   prijs: number;
   prijsType: PrijsType;
   prijsMin: number | null;
   prijsMax: number | null;
   stapgrootte: number | null;
+  // Vervangt Product.productiviteit voor dit materiaal (bijv. natuursteen
+  // legt trager dan betontegel). Leeg = gebruik de productiviteit van het
+  // product. Geldt alleen voor de eerste (primaire) materiaalcategorie van
+  // een product — zie primaireGeselecteerdeOptie() hieronder.
+  productiviteitOverride: number | null;
 };
 
 export type CalcMaterialCategory = {
@@ -59,33 +69,18 @@ export type CalcExtraOption = {
   type: "PER_EENHEID" | "PER_STUK";
 };
 
-// Eén schijf van een gestaffelde prijsPerEenheid — zie
-// berekenGestaffeldBedrag() hieronder en ProductStaffel in schema.prisma.
-export type CalcProductStaffel = {
-  vanaf: number;
-  prijsPerEenheid: number;
-};
-
 export type CalcProduct = {
   id: string;
-  arbeidsCapaciteit: number | null;
+  // Kostenopbouw — vier blokken. Materiaal loopt via materiaalCategorieen
+  // hieronder (blok 1), de rest hier (blok 2-4). Zie berekenProductKosten().
+  productiviteit: number | null;
   arbeidTariefOverride: number | null;
-  materiaalMargeOverride: number | null;
-  // Vast bedrag, telt één keer mee zodra dit product gekozen is (niet
-  // vermenigvuldigd met de hoeveelheid).
-  transportkosten: number;
+  transportkostenOverride: number | null;
+  transportMeeschalend: boolean;
+  voorrijkostenOverride: number | null;
+  voorrijMeeschalend: boolean;
   materiaalCategorieen: CalcMaterialCategory[];
   extraOpties: CalcExtraOption[];
-  // Sjablonen fase 1 — los van (en naast) materiaalCategorieen hierboven:
-  // de simpele hoeveelheid × prijsPerEenheid uit de wizard. null voor
-  // producten die uitsluitend via materiaalCategorieen geprijsd worden
-  // (het bestaande gedrag, ongewijzigd).
-  prijsPerEenheid: number | null;
-  prijsPerEenheidType: PrijsType;
-  prijsPerEenheidMin: number | null;
-  prijsPerEenheidMax: number | null;
-  minimumprijs: number | null;
-  staffels: CalcProductStaffel[];
 };
 
 // Rounds to 6 decimals before taking the ceiling, so floating-point noise
@@ -100,30 +95,103 @@ function roundUpToStep(qty: number, step: number) {
   return ceilStep(qty / step) * step;
 }
 
-// Cumulatief, als belastingschijven: elke eenheid telt tegen het tarief van
-// de schijf waar hij in valt, niet de hele hoeveelheid tegen het hoogst
-// bereikte tarief. `basisPrijs` dekt de eerste schijf (0 tot de laagste
-// `vanaf` in `staffels`); elke staffel dekt daarna vanaf zijn eigen `vanaf`
-// tot de volgende (of oneindig voor de hoogste).
-export function berekenGestaffeldBedrag(
-  qty: number,
-  basisPrijs: number,
-  staffels: CalcProductStaffel[]
+// Welk van de drie company-tarieven geldt voor de huidige arbeidStapEenheid
+// — zie CostSettings.arbeidTariefUur/Dagdeel/Dag (drie losse velden i.p.v.
+// één, zodat wisselen van arbeidStapEenheid nooit een bestaand tarief
+// herinterpreteert als een bedrag voor een andere tijdseenheid).
+export function arbeidTariefVoorStapEenheid(
+  costSettings: Pick<CalcCostSettings, "arbeidTariefUur" | "arbeidTariefDagdeel" | "arbeidTariefDag">,
+  stapEenheid: ArbeidStapEenheid
 ): number {
-  if (qty <= 0) return 0;
-  const sorted = [...staffels].sort((a, b) => a.vanaf - b.vanaf);
-  const grenzen = [0, ...sorted.map((s) => s.vanaf)];
-  const prijzen = [basisPrijs, ...sorted.map((s) => s.prijsPerEenheid)];
+  if (stapEenheid === "UUR") return costSettings.arbeidTariefUur;
+  if (stapEenheid === "DAGDEEL") return costSettings.arbeidTariefDagdeel;
+  return costSettings.arbeidTariefDag;
+}
 
-  let bedrag = 0;
-  for (let i = 0; i < grenzen.length; i++) {
-    const ondergrens = grenzen[i];
-    const bovengrens = i + 1 < grenzen.length ? grenzen[i + 1] : Infinity;
-    const eenhedenInSchijf = Math.max(0, Math.min(qty, bovengrens) - ondergrens);
-    if (eenhedenInSchijf <= 0) continue;
-    bedrag += eenhedenInSchijf * prijzen[i];
+// Materiaalcategorieën met precies één (actieve) optie hebben niets te
+// kiezen — die optie telt automatisch mee, zonder dat de klant iets hoeft
+// te selecteren. Dit is hoe de vroegere "basisprijs" (een los, handmatig
+// ingevuld Product.prijsPerEenheid) zich nu gedraagt: gewoon een
+// materiaalcategorie met exact 1 optie. `materialen` bevat hier al alleen
+// actieve opties (gefilterd door de Prisma-query die dit aanroept).
+export function geselecteerdeMateriaalOptieId(
+  category: CalcMaterialCategory,
+  materialSelections: Record<string, string>
+): string | null {
+  if (category.materialen.length === 1) return category.materialen[0].id;
+  return materialSelections[category.id] ?? null;
+}
+
+export type ProductKostenBlokken = {
+  materiaal: number;
+  arbeid: number;
+  transport: number;
+  voorrijkosten: number;
+  totaal: number;
+};
+
+// De kern van het nieuwe rekenmodel: de vier kostenblokken van één product,
+// in isolatie. Gedeeld door calculateBreakdown() hieronder (de motor achter
+// de volledige mandje-berekening) én rechtstreeks door de wizard/het
+// bewerkscherm voor het live voorbeeld — dezelfde formule, geen tweede
+// implementatie.
+//
+//   schalend deel = (materiaalkosten + arbeidskosten [+transport][+voorrij]) × hoeveelheid
+//   vaste posten  = transport en/of voorrijkosten die niet meeschalen
+//   totaalprijs   = schalend deel + vaste posten
+//
+// `materiaalkosten` komt hier al kant-en-klaar (in euro's, dus al × hoeveelheid
+// en eventuele stapgrootte-afronding verwerkt) binnen — dat gebeurt per
+// materiaalcategorie vóór deze aanroep, zie calculateBreakdown().
+export function berekenProductKosten({
+  materiaalkosten,
+  materiaalEnabled,
+  hoeveelheid,
+  productiviteit,
+  arbeidTarief,
+  arbeidEnabled,
+  arbeidAfronden,
+  transportBedrag,
+  transportMeeschalend,
+  transportEnabled,
+  voorrijBedrag,
+  voorrijMeeschalend,
+  voorrijEnabled,
+}: {
+  materiaalkosten: number;
+  materiaalEnabled: boolean;
+  hoeveelheid: number;
+  productiviteit: number | null;
+  arbeidTarief: number;
+  arbeidEnabled: boolean;
+  arbeidAfronden: boolean;
+  transportBedrag: number;
+  transportMeeschalend: boolean;
+  transportEnabled: boolean;
+  voorrijBedrag: number;
+  voorrijMeeschalend: boolean;
+  voorrijEnabled: boolean;
+}): ProductKostenBlokken {
+  const materiaal = materiaalEnabled ? materiaalkosten : 0;
+
+  let arbeid = 0;
+  if (arbeidEnabled && productiviteit != null && productiviteit > 0) {
+    const arbeidstijd = hoeveelheid / productiviteit;
+    arbeid = (arbeidAfronden ? ceilStep(arbeidstijd) : arbeidstijd) * arbeidTarief;
   }
-  return bedrag;
+
+  const transport = transportEnabled
+    ? transportMeeschalend
+      ? hoeveelheid * transportBedrag
+      : transportBedrag
+    : 0;
+  const voorrijkosten = voorrijEnabled
+    ? voorrijMeeschalend
+      ? hoeveelheid * voorrijBedrag
+      : voorrijBedrag
+    : 0;
+
+  return { materiaal, arbeid, transport, voorrijkosten, totaal: materiaal + arbeid + transport + voorrijkosten };
 }
 
 export function calculateBreakdown({
@@ -141,7 +209,7 @@ export function calculateBreakdown({
   serviceSelected: Record<string, boolean>;
   productQty: Record<string, number>;
   // Alleen voor sjabloon ARTIKELREGELS (zie sjablonen.ts): elke regel heeft
-  // een eigen prijs, dus geen los qty × prijsPerEenheid — de klant-kant heeft
+  // een eigen prijs, dus geen los qty × materiaalprijs — de klant-kant heeft
   // de som van alle regelbedragen al berekend (SjabloonResultaat soort
   // "regels") en geeft die hier per product-id mee, los van productQty (dat
   // voor dit sjabloon wél gebruikt blijft, maar dan voor arbeidskosten: de
@@ -151,26 +219,17 @@ export function calculateBreakdown({
   extraSelections: Record<string, number>;
   costSettings: CalcCostSettings;
 }) {
-  // Arbeidstijd van Producten wordt bijgehouden per geldend tarief (het
-  // globale tarief, of een product-override), zodat items met hetzelfde
-  // tarief nog steeds sámen naar boven afgerond worden op hele stappen
-  // (dagdeel/dag), terwijl een product met een eigen tarief op zichzelf
-  // wordt afgerond. Diensten hebben hun eigen uurtarief en tellen los
-  // daarvan direct mee in arbeidskosten (geen gedeelde stap-afronding).
-  const arbeidstijdPerTarief = new Map<number, number>();
   let arbeidskosten = 0;
   let materiaalkosten = 0;
   let transportkosten = 0;
+  let voorrijkosten = 0;
   let itemCount = 0;
-
-  function addArbeidstijd(tarief: number, tijd: number) {
-    if (tijd <= 0) return;
-    arbeidstijdPerTarief.set(tarief, (arbeidstijdPerTarief.get(tarief) ?? 0) + tijd);
-  }
+  let heeftDienstSelectie = false;
 
   for (const service of services) {
     if (!serviceSelected[service.id]) continue;
     itemCount += 1;
+    heeftDienstSelectie = true;
     if (costSettings.arbeidEnabled) {
       arbeidskosten +=
         service.prijsType === "VASTE_PRIJS"
@@ -179,82 +238,74 @@ export function calculateBreakdown({
     }
   }
 
+  // Diensten hebben geen eigen voorrij-instelling (dit rekenmodel raakt
+  // alleen Producten) — zelfde gedrag als vóór de vier kostenblokken: één
+  // vast bedrag zodra er minstens één dienst gekozen is.
+  if (costSettings.voorrijEnabled && heeftDienstSelectie) {
+    voorrijkosten += costSettings.voorrijTarief;
+  }
+
   for (const product of products) {
     const qty = productQty[product.id] ?? 0;
     const regelsBedrag = productRegelsBedrag[product.id] ?? 0;
     if (qty <= 0 && regelsBedrag <= 0) continue;
     itemCount += 1;
 
-    if (product.arbeidsCapaciteit && product.arbeidsCapaciteit > 0) {
-      const arbeidTarief =
-        costSettings.arbeidTariefPerProduct && product.arbeidTariefOverride != null
-          ? product.arbeidTariefOverride
-          : costSettings.arbeidTarief;
-      addArbeidstijd(arbeidTarief, qty / product.arbeidsCapaciteit);
+    // Materiaalkosten (blok 1) — som over alle categorieën. De eerste
+    // (primaire) categorie levert ook de eventuele productiviteitOverride
+    // voor blok 2 hieronder — "productiviteit kan per materiaal afwijken".
+    let productMateriaalkosten = 0;
+    let primaireOptie: CalcMaterialOption | undefined;
+    product.materiaalCategorieen.forEach((category, index) => {
+      const selectedId = geselecteerdeMateriaalOptieId(category, materialSelections);
+      if (!selectedId) return;
+      const option = category.materialen.find((m) => m.id === selectedId);
+      if (!option) return;
+      if (index === 0) primaireOptie = option;
+      const effectiveQty =
+        option.stapgrootte && option.stapgrootte > 0 ? roundUpToStep(qty, option.stapgrootte) : qty;
+      productMateriaalkosten += effectiveQty * option.prijs;
+    });
+
+    for (const extra of product.extraOpties) {
+      const aantal = extraSelections[extra.id] ?? 0;
+      if (aantal <= 0) continue;
+      productMateriaalkosten += (extra.type === "PER_STUK" ? aantal : qty) * extra.prijs;
     }
 
-    if (costSettings.materiaalEnabled) {
-      let productMateriaalkosten = 0;
-      for (const category of product.materiaalCategorieen) {
-        const selectedId = materialSelections[category.id];
-        if (!selectedId) continue;
-        const option = category.materialen.find((m) => m.id === selectedId);
-        if (!option) continue;
-        const effectiveQty =
-          option.stapgrootte && option.stapgrootte > 0
-            ? roundUpToStep(qty, option.stapgrootte)
-            : qty;
-        productMateriaalkosten += effectiveQty * option.prijs;
-      }
-
-      for (const extra of product.extraOpties) {
-        const aantal = extraSelections[extra.id] ?? 0;
-        if (aantal <= 0) continue;
-        productMateriaalkosten += (extra.type === "PER_STUK" ? aantal : qty) * extra.prijs;
-      }
-
-      if (product.prijsPerEenheid != null) {
-        let prijsPerEenheidBedrag =
-          product.staffels.length > 0
-            ? berekenGestaffeldBedrag(qty, product.prijsPerEenheid, product.staffels)
-            : qty * product.prijsPerEenheid;
-        if (product.minimumprijs != null) {
-          prijsPerEenheidBedrag = Math.max(prijsPerEenheidBedrag, product.minimumprijs);
-        }
-        productMateriaalkosten += prijsPerEenheidBedrag;
-      }
-
-      if (regelsBedrag > 0) {
-        productMateriaalkosten +=
-          product.minimumprijs != null ? Math.max(regelsBedrag, product.minimumprijs) : regelsBedrag;
-      }
-
-      const materiaalMarge =
-        costSettings.materiaalMargePerProduct && product.materiaalMargeOverride != null
-          ? product.materiaalMargeOverride
-          : costSettings.materiaalMarge;
-      materiaalkosten += productMateriaalkosten * (1 + materiaalMarge / 100);
+    if (regelsBedrag > 0) {
+      productMateriaalkosten += regelsBedrag;
     }
 
-    if (costSettings.transportEnabled) {
-      transportkosten += product.transportkosten;
-    }
-  }
+    const productiviteit = primaireOptie?.productiviteitOverride ?? product.productiviteit;
+    const arbeidTarief =
+      product.arbeidTariefOverride ?? arbeidTariefVoorStapEenheid(costSettings, costSettings.arbeidStapEenheid);
+    const transportBedrag = product.transportkostenOverride ?? costSettings.transportTarief;
+    const voorrijBedrag = product.voorrijkostenOverride ?? costSettings.voorrijTarief;
 
-  if (costSettings.arbeidEnabled) {
-    for (const [tarief, tijd] of arbeidstijdPerTarief) {
-      const billedTijd = costSettings.arbeidStapEenheid === "UUR" ? tijd : ceilStep(tijd);
-      arbeidskosten += billedTijd * tarief;
-    }
+    const kosten = berekenProductKosten({
+      materiaalkosten: productMateriaalkosten,
+      materiaalEnabled: costSettings.materiaalEnabled,
+      hoeveelheid: qty,
+      productiviteit,
+      arbeidTarief,
+      arbeidEnabled: costSettings.arbeidEnabled,
+      arbeidAfronden: costSettings.arbeidAfronden,
+      transportBedrag,
+      transportMeeschalend: product.transportMeeschalend,
+      transportEnabled: costSettings.transportEnabled,
+      voorrijBedrag,
+      voorrijMeeschalend: product.voorrijMeeschalend,
+      voorrijEnabled: costSettings.voorrijEnabled,
+    });
+
+    materiaalkosten += kosten.materiaal;
+    arbeidskosten += kosten.arbeid;
+    transportkosten += kosten.transport;
+    voorrijkosten += kosten.voorrijkosten;
   }
 
   const heeftSelectie = itemCount > 0;
-
-  let voorrijkosten = 0;
-  if (costSettings.voorrijEnabled && heeftSelectie) {
-    voorrijkosten = costSettings.voorrijTarief;
-  }
-
   const subtotaal = arbeidskosten + materiaalkosten + transportkosten + voorrijkosten;
   const btw = subtotaal * (costSettings.btwPercentage / 100);
   const totaal = subtotaal + btw;
@@ -329,27 +380,9 @@ function materiaalOptiePrijsVoor(option: CalcMaterialOption, richting: Richting)
   return (option.prijsMin + option.prijsMax) / 2;
 }
 
-// Zelfde patroon als materiaalOptiePrijsVoor — staffeltarieven zelf blijven
-// altijd vast (geen bandbreedte per schijf), alleen de basisprijs
-// (Product.prijsPerEenheid, de eerste schijf) kent een bandbreedte.
-function prijsPerEenheidVoor(product: CalcProduct, richting: Richting): number | null {
-  if (product.prijsPerEenheid == null) return null;
-  if (
-    product.prijsPerEenheidType !== "BANDBREEDTE" ||
-    product.prijsPerEenheidMin == null ||
-    product.prijsPerEenheidMax == null
-  ) {
-    return product.prijsPerEenheid;
-  }
-  if (richting === "MIN") return product.prijsPerEenheidMin;
-  if (richting === "MAX") return product.prijsPerEenheidMax;
-  return (product.prijsPerEenheidMin + product.prijsPerEenheidMax) / 2;
-}
-
 function transformeerProductVoorRichting(product: CalcProduct, richting: Richting): CalcProduct {
   return {
     ...product,
-    prijsPerEenheid: prijsPerEenheidVoor(product, richting),
     materiaalCategorieen: product.materiaalCategorieen.map((categorie) => ({
       ...categorie,
       materialen: categorie.materialen.map((materiaal) => ({

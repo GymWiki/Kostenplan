@@ -78,14 +78,26 @@ export const costSettingsSchema = z.object({
   arbeidEnabled: z.boolean(),
   arbeidZichtbaar: z.boolean(),
   arbeidStapEenheid: z.enum(["UUR", "DAGDEEL", "DAG"], "Kies een eenheid om in te rekenen"),
-  arbeidTarief: z.preprocess(
+  arbeidTariefUur: z.preprocess(
     normalizeDecimalInput,
     z.coerce.number("Vul een geldig tarief in").min(0, "Tarief kan niet negatief zijn")
   ),
-  arbeidTariefPerProduct: z.boolean(),
+  arbeidTariefDagdeel: z.preprocess(
+    normalizeDecimalInput,
+    z.coerce.number("Vul een geldig tarief in").min(0, "Tarief kan niet negatief zijn")
+  ),
+  arbeidTariefDag: z.preprocess(
+    normalizeDecimalInput,
+    z.coerce.number("Vul een geldig tarief in").min(0, "Tarief kan niet negatief zijn")
+  ),
+  arbeidAfronden: z.boolean(),
 
   transportEnabled: z.boolean(),
   transportZichtbaar: z.boolean(),
+  transportTarief: z.preprocess(
+    normalizeDecimalInput,
+    z.coerce.number("Vul een geldig bedrag in").min(0, "Bedrag kan niet negatief zijn")
+  ),
 
   voorrijEnabled: z.boolean(),
   voorrijZichtbaar: z.boolean(),
@@ -96,14 +108,6 @@ export const costSettingsSchema = z.object({
 
   materiaalEnabled: z.boolean(),
   materiaalZichtbaar: z.boolean(),
-  materiaalMarge: z.preprocess(
-    normalizeDecimalInput,
-    z.coerce
-      .number("Vul een geldig percentage in")
-      .min(0, "Opslag kan niet negatief zijn")
-      .max(500, "Opslag kan niet hoger zijn dan 500%")
-  ),
-  materiaalMargePerProduct: z.boolean(),
 
   btwPercentage: z.preprocess(
     normalizeDecimalInput,
@@ -182,17 +186,6 @@ function parseJsonPreprocess(val: unknown, fallback: unknown) {
   }
 }
 
-const productStaffelSchema = z.object({
-  vanaf: z.preprocess(
-    normalizeDecimalInput,
-    z.coerce.number("Vul een geldige grens in").positive("Vanaf moet groter dan 0 zijn")
-  ),
-  prijsPerEenheid: z.preprocess(
-    normalizeDecimalInput,
-    z.coerce.number("Vul een geldige prijs in").min(0, "Prijs kan niet negatief zijn")
-  ),
-});
-
 export const productSchema = z
   .object({
     naam: z.string().trim().min(1, "Vul een naam in").max(120),
@@ -203,27 +196,18 @@ export const productSchema = z
       (val) => parseJsonPreprocess(val, {}),
       z.record(z.string(), z.unknown())
     ),
-    prijsPerEenheid: optionalNonNegativeNumber,
-    prijsPerEenheidType: z.enum(["VAST", "BANDBREEDTE"], "Kies vast of bandbreedte"),
-    prijsPerEenheidMin: optionalNonNegativeNumber,
-    prijsPerEenheidMax: optionalNonNegativeNumber,
-    minimumprijs: optionalNonNegativeNumber,
-    staffels: z.preprocess((val) => parseJsonPreprocess(val, []), z.array(productStaffelSchema)),
-    arbeidsCapaciteit: optionalPositiveNumber,
+    // Kostenopbouw — blok 1 (materiaal) loopt via materiaalCategorieen/
+    // MaterialOption (los van dit schema, zie materialOptionSchema
+    // hieronder). Blok 2-4 hier.
+    productiviteit: optionalPositiveNumber,
     arbeidTariefOverride: optionalNonNegativeNumber,
-    materiaalMargeOverride: optionalNonNegativeNumber,
-    transportkosten: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
+    transportkostenOverride: optionalNonNegativeNumber,
+    transportMeeschalend: z.boolean(),
+    voorrijkostenOverride: optionalNonNegativeNumber,
+    voorrijMeeschalend: z.boolean(),
     icoon: optionalIconName,
     actief: z.boolean(),
   })
-  .refine(
-    (data) =>
-      data.prijsPerEenheidType !== "BANDBREEDTE" ||
-      (data.prijsPerEenheidMin != null &&
-        data.prijsPerEenheidMax != null &&
-        data.prijsPerEenheidMin <= data.prijsPerEenheidMax),
-    { message: "Minimumprijs moet kleiner of gelijk zijn aan maximumprijs", path: ["prijsPerEenheidMax"] }
-  )
   // Eenheid ligt vast zodra het sjabloon zelf een eenheid oplegt (m²/m³) —
   // zie design-beslissing 4 en vasteEenheidVoorSjabloon() in sjablonen.ts.
   .refine(
@@ -243,11 +227,16 @@ export const materialCategorySchema = z.object({
 export const materialOptionSchema = z
   .object({
     naam: z.string().trim().min(1, "Vul een naam in").max(120),
+    // Volledige verkoopprijs per eenheid, inclusief marge — geen meerprijs
+    // bovenop een aparte basisprijs meer.
     prijs: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
     prijsType: z.enum(["VAST", "BANDBREEDTE"], "Kies vast of bandbreedte"),
     prijsMin: optionalNonNegativeNumber,
     prijsMax: optionalNonNegativeNumber,
     stapgrootte: optionalPositiveNumber,
+    // Vervangt Product.productiviteit voor dit materiaal — leeg = gebruik de
+    // productiviteit van het product.
+    productiviteitOverride: optionalPositiveNumber,
     actief: z.boolean(),
   })
   .refine(
