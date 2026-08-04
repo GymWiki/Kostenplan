@@ -14,11 +14,6 @@ datasource db {
   // de verbinding die Migrate gebruikt staat in prisma.config.ts.
 }
 
-enum ServicePrijsType {
-  UURTARIEF
-  VASTE_PRIJS
-}
-
 enum ArbeidStapEenheid {
   UUR
   DAGDEEL
@@ -31,7 +26,7 @@ enum ExtraOptionType {
 }
 
 // Of een prijs een vast bedrag is, of een bandbreedte (min/max). Gebruikt
-// door MaterialOption en Service — zie de min/max-velden op die modellen.
+// door MaterialOption — zie de min/max-velden op dat model.
 enum PrijsType {
   VAST
   BANDBREEDTE
@@ -66,7 +61,7 @@ enum BandbreedteModus {
   // worden herleid tot hun gemiddelde van min/max.
   GEEN
   // Rekent twee keer door: eenmaal met alle minima, eenmaal met alle
-  // maxima van bandbreedte-producten/diensten. Vaste prijzen tellen in
+  // maxima van bandbreedte-producten. Vaste prijzen tellen in
   // beide scenario's hetzelfde mee.
   PER_PRODUCT
   // Rekent één keer door met vaste bedragen (bandbreedte-prijzen herleid
@@ -259,7 +254,6 @@ model Company {
   members              CompanyMember[]
   costSettings         CostSettings?
   branding             Branding?
-  services             Service[]
   products             Product[]
   leads                Lead[]
   cancellationFeedback CancellationFeedback[]
@@ -329,11 +323,10 @@ model CostSettings {
   companyId String  @unique
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  // Arbeidskosten — geldt alleen voor Producten (Product.productiviteit).
-  // Diensten hebben hun eigen uurtarief/vaste projectprijs, los van deze
-  // instelling. Drie losse tarieven (i.p.v. één) zodat het wisselen van
-  // arbeidStapEenheid nooit een bestaand tarief herinterpreteert als een
-  // bedrag voor een andere tijdseenheid.
+  // Arbeidskosten — geldt voor Producten (Product.productiviteit). Drie
+  // losse tarieven (i.p.v. één) zodat het wisselen van arbeidStapEenheid
+  // nooit een bestaand tarief herinterpreteert als een bedrag voor een
+  // andere tijdseenheid.
   arbeidEnabled       Boolean           @default(true)
   arbeidZichtbaar     Boolean           @default(true)
   arbeidStapEenheid   ArbeidStapEenheid @default(UUR)
@@ -357,7 +350,7 @@ model CostSettings {
   voorrijZichtbaar Boolean @default(true)
   voorrijTarief    Float   @default(35)
 
-  // Materiaalkosten — geldt alleen voor Producten (materiaalCategorieen).
+  // Materiaalkosten — geldt voor Producten (materiaalCategorieen).
   // Geen aparte marge-/opslaglaag meer: elke ingevulde materiaalprijs is al
   // een verkoopprijs, inclusief de marge van de vakman.
   materiaalEnabled   Boolean @default(true)
@@ -372,47 +365,6 @@ model CostSettings {
   bandbreedteMargeOmhoog  Float            @default(10)
 
   updatedAt DateTime @updatedAt
-}
-
-// Een dienst (arbeid), bijv. "Terrastegels leggen". In tegenstelling tot een
-// Product (fysieke eigenschappen, schaalt met een hoeveelheid) draait een
-// Dienst om arbeid: de klant vinkt hem simpelweg aan/uit in het
-// klantenportaal, voor óf een uurtarief × geschat aantal uren, óf één vaste
-// projectprijs.
-model Service {
-  id        String  @id @default(cuid())
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  naam          String
-  omschrijving  String?
-  prijsType     ServicePrijsType @default(UURTARIEF)
-  // Bij UURTARIEF: kostprijs = uurtarief × geschatteUren.
-  uurtarief     Float            @default(0)
-  geschatteUren Float            @default(0)
-  // Bij VASTE_PRIJS: kostprijs = vastePrijs, ongeacht uren.
-  vastePrijs    Float            @default(0)
-  // Vast (default) of bandbreedte — zie PrijsType. Bij BANDBREEDTE wordt,
-  // afhankelijk van prijsType hierboven, geschatteUrenMin/Max (UURTARIEF)
-  // of vastePrijsMin/Max (VASTE_PRIJS) gebruikt in plaats van het vaste veld.
-  bandbreedteType   PrijsType @default(VAST)
-  geschatteUrenMin  Float?
-  geschatteUrenMax  Float?
-  vastePrijsMin     Float?
-  vastePrijsMax     Float?
-  // Naam van een lucide-react icoon uit app/lib/icons.ts, bijv. "Sprout".
-  // Optioneel, puur decoratief.
-  icoon         String?
-  actief        Boolean          @default(true)
-  order         Int              @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Postgres indexeert foreign keys niet automatisch — zonder dit is elke
-  // "diensten van deze tenant"-query (dashboardlijst, publiek portaal, de
-  // 10-item Gratis-limietcheck) een sequential scan over de hele tabel.
-  @@index([companyId])
 }
 
 // Een samengesteld product, bijv. "Schutting". De klant kiest een

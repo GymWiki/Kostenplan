@@ -72,7 +72,7 @@ export function CostSettingsForm({
 
       <CostTypeCard
         title="Arbeidskosten"
-        description="De standaardtarieven voor arbeidstijd van producten. Diensten hebben hun eigen uurtarief of vaste projectprijs."
+        description="De standaardtarieven voor arbeidstijd van producten."
         enabled={arbeidOn}
         onToggle={setArbeidOn}
         toggleName="arbeidEnabled"
@@ -254,9 +254,9 @@ export function CostSettingsForm({
           </FieldRow>
           {bandbreedteModus === "PER_PRODUCT" && (
             <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
-              Producten en diensten met een bandbreedte-prijs (in te stellen bij het product of de
-              dienst zelf) tellen mee als bandbreedte. Items met een vaste prijs tellen in beide
-              scenario&apos;s hetzelfde mee.
+              Producten met een bandbreedte-prijs (in te stellen bij het product zelf) tellen mee
+              als bandbreedte. Items met een vaste prijs tellen in beide scenario&apos;s hetzelfde
+              mee.
             </p>
           )}
           {bandbreedteModus === "TOTAAL" && (

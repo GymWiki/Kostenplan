@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Wrench, Package, SlidersHorizontal, Users } from "lucide-react";
+import { Package, SlidersHorizontal, Users } from "lucide-react";
 import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { getPortalUrl, getEmbedCode } from "@/app/lib/url";
@@ -14,9 +14,8 @@ export const metadata: Metadata = { title: "Overzicht" };
 export default async function DashboardPage() {
   const { company } = await requireActiveCompany();
 
-  const [servicesCount, productsCount, costSettings, branding, portalUrl, embedCode, leadsCount, nieuweLeadsCount] =
+  const [productsCount, costSettings, branding, portalUrl, embedCode, leadsCount, nieuweLeadsCount] =
     await Promise.all([
-      prisma.service.count({ where: { companyId: company.id } }),
       prisma.product.count({ where: { companyId: company.id } }),
       prisma.costSettings.findUnique({
         where: { companyId: company.id },
@@ -46,7 +45,7 @@ export default async function DashboardPage() {
   // bijgehouden zodra de portaal-link is aangeklikt.
   const onboardingStappen = bouwOnboardingStappen({
     heeftBedrijfsgegevens: Boolean(branding?.logoUrl || branding?.telefoonnummer),
-    heeftCatalogusItem: servicesCount + productsCount > 0,
+    heeftCatalogusItem: productsCount > 0,
     heeftPortaalBekeken: company.onboardingPortaalBekeken,
     portalUrl,
   });
@@ -79,8 +78,7 @@ export default async function DashboardPage() {
         magEmbedden={isProTier(effectiveTier(company))}
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard icon={Wrench} label="Diensten" value={servicesCount} href="/dashboard/diensten" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard icon={Package} label="Producten" value={productsCount} href="/dashboard/producten" />
         <StatCard
           icon={SlidersHorizontal}

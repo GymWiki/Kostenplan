@@ -12,9 +12,8 @@ kosten, gebaseerd op vier instelbare kostenposten: **arbeidskosten**, **transpor
   materiaalkosten (met opslagpercentage) zijn elk afzonderlijk aan of uit te zetten en in te
   stellen, plus een btw-percentage.
 - **Arbeidskosten in stappen** — arbeid wordt gerekend in uren, dagdelen of dagen. Bij dagdelen/
-  dagen wordt de totale arbeidstijd van alle gekozen diensten en producten samen naar boven
+  dagen wordt de totale arbeidstijd van alle gekozen producten samen naar boven
   afgerond op hele stappen, niet per item apart.
-- **Diensten** — werkzaamheden met arbeidstijd en materiaalkosten per eenheid.
 - **Producten** — samengestelde producten (bijv. "Schutting") opgebouwd uit materiaalcategorieën
   (bijv. "Palen", "Tussenbekleding") met per categorie een keuze uit materialen, plus optionele
   extra opties die de klant kan aanvinken. Een product kan een arbeidscapaciteit hebben (bijv.
@@ -26,7 +25,7 @@ kosten, gebaseerd op vier instelbare kostenposten: **arbeidskosten**, **transpor
 - **Klantenportaal** — elk account krijgt een unieke, deelbare link (`/portaal/<slug>`) waar
   klanten hun tuinproject samenstellen en live een kostenraming zien. De link staat prominent op
   het dashboard, inclusief kopieerknop.
-- **Icoon per dienst/product** — optioneel een icoon kiezen uit een tuin-/hoveniersgerichte set,
+- **Icoon per product** — optioneel een icoon kiezen uit een tuin-/hoveniersgerichte set,
   zichtbaar in het dashboard en het klantenportaal.
 - **Foto per materiaal/extra optie** — optioneel een foto uploaden (max 5MB, JPG/PNG/WEBP/GIF).
   Zodra minstens één materiaal in een categorie een foto heeft, toont het klantenportaal die
@@ -45,8 +44,7 @@ kosten, gebaseerd op vier instelbare kostenposten: **arbeidskosten**, **transpor
 Supabase Auth beheert accounts, wachtwoorden en sessies (tabel `auth.users`, buiten Prisma's
 bereik). Direct na een geslaagde registratie maakt een server action een bijbehorende rij aan in
 onze eigen `User`-tabel (via Prisma), met hetzelfde `id` als de Supabase-gebruiker. Die tabel
-bevat de app-specifieke gegevens: bedrijfsnaam, portaal-slug, kosteninstellingen, diensten en
-producten.
+bevat de app-specifieke gegevens: bedrijfsnaam, portaal-slug, kosteninstellingen en producten.
 
 ## Aan de slag (lokaal)
 
@@ -187,10 +185,10 @@ is mislukt."
 ## Projectstructuur
 
 - `app/(auth)` — login- en registratiepagina's
-- `app/dashboard` — beveiligd hoveniersdashboard (instellingen, diensten, producten)
+- `app/dashboard` — beveiligd hoveniersdashboard (instellingen, producten)
 - `app/portaal/[slug]` — het publieke klantenportaal met de kostencalculator
 - `app/lib/supabase` — Supabase server client
-- `app/lib/actions` — server actions (auth, kosteninstellingen, diensten, producten en de
+- `app/lib/actions` — server actions (auth, kosteninstellingen, producten en de
   materiaalcategorieën/materialen/extra opties daarbinnen)
 - `app/lib/dal.ts` — leest de ingelogde Supabase-gebruiker en koppelt die aan het Prisma `User`-profiel
 - `prisma/schema.prisma` — datamodel van de app-tabellen (niet van Supabase Auth)

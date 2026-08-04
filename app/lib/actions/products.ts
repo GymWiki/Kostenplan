@@ -56,16 +56,13 @@ async function createProduct(company: ActiveCompany, formData: FormData): Promis
   // wordt uitgevoerd.
   let productCount: number | undefined;
   if (effectiveTier(company) === "GRATIS") {
-    const [count, serviceCount] = await Promise.all([
-      prisma.product.count({ where: { companyId: company.id } }),
-      prisma.service.count({ where: { companyId: company.id } }),
-    ]);
+    const count = await prisma.product.count({ where: { companyId: company.id } });
     productCount = count;
-    if (count + serviceCount >= GRATIS_CATALOGUS_LIMIET) {
+    if (count >= GRATIS_CATALOGUS_LIMIET) {
       return {
         success: false,
         state: {
-          error: `Je hebt de limiet van ${GRATIS_CATALOGUS_LIMIET} diensten en producten voor het Gratis-pakket bereikt. Upgrade naar Plus of Pro voor onbeperkt diensten en producten.`,
+          error: `Je hebt de limiet van ${GRATIS_CATALOGUS_LIMIET} producten voor het Gratis-pakket bereikt. Upgrade naar Plus of Pro voor onbeperkt producten.`,
         },
       };
     }
@@ -220,11 +217,8 @@ export async function copyProductAction(formData: FormData) {
   if (!origineel) return;
 
   if (effectiveTier(company) === "GRATIS") {
-    const [count, serviceCount] = await Promise.all([
-      prisma.product.count({ where: { companyId: company.id } }),
-      prisma.service.count({ where: { companyId: company.id } }),
-    ]);
-    if (count + serviceCount >= GRATIS_CATALOGUS_LIMIET) return;
+    const count = await prisma.product.count({ where: { companyId: company.id } });
+    if (count >= GRATIS_CATALOGUS_LIMIET) return;
   }
 
   const count = await prisma.product.count({ where: { companyId: company.id } });

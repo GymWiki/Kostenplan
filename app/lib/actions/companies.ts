@@ -28,7 +28,7 @@ async function setActiefBedrijfCookie(companyId: string) {
   });
 }
 
-// Bewust GEEN kopieerfunctie van producten/diensten tussen bedrijven — een
+// Bewust GEEN kopieerfunctie van producten tussen bedrijven — een
 // nieuw bedrijf start met een lege catalogus en doorloopt dezelfde
 // onboarding-checklist als een gloednieuwe gebruiker. Zie Fase 1-analyse
 // voor de onderbouwing; een kopieerfunctie is een mogelijke vervolgfeature.

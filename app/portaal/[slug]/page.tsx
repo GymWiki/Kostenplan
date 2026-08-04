@@ -27,10 +27,6 @@ const getPortalData = cache(async (slug: string) => {
       // het login-e-mailadres van de tenant zelf, dus voor gemigreerde
       // bedrijven levert de aanmaker-relatie exact hetzelfde adres op.
       creator: { select: { email: true } },
-      services: {
-        where: { actief: true },
-        orderBy: { order: "asc" },
-      },
       products: {
         where: { actief: true },
         orderBy: { order: "asc" },
@@ -107,7 +103,6 @@ export default async function PortaalPage({
       subscriptionTier={effectiveTier(company)}
       branding={company.branding}
       costSettings={company.costSettings}
-      services={company.services}
       products={company.products}
     />
   );

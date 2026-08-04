@@ -13,7 +13,7 @@ const FAQS = [
   {
     vraag: "Hoe voeg ik mijn eigen prijzen en tarieven toe?",
     antwoord:
-      "Na het aanmaken van je account stel je eenmalig je kosteninstellingen in (uurtarief, voorrijkosten, materiaalmarge en btw). Daarna voeg je je eigen diensten en producten met hun prijzen toe. De rekentool berekent automatisch een prijsindicatie op basis van jouw tarieven — nooit die van iemand anders.",
+      "Na het aanmaken van je account stel je eenmalig je kosteninstellingen in (uurtarief, voorrijkosten, materiaalmarge en btw). Daarna voeg je je eigen producten met hun prijzen toe. De rekentool berekent automatisch een prijsindicatie op basis van jouw tarieven — nooit die van iemand anders.",
   },
   {
     vraag: "Werkt Kostenplan ook voor andere vakmensen dan hoveniers?",
@@ -28,7 +28,7 @@ const FAQS = [
   {
     vraag: "Is er een gratis pakket of een proefperiode nodig?",
     antwoord:
-      "Je gebruikt Kostenplan volledig gratis met tot 10 diensten en producten, zonder tijdslimiet en zonder creditcard. Wil je onbeperkt diensten en producten, je eigen huisstijl of het leads-overzicht? Dan upgrade je naar Plus of Pro.",
+      "Je gebruikt Kostenplan volledig gratis met tot 10 producten, zonder tijdslimiet en zonder creditcard. Wil je onbeperkt producten, je eigen huisstijl of het leads-overzicht? Dan upgrade je naar Plus of Pro.",
   },
 ];
 

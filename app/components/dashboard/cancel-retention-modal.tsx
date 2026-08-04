@@ -14,7 +14,7 @@ import { startCheckoutAction, type CheckoutFormState } from "@/app/lib/actions/s
 import type { BillingInterval, SubscriptionTier } from "@/app/generated/prisma/client";
 
 const VERLIES_PLUS = [
-  "Onbeperkt diensten en producten — terug naar maximaal 10",
+  "Onbeperkt producten — terug naar maximaal 10",
   "Eigen logo en merkkleuren — terug naar de standaard Kostenplan-huisstijl",
   "De “Vraag offerte aan”-knop en je leads-overzicht verdwijnen",
 ];
@@ -198,7 +198,7 @@ function OptiesStep({
             <input type="hidden" name="plan" value="PLUS" />
             <input type="hidden" name="interval" value={actualInterval ?? "MAANDELIJKS"} />
             <p className="text-sm text-muted-foreground">
-              Of downgrade naar Plus — je behoudt onbeperkt diensten/producten, je huisstijl en
+              Of downgrade naar Plus — je behoudt onbeperkt producten, je huisstijl en
               leads, en betaalt minder.
             </p>
             {downgradeState?.error && (

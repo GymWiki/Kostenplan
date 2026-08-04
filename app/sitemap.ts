@@ -40,14 +40,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/privacybeleid`, lastModified, changeFrequency: "yearly", priority: 0.3 },
   ];
 
-  // Publieke klantenportalen: alleen bedrijven met minstens één actieve
-  // dienst of product — een leeg portaal is dunne content en voegt niets
-  // toe aan de sitemap. slug is uniek en publiek (bepaalt de portaal-URL),
-  // dus geen andere Company-velden nodig.
+  // Publieke klantenportalen: alleen bedrijven met minstens één actief
+  // product — een leeg portaal is dunne content en voegt niets toe aan de
+  // sitemap. slug is uniek en publiek (bepaalt de portaal-URL), dus geen
+  // andere Company-velden nodig.
   const companies = await prisma.company.findMany({
-    where: {
-      OR: [{ services: { some: { actief: true } } }, { products: { some: { actief: true } } }],
-    },
+    where: { products: { some: { actief: true } } },
     select: { slug: true, updatedAt: true },
   });
 

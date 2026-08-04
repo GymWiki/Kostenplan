@@ -197,7 +197,7 @@ function DeleteForm({ company }: { company: Company }) {
     >
       <p className="text-foreground">
         Dit verwijdert <strong>{company.naam}</strong> definitief, inclusief alle producten,
-        diensten, leads en instellingen. Dit kan niet ongedaan worden gemaakt.
+        leads en instellingen. Dit kan niet ongedaan worden gemaakt.
       </p>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={`bevestig-${company.id}`}>

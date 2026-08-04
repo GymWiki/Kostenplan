@@ -134,41 +134,6 @@ export const costSettingsSchema = z.object({
   ),
 });
 
-export const serviceSchema = z
-  .object({
-    naam: z.string().trim().min(1, "Vul een naam in").max(120),
-    omschrijving: z.string().trim().max(500).optional().or(z.literal("")),
-    prijsType: z.enum(["UURTARIEF", "VASTE_PRIJS"], "Kies een prijsvorm"),
-    uurtarief: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
-    geschatteUren: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
-    vastePrijs: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
-    bandbreedteType: z.enum(["VAST", "BANDBREEDTE"], "Kies vast of bandbreedte"),
-    geschatteUrenMin: optionalNonNegativeNumber,
-    geschatteUrenMax: optionalNonNegativeNumber,
-    vastePrijsMin: optionalNonNegativeNumber,
-    vastePrijsMax: optionalNonNegativeNumber,
-    icoon: optionalIconName,
-    actief: z.boolean(),
-  })
-  .refine(
-    (data) =>
-      data.bandbreedteType !== "BANDBREEDTE" ||
-      data.prijsType !== "UURTARIEF" ||
-      (data.geschatteUrenMin != null &&
-        data.geschatteUrenMax != null &&
-        data.geschatteUrenMin <= data.geschatteUrenMax),
-    { message: "Minimum aantal uren moet kleiner of gelijk zijn aan maximum", path: ["geschatteUrenMax"] }
-  )
-  .refine(
-    (data) =>
-      data.bandbreedteType !== "BANDBREEDTE" ||
-      data.prijsType !== "VASTE_PRIJS" ||
-      (data.vastePrijsMin != null &&
-        data.vastePrijsMax != null &&
-        data.vastePrijsMin <= data.vastePrijsMax),
-    { message: "Minimumprijs moet kleiner of gelijk zijn aan maximumprijs", path: ["vastePrijsMax"] }
-  );
-
 export const PRODUCT_SJABLONEN = ["ENKELE_HOEVEELHEID", "AFMETINGEN", "RUIMTES", "ARTIKELREGELS"] as const;
 
 // sjabloonConfig komt als JSON-string binnen (net als leadSnapshotSchema en
@@ -309,7 +274,7 @@ const leadSnapshotLineSchema = z.object({
 // prijsindicatie die de vakman zelf te zien krijgt in zijn eigen CRM) — ziet
 // alleen toe op de VORM van de data, niet op herberekening server-side.
 export const leadSnapshotSchema = z.object({
-  regels: z.array(leadSnapshotLineSchema).min(1, "Selecteer minimaal één dienst of product"),
+  regels: z.array(leadSnapshotLineSchema).min(1, "Selecteer minimaal één product"),
   arbeidskosten: z.number(),
   materiaalkosten: z.number(),
   transportkosten: z.number(),

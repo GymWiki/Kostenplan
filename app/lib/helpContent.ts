@@ -20,11 +20,6 @@ export const helpContent = {
       description:
         "De prijs van een product wordt berekend uit vier blokken: materiaalkosten, arbeidskosten, transportkosten en voorrijkosten. Je vult per blok in wat je normaal rekent — de rekentool telt dit automatisch bij elkaar op tot een totaalprijs voor de klant.",
     },
-    productVsDienst: {
-      title: "Product versus dienst",
-      description:
-        "Een product is iets fysieks dat je levert of plaatst (bijv. een terras). Een dienst is werk zonder materiaal (bijv. een inspectie). Beide worden apart getoond in de rekentool.",
-    },
     materiaalBandbreedte: {
       title: "Bandbreedte in plaats van vaste prijs",
       description:
@@ -34,13 +29,6 @@ export const helpContent = {
       title: "Per eenheid of per stuk",
       description:
         "“Per eenheid” schaalt automatisch mee met de hoeveelheid van het product. “Per stuk” heeft een eigen, los aantal dat de klant apart invult.",
-    },
-  },
-  diensten: {
-    bandbreedte: {
-      title: "Bandbreedte in plaats van vaste prijs",
-      description:
-        "Met bandbreedte toon je een minimum- en maximumprijs in plaats van één vast bedrag. Handig als de tijdsbesteding van een dienst kan variëren.",
     },
   },
   kosteninstellingen: {
@@ -62,7 +50,7 @@ export const helpContent = {
     btw: {
       title: "BTW-percentage",
       description:
-        "Het percentage dat wordt opgeteld bovenop je totaalprijs. Dit geldt voor alle producten en diensten in je rekentool.",
+        "Het percentage dat wordt opgeteld bovenop je totaalprijs. Dit geldt voor alle producten in je rekentool.",
     },
   },
   abonnement: {

@@ -32,7 +32,7 @@ export const DOELGROEPEN: Doelgroep[] = [
       {
         titel: "Eigen tarieven, altijd correct",
         tekst:
-          "Stel je uurtarief, materiaalmarge en voorrijkosten eenmalig in. De rekentool past ze automatisch toe op elk product en elke dienst die je aanbiedt.",
+          "Stel je uurtarief, materiaalmarge en voorrijkosten eenmalig in. De rekentool past ze automatisch toe op elk product dat je aanbiedt.",
       },
       {
         titel: "Alleen serieuze aanvragen",
@@ -61,7 +61,7 @@ export const DOELGROEPEN: Doelgroep[] = [
       {
         titel: "Eigen tarieven, altijd correct",
         tekst:
-          "Stel je uurtarief, materiaalmarge en voorrijkosten eenmalig in. De rekentool past ze automatisch toe op elk product en elke dienst die je aanbiedt.",
+          "Stel je uurtarief, materiaalmarge en voorrijkosten eenmalig in. De rekentool past ze automatisch toe op elk product dat je aanbiedt.",
       },
       {
         titel: "Alleen serieuze aanvragen",
@@ -90,7 +90,7 @@ export const DOELGROEPEN: Doelgroep[] = [
       {
         titel: "Eigen tarieven, altijd correct",
         tekst:
-          "Stel je uurtarief, materiaalmarge en voorrijkosten eenmalig in. De rekentool past ze automatisch toe op elk product en elke dienst die je aanbiedt.",
+          "Stel je uurtarief, materiaalmarge en voorrijkosten eenmalig in. De rekentool past ze automatisch toe op elk product dat je aanbiedt.",
       },
       {
         titel: "Alleen serieuze aanvragen",
@@ -119,7 +119,7 @@ export const DOELGROEPEN: Doelgroep[] = [
       {
         titel: "Eigen tarieven, altijd correct",
         tekst:
-          "Stel je uurtarief, materiaalmarge en voorrijkosten eenmalig in. De rekentool past ze automatisch toe op elk product en elke dienst die je aanbiedt.",
+          "Stel je uurtarief, materiaalmarge en voorrijkosten eenmalig in. De rekentool past ze automatisch toe op elk product dat je aanbiedt.",
       },
       {
         titel: "Alleen serieuze aanvragen",

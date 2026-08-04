@@ -10,7 +10,6 @@ import { unitLabel } from "@/app/lib/units";
 import { ActiveToggle } from "@/app/components/dashboard/active-toggle";
 import { DeleteButton } from "@/app/components/dashboard/delete-button";
 import { NieuwItemButton } from "@/app/components/dashboard/nieuw-item-button";
-import { HelpTip } from "@/app/components/ui/help-tip";
 import { effectiveTier, GRATIS_CATALOGUS_LIMIET } from "@/app/lib/subscription";
 import {
   copyProductAction,
@@ -23,16 +22,12 @@ export const metadata: Metadata = { title: "Producten" };
 export default async function ProductenPage() {
   const { company } = await requireActiveCompany();
 
-  const [products, serviceCount] = await Promise.all([
-    prisma.product.findMany({
-      where: { companyId: company.id },
-      orderBy: { order: "asc" },
-      include: { _count: { select: { materiaalCategorieen: true, extraOpties: true } } },
-    }),
-    prisma.service.count({ where: { companyId: company.id } }),
-  ]);
-  const atLimit =
-    effectiveTier(company) === "GRATIS" && products.length + serviceCount >= GRATIS_CATALOGUS_LIMIET;
+  const products = await prisma.product.findMany({
+    where: { companyId: company.id },
+    orderBy: { order: "asc" },
+    include: { _count: { select: { materiaalCategorieen: true, extraOpties: true } } },
+  });
+  const atLimit = effectiveTier(company) === "GRATIS" && products.length >= GRATIS_CATALOGUS_LIMIET;
 
   return (
     <div className="flex flex-col gap-6">
@@ -40,7 +35,6 @@ export default async function ProductenPage() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold text-foreground">
             Producten
-            <HelpTip contentKey="producten.productVsDienst" />
           </h1>
           <p className="mt-1 text-muted-foreground">
             Samengestelde producten met materiaalkeuzes, bijv. een schutting met palen en

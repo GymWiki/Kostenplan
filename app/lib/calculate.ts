@@ -23,25 +23,6 @@ export type CalcCostSettings = {
 export type PrijsType = "VAST" | "BANDBREEDTE";
 export type BandbreedteModus = "GEEN" | "PER_PRODUCT" | "TOTAAL";
 
-// Een Dienst draait om arbeid: óf een uurtarief × geschatte uren, óf één
-// vaste projectprijs. De klant vinkt hem simpelweg aan/uit — geen
-// hoeveelheid, geen materiaalkosten, los van CostSettings.
-export type CalcService = {
-  id: string;
-  prijsType: "UURTARIEF" | "VASTE_PRIJS";
-  uurtarief: number;
-  geschatteUren: number;
-  vastePrijs: number;
-  // Bandbreedte (zie PrijsType): bij BANDBREEDTE wordt, afhankelijk van
-  // prijsType hierboven, geschatteUrenMin/Max of vastePrijsMin/Max gebruikt
-  // in plaats van het vaste geschatteUren/vastePrijs-veld.
-  bandbreedteType: PrijsType;
-  geschatteUrenMin: number | null;
-  geschatteUrenMax: number | null;
-  vastePrijsMin: number | null;
-  vastePrijsMax: number | null;
-};
-
 export type CalcMaterialOption = {
   id: string;
   naam: string;
@@ -260,18 +241,14 @@ export function berekenProductKosten({
 }
 
 export function calculateBreakdown({
-  services,
   products,
-  serviceSelected,
   productQty,
   productRegelsBedrag = {},
   materialSelections,
   extraSelections,
   costSettings,
 }: {
-  services: CalcService[];
   products: CalcProduct[];
-  serviceSelected: Record<string, boolean>;
   productQty: Record<string, number>;
   // Alleen voor sjabloon ARTIKELREGELS (zie sjablonen.ts): elke regel heeft
   // een eigen prijs, dus geen los qty × materiaalprijs — de klant-kant heeft
@@ -289,26 +266,6 @@ export function calculateBreakdown({
   let transportkosten = 0;
   let voorrijkosten = 0;
   let itemCount = 0;
-  let heeftDienstSelectie = false;
-
-  for (const service of services) {
-    if (!serviceSelected[service.id]) continue;
-    itemCount += 1;
-    heeftDienstSelectie = true;
-    if (costSettings.arbeidEnabled) {
-      arbeidskosten +=
-        service.prijsType === "VASTE_PRIJS"
-          ? service.vastePrijs
-          : service.uurtarief * service.geschatteUren;
-    }
-  }
-
-  // Diensten hebben geen eigen voorrij-instelling (dit rekenmodel raakt
-  // alleen Producten) — zelfde gedrag als vóór de vier kostenblokken: één
-  // vast bedrag zodra er minstens één dienst gekozen is.
-  if (costSettings.voorrijEnabled && heeftDienstSelectie) {
-    voorrijkosten += costSettings.voorrijTarief;
-  }
 
   for (const product of products) {
     const qty = productQty[product.id] ?? 0;
@@ -417,17 +374,6 @@ export function bedragTop(bedrag: Bedrag): number {
   return typeof bedrag === "number" ? bedrag : bedrag.max;
 }
 
-// Vaste/gemiddelde prijs van een dienst, ongeacht of hij een bandbreedte
-// heeft — voor plekken die één enkel getal nodig hebben (bijv. de
-// lead-snapshot). Zelfde herleiding als calculateBreakdownRange() gebruikt
-// voor modus "geen"/"totaal".
-export function serviceVastePrijs(service: CalcService): number {
-  const middenService = transformeerServiceVoorRichting(service, "MIDDEN");
-  return middenService.prijsType === "VASTE_PRIJS"
-    ? middenService.vastePrijs
-    : middenService.uurtarief * middenService.geschatteUren;
-}
-
 type Richting = "MIN" | "MAX" | "MIDDEN";
 
 function materiaalOptiePrijsVoor(option: CalcMaterialOption, richting: Richting): number {
@@ -452,39 +398,13 @@ function transformeerProductVoorRichting(product: CalcProduct, richting: Richtin
   };
 }
 
-function transformeerServiceVoorRichting(service: CalcService, richting: Richting): CalcService {
-  if (service.bandbreedteType !== "BANDBREEDTE") return service;
-
-  if (service.prijsType === "VASTE_PRIJS") {
-    if (service.vastePrijsMin == null || service.vastePrijsMax == null) return service;
-    const vastePrijs =
-      richting === "MIN"
-        ? service.vastePrijsMin
-        : richting === "MAX"
-          ? service.vastePrijsMax
-          : (service.vastePrijsMin + service.vastePrijsMax) / 2;
-    return { ...service, vastePrijs };
-  }
-
-  if (service.geschatteUrenMin == null || service.geschatteUrenMax == null) return service;
-  const geschatteUren =
-    richting === "MIN"
-      ? service.geschatteUrenMin
-      : richting === "MAX"
-        ? service.geschatteUrenMax
-        : (service.geschatteUrenMin + service.geschatteUrenMax) / 2;
-  return { ...service, geschatteUren };
-}
-
 // Bovenop calculateBreakdown() (die voor modus "geen" volledig ongewijzigd
 // blijft — zie hierboven): rekent de prijsbandbreedte door volgens de
 // gekozen modus. Bandbreedte-prijzen worden vóór het doorrekenen vertaald
-// naar het bestaande vaste-prijsveld (prijs/vastePrijs/geschatteUren), zodat
-// calculateBreakdown() zelf nooit hoeft te weten dat bandbreedtes bestaan.
+// naar het bestaande vaste-prijsveld (prijs), zodat calculateBreakdown()
+// zelf nooit hoeft te weten dat bandbreedtes bestaan.
 export function calculateBreakdownRange(args: {
-  services: CalcService[];
   products: CalcProduct[];
-  serviceSelected: Record<string, boolean>;
   productQty: Record<string, number>;
   productRegelsBedrag?: Record<string, number>;
   materialSelections: Record<string, string>;
@@ -497,12 +417,10 @@ export function calculateBreakdownRange(args: {
   if (modus === "PER_PRODUCT") {
     const minArgs = {
       ...args,
-      services: args.services.map((s) => transformeerServiceVoorRichting(s, "MIN")),
       products: args.products.map((p) => transformeerProductVoorRichting(p, "MIN")),
     };
     const maxArgs = {
       ...args,
-      services: args.services.map((s) => transformeerServiceVoorRichting(s, "MAX")),
       products: args.products.map((p) => transformeerProductVoorRichting(p, "MAX")),
     };
     const bMin = calculateBreakdown(minArgs);
@@ -525,7 +443,6 @@ export function calculateBreakdownRange(args: {
   // bandbreedte-items worden herleid tot hun gemiddelde van min/max.
   const middenArgs = {
     ...args,
-    services: args.services.map((s) => transformeerServiceVoorRichting(s, "MIDDEN")),
     products: args.products.map((p) => transformeerProductVoorRichting(p, "MIDDEN")),
   };
   const b = calculateBreakdown(middenArgs);

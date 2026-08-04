@@ -163,7 +163,7 @@ export default function Home() {
                 <SolutionPoint
                   icon={MousePointerClick}
                   title="Klant rekent het zelf uit"
-                  description="Bezoekers klikken op jouw link of website hun wensen aan (materialen en diensten) en zien direct een realistische prijsindicatie. Ze hoeven jou hiervoor niet te bellen."
+                  description="Bezoekers klikken op jouw link of website hun wensen aan (materialen en producten) en zien direct een realistische prijsindicatie. Ze hoeven jou hiervoor niet te bellen."
                   winst="Direct 4 uur administratiewerk per week besparen."
                 />
                 <SolutionPoint
@@ -312,7 +312,7 @@ export default function Home() {
                 Test het zelf. Binnen 5 minuten online.
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                Voeg je 10 populairste producten of diensten toe en deel je rekentool direct
+                Voeg je 10 populairste producten toe en deel je rekentool direct
                 met je klanten. Helemaal gratis.
               </p>
               <div className="relative mt-8 inline-flex">

@@ -34,9 +34,9 @@ export function bouwOnboardingStappen({
     },
     {
       key: "catalogus",
-      titel: "Voeg je eerste product of dienst toe",
+      titel: "Voeg je eerste product toe",
       beschrijving: "Zo kunnen klanten direct een prijsindicatie berekenen.",
-      href: "/dashboard/diensten",
+      href: "/dashboard/producten",
       extern: false,
       voltooid: heeftCatalogusItem,
     },

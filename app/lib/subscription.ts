@@ -46,9 +46,8 @@ export function jaarlijkseBesparing(plan: "PLUS" | "PRO") {
   return Math.round((1 - jaarlijks / maandelijksPerJaar) * 100);
 }
 
-// Catalogus = Diensten + Producten samen. Boven deze grens kan een
-// Gratis-tenant geen nieuwe items meer aanmaken (zie createProductAction /
-// createServiceAction).
+// Boven deze grens kan een Gratis-tenant geen nieuwe producten meer
+// aanmaken (zie createProductAction).
 export const GRATIS_CATALOGUS_LIMIET = 10;
 
 type TierUser = {

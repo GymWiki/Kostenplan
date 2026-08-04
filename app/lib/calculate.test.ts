@@ -7,10 +7,8 @@ import {
   calculateBreakdown,
   calculateBreakdownRange,
   geselecteerdeMateriaalOptieId,
-  serviceVastePrijs,
   type CalcCostSettings,
   type CalcProduct,
-  type CalcService,
 } from "./calculate";
 
 // arbeidAfronden staat hier bewust aan (i.p.v. de nieuwe standaard uit) zodat
@@ -34,22 +32,6 @@ const baseCostSettings: CalcCostSettings = {
   bandbreedteMargeOmlaag: 10,
   bandbreedteMargeOmhoog: 10,
 };
-
-function maakDienst(overrides: Partial<CalcService> = {}): CalcService {
-  return {
-    id: "dienst-1",
-    prijsType: "UURTARIEF",
-    uurtarief: 45,
-    geschatteUren: 4,
-    vastePrijs: 0,
-    bandbreedteType: "VAST",
-    geschatteUrenMin: null,
-    geschatteUrenMax: null,
-    vastePrijsMin: null,
-    vastePrijsMax: null,
-    ...overrides,
-  };
-}
 
 function maakProduct(overrides: Partial<CalcProduct> = {}): CalcProduct {
   return {
@@ -87,9 +69,7 @@ describe("calculateBreakdown (basispad)", () => {
   it("rekent arbeid, materiaal, transport en voorrijkosten correct op", () => {
     const product = maakProduct();
     const result = calculateBreakdown({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 12 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -130,9 +110,7 @@ describe("calculateBreakdown (basispad)", () => {
       ],
     });
     const result = calculateBreakdown({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 12 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -145,9 +123,7 @@ describe("calculateBreakdown (basispad)", () => {
 
   it("geeft 0 en heeftSelectie=false zonder selectie", () => {
     const result = calculateBreakdown({
-      services: [maakDienst()],
       products: [maakProduct()],
-      serviceSelected: {},
       productQty: {},
       materialSelections: {},
       extraSelections: {},
@@ -161,9 +137,7 @@ describe("calculateBreakdown (basispad)", () => {
   it("materiaalcategorie met precies één optie wordt automatisch geselecteerd", () => {
     const product = maakProduct();
     const result = calculateBreakdown({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 12 },
       materialSelections: {}, // geen expliciete keuze — er is maar 1 optie
       extraSelections: {},
@@ -187,9 +161,7 @@ describe("calculateBreakdown (basispad)", () => {
       ],
     });
     const result = calculateBreakdown({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 12 },
       materialSelections: {},
       extraSelections: {},
@@ -240,9 +212,7 @@ describe("calculateBreakdown (basispad)", () => {
       ],
     });
     const result = calculateBreakdown({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 20 },
       materialSelections: {},
       extraSelections: {},
@@ -278,9 +248,7 @@ describe("calculateBreakdown — productiviteit per materiaal", () => {
       ],
     });
     const result = calculateBreakdown({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 10 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -294,9 +262,7 @@ describe("calculateBreakdown — productiviteit per materiaal", () => {
   it("valt terug op de productiviteit van het product als het materiaal geen override heeft", () => {
     const product = maakProduct({ productiviteit: 10 });
     const result = calculateBreakdown({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 10 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -316,9 +282,7 @@ describe("calculateBreakdown — transport en voorrijkosten (meeschalend of vast
       voorrijkostenOverride: 15,
     });
     const result = calculateBreakdown({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 100 }, // grote hoeveelheid, mag niets uitmaken
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -338,9 +302,7 @@ describe("calculateBreakdown — transport en voorrijkosten (meeschalend of vast
       voorrijMeeschalend: true,
     });
     const result = calculateBreakdown({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 12 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -358,9 +320,7 @@ describe("calculateBreakdown — transport en voorrijkosten (meeschalend of vast
       voorrijkostenOverride: null,
     });
     const result = calculateBreakdown({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 12 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -371,28 +331,13 @@ describe("calculateBreakdown — transport en voorrijkosten (meeschalend of vast
     expect(result.voorrijkosten).toBe(35);
   });
 
-  it("rekent voorrijkosten één keer voor een dienst-alleen mandje, onafhankelijk van producten", () => {
-    const result = calculateBreakdown({
-      services: [maakDienst()],
-      products: [],
-      serviceSelected: { "dienst-1": true },
-      productQty: {},
-      materialSelections: {},
-      extraSelections: {},
-      costSettings: baseCostSettings,
-    });
-
-    expect(result.voorrijkosten).toBe(35);
-  });
 });
 
 describe("calculateBreakdown — arbeid afronden (aan/uit)", () => {
   it("rekent continu door als arbeidAfronden uitstaat (standaard)", () => {
     const product = maakProduct({ productiviteit: 10 });
     const result = calculateBreakdown({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 12 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -406,9 +351,7 @@ describe("calculateBreakdown — arbeid afronden (aan/uit)", () => {
   it("rondt naar boven af op hele stappen als arbeidAfronden aanstaat", () => {
     const product = maakProduct({ productiviteit: 10 });
     const result = calculateBreakdown({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 12 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -424,9 +367,7 @@ describe("calculateBreakdownRange — modus GEEN", () => {
   it("geeft exact dezelfde uitkomst als calculateBreakdown() zelf, als één vast bedrag", () => {
     const product = maakProduct();
     const args = {
-      services: [maakDienst()],
       products: [product],
-      serviceSelected: { "dienst-1": true },
       productQty: { "product-1": 12 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -466,9 +407,7 @@ describe("calculateBreakdownRange — modus GEEN", () => {
       ],
     });
     const range = calculateBreakdownRange({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 12 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -506,9 +445,7 @@ describe("calculateBreakdownRange — modus PER_PRODUCT", () => {
       ],
     });
     const range = calculateBreakdownRange({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 12 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -541,9 +478,7 @@ describe("calculateBreakdownRange — modus PER_PRODUCT", () => {
   it("toont één bedrag als geen enkele regel een bandbreedte heeft", () => {
     const product = maakProduct();
     const range = calculateBreakdownRange({
-      services: [maakDienst()],
       products: [product],
-      serviceSelected: { "dienst-1": true },
       productQty: { "product-1": 12 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -554,26 +489,6 @@ describe("calculateBreakdownRange — modus PER_PRODUCT", () => {
     expect(typeof range.subtotaal).toBe("number");
     expect(typeof range.arbeidskosten).toBe("number");
     expect(typeof range.materiaalkosten).toBe("number");
-  });
-
-  it("combineert een bandbreedte-dienst (uurtarief) met een vast product", () => {
-    const dienst = maakDienst({
-      bandbreedteType: "BANDBREEDTE",
-      geschatteUrenMin: 8,
-      geschatteUrenMax: 12,
-    });
-    const range = calculateBreakdownRange({
-      services: [dienst],
-      products: [],
-      serviceSelected: { "dienst-1": true },
-      productQty: {},
-      materialSelections: {},
-      extraSelections: {},
-      costSettings,
-    });
-
-    // uurtarief 45 * 8 = 360, 45*12=540
-    expect(range.arbeidskosten).toEqual({ min: 360, max: 540 });
   });
 });
 
@@ -587,9 +502,7 @@ describe("calculateBreakdownRange — modus TOTAAL", () => {
     };
     const product = maakProduct();
     const range = calculateBreakdownRange({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 12 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -615,9 +528,7 @@ describe("calculateBreakdownRange — modus TOTAAL", () => {
     };
     const product = maakProduct();
     const range = calculateBreakdownRange({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 12 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -651,9 +562,7 @@ describe("calculateBreakdownRange — modus TOTAAL", () => {
       ],
     });
     const range = calculateBreakdownRange({
-      services: [],
       products: [product],
-      serviceSelected: {},
       productQty: { "product-1": 12 },
       materialSelections: { "categorie-1": "materiaal-1" },
       extraSelections: {},
@@ -667,9 +576,7 @@ describe("calculateBreakdownRange — modus TOTAAL", () => {
   it("geeft geen marge-bandbreedte als er niets geselecteerd is", () => {
     const costSettings: CalcCostSettings = { ...baseCostSettings, bandbreedteModus: "TOTAAL" };
     const range = calculateBreakdownRange({
-      services: [],
       products: [maakProduct()],
-      serviceSelected: {},
       productQty: {},
       materialSelections: {},
       extraSelections: {},
@@ -703,9 +610,7 @@ describe("wederzijdse uitsluiting van de drie modi", () => {
     ],
   });
   const args = {
-    services: [],
     products: [product],
-    serviceSelected: {},
     productQty: { "product-1": 12 },
     materialSelections: { "categorie-1": "materiaal-1" },
     extraSelections: {},
@@ -743,26 +648,6 @@ describe("bedragTop", () => {
   });
   it("geeft de bovengrens terug van een bandbreedte", () => {
     expect(bedragTop({ min: 10, max: 20 })).toBe(20);
-  });
-});
-
-describe("serviceVastePrijs", () => {
-  it("geeft vastePrijs terug voor een VASTE_PRIJS-dienst zonder bandbreedte", () => {
-    const dienst = maakDienst({ prijsType: "VASTE_PRIJS", vastePrijs: 250 });
-    expect(serviceVastePrijs(dienst)).toBe(250);
-  });
-  it("geeft het gemiddelde terug voor een bandbreedte VASTE_PRIJS-dienst", () => {
-    const dienst = maakDienst({
-      prijsType: "VASTE_PRIJS",
-      bandbreedteType: "BANDBREEDTE",
-      vastePrijsMin: 200,
-      vastePrijsMax: 300,
-    });
-    expect(serviceVastePrijs(dienst)).toBe(250);
-  });
-  it("geeft uurtarief × geschatteUren terug voor een UURTARIEF-dienst", () => {
-    const dienst = maakDienst({ uurtarief: 45, geschatteUren: 4 });
-    expect(serviceVastePrijs(dienst)).toBe(180);
   });
 });
 
@@ -999,9 +884,7 @@ describe("migratie: gelijkblijvende uitkomst voor bestaande producten", () => {
   it("berekent hetzelfde totaal als de oude prijsPerEenheid-formule, voor een reeks hoeveelheden", () => {
     for (const qty of [1, 2.5, 12, 20, 100]) {
       const result = calculateBreakdown({
-        services: [],
         products: [gemigreerdProduct],
-        serviceSelected: {},
         productQty: { "product-1": qty },
         materialSelections: {}, // geen keuze nodig — categorie heeft precies 1 optie
         extraSelections: {},
@@ -1015,9 +898,7 @@ describe("migratie: gelijkblijvende uitkomst voor bestaande producten", () => {
 
   it("laat arbeids- en transportkosten van vóór de migratie ongewijzigd (niet op 0 gezet)", () => {
     const result = calculateBreakdown({
-      services: [],
       products: [gemigreerdProduct],
-      serviceSelected: {},
       productQty: { "product-1": 12 },
       materialSelections: {},
       extraSelections: {},

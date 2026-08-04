@@ -39,9 +39,9 @@ import {
 } from "lucide-react";
 
 // Curated, vakman-relevant subset of lucide-react icons the vakman can
-// pick from for a dienst or product. Keys are stored as-is in the database
-// (Service.icoon / Product.icoon), so don't rename existing keys — that
-// would silently "unset" the icon for anyone who already picked it.
+// pick from for a product. Keys are stored as-is in the database
+// (Product.icoon), so don't rename existing keys — that would silently
+// "unset" the icon for anyone who already picked it.
 export const PRODUCT_ICONS: Record<string, LucideIcon> = {
   TreePine,
   TreeDeciduous,

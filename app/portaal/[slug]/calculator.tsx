@@ -10,7 +10,6 @@ import {
   berekenProductKosten,
   calculateBreakdownRange,
   geselecteerdeMateriaalOptieId,
-  serviceVastePrijs,
   type Bedrag,
 } from "@/app/lib/calculate";
 import {
@@ -44,7 +43,6 @@ import type {
   MaterialCategory,
   MaterialOption,
   Product,
-  Service,
   SubscriptionTier,
 } from "@/app/generated/prisma/client";
 
@@ -60,7 +58,6 @@ type Props = {
   subscriptionTier: SubscriptionTier;
   branding: Branding | null;
   costSettings: CostSettings;
-  services: Service[];
   products: ProductWithDetails[];
 };
 
@@ -78,10 +75,8 @@ export function Calculator({
   subscriptionTier,
   branding,
   costSettings,
-  services,
   products,
 }: Props) {
-  const [serviceSelected, setServiceSelected] = useState<Record<string, boolean>>({});
   // Rechtstreeks door de klant bijgehouden hoeveelheid — alleen gebruikt voor
   // sjabloon ENKELE_HOEVEELHEID (de QuantityStepper). Voor de andere
   // sjablonen (Afmetingen/Ruimtes/Artikelregels) wordt de hoeveelheid
@@ -177,25 +172,14 @@ export function Calculator({
   const breakdown = useMemo(
     () =>
       calculateBreakdownRange({
-        services,
         products,
-        serviceSelected,
         productQty: effectiveProductQty,
         productRegelsBedrag,
         materialSelections,
         extraSelections,
         costSettings,
       }),
-    [
-      services,
-      products,
-      serviceSelected,
-      effectiveProductQty,
-      productRegelsBedrag,
-      materialSelections,
-      extraSelections,
-      costSettings,
-    ]
+    [products, effectiveProductQty, productRegelsBedrag, materialSelections, extraSelections, costSettings]
   );
 
   // Een verplichte materiaalcategorie zonder keuze houdt de prijsindicatie
@@ -216,18 +200,9 @@ export function Calculator({
   // Bevroren "wat had de klant aangevinkt" voor de leads-CRM (zie
   // app/lib/leads.ts) — meegestuurd bij "Offerte aanvragen" zodat de vakman
   // later precies kan zien waarop de prijsindicatie was gebaseerd, ook als de
-  // Diensten/Producten zelf intussen gewijzigd zijn.
+  // Producten zelf intussen gewijzigd zijn.
   const snapshot: LeadSnapshot = useMemo(() => {
     const regels: LeadSnapshotLine[] = [];
-
-    for (const service of services) {
-      if (!serviceSelected[service.id]) continue;
-      regels.push({
-        naam: service.naam,
-        type: "dienst",
-        prijs: serviceVastePrijs(service),
-      });
-    }
 
     for (const product of products) {
       const qty = effectiveProductQty[product.id] ?? 0;
@@ -265,18 +240,9 @@ export function Calculator({
       btw: bedragTop(breakdown.btw),
       totaal: bedragTop(breakdown.totaal),
     };
-  }, [
-    services,
-    products,
-    serviceSelected,
-    effectiveProductQty,
-    productRegelsBedrag,
-    materialSelections,
-    extraSelections,
-    breakdown,
-  ]);
+  }, [products, effectiveProductQty, productRegelsBedrag, materialSelections, extraSelections, breakdown]);
 
-  const isEmpty = services.length === 0 && products.length === 0;
+  const isEmpty = products.length === 0;
 
   return (
     <div
@@ -339,30 +305,9 @@ export function Calculator({
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {welkomstTekst ??
-                    "Vink diensten aan en geef bij producten de gewenste hoeveelheid op. Je ziet direct een schatting van de kosten hiernaast."}
+                    "Geef bij producten de gewenste hoeveelheid op. Je ziet direct een schatting van de kosten hiernaast."}
                 </p>
               </div>
-
-              {services.length > 0 && (
-                <section className="flex flex-col gap-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Diensten
-                  </h3>
-                  <div className="flex flex-col gap-3">
-                    {services.map((service) => (
-                      <ServiceRow
-                        key={service.id}
-                        service={service}
-                        costSettings={costSettings}
-                        selected={serviceSelected[service.id] ?? false}
-                        onToggle={(selected) =>
-                          setServiceSelected((prev) => ({ ...prev, [service.id]: selected }))
-                        }
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
 
               {products.length > 0 && (
                 <section className="flex flex-col gap-3">
@@ -465,68 +410,6 @@ function ContactBalk({
         )}
       </div>
     </div>
-  );
-}
-
-function ServiceRow({
-  service,
-  costSettings,
-  selected,
-  onToggle,
-}: {
-  service: Service;
-  costSettings: CostSettings;
-  selected: boolean;
-  onToggle: (selected: boolean) => void;
-}) {
-  const heeftBandbreedte = service.bandbreedteType === "BANDBREEDTE";
-  const prijs: Bedrag =
-    service.prijsType === "VASTE_PRIJS"
-      ? heeftBandbreedte && service.vastePrijsMin != null && service.vastePrijsMax != null
-        ? { min: service.vastePrijsMin, max: service.vastePrijsMax }
-        : service.vastePrijs
-      : heeftBandbreedte && service.geschatteUrenMin != null && service.geschatteUrenMax != null
-        ? {
-            min: service.uurtarief * service.geschatteUrenMin,
-            max: service.uurtarief * service.geschatteUrenMax,
-          }
-        : service.uurtarief * service.geschatteUren;
-  const prijsGetal = bedragTop(prijs);
-  const ServiceIcon = getProductIcon(service.icoon);
-
-  return (
-    <label
-      className={cn(
-        "flex cursor-pointer items-center gap-3 rounded-xl border p-5 shadow-sm transition-colors",
-        selected
-          ? "border-[var(--brand-primary)]/40 bg-[var(--brand-primary)]/10"
-          : "border-border bg-card hover:border-[var(--brand-primary)]/30"
-      )}
-    >
-      <input
-        type="checkbox"
-        className="h-5 w-5 shrink-0 rounded border-input accent-[var(--brand-primary)]"
-        checked={selected}
-        onChange={(e) => onToggle(e.target.checked)}
-      />
-      {ServiceIcon && (
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
-          {/* eslint-disable-next-line react-hooks/static-components -- stable lookup from a module-level icon map, not a new component */}
-          <ServiceIcon className="h-5 w-5" />
-        </span>
-      )}
-      <div className="min-w-0 flex-1">
-        <p className="font-medium text-foreground">{service.naam}</p>
-        {service.omschrijving && (
-          <p className="mt-0.5 text-sm text-muted-foreground">{service.omschrijving}</p>
-        )}
-      </div>
-      {costSettings.arbeidEnabled && prijsGetal > 0 && (
-        <span className="shrink-0 text-sm font-medium text-muted-foreground">
-          {formatCurrencyRange(prijs)}
-        </span>
-      )}
-    </label>
   );
 }
 
@@ -1127,7 +1010,7 @@ function Summary({
 
           {!breakdown.heeftSelectie ? (
             <p className="text-sm text-muted-foreground">
-              Selecteer diensten of producten om een schatting te zien.
+              Selecteer producten om een schatting te zien.
             </p>
           ) : state?.success ? (
             <p className="rounded-lg bg-[var(--brand-primary)]/10 px-3 py-3 text-sm text-foreground">
