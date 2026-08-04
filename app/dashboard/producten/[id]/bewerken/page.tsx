@@ -47,7 +47,6 @@ export default async function BewerkProductPage({
         action={updateProductAction.bind(null, product.id)}
         product={product}
         pricingSettings={pricingSettings}
-        verfijningTellingen={{ extraOpties: product.extraOpties.length }}
         materialenSectie={
           <MaterialCategoriesManager
             productId={product.id}

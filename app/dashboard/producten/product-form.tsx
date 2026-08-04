@@ -6,7 +6,6 @@ import { Button, LinkButton } from "@/app/components/ui/button";
 import { DecimalInput, Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { IconPicker } from "@/app/components/ui/icon-picker";
-import { CollapsibleSection } from "@/app/components/ui/collapsible";
 import { SjabloonPicker } from "./velden/sjabloon-picker";
 import { VeldenRenderer, VeldInputEnkel } from "./velden/veld-form";
 import { OverrideVeld, MateriaalkostenVeld, KostenUitsplitsing } from "./velden/kosten-blok";
@@ -56,16 +55,12 @@ export function ProductForm({
   action,
   product,
   pricingSettings,
-  verfijningTellingen,
   materialenSectie,
   extraOptiesSectie,
 }: {
   action: (state: ProductFormState, formData: FormData) => Promise<ProductFormState>;
   product?: ProductMetRelaties;
   pricingSettings: PricingSettings;
-  // Aantal toeslagen — voor de Verfijning-samenvattingsregel wanneer je 'm
-  // dichtgeklapt hebt.
-  verfijningTellingen?: { extraOpties: number };
   materialenSectie?: React.ReactNode;
   extraOptiesSectie?: React.ReactNode;
 }) {
@@ -110,8 +105,6 @@ export function ProductForm({
     String(product?.voorrijkostenOverride ?? pricingSettings.voorrijTarief)
   );
   const [voorrijMeeschalend, setVoorrijMeeschalend] = useState(product?.voorrijMeeschalend ?? false);
-
-  const [verfijningOpen, setVerfijningOpen] = useState(false);
 
   const instelVelden = instelVeldenVoorSjabloon(sjabloon);
   const sjabloonConfig = coerceVeldWaarden(instelVelden, sjabloonConfigRaw);
@@ -163,11 +156,6 @@ export function ProductForm({
       setEigenEenheid(false);
     }
   }
-
-  const verfijningSamenvatting =
-    (verfijningTellingen?.extraOpties ?? 0) > 0
-      ? `${verfijningTellingen!.extraOpties} ${verfijningTellingen!.extraOpties === 1 ? "toeslag" : "toeslagen"}`
-      : "Geen toeslagen";
 
   return (
     <div className="flex flex-col gap-8">
@@ -460,9 +448,9 @@ export function ProductForm({
         <div className="flex flex-col gap-4 rounded-md border border-border p-4">{materialenSectie}</div>
       )}
 
-      <CollapsibleSection title="Verfijning" summary={verfijningSamenvatting} open={verfijningOpen} onOpenChange={setVerfijningOpen}>
-        {extraOptiesSectie}
-      </CollapsibleSection>
+      {extraOptiesSectie && (
+        <div className="flex flex-col gap-4 rounded-md border border-border p-4">{extraOptiesSectie}</div>
+      )}
 
       <div className="sticky bottom-4 z-20 flex justify-end gap-2 sm:bottom-6">
         <LinkButton href="/dashboard/producten" variant="outline" className="shadow-lg">
