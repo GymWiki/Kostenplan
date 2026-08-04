@@ -27,6 +27,7 @@ export default async function BewerkProductPage({
           include: { materialen: { orderBy: { order: "asc" } } },
         },
         extraOpties: { orderBy: { order: "asc" } },
+        staffels: { orderBy: { order: "asc" } },
       },
     }),
     getProductPricingSettings(company.id),
@@ -51,6 +52,11 @@ export default async function BewerkProductPage({
         arbeidTariefPerProduct={pricingSettings.arbeidTariefPerProduct}
         materiaalMarge={pricingSettings.materiaalMarge}
         materiaalMargePerProduct={pricingSettings.materiaalMargePerProduct}
+        btwPercentage={pricingSettings.btwPercentage}
+        verfijningTellingen={{
+          extraOpties: product.extraOpties.length,
+          materiaalCategorieen: product.materiaalCategorieen.length,
+        }}
       >
         <MaterialCategoriesManager
           productId={product.id}

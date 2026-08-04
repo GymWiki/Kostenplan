@@ -24,6 +24,7 @@ export default async function NieuwProductPage() {
         arbeidTariefPerProduct={pricingSettings.arbeidTariefPerProduct}
         materiaalMarge={pricingSettings.materiaalMarge}
         materiaalMargePerProduct={pricingSettings.materiaalMargePerProduct}
+        btwPercentage={pricingSettings.btwPercentage}
       />
     </div>
   );

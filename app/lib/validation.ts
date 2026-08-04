@@ -165,17 +165,75 @@ export const serviceSchema = z
     { message: "Minimumprijs moet kleiner of gelijk zijn aan maximumprijs", path: ["vastePrijsMax"] }
   );
 
-export const productSchema = z.object({
-  naam: z.string().trim().min(1, "Vul een naam in").max(120),
-  omschrijving: z.string().trim().max(500).optional().or(z.literal("")),
-  eenheid: z.string().trim().min(1).max(20),
-  arbeidsCapaciteit: optionalPositiveNumber,
-  arbeidTariefOverride: optionalNonNegativeNumber,
-  materiaalMargeOverride: optionalNonNegativeNumber,
-  transportkosten: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
-  icoon: optionalIconName,
-  actief: z.boolean(),
+export const PRODUCT_SJABLONEN = ["ENKELE_HOEVEELHEID", "AFMETINGEN", "RUIMTES", "ARTIKELREGELS"] as const;
+
+// sjabloonConfig komt als JSON-string binnen (net als leadSnapshotSchema en
+// offerteUpdateSchema hieronder) — client-side samengesteld door
+// coerceVeldWaarden() (app/lib/sjablonen.ts), dus al naar de juiste
+// getal/boolean-types omgezet. De server ziet hier alleen toe op de VORM
+// (een object/array), niet op de sjabloon-specifieke inhoud — die interpreteert
+// alleen SJABLOON_REGISTRY, en die is puur code, niet user-authored.
+function parseJsonPreprocess(val: unknown, fallback: unknown) {
+  if (typeof val !== "string" || val.trim() === "") return fallback;
+  try {
+    return JSON.parse(val);
+  } catch {
+    return fallback;
+  }
+}
+
+const productStaffelSchema = z.object({
+  vanaf: z.preprocess(
+    normalizeDecimalInput,
+    z.coerce.number("Vul een geldige grens in").positive("Vanaf moet groter dan 0 zijn")
+  ),
+  prijsPerEenheid: z.preprocess(
+    normalizeDecimalInput,
+    z.coerce.number("Vul een geldige prijs in").min(0, "Prijs kan niet negatief zijn")
+  ),
 });
+
+export const productSchema = z
+  .object({
+    naam: z.string().trim().min(1, "Vul een naam in").max(120),
+    omschrijving: z.string().trim().max(500).optional().or(z.literal("")),
+    eenheid: z.string().trim().min(1).max(20),
+    sjabloon: z.enum(PRODUCT_SJABLONEN, "Kies een sjabloon"),
+    sjabloonConfig: z.preprocess(
+      (val) => parseJsonPreprocess(val, {}),
+      z.record(z.string(), z.unknown())
+    ),
+    prijsPerEenheid: optionalNonNegativeNumber,
+    prijsPerEenheidType: z.enum(["VAST", "BANDBREEDTE"], "Kies vast of bandbreedte"),
+    prijsPerEenheidMin: optionalNonNegativeNumber,
+    prijsPerEenheidMax: optionalNonNegativeNumber,
+    minimumprijs: optionalNonNegativeNumber,
+    staffels: z.preprocess((val) => parseJsonPreprocess(val, []), z.array(productStaffelSchema)),
+    arbeidsCapaciteit: optionalPositiveNumber,
+    arbeidTariefOverride: optionalNonNegativeNumber,
+    materiaalMargeOverride: optionalNonNegativeNumber,
+    transportkosten: z.preprocess(normalizeDecimalInput, z.coerce.number().min(0)),
+    icoon: optionalIconName,
+    actief: z.boolean(),
+  })
+  .refine(
+    (data) =>
+      data.prijsPerEenheidType !== "BANDBREEDTE" ||
+      (data.prijsPerEenheidMin != null &&
+        data.prijsPerEenheidMax != null &&
+        data.prijsPerEenheidMin <= data.prijsPerEenheidMax),
+    { message: "Minimumprijs moet kleiner of gelijk zijn aan maximumprijs", path: ["prijsPerEenheidMax"] }
+  )
+  // Eenheid ligt vast zodra het sjabloon zelf een eenheid oplegt (m²/m³) —
+  // zie design-beslissing 4 en vasteEenheidVoorSjabloon() in sjablonen.ts.
+  .refine(
+    (data) => data.sjabloon !== "AFMETINGEN" || data.eenheid === "m2" || data.eenheid === "m3",
+    { message: "Afmetingen rekent altijd in m² of m³", path: ["eenheid"] }
+  )
+  .refine((data) => data.sjabloon !== "RUIMTES" || data.eenheid === "m2", {
+    message: "Ruimtes rekent altijd in m²",
+    path: ["eenheid"],
+  });
 
 export const materialCategorySchema = z.object({
   naam: z.string().trim().min(1, "Vul een naam in").max(60),

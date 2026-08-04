@@ -6,6 +6,7 @@ import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { productSchema } from "@/app/lib/validation";
 import { effectiveTier, GRATIS_CATALOGUS_LIMIET } from "@/app/lib/subscription";
+import type { Prisma } from "@/app/generated/prisma/client";
 
 export type ProductFormState = {
   error?: string;
@@ -17,6 +18,14 @@ function parseProductForm(formData: FormData) {
     naam: formData.get("naam"),
     omschrijving: formData.get("omschrijving") ?? "",
     eenheid: formData.get("eenheid"),
+    sjabloon: formData.get("sjabloon") ?? "ENKELE_HOEVEELHEID",
+    sjabloonConfig: formData.get("sjabloonConfig") ?? "{}",
+    prijsPerEenheid: formData.get("prijsPerEenheid"),
+    prijsPerEenheidType: formData.get("prijsPerEenheidType") ?? "VAST",
+    prijsPerEenheidMin: formData.get("prijsPerEenheidMin"),
+    prijsPerEenheidMax: formData.get("prijsPerEenheidMax"),
+    minimumprijs: formData.get("minimumprijs"),
+    staffels: formData.get("staffels") ?? "[]",
     arbeidsCapaciteit: formData.get("arbeidsCapaciteit"),
     arbeidTariefOverride: formData.get("arbeidTariefOverride"),
     materiaalMargeOverride: formData.get("materiaalMargeOverride"),
@@ -59,11 +68,14 @@ export async function createProductAction(
 
   const count = productCount ?? (await prisma.product.count({ where: { companyId: company.id } }));
 
+  const { staffels, ...productData } = parsed.data;
   const product = await prisma.product.create({
     data: {
-      ...parsed.data,
+      ...productData,
+      sjabloonConfig: productData.sjabloonConfig as Prisma.InputJsonValue,
       companyId: company.id,
       order: count,
+      staffels: { create: staffels.map((s, order) => ({ ...s, order })) },
     },
   });
 
@@ -87,9 +99,27 @@ export async function updateProductAction(
     return { fieldErrors };
   }
 
-  await prisma.product.updateMany({
+  const existing = await prisma.product.findFirst({
     where: { id: productId, companyId: company.id },
-    data: parsed.data,
+    select: { id: true },
+  });
+  if (!existing) {
+    revalidatePath("/dashboard/producten");
+    redirect("/dashboard/producten");
+  }
+
+  const { staffels, ...productData } = parsed.data;
+  // Nested relaties kunnen niet via updateMany (die ondersteunt geen
+  // relatie-writes) — vandaar update() op het al geverifieerde id. Staffels
+  // volledig vervangen (deleteMany + create) is simpeler en robuuster dan
+  // los diffen, en dit is een kleine, zelden gewijzigde lijst.
+  await prisma.product.update({
+    where: { id: productId },
+    data: {
+      ...productData,
+      sjabloonConfig: productData.sjabloonConfig as Prisma.InputJsonValue,
+      staffels: { deleteMany: {}, create: staffels.map((s, order) => ({ ...s, order })) },
+    },
   });
 
   revalidatePath("/dashboard/producten");

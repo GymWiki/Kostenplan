@@ -117,6 +117,7 @@ export async function getProductPricingSettings(companyId: string) {
       arbeidTariefPerProduct: true,
       materiaalMarge: true,
       materiaalMargePerProduct: true,
+      btwPercentage: true,
     },
   });
   return (
@@ -126,6 +127,7 @@ export async function getProductPricingSettings(companyId: string) {
       arbeidTariefPerProduct: false,
       materiaalMarge: 0,
       materiaalMargePerProduct: false,
+      btwPercentage: 21,
     }
   );
 }

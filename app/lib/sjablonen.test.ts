@@ -3,10 +3,19 @@ import {
   SJABLOON_REGISTRY,
   SJABLOON_OPTIES,
   hoeveelheidUitResultaat,
+  instelVeldenVoorSjabloon,
+  standaardConfigVoorSjabloon,
+  klantVeldenVoorSjabloon,
+  standaardKlantInvoerVoorSjabloon,
+  berekenHoeveelheidVoorSjabloon,
+  vasteEenheidVoorSjabloon,
+  parseGetal,
+  coerceVeldWaarden,
   type AfmetingenConfig,
   type AfmetingenInvoer,
   type ArtikelregelsConfig,
   type ArtikelregelsInvoer,
+  type RegelgroepVeld,
   type RuimtesConfig,
   type RuimtesInvoer,
 } from "./sjablonen";
@@ -210,3 +219,90 @@ describe("ARTIKELREGELS", () => {
     expect(veld.zichtbaarAls("aantal", { artikelTypeId: "kastje" })).toBe(true);
   });
 });
+
+describe("generieke sjabloon-accessors", () => {
+  it("geven voor elk sjabloon dezelfde uitkomst als de registry direct", () => {
+    for (const id of Object.keys(SJABLOON_REGISTRY) as (keyof typeof SJABLOON_REGISTRY)[]) {
+      const sjabloon = SJABLOON_REGISTRY[id];
+      expect(instelVeldenVoorSjabloon(id)).toEqual(sjabloon.instelVelden);
+      expect(standaardConfigVoorSjabloon(id)).toEqual(sjabloon.standaardConfig);
+
+      const config = standaardConfigVoorSjabloon(id);
+      // .toEqual (niet direct) omdat ARTIKELREGELS' klantVelden een eigen
+      // zichtbaarAls-closure per aanroep teruggeeft — vergelijk daarom alleen
+      // de key/soort-vorm, niet functiereferenties.
+      const viaWrapper = klantVeldenVoorSjabloon(id, config).map(({ key, soort }) => ({ key, soort }));
+      const direct = sjabloon.klantVelden(config as never).map(({ key, soort }) => ({ key, soort }));
+      expect(viaWrapper).toEqual(direct);
+      expect(standaardKlantInvoerVoorSjabloon(id, config)).toEqual(
+        sjabloon.standaardKlantInvoer(config as never)
+      );
+      expect(vasteEenheidVoorSjabloon(id, config)).toEqual(sjabloon.vasteEenheid?.(config as never));
+
+      const invoer = standaardKlantInvoerVoorSjabloon(id, config);
+      expect(berekenHoeveelheidVoorSjabloon(id, config, invoer)).toEqual(
+        sjabloon.berekenHoeveelheid(config as never, invoer as never)
+      );
+    }
+  });
+});
+
+describe("parseGetal", () => {
+  it("accepteert getallen, komma- en puntnotatie, en valt terug op de standaardwaarde", () => {
+    expect(parseGetal(12)).toBe(12);
+    expect(parseGetal("12")).toBe(12);
+    expect(parseGetal("1,5")).toBe(1.5);
+    expect(parseGetal("1.5")).toBe(1.5);
+    expect(parseGetal("")).toBe(0);
+    expect(parseGetal("abc", 7)).toBe(7);
+    expect(parseGetal(undefined, 3)).toBe(3);
+  });
+});
+
+describe("coerceVeldWaarden", () => {
+  it("zet ruwe stringwaarden om naar getal/boolean volgens de veldsoort", () => {
+    const velden = afmetingenInstelVelden();
+    const resultaat = coerceVeldWaarden(velden, { metDiepte: "true" });
+    expect(resultaat).toEqual({ metDiepte: true });
+  });
+
+  it("werkt recursief door een regelgroep heen", () => {
+    const veld: RegelgroepVeld = {
+      key: "regels",
+      soort: "regelgroep",
+      label: "Regels",
+      toevoegLabel: "Toevoegen",
+      kolommen: [
+        { key: "naam", soort: "tekst", label: "Naam" },
+        { key: "aantal", soort: "getal", label: "Aantal" },
+      ],
+    };
+    const resultaat = coerceVeldWaarden([veld], {
+      regels: [
+        { naam: "Kozijn", aantal: "2,5" },
+        { naam: "Deur", aantal: "" },
+      ],
+    });
+    expect(resultaat).toEqual({
+      regels: [
+        { naam: "Kozijn", aantal: 2.5 },
+        { naam: "Deur", aantal: 0 },
+      ],
+    });
+  });
+
+  it("valt terug op een lege array als de regelgroep-waarde geen array is", () => {
+    const veld: RegelgroepVeld = {
+      key: "regels",
+      soort: "regelgroep",
+      label: "Regels",
+      toevoegLabel: "Toevoegen",
+      kolommen: [{ key: "naam", soort: "tekst", label: "Naam" }],
+    };
+    expect(coerceVeldWaarden([veld], {})).toEqual({ regels: [] });
+  });
+});
+
+function afmetingenInstelVelden() {
+  return SJABLOON_REGISTRY.AFMETINGEN.instelVelden;
+}

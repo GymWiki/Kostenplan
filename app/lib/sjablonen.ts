@@ -91,7 +91,9 @@ const enkeleHoeveelheid = {
   // te weten of de functie de config gebruikt.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   klantVelden: (config: EnkeleHoeveelheidConfig): SjabloonVeld[] => [],
-  standaardKlantInvoer: (): EnkeleHoeveelheidInvoer => ({ hoeveelheid: 1 }),
+  // Demo-waarde voor het live voorbeeld — geen 0/leeg, anders toont het
+  // voorbeeld meteen "€ 0" i.p.v. iets waar de vakman iets aan heeft.
+  standaardKlantInvoer: (): EnkeleHoeveelheidInvoer => ({ hoeveelheid: 20 }),
   berekenHoeveelheid: (
     _config: EnkeleHoeveelheidConfig,
     invoer: EnkeleHoeveelheidInvoer
@@ -121,7 +123,9 @@ const afmetingen = {
       ? ([{ key: "diepte", soort: "getal", label: "Diepte", eenheid: "meter", min: 0 }] as SjabloonVeld[])
       : []),
   ],
-  standaardKlantInvoer: (): AfmetingenInvoer => ({ lengte: 0, breedte: 0, diepte: 0 }),
+  // Demo-waarden voor het live voorbeeld — matcht het voorbeeld uit de
+  // opdracht ("Een terras van 12 × 4 meter komt uit op € 3.840").
+  standaardKlantInvoer: (): AfmetingenInvoer => ({ lengte: 12, breedte: 4, diepte: 0.1 }),
   berekenHoeveelheid: (config: AfmetingenConfig, invoer: AfmetingenInvoer): SjabloonResultaat => {
     const m2 = Math.max(0, invoer.lengte) * Math.max(0, invoer.breedte);
     const waarde = config.metDiepte ? m2 * Math.max(0, invoer.diepte) : m2;
@@ -200,8 +204,10 @@ const ruimtes = {
       ],
     },
   ],
+  // Demo-ruimte voor het live voorbeeld — een gemiddelde woonkamer, zodat de
+  // uitkomst meteen iets zegt in plaats van "€ 0".
   standaardKlantInvoer: (config: RuimtesConfig): RuimtesInvoer => ({
-    ruimtes: [{ naam: "", lengte: 0, breedte: 0, hoogte: 0, aftrek: config.standaardAftrek }],
+    ruimtes: [{ naam: "Woonkamer", lengte: 5, breedte: 4, hoogte: 2.5, aftrek: config.standaardAftrek }],
   }),
   berekenHoeveelheid: (config: RuimtesConfig, invoer: RuimtesInvoer): SjabloonResultaat => ({
     soort: "hoeveelheid",
@@ -283,8 +289,10 @@ const artikelregels = {
       ],
     },
   ],
+  // Demo-regel voor het live voorbeeld — breedte/hoogte 1×1 zodat een
+  // m²-artikeltype ook meteen een niet-nul uitkomst laat zien.
   standaardKlantInvoer: (config: ArtikelregelsConfig): ArtikelregelsInvoer => ({
-    regels: [{ artikelTypeId: config.artikelTypes[0]?.id ?? "", breedte: 0, hoogte: 0, aantal: 1 }],
+    regels: [{ artikelTypeId: config.artikelTypes[0]?.id ?? "", breedte: 1, hoogte: 1, aantal: 1 }],
   }),
   berekenHoeveelheid: (config: ArtikelregelsConfig, invoer: ArtikelregelsInvoer): SjabloonResultaat => {
     const regels: SjabloonRegelResultaat[] = [];
@@ -320,3 +328,85 @@ export const SJABLOON_REGISTRY = {
 export const SJABLOON_OPTIES: { id: ProductSjabloon; label: string; voorbeeldenTekst: string }[] = (
   Object.values(SJABLOON_REGISTRY) as { id: ProductSjabloon; label: string; voorbeeldenTekst: string }[]
 ).map(({ id, label, voorbeeldenTekst }) => ({ id, label, voorbeeldenTekst }));
+
+// ---------------------------------------------------------------------------
+// Generieke toegang tot een sjabloon via zijn ProductSjabloon-id (i.p.v. de
+// SJABLOON_REGISTRY-property direct, wat op call-sites die met een variabele
+// werken tot een onbruikbare unie van functiesignaturen leidt). Elke config/
+// invoer komt hier binnen als `unknown` en wordt intern naar het juiste type
+// gecast — dat is de enige plek in de codebase waar dat mag.
+// ---------------------------------------------------------------------------
+
+export function instelVeldenVoorSjabloon(sjabloon: ProductSjabloon): SjabloonVeld[] {
+  return SJABLOON_REGISTRY[sjabloon].instelVelden;
+}
+
+export function standaardConfigVoorSjabloon(sjabloon: ProductSjabloon): Record<string, unknown> {
+  return SJABLOON_REGISTRY[sjabloon].standaardConfig;
+}
+
+export function klantVeldenVoorSjabloon(sjabloon: ProductSjabloon, config: unknown): SjabloonVeld[] {
+  return (SJABLOON_REGISTRY[sjabloon].klantVelden as (config: unknown) => SjabloonVeld[])(config);
+}
+
+export function standaardKlantInvoerVoorSjabloon(
+  sjabloon: ProductSjabloon,
+  config: unknown
+): Record<string, unknown> {
+  return (
+    SJABLOON_REGISTRY[sjabloon].standaardKlantInvoer as (config: unknown) => Record<string, unknown>
+  )(config);
+}
+
+export function berekenHoeveelheidVoorSjabloon(
+  sjabloon: ProductSjabloon,
+  config: unknown,
+  invoer: unknown
+): SjabloonResultaat {
+  return (
+    SJABLOON_REGISTRY[sjabloon].berekenHoeveelheid as (config: unknown, invoer: unknown) => SjabloonResultaat
+  )(config, invoer);
+}
+
+export function vasteEenheidVoorSjabloon(sjabloon: ProductSjabloon, config: unknown): string | undefined {
+  const fn = SJABLOON_REGISTRY[sjabloon].vasteEenheid as ((config: unknown) => string) | undefined;
+  return fn?.(config);
+}
+
+// ---------------------------------------------------------------------------
+// Coercie van ruwe formulierwaarden (strings uit DecimalInput/Select, of een
+// uit JSON geparste config) naar de types die SjabloonVeld beschrijft. Nodig
+// omdat de UI getal-velden bewust als string bijhoudt terwijl de gebruiker
+// typt (zie veld-form.tsx) — pas vlak vóór berekenen/opslaan wordt dat een
+// echt getal/boolean. Werkt ook recursief door een regelgroep heen.
+// ---------------------------------------------------------------------------
+
+export function parseGetal(ruw: unknown, standaard = 0): number {
+  if (typeof ruw === "number") return Number.isFinite(ruw) ? ruw : standaard;
+  if (typeof ruw !== "string") return standaard;
+  const genormaliseerd = ruw.trim().replace(",", ".");
+  if (genormaliseerd === "") return standaard;
+  const getal = Number(genormaliseerd);
+  return Number.isFinite(getal) ? getal : standaard;
+}
+
+export function coerceVeldWaarden(
+  velden: SjabloonVeld[],
+  waarden: Record<string, unknown>
+): Record<string, unknown> {
+  const resultaat: Record<string, unknown> = { ...waarden };
+  for (const veld of velden) {
+    const ruw = waarden[veld.key];
+    if (veld.soort === "getal") {
+      resultaat[veld.key] = parseGetal(ruw, veld.standaardWaarde ?? 0);
+    } else if (veld.soort === "janee") {
+      resultaat[veld.key] = ruw === true || ruw === "true";
+    } else if (veld.soort === "tekst" || veld.soort === "keuze") {
+      resultaat[veld.key] = typeof ruw === "string" ? ruw : ruw == null ? "" : String(ruw);
+    } else if (veld.soort === "regelgroep") {
+      const regels = Array.isArray(ruw) ? (ruw as Record<string, unknown>[]) : [];
+      resultaat[veld.key] = regels.map((regel) => coerceVeldWaarden(veld.kolommen, regel));
+    }
+  }
+  return resultaat;
+}
