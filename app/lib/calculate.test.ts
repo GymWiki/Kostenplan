@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   bedragTop,
+  berekenGestaffeldBedrag,
   calculateBreakdown,
   calculateBreakdownRange,
   serviceVastePrijs,
   type CalcCostSettings,
   type CalcProduct,
+  type CalcProductStaffel,
   type CalcService,
 } from "./calculate";
 
@@ -65,6 +67,12 @@ function maakProduct(overrides: Partial<CalcProduct> = {}): CalcProduct {
       },
     ],
     extraOpties: [],
+    prijsPerEenheid: null,
+    prijsPerEenheidType: "VAST",
+    prijsPerEenheidMin: null,
+    prijsPerEenheidMax: null,
+    minimumprijs: null,
+    staffels: [],
     ...overrides,
   };
 }
@@ -473,5 +481,204 @@ describe("serviceVastePrijs", () => {
   it("geeft uurtarief × geschatteUren terug voor een UURTARIEF-dienst", () => {
     const dienst = maakDienst({ uurtarief: 45, geschatteUren: 4 });
     expect(serviceVastePrijs(dienst)).toBe(180);
+  });
+});
+
+describe("berekenGestaffeldBedrag", () => {
+  const staffels: CalcProductStaffel[] = [
+    { vanaf: 10, prijsPerEenheid: 45 },
+    { vanaf: 50, prijsPerEenheid: 40 },
+  ];
+
+  it("gebruikt alleen de basisprijs als de hoeveelheid onder de eerste staffel blijft", () => {
+    expect(berekenGestaffeldBedrag(8, 50, staffels)).toBe(400); // 8 * 50
+  });
+
+  it("rekent cumulatief door de schijven heen, zoals belastingschijven", () => {
+    // 0-10 (10) * 50 = 500, 10-50 (40) * 45 = 1800, 50-70 (20) * 40 = 800
+    expect(berekenGestaffeldBedrag(70, 50, staffels)).toBe(3100);
+  });
+
+  it("werkt met staffels die niet al gesorteerd zijn aangeleverd", () => {
+    const ongesorteerd: CalcProductStaffel[] = [
+      { vanaf: 50, prijsPerEenheid: 40 },
+      { vanaf: 10, prijsPerEenheid: 45 },
+    ];
+    expect(berekenGestaffeldBedrag(70, 50, ongesorteerd)).toBe(3100);
+  });
+
+  it("geeft 0 terug voor een hoeveelheid van 0 of minder", () => {
+    expect(berekenGestaffeldBedrag(0, 50, staffels)).toBe(0);
+    expect(berekenGestaffeldBedrag(-5, 50, staffels)).toBe(0);
+  });
+
+  it("werkt zonder staffels als platte hoeveelheid × basisprijs", () => {
+    expect(berekenGestaffeldBedrag(12, 50, [])).toBe(600);
+  });
+});
+
+describe("calculateBreakdown — prijsPerEenheid (sjablonen fase 1)", () => {
+  it("telt hoeveelheid × prijsPerEenheid op bij materiaalkosten, naast materiaalCategorieen", () => {
+    const product = maakProduct({
+      arbeidsCapaciteit: null,
+      materiaalCategorieen: [],
+      prijsPerEenheid: 48,
+    });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 20 },
+      materialSelections: {},
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(result.arbeidskosten).toBe(0);
+    expect(result.materiaalkosten).toBe(960); // 20 * 48
+  });
+
+  it("past materiaalMarge ook toe op de prijsPerEenheid-bijdrage", () => {
+    const product = maakProduct({
+      arbeidsCapaciteit: null,
+      materiaalCategorieen: [],
+      prijsPerEenheid: 48,
+    });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 20 },
+      materialSelections: {},
+      extraSelections: {},
+      costSettings: { ...baseCostSettings, materiaalMarge: 10 },
+    });
+
+    expect(result.materiaalkosten).toBeCloseTo(960 * 1.1, 6);
+  });
+
+  it("gebruikt de gestaffelde prijs zodra het product staffels heeft", () => {
+    const product = maakProduct({
+      arbeidsCapaciteit: null,
+      materiaalCategorieen: [],
+      prijsPerEenheid: 50,
+      staffels: [
+        { vanaf: 10, prijsPerEenheid: 45 },
+        { vanaf: 50, prijsPerEenheid: 40 },
+      ],
+    });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 70 },
+      materialSelections: {},
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(result.materiaalkosten).toBe(3100);
+  });
+
+  it("licht de prijsPerEenheid-bijdrage op tot minimumprijs, indien lager", () => {
+    const product = maakProduct({
+      arbeidsCapaciteit: null,
+      materiaalCategorieen: [],
+      prijsPerEenheid: 48,
+      minimumprijs: 500,
+    });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 2 }, // 2 * 48 = 96, onder de minimumprijs
+      materialSelections: {},
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(result.materiaalkosten).toBe(500);
+  });
+
+  it("raakt minimumprijs niet aan als de berekende prijs er al boven zit", () => {
+    const product = maakProduct({
+      arbeidsCapaciteit: null,
+      materiaalCategorieen: [],
+      prijsPerEenheid: 48,
+      minimumprijs: 100,
+    });
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 20 }, // 20 * 48 = 960
+      materialSelections: {},
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(result.materiaalkosten).toBe(960);
+  });
+
+  it("bestaande producten (prijsPerEenheid null) blijven ongewijzigd — geen extra bijdrage", () => {
+    const product = maakProduct(); // prijsPerEenheid: null via de default
+    const result = calculateBreakdown({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 12 },
+      materialSelections: { "categorie-1": "materiaal-1" },
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    // Zelfde uitkomst als de allereerste test in dit bestand.
+    expect(result.materiaalkosten).toBe(240);
+  });
+});
+
+describe("calculateBreakdownRange — bandbreedte op prijsPerEenheid", () => {
+  it("rekent een BANDBREEDTE-prijsPerEenheid door als min/max-paar (modus PER_PRODUCT)", () => {
+    const product = maakProduct({
+      arbeidsCapaciteit: null,
+      materiaalCategorieen: [],
+      prijsPerEenheid: 0,
+      prijsPerEenheidType: "BANDBREEDTE",
+      prijsPerEenheidMin: 40,
+      prijsPerEenheidMax: 60,
+    });
+    const range = calculateBreakdownRange({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 10 },
+      materialSelections: {},
+      extraSelections: {},
+      costSettings: { ...baseCostSettings, bandbreedteModus: "PER_PRODUCT" },
+    });
+
+    expect(range.materiaalkosten).toEqual({ min: 400, max: 600 });
+  });
+
+  it("herleidt een BANDBREEDTE-prijsPerEenheid tot het gemiddelde (modus GEEN)", () => {
+    const product = maakProduct({
+      arbeidsCapaciteit: null,
+      materiaalCategorieen: [],
+      prijsPerEenheid: 0,
+      prijsPerEenheidType: "BANDBREEDTE",
+      prijsPerEenheidMin: 40,
+      prijsPerEenheidMax: 60,
+    });
+    const range = calculateBreakdownRange({
+      services: [],
+      products: [product],
+      serviceSelected: {},
+      productQty: { "product-1": 10 },
+      materialSelections: {},
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    expect(range.materiaalkosten).toBe(500); // 10 * ((40+60)/2)
   });
 });

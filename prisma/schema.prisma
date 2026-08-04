@@ -37,6 +37,27 @@ enum PrijsType {
   BANDBREEDTE
 }
 
+// Bepaalt hoe de klant bij een product tot een hoeveelheid komt — zie
+// app/lib/sjablonen.ts voor de bijbehorende velden/berekening per sjabloon.
+// Alles ná de hoeveelheid (arbeid, materiaalcategorieën, prijsPerEenheid,
+// transport) is gedeeld en ongewijzigd, ongeacht het sjabloon.
+enum ProductSjabloon {
+  // Huidig/enige gedrag vóór sjablonen: klant vult direct de hoeveelheid in
+  // de eenheid van het product in. Blijft het default-sjabloon zodat
+  // bestaande producten ongewijzigd functioneren.
+  ENKELE_HOEVEELHEID
+  // Klant vult lengte × breedte (m²) of lengte × breedte × diepte (m³) in.
+  AFMETINGEN
+  // Klant voegt ruimtes toe (naam + l×b×h); vloer-/plafond-/wandoppervlak
+  // worden afgeleid en (voor zover de vakman dat bij het product aanvinkt)
+  // samengeteld tot één m²-hoeveelheid.
+  RUIMTES
+  // Klant stelt een lijst regels samen (artikeltype + afmetingen/aantal).
+  // Elk artikeltype heeft een eigen prijs — wijkt daarmee af van het
+  // hoeveelheid-×-prijsPerEenheid-patroon, zie app/lib/sjablonen.ts.
+  ARTIKELREGELS
+}
+
 // Per-berekening instelling (zie CostSettings.bandbreedteModus) die bepaalt
 // hoe bandbreedte-prijzen worden doorgerekend. De standen sluiten elkaar uit
 // — zie app/lib/calculate.ts calculateBreakdownRange() voor de doorrekening.
@@ -423,13 +444,59 @@ model Product {
   actief                 Boolean @default(true)
   order                  Int     @default(0)
 
+  // Bepaalt hoe de klant tot een hoeveelheid komt — zie ProductSjabloon.
+  // Default ENKELE_HOEVEELHEID zodat bestaande producten (en de migratie
+  // die deze kolom toevoegt) ongewijzigd blijven werken.
+  sjabloon       ProductSjabloon @default(ENKELE_HOEVEELHEID)
+  // Sjabloon-specifieke instellingen van de vakman (bijv. AFMETINGEN:
+  // { metDiepte }, RUIMTES: { telVloerMee, telPlafondMee, telWandMee,
+  // standaardAftrek }, ARTIKELREGELS: { artikelTypes: [...] }). Leeg voor
+  // ENKELE_HOEVEELHEID. Vorm gedefinieerd in app/lib/sjablonen.ts, niet
+  // hier — hier alleen opslag.
+  sjabloonConfig Json?
+
+  // De simpele basisprijs uit de wizard: hoeveelheid × prijsPerEenheid,
+  // los van (en naast) de geavanceerde materiaalCategorieen hieronder.
+  // Leeg voor producten die uitsluitend via materiaalcategorieën geprijsd
+  // worden (het gedrag van vóór sjablonen, zie ook createProductAction).
+  prijsPerEenheid     Float?
+  // Vast (default) of bandbreedte — zelfde patroon als MaterialOption.
+  // Bij BANDBREEDTE wordt prijsPerEenheidMin/Max gebruikt i.p.v. het vaste
+  // prijsPerEenheid-veld.
+  prijsPerEenheidType PrijsType @default(VAST)
+  prijsPerEenheidMin  Float?
+  prijsPerEenheidMax  Float?
+  // Ondergrens voor de prijsPerEenheid-bijdrage van dít product (vóór
+  // materiaalMarge) — "ik reken nooit minder dan dit voor dit product".
+  minimumprijs        Float?
+
   materiaalCategorieen MaterialCategory[]
   extraOpties          ExtraOption[]
+  staffels             ProductStaffel[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([companyId])
+}
+
+// Gestaffelde prijs voor het prijsPerEenheid-deel van een product — cumulatief
+// doorgerekend zoals belastingschijven: elke eenheid telt tegen het tarief
+// van de schijf waar hij in valt, niet de hele hoeveelheid tegen het hoogst
+// bereikte tarief. Product.prijsPerEenheid dekt de eerste schijf (0 tot de
+// laagste `vanaf` hier); elke staffel dekt daarna vanaf zijn eigen `vanaf`
+// tot de volgende staffel (of oneindig voor de hoogste). Zie
+// berekenGestaffeldBedrag() in app/lib/calculate.ts.
+model ProductStaffel {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  vanaf           Float
+  prijsPerEenheid Float
+  order           Int    @default(0)
+
+  @@index([productId])
 }
 
 // Onderdeel van een product waarvoor de klant één materiaal kiest,

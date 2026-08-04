@@ -59,6 +59,13 @@ export type CalcExtraOption = {
   type: "PER_EENHEID" | "PER_STUK";
 };
 
+// Eén schijf van een gestaffelde prijsPerEenheid — zie
+// berekenGestaffeldBedrag() hieronder en ProductStaffel in schema.prisma.
+export type CalcProductStaffel = {
+  vanaf: number;
+  prijsPerEenheid: number;
+};
+
 export type CalcProduct = {
   id: string;
   arbeidsCapaciteit: number | null;
@@ -69,6 +76,16 @@ export type CalcProduct = {
   transportkosten: number;
   materiaalCategorieen: CalcMaterialCategory[];
   extraOpties: CalcExtraOption[];
+  // Sjablonen fase 1 — los van (en naast) materiaalCategorieen hierboven:
+  // de simpele hoeveelheid × prijsPerEenheid uit de wizard. null voor
+  // producten die uitsluitend via materiaalCategorieen geprijsd worden
+  // (het bestaande gedrag, ongewijzigd).
+  prijsPerEenheid: number | null;
+  prijsPerEenheidType: PrijsType;
+  prijsPerEenheidMin: number | null;
+  prijsPerEenheidMax: number | null;
+  minimumprijs: number | null;
+  staffels: CalcProductStaffel[];
 };
 
 // Rounds to 6 decimals before taking the ceiling, so floating-point noise
@@ -81,6 +98,32 @@ function ceilStep(value: number) {
 // materials that are only sold in fixed bundles, e.g. per 1.8 m).
 function roundUpToStep(qty: number, step: number) {
   return ceilStep(qty / step) * step;
+}
+
+// Cumulatief, als belastingschijven: elke eenheid telt tegen het tarief van
+// de schijf waar hij in valt, niet de hele hoeveelheid tegen het hoogst
+// bereikte tarief. `basisPrijs` dekt de eerste schijf (0 tot de laagste
+// `vanaf` in `staffels`); elke staffel dekt daarna vanaf zijn eigen `vanaf`
+// tot de volgende (of oneindig voor de hoogste).
+export function berekenGestaffeldBedrag(
+  qty: number,
+  basisPrijs: number,
+  staffels: CalcProductStaffel[]
+): number {
+  if (qty <= 0) return 0;
+  const sorted = [...staffels].sort((a, b) => a.vanaf - b.vanaf);
+  const grenzen = [0, ...sorted.map((s) => s.vanaf)];
+  const prijzen = [basisPrijs, ...sorted.map((s) => s.prijsPerEenheid)];
+
+  let bedrag = 0;
+  for (let i = 0; i < grenzen.length; i++) {
+    const ondergrens = grenzen[i];
+    const bovengrens = i + 1 < grenzen.length ? grenzen[i + 1] : Infinity;
+    const eenhedenInSchijf = Math.max(0, Math.min(qty, bovengrens) - ondergrens);
+    if (eenhedenInSchijf <= 0) continue;
+    bedrag += eenhedenInSchijf * prijzen[i];
+  }
+  return bedrag;
 }
 
 export function calculateBreakdown({
@@ -159,6 +202,17 @@ export function calculateBreakdown({
         const aantal = extraSelections[extra.id] ?? 0;
         if (aantal <= 0) continue;
         productMateriaalkosten += (extra.type === "PER_STUK" ? aantal : qty) * extra.prijs;
+      }
+
+      if (product.prijsPerEenheid != null) {
+        let prijsPerEenheidBedrag =
+          product.staffels.length > 0
+            ? berekenGestaffeldBedrag(qty, product.prijsPerEenheid, product.staffels)
+            : qty * product.prijsPerEenheid;
+        if (product.minimumprijs != null) {
+          prijsPerEenheidBedrag = Math.max(prijsPerEenheidBedrag, product.minimumprijs);
+        }
+        productMateriaalkosten += prijsPerEenheidBedrag;
       }
 
       const materiaalMarge =
@@ -261,9 +315,27 @@ function materiaalOptiePrijsVoor(option: CalcMaterialOption, richting: Richting)
   return (option.prijsMin + option.prijsMax) / 2;
 }
 
+// Zelfde patroon als materiaalOptiePrijsVoor — staffeltarieven zelf blijven
+// altijd vast (geen bandbreedte per schijf), alleen de basisprijs
+// (Product.prijsPerEenheid, de eerste schijf) kent een bandbreedte.
+function prijsPerEenheidVoor(product: CalcProduct, richting: Richting): number | null {
+  if (product.prijsPerEenheid == null) return null;
+  if (
+    product.prijsPerEenheidType !== "BANDBREEDTE" ||
+    product.prijsPerEenheidMin == null ||
+    product.prijsPerEenheidMax == null
+  ) {
+    return product.prijsPerEenheid;
+  }
+  if (richting === "MIN") return product.prijsPerEenheidMin;
+  if (richting === "MAX") return product.prijsPerEenheidMax;
+  return (product.prijsPerEenheidMin + product.prijsPerEenheidMax) / 2;
+}
+
 function transformeerProductVoorRichting(product: CalcProduct, richting: Richting): CalcProduct {
   return {
     ...product,
+    prijsPerEenheid: prijsPerEenheidVoor(product, richting),
     materiaalCategorieen: product.materiaalCategorieen.map((categorie) => ({
       ...categorie,
       materialen: categorie.materialen.map((materiaal) => ({

@@ -28,6 +28,7 @@ import type {
   MaterialCategory,
   MaterialOption,
   Product,
+  ProductStaffel,
   Service,
   SubscriptionTier,
 } from "@/app/generated/prisma/client";
@@ -35,6 +36,7 @@ import type {
 type ProductWithDetails = Product & {
   materiaalCategorieen: (MaterialCategory & { materialen: MaterialOption[] })[];
   extraOpties: ExtraOption[];
+  staffels: ProductStaffel[];
 };
 
 type Props = {

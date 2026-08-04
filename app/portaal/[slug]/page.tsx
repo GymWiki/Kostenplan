@@ -48,6 +48,9 @@ const getPortalData = cache(async (slug: string) => {
             where: { actief: true },
             orderBy: { order: "asc" },
           },
+          staffels: {
+            orderBy: { order: "asc" },
+          },
         },
       },
     },
