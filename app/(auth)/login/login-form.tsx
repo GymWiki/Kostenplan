@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { loginAction, type AuthFormState } from "@/app/lib/actions/auth";
 import { GoogleSignInButton } from "@/app/components/auth/google-signin-button";
@@ -41,7 +42,12 @@ export function LoginForm() {
           )}
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="password">Wachtwoord</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Wachtwoord</Label>
+            <Link href="/wachtwoord-vergeten" className="text-xs font-medium text-primary hover:underline">
+              Wachtwoord vergeten?
+            </Link>
+          </div>
           <PasswordInput
             id="password"
             name="password"

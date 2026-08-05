@@ -3,12 +3,14 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/server";
 import { getBaseUrl } from "@/app/lib/url";
-import { registerSchema, loginSchema } from "@/app/lib/validation";
+import { registerSchema, loginSchema, requestPasswordResetSchema } from "@/app/lib/validation";
 
 export type AuthFormState = {
   error?: string;
   fieldErrors?: Record<string, string>;
 } | null;
+
+export type RequestPasswordResetState = { error?: string; success?: boolean } | null;
 
 export async function registerAction(
   _prevState: AuthFormState,
@@ -78,6 +80,34 @@ export async function loginAction(
   }
 
   redirect("/dashboard");
+}
+
+// Stuurt (indien het adres bestaat) een reset-link naar het opgegeven
+// e-mailadres. Retourneert bewust altijd hetzelfde succes, ongeacht of het
+// adres daadwerkelijk een account heeft — anders zou dit formulier te
+// misbruiken zijn om te ontdekken welke e-mailadressen een Kostenplan-
+// account hebben. De link leidt naar /auth/callback, dat de meegestuurde
+// code omwisselt voor een (tijdelijke) sessie en daarna naar
+// /wachtwoord-resetten stuurt, waar updatePasswordAction (account.ts) het
+// nieuwe wachtwoord opslaat — dezelfde actie als bij een gewone
+// wachtwoordwijziging in Profiel, want Supabase maakt geen onderscheid
+// tussen "net ingelogd" en "net via een reset-link ingelogd".
+export async function requestPasswordResetAction(
+  _prevState: RequestPasswordResetState,
+  formData: FormData
+): Promise<RequestPasswordResetState> {
+  const parsed = requestPasswordResetSchema.safeParse({ email: formData.get("email") });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Vul een geldig e-mailadres in" };
+  }
+
+  const baseUrl = await getBaseUrl();
+  const supabase = await createClient();
+  await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+    redirectTo: `${baseUrl}/auth/callback?next=/wachtwoord-resetten`,
+  });
+
+  return { success: true };
 }
 
 export async function logoutAction() {

@@ -69,6 +69,10 @@ export const changePasswordSchema = z.object({
   password: z.string().min(8, "Wachtwoord moet minimaal 8 tekens zijn"),
 });
 
+export const requestPasswordResetSchema = z.object({
+  email: z.string().trim().email("Vul een geldig e-mailadres in"),
+});
+
 export const loginSchema = z.object({
   email: z.string().trim().email("Vul een geldig e-mailadres in"),
   password: z.string().min(1, "Vul je wachtwoord in"),
