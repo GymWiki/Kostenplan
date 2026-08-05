@@ -8,13 +8,27 @@ import { cn } from "@/app/lib/cn";
 export function IconPicker({
   name,
   defaultValue,
+  onChange,
 }: {
   name: string;
   defaultValue?: string | null;
+  // Optioneel: het hidden input hieronder wisselt van waarde via een JS
+  // state-setter, niet via een klik/change op het input zelf — dat
+  // bubbelt niet als DOM change-event naar een omliggend <form>. Een
+  // aanroeper die op elke wijziging wil reageren (bijv. autosave) heeft
+  // dus deze expliciete callback nodig i.p.v. te vertrouwen op form-brede
+  // onChange-bubbling.
+  onChange?: (value: string | null) => void;
 }) {
   const [selected, setSelected] = useState<string | null>(defaultValue ?? null);
   const [open, setOpen] = useState(false);
   const SelectedIcon = getProductIcon(selected);
+
+  function select(value: string | null) {
+    setSelected(value);
+    setOpen(false);
+    onChange?.(value);
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -41,10 +55,7 @@ export function IconPicker({
         <div className="flex flex-wrap gap-1.5 rounded-md border border-border bg-card p-3">
           <button
             type="button"
-            onClick={() => {
-              setSelected(null);
-              setOpen(false);
-            }}
+            onClick={() => select(null)}
             aria-label="Geen icoon"
             aria-pressed={selected === null}
             className={cn(
@@ -63,10 +74,7 @@ export function IconPicker({
               <button
                 key={iconName}
                 type="button"
-                onClick={() => {
-                  setSelected(iconName);
-                  setOpen(false);
-                }}
+                onClick={() => select(iconName)}
                 aria-label={iconName}
                 aria-pressed={isSelected}
                 className={cn(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { LayoutGrid, List, TrendingUp, Users, Trophy, Target } from "lucide-react";
 import { cn } from "@/app/lib/cn";
 import { formatCurrency } from "@/app/lib/format";
@@ -23,6 +23,24 @@ export type LeadWithNotes = Omit<Lead, "snapshot"> & {
 
 type View = "kanban" | "lijst";
 
+const NARROW_QUERY = "(max-width: 639px)";
+
+// Of het venster smal genoeg is voor de mobiele Lijst-weergave als
+// standaard — via useSyncExternalStore i.p.v. een effect+setState (window
+// is server-side niet beschikbaar; dit patroon voorkomt een hydration-
+// mismatch, zie ook ThemeToggle voor hetzelfde idee met "mounted").
+function useIsNarrowViewport() {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mql = window.matchMedia(NARROW_QUERY);
+      mql.addEventListener("change", onChange);
+      return () => mql.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia(NARROW_QUERY).matches,
+    () => false
+  );
+}
+
 export function LeadsView({
   leads,
   pipelineWaarde,
@@ -38,7 +56,15 @@ export function LeadsView({
   conversieRatio: number | null;
   isGratis: boolean;
 }) {
-  const [view, setView] = useState<View>("kanban");
+  // null = nog geen expliciete keuze door de gebruiker gemaakt — dan geldt
+  // de viewport-afhankelijke standaard hieronder. Zodra iemand zelf op
+  // Bord/Lijst klikt, wint die keuze voorgoed van de standaard, ook als het
+  // venster daarna van grootte verandert.
+  const [gekozenView, setGekozenView] = useState<View | null>(null);
+  const isNarrow = useIsNarrowViewport();
+  // Het bord stapelt op een smal scherm al zijn statuskolommen verticaal —
+  // veel minder bruikbaar dan de Lijst-weergave daar.
+  const view: View = gekozenView ?? (isNarrow ? "lijst" : "kanban");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
   const selectedLead = leads.find((lead) => lead.id === selectedLeadId) ?? null;
@@ -76,7 +102,7 @@ export function LeadsView({
           <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
             <button
               type="button"
-              onClick={() => setView("kanban")}
+              onClick={() => setGekozenView("kanban")}
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
                 view === "kanban"
@@ -89,7 +115,7 @@ export function LeadsView({
             </button>
             <button
               type="button"
-              onClick={() => setView("lijst")}
+              onClick={() => setGekozenView("lijst")}
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
                 view === "lijst"

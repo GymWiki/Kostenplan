@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import Link from "next/link";
-import { Button, LinkButton } from "@/app/components/ui/button";
+import { LinkButton } from "@/app/components/ui/button";
 import { DecimalInput, Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { IconPicker } from "@/app/components/ui/icon-picker";
@@ -68,6 +68,25 @@ export function ProductForm({
     action,
     null
   );
+
+  // Autosave: elke wijziging in dit formulier slaat na een korte pauze
+  // vanzelf op — net als Materialen/Extra opties eronder. Vóór deze
+  // opzet spaarde alleen dit formulier NIET automatisch op, terwijl de
+  // rest van het scherm dat wel deed; wie alleen iets bij Materialen
+  // wijzigde en wegnavigeerde verloor zo stilzwijgend een niet-opgeslagen
+  // naam-/tariefwijziging hierboven (zie UX-audit). De meeste velden zijn
+  // gewone form-controls waarvan een change-event vanzelf naar het
+  // <form>-element bubbelt (zie onChange hieronder); sjabloon-wissel en
+  // icoonkeuze verlopen via een knop-klik i.p.v. een form-control-change
+  // en roepen dit daarom expliciet zelf aan.
+  const formRef = useRef<HTMLFormElement>(null);
+  const autosaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function scheduleAutosave() {
+    if (autosaveTimeout.current) clearTimeout(autosaveTimeout.current);
+    autosaveTimeout.current = setTimeout(() => {
+      if (formRef.current) formAction(new FormData(formRef.current));
+    }, 800);
+  }
 
   const [naam, setNaam] = useState(product?.naam ?? "");
   const [eenheid, setEenheid] = useState(product?.eenheid ?? "m1");
@@ -155,11 +174,18 @@ export function ProductForm({
       setEenheid(nieuweVasteEenheid);
       setEigenEenheid(false);
     }
+    scheduleAutosave();
   }
 
   return (
     <div className="flex flex-col gap-8">
-      <form id="product-form" action={formAction} className="flex flex-col gap-5">
+      <form
+        id="product-form"
+        ref={formRef}
+        action={formAction}
+        onChange={scheduleAutosave}
+        className="flex flex-col gap-5"
+      >
       {state?.error && (
         <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {state.error}
@@ -429,7 +455,7 @@ export function ProductForm({
 
       <div className="flex flex-col gap-1.5">
         <p className="text-sm font-medium text-foreground">Icoon</p>
-        <IconPicker name="icoon" defaultValue={product?.icoon} />
+        <IconPicker name="icoon" defaultValue={product?.icoon} onChange={scheduleAutosave} />
       </div>
 
       <div className="flex items-center gap-3 rounded-md border border-border p-3">
@@ -452,13 +478,13 @@ export function ProductForm({
         <div className="flex flex-col gap-4 rounded-md border border-border p-4">{extraOptiesSectie}</div>
       )}
 
-      <div className="sticky bottom-4 z-20 flex justify-end gap-2 sm:bottom-6">
+      <div className="sticky bottom-4 z-20 flex items-center justify-between gap-2 sm:bottom-6">
+        <span className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-lg">
+          {pending ? "Bezig met opslaan…" : "Wijzigingen worden automatisch opgeslagen"}
+        </span>
         <LinkButton href="/dashboard/producten" variant="outline" className="shadow-lg">
-          Annuleren
+          Terug naar producten
         </LinkButton>
-        <Button type="submit" form="product-form" disabled={pending} className="shadow-lg">
-          {pending ? "Opslaan…" : "Product opslaan"}
-        </Button>
       </div>
     </div>
   );
