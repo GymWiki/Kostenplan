@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Check, X } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Label, Textarea } from "@/app/components/ui/input";
@@ -11,6 +11,10 @@ export function OfferteReactieForm({ deelToken }: { deelToken: string }) {
     reageerOpOfferteAction.bind(null, deelToken),
     null
   );
+  // Beide knoppen delen dezelfde pending-status (één form, één action) — dit
+  // onthoudt welke knop is aangeklikt, zodat alleen díe zijn tekst wisselt
+  // naar "Bezig…" in plaats van dat beide knoppen ambigu tegelijk reageren.
+  const [klik, setKlik] = useState<"GEACCEPTEERD" | "AFGEWEZEN" | null>(null);
 
   return (
     <form action={formAction} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5">
@@ -21,9 +25,16 @@ export function OfferteReactieForm({ deelToken }: { deelToken: string }) {
       </div>
       {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button type="submit" name="beslissing" value="GEACCEPTEERD" disabled={pending} className="flex-1">
+        <Button
+          type="submit"
+          name="beslissing"
+          value="GEACCEPTEERD"
+          disabled={pending}
+          onClick={() => setKlik("GEACCEPTEERD")}
+          className="flex-1"
+        >
           <Check className="h-4 w-4" />
-          Akkoord
+          {pending && klik === "GEACCEPTEERD" ? "Bezig…" : "Akkoord"}
         </Button>
         <Button
           type="submit"
@@ -31,10 +42,11 @@ export function OfferteReactieForm({ deelToken }: { deelToken: string }) {
           value="AFGEWEZEN"
           variant="outline"
           disabled={pending}
+          onClick={() => setKlik("AFGEWEZEN")}
           className="flex-1"
         >
           <X className="h-4 w-4" />
-          Niet akkoord
+          {pending && klik === "AFGEWEZEN" ? "Bezig…" : "Niet akkoord"}
         </Button>
       </div>
     </form>

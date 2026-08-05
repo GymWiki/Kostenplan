@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -87,6 +87,10 @@ export function OfferteEditor({
     genereerDeelLinkAction.bind(null, offerte.id),
     null
   );
+  const [regenPending, startRegenTransition] = useTransition();
+  function regenereerDeelLink() {
+    startRegenTransition(() => regenereerDeelLinkAction(offerte.id));
+  }
 
   const parsedRegels = useMemo(() => regels.map(naarOfferteRegel), [regels]);
   const regelsJson = useMemo(() => JSON.stringify(parsedRegels), [parsedRegels]);
@@ -162,12 +166,10 @@ export function OfferteEditor({
                 <Mail className="h-4 w-4" />
                 Open in e-mail
               </LinkButton>
-              <form action={regenereerDeelLinkAction.bind(null, offerte.id)}>
-                <Button type="submit" variant="ghost" size="sm">
-                  <RefreshCw className="h-4 w-4" />
-                  Nieuwe link genereren
-                </Button>
-              </form>
+              <Button type="button" variant="ghost" size="sm" onClick={regenereerDeelLink} disabled={regenPending}>
+                <RefreshCw className="h-4 w-4" />
+                {regenPending ? "Bezig…" : "Nieuwe link genereren"}
+              </Button>
             </div>
             <p className="truncate text-xs text-muted-foreground">{deelUrl}</p>
           </CardContent>
@@ -317,6 +319,11 @@ export function OfferteEditor({
           {(saveState?.error || shareState?.error) && (
             <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {saveState?.error || shareState?.error}
+            </p>
+          )}
+          {saveState?.success && (
+            <p className="rounded-md bg-accent px-3 py-2 text-sm text-accent-foreground">
+              Concept opgeslagen.
             </p>
           )}
 

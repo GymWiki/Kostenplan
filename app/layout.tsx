@@ -16,11 +16,11 @@ export const metadata: Metadata = {
   // NEXT_PUBLIC_APP_URL niet gezet is — zie app/lib/url.ts.
   metadataBase: new URL(getSiteUrl()),
   title: {
-    default: "Kostenplan — Kostencalculator voor hoveniers",
+    default: "Kostenplan — Offertecalculator voor vakmensen",
     template: "%s · Kostenplan",
   },
   description:
-    "Kostenplan helpt hoveniers een online kostencalculator te bouwen zodat klanten direct een duidelijke schatting krijgen van de aanlegkosten van hun tuin.",
+    "Kostenplan helpt vakmensen een online kostencalculator te bouwen zodat klanten direct een duidelijke schatting krijgen van de kosten van hun project.",
 };
 
 export default function RootLayout({

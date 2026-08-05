@@ -49,6 +49,7 @@ export function OffertePresentatie({
 
   return (
     <div
+      data-portal-shell
       className={brandingFontVariables()}
       style={{ fontFamily, backgroundColor: achtergrondKleur, minHeight: "100vh" }}
     >

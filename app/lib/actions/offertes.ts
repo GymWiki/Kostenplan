@@ -10,7 +10,11 @@ import { prefillOfferteRegels } from "@/app/lib/offertes";
 import type { LeadSnapshot } from "@/app/lib/leads";
 import type { Offerte } from "@/app/generated/prisma/client";
 
-export type OfferteFormState = { error?: string; fieldErrors?: Record<string, string> } | null;
+export type OfferteFormState = {
+  error?: string;
+  fieldErrors?: Record<string, string>;
+  success?: boolean;
+} | null;
 
 async function requireOfferteOwnership(offerteId: string, companyId: string) {
   return prisma.offerte.findFirst({
@@ -125,7 +129,7 @@ export async function saveOfferteAction(
 
   revalidatePath(`/dashboard/leads/${offerte.leadId}/offerte`);
   revalidatePath("/dashboard/leads");
-  return { error: undefined };
+  return { success: true };
 }
 
 // Het enige pad waarlangs een offerte de deur uit gaat — nooit automatisch.

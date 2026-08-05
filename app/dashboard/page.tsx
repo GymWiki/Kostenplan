@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Package, SlidersHorizontal, Users } from "lucide-react";
 import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
@@ -115,7 +116,7 @@ function StatCard({
   badge?: string;
 }) {
   return (
-    <a href={href} className="relative block">
+    <Link href={href} className="relative block">
       {badge && (
         <span className="animate-soft-pulse absolute -top-2 -right-2 z-10 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground shadow-sm">
           {badge}
@@ -132,6 +133,6 @@ function StatCard({
           </div>
         </CardContent>
       </Card>
-    </a>
+    </Link>
   );
 }

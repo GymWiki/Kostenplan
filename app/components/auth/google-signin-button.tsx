@@ -1,3 +1,6 @@
+"use client";
+
+import { useFormStatus } from "react-dom";
 import { signInWithGoogleAction } from "@/app/lib/actions/auth";
 import { Button } from "@/app/components/ui/button";
 
@@ -24,13 +27,20 @@ function GoogleIcon() {
   );
 }
 
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" variant="outline" className="w-full" disabled={pending}>
+      <GoogleIcon />
+      {pending ? "Bezig…" : "Doorgaan met Google"}
+    </Button>
+  );
+}
+
 export function GoogleSignInButton() {
   return (
     <form action={signInWithGoogleAction}>
-      <Button type="submit" variant="outline" className="w-full">
-        <GoogleIcon />
-        Doorgaan met Google
-      </Button>
+      <SubmitButton />
     </form>
   );
 }

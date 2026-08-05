@@ -42,8 +42,8 @@ export function AbonnementView({
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Abonnement</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="text-2xl font-semibold text-foreground">Abonnement</h1>
+        <p className="mt-1 text-muted-foreground">
           Beheer je pakket en betaalperiode. Betalingen verlopen veilig via Mollie.
         </p>
       </div>

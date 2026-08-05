@@ -59,6 +59,8 @@ export function LeadDetailDrawer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lead?.id]);
 
+  const [omzettenPending, startOmzettenTransition] = useTransition();
+
   if (!lead) return null;
 
   const mailtoHref = `mailto:${lead.email}?subject=${encodeURIComponent("Over je offerte-aanvraag")}`;
@@ -128,12 +130,16 @@ export function LeadDetailDrawer({
                 <OfferteStatusBadge offerte={lead.offerte} />
               </LinkButton>
             ) : (
-              <form action={omzettenNaarOfferteAction.bind(null, lead.id)}>
-                <Button type="submit" variant="secondary" className="w-full">
-                  <FileText className="h-4 w-4" />
-                  Omzetten naar offerte
-                </Button>
-              </form>
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                disabled={omzettenPending}
+                onClick={() => startOmzettenTransition(() => omzettenNaarOfferteAction(lead.id))}
+              >
+                <FileText className="h-4 w-4" />
+                {omzettenPending ? "Bezig…" : "Omzetten naar offerte"}
+              </Button>
             )}
           </div>
 
