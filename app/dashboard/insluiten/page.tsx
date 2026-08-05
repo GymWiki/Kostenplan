@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import { Lock } from "lucide-react";
 import { requireActiveCompany } from "@/app/lib/dal";
 import { getEmbedCode } from "@/app/lib/url";
 import { effectiveTier, isProTier } from "@/app/lib/subscription";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { LinkButton } from "@/app/components/ui/button";
+import { ProFeatureLock } from "@/app/components/dashboard/pro-feature-lock";
 import { EmbedTutorialTabs } from "./embed-tutorial-tabs";
 
 export const metadata: Metadata = { title: "Rekentool insluiten" };
@@ -31,23 +30,10 @@ export default async function InsluitenPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="flex flex-col items-start gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Lock className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="text-sm font-medium text-foreground">Alleen bij Pro</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Sluit je rekentool rechtstreeks in op je eigen website via een iframe. Upgrade
-                naar Pro om de insluitcode en deze handleiding te ontgrendelen.
-              </p>
-            </div>
-            <LinkButton href="/dashboard/abonnement" size="sm">
-              Upgrade naar Pro
-            </LinkButton>
-          </CardContent>
-        </Card>
+        <ProFeatureLock
+          title="Alleen bij Pro"
+          description="Sluit je rekentool rechtstreeks in op je eigen website via een iframe. Upgrade naar Pro om de insluitcode en deze handleiding te ontgrendelen."
+        />
       )}
     </div>
   );

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutGrid, List, TrendingUp, Users, Trophy, Target, Mail } from "lucide-react";
+import { LayoutGrid, List, TrendingUp, Users, Trophy, Target } from "lucide-react";
 import { cn } from "@/app/lib/cn";
 import { formatCurrency } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { LinkButton } from "@/app/components/ui/button";
 import { HelpTip } from "@/app/components/ui/help-tip";
+import { ProFeatureLock } from "@/app/components/dashboard/pro-feature-lock";
 import { KanbanBoard } from "./kanban-board";
 import { LeadsTable } from "./leads-table";
 import { LeadDetailDrawer } from "./lead-detail-drawer";
@@ -53,24 +53,12 @@ export function LeadsView({
           </p>
         </div>
 
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Mail className="h-6 w-6" />
-            </span>
-            <p className="text-lg font-semibold text-foreground">
-              Offerte-aanvragen ontvangen?
-            </p>
-            <p className="max-w-sm text-sm text-muted-foreground">
-              Vanaf Plus verschijnt elke offerte-aanvraag die een klant via jouw klantenportaal
-              indient direct hier, inclusief contactgegevens en prijsindicatie. Upgrade naar Plus
-              of Pro om leads binnen te laten komen.
-            </p>
-            <LinkButton href="/dashboard/abonnement" className="mt-2">
-              Upgrade naar Plus of Pro
-            </LinkButton>
-          </CardContent>
-        </Card>
+        <ProFeatureLock
+          size="lg"
+          title="Offerte-aanvragen ontvangen?"
+          description="Vanaf Plus verschijnt elke offerte-aanvraag die een klant via jouw klantenportaal indient direct hier, inclusief contactgegevens en prijsindicatie. Upgrade naar Plus of Pro om leads binnen te laten komen."
+          ctaLabel="Upgrade naar Plus of Pro"
+        />
       </div>
     );
   }

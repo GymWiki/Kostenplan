@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
-import { createPortal } from "react-dom";
 import { Lock, X } from "lucide-react";
 import { LinkButton, Button } from "@/app/components/ui/button";
+import { Overlay } from "@/app/components/ui/overlay";
 import { PLAN_LABELS } from "@/app/lib/subscription";
 import type { SubscriptionTier } from "@/app/generated/prisma/client";
 
@@ -24,35 +23,8 @@ export function UpgradeModal({
   title: string;
   description: string;
 }) {
-  useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = "";
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
-
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="upgrade-modal-title"
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-    >
-      <button
-        type="button"
-        aria-label="Sluiten"
-        onClick={onClose}
-        className="absolute inset-0 cursor-pointer bg-black/50 backdrop-blur-sm"
-      />
+  return (
+    <Overlay open={open} onClose={onClose} ariaLabelledBy="upgrade-modal-title" className="flex items-center justify-center p-4">
       <div className="relative flex w-full max-w-sm flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-lg">
         <button
           type="button"
@@ -83,7 +55,6 @@ export function UpgradeModal({
           </Button>
         </div>
       </div>
-    </div>,
-    document.body
+    </Overlay>
   );
 }

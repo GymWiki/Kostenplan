@@ -56,6 +56,9 @@ export function RegisterForm() {
             placeholder="Minimaal 8 tekens"
             required
           />
+          {/* Blijft zichtbaar terwijl je typt — anders dan de placeholder
+              hierboven, die verdwijnt zodra je begint. */}
+          <p className="text-xs text-muted-foreground">Minimaal 8 tekens.</p>
           {state?.fieldErrors?.password && (
             <p className="text-sm text-destructive">
               {state.fieldErrors.password}

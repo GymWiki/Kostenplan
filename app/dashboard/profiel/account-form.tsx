@@ -30,7 +30,9 @@ export function AccountForm({ email }: { email: string }) {
         />
         {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
         {state?.success && (
-          <p className="text-sm text-accent-foreground">Wachtwoord gewijzigd.</p>
+          <p className="rounded-md bg-accent px-3 py-2 text-sm text-accent-foreground">
+            Wachtwoord gewijzigd.
+          </p>
         )}
         <div>
           <Button type="submit" variant="secondary" disabled={pending}>

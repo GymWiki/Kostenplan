@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Logo } from "@/app/components/ui/logo";
+import { BrandHeader } from "@/app/components/ui/brand-header";
 import { ThemeToggle } from "@/app/components/ui/theme-toggle";
 
 export default function AuthLayout({
@@ -13,13 +12,7 @@ export default function AuthLayout({
         <ThemeToggle />
       </div>
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <Link
-          href="/"
-          className="mb-8 flex items-center gap-2 text-lg font-semibold text-foreground"
-        >
-          <Logo />
-          Kostenplan
-        </Link>
+        <BrandHeader href="/" />
         {children}
       </div>
     </div>

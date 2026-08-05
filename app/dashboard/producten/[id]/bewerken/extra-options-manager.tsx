@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { Pencil, Trash2, X, Check, Plus } from "lucide-react";
+import { Pencil, X, Check, Plus } from "lucide-react";
 import {
   createExtraOptionAction,
   updateExtraOptionAction,
@@ -10,6 +10,7 @@ import {
   type ExtraOptionFormState,
 } from "@/app/lib/actions/extra-options";
 import { Button } from "@/app/components/ui/button";
+import { DeleteButton } from "@/app/components/dashboard/delete-button";
 import { DecimalInput, Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -279,18 +280,11 @@ function ActiveMiniToggle({
 
 function DeleteExtraOptionForm({ extraOptionId }: { extraOptionId: string }) {
   return (
-    <form
+    <DeleteButton
       action={deleteExtraOptionAction}
-      onSubmit={(e) => {
-        if (!confirm("Weet je zeker dat je deze extra optie wilt verwijderen?")) {
-          e.preventDefault();
-        }
-      }}
-    >
-      <input type="hidden" name="extraOptionId" value={extraOptionId} />
-      <Button type="submit" variant="ghost" size="icon" aria-label="Verwijderen">
-        <Trash2 className="h-4 w-4 text-destructive" />
-      </Button>
-    </form>
+      id={extraOptionId}
+      idField="extraOptionId"
+      confirmMessage="Weet je zeker dat je deze extra optie wilt verwijderen?"
+    />
   );
 }

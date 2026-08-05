@@ -1,12 +1,13 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import { createPortal } from "react-dom";
-import { X, Mail, MessageCircle, Pencil, Trash2, Check, Plus, FileText } from "lucide-react";
+import { X, Mail, MessageCircle, Pencil, Check, Plus, FileText } from "lucide-react";
 import { formatCurrency } from "@/app/lib/format";
 import { unitLabel } from "@/app/lib/units";
 import { cn } from "@/app/lib/cn";
 import { Button, LinkButton } from "@/app/components/ui/button";
+import { Overlay } from "@/app/components/ui/overlay";
+import { DeleteButton } from "@/app/components/dashboard/delete-button";
 import { Textarea } from "@/app/components/ui/input";
 import {
   addLeadNoteAction,
@@ -36,20 +37,6 @@ export function LeadDetailDrawer({
   lead: LeadWithNotes | null;
   onClose: () => void;
 }) {
-  useEffect(() => {
-    if (!lead) return;
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", onKeyDown);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = "";
-    };
-  }, [lead, onClose]);
-
   // De vakman "ziet" een klantreactie door de aanvraag te openen — dooft de
   // pulserende stip op de kanban-kaart/lijstregel (zie kanban-board.tsx).
   useEffect(() => {
@@ -65,14 +52,8 @@ export function LeadDetailDrawer({
 
   const mailtoHref = `mailto:${lead.email}?subject=${encodeURIComponent("Over je offerte-aanvraag")}`;
 
-  return createPortal(
-    <div role="dialog" aria-modal="true" aria-label={`Aanvraag van ${lead.naam}`} className="fixed inset-0 z-[100]">
-      <button
-        type="button"
-        aria-label="Sluiten"
-        onClick={onClose}
-        className="absolute inset-0 cursor-pointer bg-black/50 backdrop-blur-sm"
-      />
+  return (
+    <Overlay open onClose={onClose} ariaLabel={`Aanvraag van ${lead.naam}`}>
       <div className="absolute inset-y-0 right-0 flex h-full w-full max-w-md flex-col overflow-y-auto border-l border-border bg-card shadow-lg">
         <div className="flex items-start justify-between gap-4 border-b border-border p-5">
           <div className="min-w-0">
@@ -200,8 +181,7 @@ export function LeadDetailDrawer({
           </div>
         </div>
       </div>
-    </div>,
-    document.body
+    </Overlay>
   );
 }
 
@@ -289,19 +269,12 @@ function NoteRow({ note }: { note: LeadNote }) {
         >
           <Pencil className="h-4 w-4" />
         </Button>
-        <form
+        <DeleteButton
           action={deleteLeadNoteAction}
-          onSubmit={(e) => {
-            if (!confirm("Weet je zeker dat je deze notitie wilt verwijderen?")) {
-              e.preventDefault();
-            }
-          }}
-        >
-          <input type="hidden" name="noteId" value={note.id} />
-          <Button type="submit" variant="ghost" size="icon" aria-label="Verwijderen">
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        </form>
+          id={note.id}
+          idField="noteId"
+          confirmMessage="Weet je zeker dat je deze notitie wilt verwijderen?"
+        />
       </div>
     </div>
   );

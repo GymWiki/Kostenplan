@@ -1,9 +1,9 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { X, Pause, ArrowDownCircle } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
+import { Overlay } from "@/app/components/ui/overlay";
 import { Label, Select, Textarea } from "@/app/components/ui/input";
 import {
   cancelSubscriptionAction,
@@ -59,36 +59,10 @@ export function CancelRetentionModal({
     if (open) setStep("opties");
   }
 
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = "";
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
-
   const verliesItems = actualPlan === "PRO" ? [...VERLIES_PRO_EXTRA, ...VERLIES_PLUS] : VERLIES_PLUS;
 
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="cancel-retention-title"
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-    >
-      <button
-        type="button"
-        aria-label="Sluiten"
-        onClick={onClose}
-        className="absolute inset-0 cursor-pointer bg-black/50 backdrop-blur-sm"
-      />
+  return (
+    <Overlay open={open} onClose={onClose} ariaLabelledBy="cancel-retention-title" className="flex items-center justify-center p-4">
       <div className="relative flex max-h-[90vh] w-full max-w-md flex-col gap-4 overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-lg">
         <button
           type="button"
@@ -116,8 +90,7 @@ export function CancelRetentionModal({
           />
         )}
       </div>
-    </div>,
-    document.body
+    </Overlay>
   );
 }
 

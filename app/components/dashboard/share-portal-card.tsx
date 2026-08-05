@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Lock, BookOpen } from "lucide-react";
+import { ExternalLink, BookOpen } from "lucide-react";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { LinkButton } from "@/app/components/ui/button";
 import { CopyButton } from "@/app/components/dashboard/copy-link";
+import { ProFeatureLock } from "@/app/components/dashboard/pro-feature-lock";
 import { cn } from "@/app/lib/cn";
 
 export function SharePortalCard({
@@ -87,21 +88,11 @@ export function SharePortalCard({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-border p-4">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Lock className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="text-sm font-medium text-foreground">Alleen bij Pro</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Sluit je rekentool rechtstreeks in op je eigen website via een iframe. Upgrade
-                naar Pro om de insluitcode te ontgrendelen.
-              </p>
-            </div>
-            <LinkButton href="/dashboard/abonnement" size="sm">
-              Upgrade naar Pro
-            </LinkButton>
-          </div>
+          <ProFeatureLock
+            wrapper="inline"
+            title="Alleen bij Pro"
+            description="Sluit je rekentool rechtstreeks in op je eigen website via een iframe. Upgrade naar Pro om de insluitcode te ontgrendelen."
+          />
         )}
       </CardContent>
     </Card>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { Pencil, Trash2, X, Check, Plus } from "lucide-react";
+import { Pencil, X, Check, Plus } from "lucide-react";
 import {
   createMaterialCategoryAction,
   updateMaterialCategoryAction,
@@ -16,6 +16,7 @@ import {
   type MaterialOptionFormState,
 } from "@/app/lib/actions/material-options";
 import { Button } from "@/app/components/ui/button";
+import { DeleteButton } from "@/app/components/dashboard/delete-button";
 import { DecimalInput, Input, Label } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -277,23 +278,12 @@ function CategoryCard({
 
 function DeleteCategoryForm({ materialCategoryId }: { materialCategoryId: string }) {
   return (
-    <form
+    <DeleteButton
       action={deleteMaterialCategoryAction}
-      onSubmit={(e) => {
-        if (
-          !confirm(
-            "Weet je zeker dat je deze categorie en alle materialen erin wilt verwijderen?"
-          )
-        ) {
-          e.preventDefault();
-        }
-      }}
-    >
-      <input type="hidden" name="materialCategoryId" value={materialCategoryId} />
-      <Button type="submit" variant="ghost" size="icon" aria-label="Verwijderen">
-        <Trash2 className="h-4 w-4 text-destructive" />
-      </Button>
-    </form>
+      id={materialCategoryId}
+      idField="materialCategoryId"
+      confirmMessage="Weet je zeker dat je deze categorie en alle materialen erin wilt verwijderen?"
+    />
   );
 }
 
@@ -467,19 +457,12 @@ function ActiveMiniToggle({
 
 function DeleteMaterialForm({ materialOptionId }: { materialOptionId: string }) {
   return (
-    <form
+    <DeleteButton
       action={deleteMaterialOptionAction}
-      onSubmit={(e) => {
-        if (!confirm("Weet je zeker dat je dit materiaal wilt verwijderen?")) {
-          e.preventDefault();
-        }
-      }}
-    >
-      <input type="hidden" name="materialOptionId" value={materialOptionId} />
-      <Button type="submit" variant="ghost" size="icon" aria-label="Verwijderen">
-        <Trash2 className="h-4 w-4 text-destructive" />
-      </Button>
-    </form>
+      id={materialOptionId}
+      idField="materialOptionId"
+      confirmMessage="Weet je zeker dat je dit materiaal wilt verwijderen?"
+    />
   );
 }
 

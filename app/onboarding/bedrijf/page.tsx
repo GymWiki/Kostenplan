@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
-import { Logo } from "@/app/components/ui/logo";
+import { BrandHeader } from "@/app/components/ui/brand-header";
 import { CompanyForm } from "@/app/dashboard/bedrijven/nieuw/company-form";
+import { OnboardingStepIndicator } from "@/app/onboarding/step-indicator";
 
 export const metadata: Metadata = { title: "Welkom bij Kostenplan" };
 
@@ -24,10 +25,8 @@ export default async function OnboardingBedrijfPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
-      <div className="mb-8 flex items-center gap-2 text-lg font-semibold text-foreground">
-        <Logo />
-        Kostenplan
-      </div>
+      <BrandHeader />
+      <OnboardingStepIndicator step={1} total={2} />
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle as="h1" className="text-xl">

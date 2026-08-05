@@ -281,7 +281,9 @@ export function Calculator({
               </>
             )}
           </div>
-          <ThemeToggle />
+          <span className="print:hidden">
+            <ThemeToggle />
+          </span>
         </div>
       </header>
 
@@ -1135,7 +1137,7 @@ function Summary({
                   </div>
                 </form>
               ) : (
-                <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="flex flex-col gap-2 print:hidden sm:flex-row">
                   <Button
                     type="button"
                     variant="secondary"
