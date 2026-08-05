@@ -176,6 +176,20 @@ export type ProductKostenBlokken = {
   totaal: number;
 };
 
+// Het volledige, eigen bedrag van één product binnen de mandje-berekening
+// (materiaal + arbeid + transport + voorrijkosten van dát product, dus al
+// meegeteld in calculateBreakdown()'s totalen hieronder — dit is puur de
+// per-product uitsplitsing daarvan). Gebruikt om offerteregels een eigen,
+// eerlijke prijs per eenheid te geven in plaats van dat het hele
+// productbedrag in één generieke restpost verdwijnt — zie
+// prefillOfferteRegels() in app/lib/offertes.ts.
+export type ProductRegel = {
+  productId: string;
+  aantal: number;
+  prijsPerEenheid: number;
+  totaal: number;
+};
+
 // De kern van het nieuwe rekenmodel: de vier kostenblokken van één product,
 // in isolatie. Gedeeld door calculateBreakdown() hieronder (de motor achter
 // de volledige mandje-berekening) én rechtstreeks door de wizard/het
@@ -266,6 +280,7 @@ export function calculateBreakdown({
   let transportkosten = 0;
   let voorrijkosten = 0;
   let itemCount = 0;
+  const productRegels: ProductRegel[] = [];
 
   for (const product of products) {
     const qty = productQty[product.id] ?? 0;
@@ -319,6 +334,13 @@ export function calculateBreakdown({
     arbeidskosten += kosten.arbeid;
     transportkosten += kosten.transport;
     voorrijkosten += kosten.voorrijkosten;
+
+    productRegels.push({
+      productId: product.id,
+      aantal: qty,
+      prijsPerEenheid: qty > 0 ? kosten.totaal / qty : 0,
+      totaal: kosten.totaal,
+    });
   }
 
   const heeftSelectie = itemCount > 0;
@@ -335,6 +357,7 @@ export function calculateBreakdown({
     btw,
     totaal,
     heeftSelectie,
+    productRegels,
   };
 }
 
@@ -354,6 +377,10 @@ export type BreakdownRange = {
   // (bijv. "indicatie −10% / +15%").
   margeOmlaag?: number;
   margeOmhoog?: number;
+  // Altijd het MIDDEN-scenario (ongeacht modus) — voor plekken die per
+  // product één vast getal nodig hebben, zoals de lead-snapshot/offerte-
+  // regels, die zelf nooit een bandbreedte tonen.
+  productRegels: ProductRegel[];
 };
 
 function round2(value: number) {
@@ -414,6 +441,15 @@ export function calculateBreakdownRange(args: {
   const { costSettings } = args;
   const modus = costSettings.bandbreedteModus;
 
+  // Ongeacht modus: het MIDDEN-scenario levert altijd de per-product
+  // regelprijzen (productRegels) — die tonen zelf nooit een bandbreedte,
+  // ook niet in modus PER_PRODUCT (zie BreakdownRange.productRegels).
+  const middenArgs = {
+    ...args,
+    products: args.products.map((p) => transformeerProductVoorRichting(p, "MIDDEN")),
+  };
+  const bMidden = calculateBreakdown(middenArgs);
+
   if (modus === "PER_PRODUCT") {
     const minArgs = {
       ...args,
@@ -436,34 +472,28 @@ export function calculateBreakdownRange(args: {
       btw: magBedrag(bMin.btw, bMax.btw),
       totaal: magBedrag(bMin.totaal, bMax.totaal),
       heeftSelectie: bMin.heeftSelectie,
+      productRegels: bMidden.productRegels,
     };
   }
 
-  // GEEN en TOTAAL rekenen allebei één keer door met "vaste" bedragen —
-  // bandbreedte-items worden herleid tot hun gemiddelde van min/max.
-  const middenArgs = {
-    ...args,
-    products: args.products.map((p) => transformeerProductVoorRichting(p, "MIDDEN")),
-  };
-  const b = calculateBreakdown(middenArgs);
-
-  if (modus === "TOTAAL" && b.heeftSelectie) {
-    const totaalMin = round2(b.totaal * (1 - costSettings.bandbreedteMargeOmlaag / 100));
-    const totaalMax = round2(b.totaal * (1 + costSettings.bandbreedteMargeOmhoog / 100));
+  if (modus === "TOTAAL" && bMidden.heeftSelectie) {
+    const totaalMin = round2(bMidden.totaal * (1 - costSettings.bandbreedteMargeOmlaag / 100));
+    const totaalMax = round2(bMidden.totaal * (1 + costSettings.bandbreedteMargeOmhoog / 100));
     return {
       modus,
-      arbeidskosten: b.arbeidskosten,
-      materiaalkosten: b.materiaalkosten,
-      transportkosten: b.transportkosten,
-      voorrijkosten: b.voorrijkosten,
-      subtotaal: b.subtotaal,
-      btw: b.btw,
+      arbeidskosten: bMidden.arbeidskosten,
+      materiaalkosten: bMidden.materiaalkosten,
+      transportkosten: bMidden.transportkosten,
+      voorrijkosten: bMidden.voorrijkosten,
+      subtotaal: bMidden.subtotaal,
+      btw: bMidden.btw,
       totaal: magBedrag(totaalMin, totaalMax),
-      heeftSelectie: b.heeftSelectie,
+      heeftSelectie: bMidden.heeftSelectie,
       margeOmlaag: costSettings.bandbreedteMargeOmlaag,
       margeOmhoog: costSettings.bandbreedteMargeOmhoog,
+      productRegels: bMidden.productRegels,
     };
   }
 
-  return { modus, ...b };
+  return { modus, ...bMidden };
 }

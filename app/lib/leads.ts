@@ -9,11 +9,12 @@ export type LeadSnapshotLine = {
   eenheid?: string;
   materiaal?: string;
   extras?: string[];
-  // Alleen betrouwbaar per-regel te berekenen voor Diensten (een losstaand
-  // uurtarief/vast bedrag). Bij Producten is arbeid gedeeld en stapsgewijs
-  // afgerond over meerdere producten heen (zie calculate.ts), dus daar is
-  // geen eerlijke prijs per regel te geven — de totalen hieronder zijn wel
-  // altijd exact.
+  // Het volledige, eigen bedrag van dit product (materiaal + arbeid +
+  // transport + voorrijkosten van dít product — zie calculate.ts's
+  // ProductRegel/calculateBreakdown, dat elk product onafhankelijk
+  // doorrekent). Gevuld door de calculator bij het bouwen van de snapshot;
+  // gebruikt door prefillOfferteRegels() (offertes.ts) om elke offerteregel
+  // zijn eigen, eerlijke prijs per eenheid te geven.
   prijs?: number;
 };
 

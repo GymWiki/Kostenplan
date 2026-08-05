@@ -36,13 +36,14 @@ export function berekenOfferteTotalen(regels: OfferteRegel[], btwPercentage: num
 }
 
 // Vult een nieuw offerteconcept met één regel per item uit de bevroren
-// aanvraag-snapshot. Alleen Diensten hebben een betrouwbare eigen prijs (zie
-// LeadSnapshotLine in app/lib/leads.ts) — bij Producten is arbeid gedeeld en
-// stapsgewijs afgerond over meerdere producten heen, dus daar bestaat geen
-// eerlijke prijs per regel. In plaats van iets te verzinnen tellen we het
-// restant (subtotaal minus de wél bekende regels) op als één aparte,
-// duidelijk gelabelde regel — de vakman herverdeelt die desgewenst zelf over
-// losse regels vóór het delen.
+// aanvraag-snapshot. Elke regel krijgt zijn eigen, al berekende prijs (zie
+// LeadSnapshotLine.prijs in app/lib/leads.ts — het volledige, onafhankelijk
+// per product berekende bedrag uit calculate.ts). Het restant (subtotaal
+// minus de som van alle regels) hoort er normaal gesproken niet meer te
+// zijn — die blijft alleen als vangnet staan voor het zeldzame geval dat een
+// regel toch geen prijs heeft (bijv. een oudere, vóór deze fix bevroren
+// snapshot) of voor een centverschil door afronding, in plaats van geld
+// stilzwijgend te laten verdwijnen.
 export function prefillOfferteRegels(snapshot: LeadSnapshot): OfferteRegel[] {
   const regels: OfferteRegel[] = snapshot.regels.map((lijn, i) => {
     const aantal = lijn.aantal ?? 1;

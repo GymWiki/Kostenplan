@@ -88,6 +88,59 @@ describe("calculateBreakdown (basispad)", () => {
     expect(result.heeftSelectie).toBe(true);
   });
 
+  it("geeft elk product zijn eigen, onafhankelijke productRegel — ook met meeschalend transport/voorrij (regressie)", () => {
+    const product1 = maakProduct(); // qty 12: arbeid 400, materiaal 240, transport 25 (vast), voorrij 35 (vast) = 700
+    const product2 = maakProduct({
+      id: "product-2",
+      productiviteit: 5,
+      transportkostenOverride: 3,
+      transportMeeschalend: true,
+      voorrijkostenOverride: 5,
+      voorrijMeeschalend: true,
+      materiaalCategorieen: [
+        {
+          id: "categorie-2",
+          naam: "Categorie 2",
+          materialen: [
+            {
+              id: "materiaal-2",
+              naam: "Materiaal 2",
+              prijs: 15,
+              prijsType: "VAST",
+              prijsMin: null,
+              prijsMax: null,
+              stapgrootte: null,
+              productiviteitOverride: null,
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = calculateBreakdown({
+      products: [product1, product2],
+      productQty: { "product-1": 12, "product-2": 8 },
+      materialSelections: { "categorie-1": "materiaal-1", "categorie-2": "materiaal-2" },
+      extraSelections: {},
+      costSettings: baseCostSettings,
+    });
+
+    // product-2: materiaal 8*15=120, arbeid 8/5=1.6 -> ceil 2 dagdelen*200=400,
+    // transport (meeschalend) 8*3=24, voorrij (meeschalend) 8*5=40 -> 584
+    expect(result.productRegels).toHaveLength(2);
+    expect(result.productRegels[0]).toMatchObject({ productId: "product-1", aantal: 12, totaal: 700 });
+    expect(result.productRegels[0].prijsPerEenheid).toBeCloseTo(700 / 12, 6);
+    expect(result.productRegels[1]).toMatchObject({ productId: "product-2", aantal: 8, totaal: 584 });
+    expect(result.productRegels[1].prijsPerEenheid).toBeCloseTo(584 / 8, 6);
+
+    // Elk product staat op zichzelf: de som van de losse productRegels moet
+    // exact het subtotaal van de hele mandje-berekening zijn — geen bedrag
+    // "verdwijnt" ergens tussen de per-product- en de mandje-optelling.
+    const somProductRegels = result.productRegels.reduce((som, regel) => som + regel.totaal, 0);
+    expect(somProductRegels).toBeCloseTo(result.subtotaal, 6);
+    expect(result.subtotaal).toBe(1284);
+  });
+
   it("rondt materiaalhoeveelheid naar boven af op stapgrootte", () => {
     const product = maakProduct({
       materiaalCategorieen: [

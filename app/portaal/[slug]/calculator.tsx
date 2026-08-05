@@ -220,6 +220,13 @@ export function Calculator({
         .filter((extra) => (extraSelections[extra.id] ?? 0) > 0)
         .map((extra) => extra.naam);
 
+      // Eigen, volledig berekend bedrag van dit product (materiaal + arbeid
+      // + transport + voorrijkosten van dít product) — zodat een offerte die
+      // hieruit wordt opgebouwd elke regel zijn eigen prijs geeft in plaats
+      // van alles in één restpost te proppen (zie prefillOfferteRegels in
+      // app/lib/offertes.ts).
+      const productRegel = breakdown.productRegels.find((regel) => regel.productId === product.id);
+
       regels.push({
         naam: product.naam,
         type: "product",
@@ -227,6 +234,7 @@ export function Calculator({
         eenheid: product.eenheid,
         materiaal: materiaalNamen.length > 0 ? materiaalNamen.join(", ") : undefined,
         extras: extraNamen.length > 0 ? extraNamen : undefined,
+        prijs: productRegel?.totaal,
       });
     }
 
