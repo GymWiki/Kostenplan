@@ -644,7 +644,7 @@ function ProductCard({
                     >
                       <input
                         type="checkbox"
-                        className="mt-0.5 h-4 w-4 rounded border-input accent-primary"
+                        className="mt-0.5 h-4 w-4 rounded border-input accent-[var(--brand-primary)]"
                         checked={(extraSelections[extra.id] ?? 0) > 0}
                         onChange={(e) => onExtraChange(extra.id, e.target.checked ? 1 : 0)}
                       />
@@ -784,7 +784,7 @@ function SjabloonEenvoudigVeld({
             value={typeof waarde === "number" ? waarde : parseGetal(waarde, 0)}
             onChange={onChange}
             placeholder="0"
-            className="h-10 w-24 text-right"
+            className="h-11 w-24 text-right"
           />
           {veld.eenheid && <span className="text-xs text-muted-foreground">{veld.eenheid}</span>}
         </div>
@@ -875,7 +875,7 @@ function SjabloonRegelgroep({
                     value={typeof regel[kolom.key] === "number" ? (regel[kolom.key] as number) : parseGetal(regel[kolom.key], 0)}
                     onChange={(waarde) => updateRegel(index, kolom.key, waarde)}
                     placeholder="0"
-                    className="h-10"
+                    className="h-11"
                   />
                 ) : kolom.soort === "keuze" ? (
                   <Select

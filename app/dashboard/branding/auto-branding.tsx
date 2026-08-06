@@ -254,7 +254,7 @@ function AutoBrandingPreview({
                     type="checkbox"
                     checked={useAlternativeTitle}
                     onChange={(e) => setUseAlternativeTitle(e.target.checked)}
-                    className="h-3.5 w-3.5 rounded border-input"
+                    className="h-3.5 w-3.5 rounded border-input accent-primary"
                   />
                   Gebruik in plaats daarvan: &ldquo;{result.titleAlternative}&rdquo;
                 </label>
@@ -325,7 +325,7 @@ function CheckField({
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-1 h-4 w-4 shrink-0 rounded border-input"
+        className="mt-1 h-4 w-4 shrink-0 rounded border-input accent-primary"
       />
       <span className="flex flex-col gap-1">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
