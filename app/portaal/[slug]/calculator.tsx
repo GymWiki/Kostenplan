@@ -483,7 +483,7 @@ function ProductCard({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             {ProductIcon && (
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-primary)]/10 text-foreground">
                 {/* eslint-disable-next-line react-hooks/static-components -- stable lookup from a module-level icon map, not a new component */}
                 <ProductIcon className="h-5 w-5" />
               </span>
@@ -914,7 +914,7 @@ function SjabloonRegelgroep({
         type="button"
         variant="outline"
         onClick={voegRegelToe}
-        className="w-full gap-1.5 border-dashed border-[var(--brand-primary)]/40 bg-transparent text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/10"
+        className="w-full gap-1.5 border-dashed border-[var(--brand-primary)]/40 bg-transparent hover:bg-[var(--brand-primary)]/10"
       >
         <Plus className="h-4 w-4" />
         {veld.toevoegLabel}
