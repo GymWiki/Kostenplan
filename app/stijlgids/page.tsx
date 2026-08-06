@@ -5,6 +5,7 @@ import { Badge } from "@/app/components/ui/badge";
 import { Switch } from "@/app/components/ui/switch";
 import { Input, DecimalInput, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Calculator } from "@/app/portaal/[slug]/calculator";
+import { OffertePresentatie } from "@/app/offerte/[token]/offerte-presentatie";
 import type {
   Branding,
   CostSettings,
@@ -214,6 +215,29 @@ function PortalPreview({
           branding={maakBranding(primaireKleur, achtergrondKleur)}
           costSettings={maakCostSettings()}
           products={maakProducten()}
+        />
+      </div>
+      <div className="overflow-hidden rounded-xl border border-border">
+        <OffertePresentatie
+          deelToken="stijlgids-preview"
+          bedrijfsnaam="Voorbeeldbedrijf"
+          klantNaam="J. de Vries"
+          logoUrl={null}
+          primaireKleur={primaireKleur}
+          achtergrondKleur={achtergrondKleur}
+          fontFamily="var(--font-plus-jakarta-sans)"
+          regels={[
+            { id: "regel-1", omschrijving: "Schutting (Betonnen palen)", aantal: 10, eenheid: "m1", prijsPerEenheid: 236 },
+            { id: "regel-2", omschrijving: "Poort toevoegen", aantal: 1, eenheid: "stuk", prijsPerEenheid: 145 },
+          ]}
+          introTekst="Bedankt voor uw aanvraag. Hierbij ontvangt u onze offerte."
+          voorwaardenTekst={null}
+          geldigTot={new Date("2026-02-01")}
+          gereageerdOp={null}
+          btwPercentage={21}
+          status="VERSTUURD"
+          contactEmail="voorbeeld@kostenplan.nl"
+          contactTelefoonnummer="0612345678"
         />
       </div>
     </div>

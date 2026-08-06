@@ -68,8 +68,8 @@ export function OffertePresentatie({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h1 className="text-xl font-semibold text-foreground">Offerte voor {klantNaam}</h1>
             <span
-              className="rounded-full px-2.5 py-0.5 text-xs font-medium"
-              style={{ backgroundColor: `${primaireKleur}1a`, color: primaireKleur }}
+              className="rounded-full px-2.5 py-0.5 text-xs font-medium text-foreground"
+              style={{ backgroundColor: `${primaireKleur}1a` }}
             >
               {OFFERTE_STATUS_LABELS[status]}
             </span>
