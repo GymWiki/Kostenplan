@@ -5,6 +5,13 @@ const protectedPrefixes = ["/dashboard", "/onboarding"];
 const authRoutes = ["/login", "/registreren"];
 
 export default async function proxy(request: NextRequest) {
+  // Interne stijlgids-QA-route: geen auth-gerelateerd gedrag nodig (geen
+  // protected/auth-prefix hierboven raakt 'm toch), en zo blijft de pagina
+  // ook renderbaar zonder Supabase-omgevingsvariabelen.
+  if (request.nextUrl.pathname.startsWith("/stijlgids")) {
+    return NextResponse.next({ request });
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

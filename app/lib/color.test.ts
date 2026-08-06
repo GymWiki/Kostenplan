@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   contrastRatio,
   contrastAgainstWhite,
+  accessibleTextColor,
   isGrayscale,
   darkenUntilContrast,
   colorsAreDistinct,
@@ -54,6 +55,29 @@ describe("contrastRatio / contrastAgainstWhite", () => {
 
   it("geeft null bij ongeldige hex", () => {
     expect(contrastAgainstWhite("niet-een-kleur")).toBeNull();
+  });
+});
+
+describe("accessibleTextColor", () => {
+  it("kiest zwarte tekst op lichte merkkleuren", () => {
+    expect(accessibleTextColor("#a7f3d0")).toBe("#000000"); // munt (licht)
+    expect(accessibleTextColor("#fde68a")).toBe("#000000"); // pastelgeel
+  });
+
+  it("kiest witte tekst op donkere merkkleuren", () => {
+    expect(accessibleTextColor("#15803d")).toBe("#ffffff"); // groen (bestaande huisstijl)
+    expect(accessibleTextColor("#1e1b4b")).toBe("#ffffff"); // diepe indigo
+  });
+
+  it("kiest de kant met het hoogste contrast rond het omslagpunt", () => {
+    // #767676 is bekend als het WCAG-omslagpunt: wit en zwart geven vrijwel
+    // gelijk contrast, dus welke kant "wint" hangt af van de exacte waarde —
+    // belangrijk is dat de functie altijd een geldige keuze teruggeeft.
+    expect(["#ffffff", "#000000"]).toContain(accessibleTextColor("#767676"));
+  });
+
+  it("geeft wit terug als vangnet bij ongeldige hex (contrast telt dan als 0)", () => {
+    expect(accessibleTextColor("niet-een-kleur")).toBe("#ffffff");
   });
 });
 

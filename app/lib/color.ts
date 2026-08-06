@@ -108,6 +108,16 @@ export function contrastAgainstWhite(hex: string): number | null {
   return contrastRatio(hex, "#ffffff");
 }
 
+// Kiest de leesbaarste tekstkleur (wit of zwart) voor een gegeven
+// achtergrondkleur — gebruikt door het klantenportaal om tekst op de
+// dynamische, per-account ingestelde merkkleur altijd leesbaar te houden
+// in plaats van een vaste tekstkleur te hardcoden.
+export function accessibleTextColor(hex: string): string {
+  const whiteRatio = contrastRatio(hex, "#ffffff") ?? 0;
+  const blackRatio = contrastRatio(hex, "#000000") ?? 0;
+  return whiteRatio >= blackRatio ? "#ffffff" : "#000000";
+}
+
 // HSL-saturatie/lightness-drempels om wit, zwart en grijstinten uit te
 // filteren als "geen echte merkkleur" — een foto- of achtergrondgrijs telt
 // hierdoor niet mee als gedetecteerde brandkleur.

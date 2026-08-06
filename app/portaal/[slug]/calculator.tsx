@@ -34,6 +34,7 @@ import { getProductIcon } from "@/app/lib/icons";
 import { unitLabel } from "@/app/lib/units";
 import { cn } from "@/app/lib/cn";
 import { fontFamilyFor, brandingFontVariables } from "@/app/lib/fonts";
+import { accessibleTextColor } from "@/app/lib/color";
 import { createLeadAction, type LeadFormState } from "@/app/lib/actions/leads";
 import type { LeadSnapshot, LeadSnapshotLine } from "@/app/lib/leads";
 import type {
@@ -131,6 +132,10 @@ export function Calculator({
   const achtergrondKleur = magPersonaliserenUiterlijk
     ? (branding?.achtergrondKleur ?? STANDAARD_ACHTERGRONDKLEUR)
     : STANDAARD_ACHTERGRONDKLEUR;
+  // De accentkleur wordt door de vakman gekozen en kan licht of donker zijn —
+  // bepaal de tekstkleur erop-tegen dus automatisch in plaats van wit vast
+  // te hardcoden, zodat de tekst altijd leesbaar blijft.
+  const brandPrimaryForeground = accessibleTextColor(primaireKleur);
   const fontFamily = fontFamilyFor(magPersonaliserenUiterlijk ? (branding?.lettertype ?? "MODERN") : "MODERN");
   const toonPoweredBy = subscriptionTier === "GRATIS";
 
@@ -259,6 +264,7 @@ export function Calculator({
       style={
         {
           "--brand-primary": primaireKleur,
+          "--brand-primary-foreground": brandPrimaryForeground,
           backgroundColor: achtergrondKleur,
           fontFamily,
         } as React.CSSProperties
@@ -281,11 +287,11 @@ export function Calculator({
           )}
           <div className="min-w-0 flex-1">
             {titel ? (
-              <h1 className="truncate text-xl font-semibold text-white">{titel}</h1>
+              <h1 className="truncate text-xl font-semibold text-[var(--brand-primary-foreground)]">{titel}</h1>
             ) : (
               <>
-                <p className="text-sm text-white/80">Kostencalculator van</p>
-                <h1 className="truncate text-xl font-semibold text-white">{bedrijfsnaam}</h1>
+                <p className="text-sm text-[var(--brand-primary-foreground)]/80">Kostencalculator van</p>
+                <h1 className="truncate text-xl font-semibold text-[var(--brand-primary-foreground)]">{bedrijfsnaam}</h1>
               </>
             )}
           </div>
@@ -538,7 +544,7 @@ function ProductCard({
                             onClick={() => onMaterialSelect(category.id, material.id)}
                             aria-pressed={isSelected}
                             className={cn(
-                              "flex flex-col items-center gap-1.5 rounded-md border-2 p-2 text-center transition-colors cursor-pointer",
+                              "flex flex-col items-center gap-1.5 rounded-md border-2 p-2 text-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                               isSelected
                                 ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/10"
                                 : "border-border bg-card hover:border-[var(--brand-primary)]/40 hover:bg-secondary"
@@ -562,7 +568,7 @@ function ProductCard({
                                 </span>
                               )}
                               {isSelected && (
-                                <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--brand-primary)] text-white ring-2 ring-card">
+                                <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] ring-2 ring-card">
                                   <Check className="h-3 w-3" />
                                 </span>
                               )}
@@ -892,24 +898,27 @@ function SjabloonRegelgroep({
               </div>
             );
           })}
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon"
             onClick={() => verwijderRegel(index)}
             aria-label="Regel verwijderen"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive cursor-pointer"
+            className="shrink-0 text-muted-foreground hover:text-destructive"
           >
             <Minus className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       ))}
-      <button
+      <Button
         type="button"
+        variant="outline"
         onClick={voegRegelToe}
-        className="flex items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--brand-primary)]/40 py-2 text-sm font-medium text-[var(--brand-primary)] transition-colors hover:bg-[var(--brand-primary)]/10 cursor-pointer"
+        className="w-full gap-1.5 border-dashed border-[var(--brand-primary)]/40 bg-transparent text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/10"
       >
         <Plus className="h-4 w-4" />
         {veld.toevoegLabel}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -1136,7 +1145,7 @@ function Summary({
                     <Button
                       type="submit"
                       variant="primary"
-                      className="flex-1 border-transparent bg-[var(--brand-primary)] text-white hover:opacity-90"
+                      className="flex-1 border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90"
                       disabled={pending}
                     >
                       <Mail className="h-4 w-4" />
@@ -1159,7 +1168,7 @@ function Summary({
                     <Button
                       type="button"
                       variant="primary"
-                      className="flex-1 border-transparent bg-[var(--brand-primary)] text-white hover:opacity-90"
+                      className="flex-1 border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90"
                       onClick={() => setFormOpen(true)}
                       disabled={heeftOntbrekendeVerplichteMaterialen}
                     >
