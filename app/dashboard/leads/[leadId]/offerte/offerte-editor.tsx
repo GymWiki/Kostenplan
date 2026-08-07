@@ -328,10 +328,10 @@ export function OfferteEditor({
           )}
 
           <div className="flex flex-col gap-2 sm:flex-row-reverse">
-            <Button type="submit" formAction={shareAction} disabled={pending} className="flex-1">
+            <Button type="submit" formAction={shareAction} size="lg" disabled={pending} className="w-full sm:flex-1">
               {sharePending ? "Bezig…" : "Genereer offerte om te delen"}
             </Button>
-            <Button type="submit" formAction={saveAction} variant="outline" disabled={pending} className="flex-1">
+            <Button type="submit" formAction={saveAction} variant="outline" size="lg" disabled={pending} className="w-full sm:flex-1">
               {savePending ? "Bezig…" : "Concept opslaan"}
             </Button>
           </div>

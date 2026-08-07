@@ -1136,7 +1136,8 @@ function Summary({
                     <Button
                       type="button"
                       variant="ghost"
-                      className="flex-1"
+                      size="lg"
+                      className="w-full sm:flex-1"
                       onClick={() => setFormOpen(false)}
                       disabled={pending}
                     >
@@ -1145,7 +1146,8 @@ function Summary({
                     <Button
                       type="submit"
                       variant="primary"
-                      className="flex-1 border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90"
+                      size="lg"
+                      className="w-full border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90 sm:flex-1"
                       disabled={pending}
                     >
                       <Mail className="h-4 w-4" />

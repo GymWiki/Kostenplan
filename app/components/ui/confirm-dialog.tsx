@@ -55,13 +55,14 @@ export function ConfirmDialog({
           <Button
             type="button"
             variant={variant}
-            className="flex-1"
+            size="lg"
+            className="w-full sm:flex-1"
             disabled={pending}
             onClick={onConfirm}
           >
             {pending ? "Bezig…" : confirmLabel}
           </Button>
-          <Button type="button" variant="secondary" className="flex-1" disabled={pending} onClick={onClose}>
+          <Button type="button" variant="secondary" size="lg" className="w-full sm:flex-1" disabled={pending} onClick={onClose}>
             {cancelLabel}
           </Button>
         </div>

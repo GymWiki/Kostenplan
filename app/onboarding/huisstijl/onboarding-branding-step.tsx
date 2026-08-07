@@ -25,11 +25,11 @@ export function OnboardingBrandingStep() {
         {applied?.logoUrl && <input type="hidden" name="logoUrl" value={applied.logoUrl} />}
         {applied?.customTitel && <input type="hidden" name="customTitel" value={applied.customTitel} />}
         {applied?.welkomstTekst && <input type="hidden" name="welkomstTekst" value={applied.welkomstTekst} />}
-        <Button type="submit" disabled={!applied} className="flex-1">
+        <Button type="submit" size="lg" disabled={!applied} className="w-full sm:flex-1">
           Opslaan en doorgaan
           <ArrowRight className="h-4 w-4" />
         </Button>
-        <LinkButton href="/dashboard" variant="outline" className="flex-1">
+        <LinkButton href="/dashboard" variant="outline" size="lg" className="w-full sm:flex-1">
           Overslaan, ik doe dit later
         </LinkButton>
       </form>

@@ -29,9 +29,10 @@ export function OfferteReactieForm({ deelToken }: { deelToken: string }) {
           type="submit"
           name="beslissing"
           value="GEACCEPTEERD"
+          size="lg"
           disabled={pending}
           onClick={() => setKlik("GEACCEPTEERD")}
-          className="flex-1"
+          className="w-full sm:flex-1"
         >
           <Check className="h-4 w-4" />
           {pending && klik === "GEACCEPTEERD" ? "Bezig…" : "Akkoord"}
@@ -41,9 +42,10 @@ export function OfferteReactieForm({ deelToken }: { deelToken: string }) {
           name="beslissing"
           value="AFGEWEZEN"
           variant="outline"
+          size="lg"
           disabled={pending}
           onClick={() => setKlik("AFGEWEZEN")}
-          className="flex-1"
+          className="w-full sm:flex-1"
         >
           <X className="h-4 w-4" />
           {pending && klik === "AFGEWEZEN" ? "Bezig…" : "Niet akkoord"}

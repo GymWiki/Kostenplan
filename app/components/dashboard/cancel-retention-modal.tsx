@@ -192,10 +192,10 @@ function OptiesStep({
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row-reverse">
-        <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+        <Button type="button" variant="secondary" size="lg" className="w-full sm:flex-1" onClick={onClose}>
           Ik blijf, bedankt
         </Button>
-        <Button type="button" variant="ghost" className="flex-1" onClick={onDoorNaarOpzeggen}>
+        <Button type="button" variant="ghost" size="lg" className="w-full sm:flex-1" onClick={onDoorNaarOpzeggen}>
           Toch opzeggen
         </Button>
       </div>
@@ -262,10 +262,10 @@ function RedenStep({
       {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
 
       <div className="flex flex-col gap-2 sm:flex-row-reverse">
-        <Button type="submit" variant="destructive" className="flex-1" disabled={pending}>
+        <Button type="submit" variant="destructive" size="lg" className="w-full sm:flex-1" disabled={pending}>
           {pending ? "Bezig…" : "Ja, opzeggen"}
         </Button>
-        <Button type="button" variant="outline" className="flex-1" onClick={onTerug}>
+        <Button type="button" variant="outline" size="lg" className="w-full sm:flex-1" onClick={onTerug}>
           Terug
         </Button>
       </div>

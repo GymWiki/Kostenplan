@@ -5,6 +5,7 @@ import { Badge } from "@/app/components/ui/badge";
 import { Switch } from "@/app/components/ui/switch";
 import { Input, DecimalInput, Label, Select, Textarea } from "@/app/components/ui/input";
 import { IconPicker } from "@/app/components/ui/icon-picker";
+import { ModalDemos } from "./modal-demos";
 import { Calculator } from "@/app/portaal/[slug]/calculator";
 import { OffertePresentatie } from "@/app/offerte/[token]/offerte-presentatie";
 import type {
@@ -326,6 +327,15 @@ export default function StijlgidsPage() {
         <Card>
           <CardContent className="pt-5">
             <IconPicker name="sg-icoon" defaultValue="Fence" />
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="flex flex-col gap-6">
+        <h2 className="text-lg font-semibold text-foreground">Admin-modals (actieknoppen)</h2>
+        <Card>
+          <CardContent className="pt-5">
+            <ModalDemos />
           </CardContent>
         </Card>
       </section>
