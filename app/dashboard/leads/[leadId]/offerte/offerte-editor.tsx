@@ -11,6 +11,7 @@ import {
   Mail,
   Download,
   RefreshCw,
+  TriangleAlert,
 } from "lucide-react";
 import { Button, LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
@@ -22,9 +23,10 @@ import {
   saveOfferteAction,
   genereerDeelLinkAction,
   regenereerDeelLinkAction,
+  herberekenOfferteAction,
   type OfferteFormState,
 } from "@/app/lib/actions/offertes";
-import { berekenOfferteTotalen, regelTotaal, type OfferteRegel } from "@/app/lib/offertes";
+import { berekenOfferteTotalen, heeftVerouderdeBerekening, regelTotaal, type OfferteRegel } from "@/app/lib/offertes";
 import { formatCurrency } from "@/app/lib/format";
 import type { Branding, Offerte } from "@/app/generated/prisma/client";
 
@@ -96,6 +98,18 @@ export function OfferteEditor({
   const regelsJson = useMemo(() => JSON.stringify(parsedRegels), [parsedRegels]);
   const totalen = berekenOfferteTotalen(parsedRegels, btwPercentage);
 
+  // Alleen relevant voor een nog niet verzonden concept — een al gedeelde of
+  // definitieve offerte wordt hier nooit met terugwerkende kracht op
+  // gecontroleerd of aangepast.
+  const verouderd = offerte.status === "CONCEPT" && heeftVerouderdeBerekening(parsedRegels);
+  const [herberekenPending, startHerberekenTransition] = useTransition();
+  function herbereken() {
+    startHerberekenTransition(async () => {
+      const nieuweRegels = await herberekenOfferteAction(offerte.id);
+      if (nieuweRegels) setRegels(nieuweRegels.map(naarEditRegel));
+    });
+  }
+
   function addRegel() {
     setRegels((r) => [
       ...r,
@@ -139,6 +153,30 @@ export function OfferteEditor({
           </h1>
         </div>
       </div>
+
+      {verouderd && (
+        <Card className="border-warning/30 bg-warning/10">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  Deze offerte is berekend met verouderde prijzen
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  De aanvraag waarop dit concept is gebaseerd gaf geen prijs per productregel mee,
+                  waardoor alle kosten in één post staan. Bereken de regels opnieuw met de huidige
+                  logica.
+                </p>
+              </div>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={herbereken} disabled={herberekenPending}>
+              <RefreshCw className="h-4 w-4" />
+              {herberekenPending ? "Bezig…" : "Opnieuw berekenen"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {deelUrl && (
         <Card>

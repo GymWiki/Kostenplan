@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { prefillOfferteRegels, regelTotaal, offerteSubtotaal } from "./offertes";
+import { prefillOfferteRegels, regelTotaal, offerteSubtotaal, heeftVerouderdeBerekening } from "./offertes";
 import type { LeadSnapshot } from "./leads";
+import type { OfferteRegel } from "./offertes";
 
 describe("prefillOfferteRegels", () => {
   it("geeft elke productregel zijn eigen prijs i.p.v. alles in één restpost te proppen (regressie)", () => {
@@ -94,5 +95,34 @@ describe("prefillOfferteRegels", () => {
 
     const regels = prefillOfferteRegels(snapshot);
     expect(regels.some((regel) => regel.id === "snapshot-restant")).toBe(false);
+  });
+});
+
+describe("heeftVerouderdeBerekening", () => {
+  it("herkent een concept met de vangnet-restpost als verouderd", () => {
+    const regels: OfferteRegel[] = [
+      { id: "snapshot-0", omschrijving: "Schutting", aantal: 10, eenheid: "m1", prijsPerEenheid: 0 },
+      { id: "snapshot-restant", omschrijving: "Materiaal- en overige kosten", aantal: 1, eenheid: "post", prijsPerEenheid: 5960 },
+    ];
+    expect(heeftVerouderdeBerekening(regels)).toBe(true);
+  });
+
+  it("een concept zonder restpost telt niet als verouderd", () => {
+    const regels: OfferteRegel[] = [
+      { id: "snapshot-0", omschrijving: "Schutting", aantal: 10, eenheid: "m1", prijsPerEenheid: 236 },
+      { id: "snapshot-1", omschrijving: "Terras aanleggen", aantal: 90, eenheid: "m2", prijsPerEenheid: 40 },
+    ];
+    expect(heeftVerouderdeBerekening(regels)).toBe(false);
+  });
+
+  it("een handmatig door de vakman toegevoegde regel (eigen uuid) triggert de melding niet", () => {
+    // addRegel() in offerte-editor.tsx geeft nieuwe regels een
+    // crypto.randomUUID() — nooit het gereserveerde "snapshot-restant"-id,
+    // dus een vakman die zelf een "overige kosten"-regel toevoegt krijgt
+    // hier geen valse melding over.
+    const regels: OfferteRegel[] = [
+      { id: "3f1a2b0a-1111-4a1a-9a1a-000000000001", omschrijving: "Overige kosten", aantal: 1, eenheid: "post", prijsPerEenheid: 150 },
+    ];
+    expect(heeftVerouderdeBerekening(regels)).toBe(false);
   });
 });

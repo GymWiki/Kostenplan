@@ -6,6 +6,7 @@ import { Switch } from "@/app/components/ui/switch";
 import { Input, DecimalInput, Label, Select, Textarea } from "@/app/components/ui/input";
 import { IconPicker } from "@/app/components/ui/icon-picker";
 import { ModalDemos } from "./modal-demos";
+import { TriangleAlert, RefreshCw } from "lucide-react";
 import { Calculator } from "@/app/portaal/[slug]/calculator";
 import { OffertePresentatie } from "@/app/offerte/[token]/offerte-presentatie";
 import type {
@@ -336,6 +337,31 @@ export default function StijlgidsPage() {
         <Card>
           <CardContent className="pt-5">
             <ModalDemos />
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="flex flex-col gap-6">
+        <h2 className="text-lg font-semibold text-foreground">Verouderde-offerteberekening-melding</h2>
+        <Card className="border-warning/30 bg-warning/10">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  Deze offerte is berekend met verouderde prijzen
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  De aanvraag waarop dit concept is gebaseerd gaf geen prijs per productregel mee,
+                  waardoor alle kosten in één post staan. Bereken de regels opnieuw met de huidige
+                  logica.
+                </p>
+              </div>
+            </div>
+            <Button type="button" variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4" />
+              Opnieuw berekenen
+            </Button>
           </CardContent>
         </Card>
       </section>

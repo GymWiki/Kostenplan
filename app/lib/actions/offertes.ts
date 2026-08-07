@@ -6,7 +6,7 @@ import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { offerteUpdateSchema, offerteReactieSchema } from "@/app/lib/validation";
 import { genereerEnUploadOffertePdf } from "@/app/lib/offerte-pdf";
-import { prefillOfferteRegels } from "@/app/lib/offertes";
+import { prefillOfferteRegels, type OfferteRegel } from "@/app/lib/offertes";
 import type { LeadSnapshot } from "@/app/lib/leads";
 import type { Offerte } from "@/app/generated/prisma/client";
 
@@ -206,6 +206,32 @@ export async function regenereerDeelLinkAction(offerteId: string) {
   });
 
   revalidatePath(`/dashboard/leads/${offerte.leadId}/offerte`);
+}
+
+// Herberekent de regels van een concept vanuit de bevroren aanvraag-
+// snapshot, met de huidige (gefixte) logica — voor concepten die zijn
+// voorgevuld tegen een oudere snapshot zonder prijs per productregel (zie
+// heeftVerouderdeBerekening in app/lib/offertes.ts). Bewust geen stille
+// automatische herberekening: de vakman ziet expliciet een melding en klikt
+// zelf op "Opnieuw berekenen" — dezelfde reden waarom "genereer offerte om
+// te delen" ook nooit ongevraagd bedragen wijzigt. Alleen voor CONCEPT: een
+// al verzonden of definitieve offerte wordt hier nooit met terugwerkende
+// kracht door aangepast. Geeft de nieuwe regels terug zodat de editor zijn
+// client-side bewerkstate kan bijwerken — revalidatePath alleen is hier niet
+// genoeg, regels leven in useState, niet rechtstreeks in props.
+export async function herberekenOfferteAction(offerteId: string): Promise<OfferteRegel[] | null> {
+  const { company } = await requireActiveCompany();
+  const offerte = await requireOfferteOwnership(offerteId, company.id);
+  if (!offerte || offerte.status !== "CONCEPT") return null;
+
+  const lead = await prisma.lead.findUniqueOrThrow({ where: { id: offerte.leadId } });
+  const regels = prefillOfferteRegels(lead.snapshot as unknown as LeadSnapshot);
+
+  await prisma.offerte.update({ where: { id: offerteId }, data: { regels } });
+
+  revalidatePath(`/dashboard/leads/${offerte.leadId}/offerte`);
+  revalidatePath("/dashboard/leads");
+  return regels;
 }
 
 // Zet reactieGezien terug op true zodra de vakman de offerte weer opent —

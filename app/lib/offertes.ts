@@ -75,6 +75,20 @@ export function prefillOfferteRegels(snapshot: LeadSnapshot): OfferteRegel[] {
   return regels;
 }
 
+// Signaleert een concept dat is voorgevuld tegen een aanvraag-snapshot van
+// vóór de fix waarbij elk productregel zijn eigen prijs kreeg (of tegen een
+// snapshot die om een andere reden geen prijs per regel kon geven) — te
+// herkennen aan het vaste "snapshot-restant"-id dat prefillOfferteRegels()
+// hierboven alleen zet als vangnet. Bewust géén generieke "wijkt af van wat
+// prefillOfferteRegels nu zou opleveren"-vergelijking: regels zijn na
+// aanmaken vrij bewerkbaar (zie OfferteRegel hierboven), dus zo'n check zou
+// ook op elke handmatige aanpassing van de vakman afgaan. Alleen relevant
+// voor CONCEPT — zie herberekenOfferteAction in app/lib/actions/offertes.ts,
+// die hier bewust nooit een VERSTUURD/definitieve offerte mee aanpast.
+export function heeftVerouderdeBerekening(regels: OfferteRegel[]): boolean {
+  return regels.some((regel) => regel.id === "snapshot-restant");
+}
+
 // Lazy weergave-status: VERSTUURD + geldigTot verstreken telt overal als
 // Verlopen, zonder dat elke leeslocatie (kanban-kaart, lijst) daarvoor een
 // database-schrijving hoeft te doen. De daadwerkelijke rij wordt pas
