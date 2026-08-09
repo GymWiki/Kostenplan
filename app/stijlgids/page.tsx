@@ -31,6 +31,15 @@ export const metadata: Metadata = {
 
 const NU = new Date("2026-01-01T00:00:00.000Z");
 
+// Inline SVG i.p.v. een externe URL, zodat de materiaal-tegel-preview geen
+// netwerktoegang nodig heeft — puur om de "met foto naast zonder foto"
+// tegel-inconsistentie te kunnen screenshotten.
+const PLACEHOLDER_FOTO =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#94a89b"/><rect x="8" y="8" width="48" height="48" fill="#5d6b75"/></svg>'
+  );
+
 function maakCostSettings(): CostSettings {
   return {
     id: "stijlgids-cost-settings",
@@ -107,7 +116,9 @@ function maakProducten(): (Product & {
           verplicht: true,
           createdAt: NU,
           materialen: [
-            maakMateriaalOptie({ id: "mat-beton", naam: "Betonnen palen", prijs: 18, foto: null }),
+            // Bewust één met en één zonder foto — test de icoon-fallback
+            // van een tegel zonder foto naast een tegel mét foto.
+            maakMateriaalOptie({ id: "mat-beton", naam: "Betonnen palen", prijs: 18, foto: PLACEHOLDER_FOTO }),
             maakMateriaalOptie({ id: "mat-hout", naam: "Houten palen", prijs: 12, foto: null }),
           ],
         },
@@ -160,6 +171,41 @@ function maakProducten(): (Product & {
           verplicht: false,
           createdAt: NU,
           materialen: [maakMateriaalOptie({ id: "mat-kunststof", naam: "Kunststof", prijs: 0 })],
+        },
+      ],
+      extraOpties: [],
+    },
+    {
+      id: "product-terras",
+      companyId: "stijlgids-company",
+      naam: "Terras aanleggen",
+      omschrijving: "Lengte × breedte, geprijsd per m².",
+      eenheid: "m2",
+      productiviteit: 8,
+      arbeidTariefOverride: null,
+      transportkostenOverride: null,
+      transportMeeschalend: false,
+      voorrijkostenOverride: null,
+      voorrijMeeschalend: false,
+      icoon: "LayoutGrid",
+      actief: true,
+      order: 2,
+      sjabloon: "AFMETINGEN",
+      sjabloonConfig: { metDiepte: false },
+      createdAt: NU,
+      updatedAt: NU,
+      materiaalCategorieen: [
+        {
+          id: "cat-terras-materiaal",
+          productId: "product-terras",
+          naam: "Bestrating",
+          order: 0,
+          verplicht: false,
+          createdAt: NU,
+          materialen: [
+            maakMateriaalOptie({ id: "mat-beton-tegel", naam: "Betontegel", prijs: 22 }),
+            maakMateriaalOptie({ id: "mat-natuursteen", naam: "Natuursteen", prijs: 45 }),
+          ],
         },
       ],
       extraOpties: [],

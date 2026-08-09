@@ -69,6 +69,15 @@ type Props = {
 const STANDAARD_PRIMAIRE_KLEUR = "#15803d";
 const STANDAARD_ACHTERGRONDKLEUR = "#f7faf8";
 
+// Klantvriendelijke weergave van een eenheid, alleen voor deze configurator.
+// "m¹" is vaktaal die een consument niet meteen herkent — in het
+// admin-dashboard (waar de vakman zelf uit "m¹"/"m²"/"m³" kiest) blijft
+// unitLabel() uit units.ts bewust ongewijzigd, dit is puur klant-weergave.
+function klantEenheidLabel(eenheid: string) {
+  if (eenheid === "m1") return "meter";
+  return unitLabel(eenheid);
+}
+
 export function Calculator({
   slug,
   bedrijfsnaam,
@@ -498,7 +507,7 @@ function ProductCard({
           {isEnkeleHoeveelheid ? (
             <QuantityStepper
               naam={product.naam}
-              eenheid={unitLabel(product.eenheid)}
+              eenheid={klantEenheidLabel(product.eenheid)}
               qty={qty}
               onChange={onQtyChange}
             />
@@ -559,7 +568,7 @@ function ProductCard({
                                   className="h-16 w-16 rounded-md object-cover"
                                 />
                               ) : (
-                                <span className="flex h-16 w-16 items-center justify-center rounded-md bg-secondary text-muted-foreground">
+                                <span className="flex h-16 w-16 items-center justify-center rounded-md bg-[var(--brand-primary)]/10 text-foreground">
                                   {ProductIcon ? (
                                     <ProductIcon className="h-6 w-6" />
                                   ) : (
@@ -578,7 +587,7 @@ function ProductCard({
                             </span>
                             <span className="text-xs text-muted-foreground">
                               {formatCurrencyRange(materiaalPrijsWeergave(material))} /{" "}
-                              {unitLabel(product.eenheid)}
+                              {klantEenheidLabel(product.eenheid)}
                             </span>
                           </button>
                         );
@@ -595,7 +604,7 @@ function ProductCard({
                       {category.materialen.map((material) => (
                         <option key={material.id} value={material.id}>
                           {material.naam} — {formatCurrencyRange(materiaalPrijsWeergave(material))}{" "}
-                          / {unitLabel(product.eenheid)}
+                          / {klantEenheidLabel(product.eenheid)}
                         </option>
                       ))}
                     </Select>
@@ -663,7 +672,7 @@ function ProductCard({
                         )}
                       </span>
                       <span className="shrink-0 text-muted-foreground">
-                        + {formatCurrency(extra.prijs)} / {unitLabel(product.eenheid)}
+                        + {formatCurrency(extra.prijs)} / {klantEenheidLabel(product.eenheid)}
                       </span>
                     </label>
                   )
@@ -743,15 +752,20 @@ function SjabloonInvoer({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    // 2 kolommen i.p.v. één volle-breedte veld per rij: Lengte/Breedte
+    // staan zo naast elkaar in plaats van met een grote lege ruimte
+    // ertussen op mobiel. Velden die niet naast een ander veld horen
+    // (keuze/tekst/ja-nee/regelgroep) nemen zelf col-span-2.
+    <div className="grid grid-cols-2 gap-3">
       {velden.map((veld) =>
         veld.soort === "regelgroep" ? (
-          <SjabloonRegelgroep
-            key={veld.key}
-            veld={veld}
-            regels={Array.isArray(invoer[veld.key]) ? (invoer[veld.key] as Record<string, unknown>[]) : []}
-            onChange={(regels) => setVeldWaarde(veld.key, regels)}
-          />
+          <div key={veld.key} className="col-span-2">
+            <SjabloonRegelgroep
+              veld={veld}
+              regels={Array.isArray(invoer[veld.key]) ? (invoer[veld.key] as Record<string, unknown>[]) : []}
+              onChange={(regels) => setVeldWaarde(veld.key, regels)}
+            />
+          </div>
         ) : (
           <SjabloonEenvoudigVeld
             key={veld.key}
@@ -776,7 +790,7 @@ function SjabloonEenvoudigVeld({
 }) {
   if (veld.soort === "getal") {
     return (
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor={`sv-${veld.key}`}>{veld.label}</Label>
         <div className="flex items-center gap-1.5">
           <DecimalField
@@ -784,9 +798,9 @@ function SjabloonEenvoudigVeld({
             value={typeof waarde === "number" ? waarde : parseGetal(waarde, 0)}
             onChange={onChange}
             placeholder="0"
-            className="h-11 w-24 text-right"
+            className="h-11 w-full text-right"
           />
-          {veld.eenheid && <span className="text-xs text-muted-foreground">{veld.eenheid}</span>}
+          {veld.eenheid && <span className="shrink-0 text-xs text-muted-foreground">{veld.eenheid}</span>}
         </div>
       </div>
     );
@@ -794,7 +808,7 @@ function SjabloonEenvoudigVeld({
 
   if (veld.soort === "janee") {
     return (
-      <label className="flex items-center justify-between gap-3 text-sm">
+      <label className="col-span-2 flex items-center justify-between gap-3 text-sm">
         <span className="text-foreground">{veld.label}</span>
         <input
           type="checkbox"
@@ -808,7 +822,7 @@ function SjabloonEenvoudigVeld({
 
   if (veld.soort === "keuze") {
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className="col-span-2 flex flex-col gap-1.5">
         <Label>{veld.label}</Label>
         <Select value={typeof waarde === "string" ? waarde : ""} onChange={(e) => onChange(e.target.value)}>
           {veld.opties.map((optie) => (
@@ -822,7 +836,7 @@ function SjabloonEenvoudigVeld({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="col-span-2 flex flex-col gap-1.5">
       <Label>{veld.label}</Label>
       <Input
         value={typeof waarde === "string" ? waarde : ""}
@@ -936,34 +950,37 @@ function QuantityStepper({
 }) {
   const step = 1;
   return (
-    <div className="flex shrink-0 items-center gap-2">
-      <button
-        type="button"
-        onClick={() => onChange(Math.max(0, round(qty - step)))}
-        className="flex h-11 w-11 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-40 cursor-pointer"
-        disabled={qty <= 0}
-        aria-label={`${naam} verminderen`}
-      >
-        <Minus className="h-4 w-4" />
-      </button>
-      <div className="flex flex-col items-center">
+    <div className="flex shrink-0 flex-col items-center gap-1">
+      {/* Eén visueel samenhangend stepper-component i.p.v. drie losse
+          vlakken — min/veld/plus delen dezelfde rand en radius, elk
+          segment blijft minimaal 44x44px tikgebied. */}
+      <div className="inline-flex h-11 items-stretch overflow-hidden rounded-md border border-border bg-card">
+        <button
+          type="button"
+          onClick={() => onChange(Math.max(0, round(qty - step)))}
+          className="flex w-11 shrink-0 items-center justify-center text-foreground transition-colors hover:bg-secondary focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:pointer-events-none disabled:opacity-40 cursor-pointer"
+          disabled={qty <= 0}
+          aria-label={`${naam} verminderen`}
+        >
+          <Minus className="h-4 w-4" />
+        </button>
         <DecimalField
           value={qty}
           onChange={onChange}
           placeholder="0"
-          className="h-11 w-20 text-center"
+          className="h-11 w-16 rounded-none border-y-0 text-center focus-visible:z-10"
           aria-label={`Aantal ${naam}`}
         />
-        <span className="mt-0.5 text-xs text-muted-foreground">{eenheid}</span>
+        <button
+          type="button"
+          onClick={() => onChange(round(qty + step))}
+          className="flex w-11 shrink-0 items-center justify-center text-foreground transition-colors hover:bg-secondary focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset cursor-pointer"
+          aria-label={`${naam} toevoegen`}
+        >
+          <Plus className="h-4 w-4" />
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={() => onChange(round(qty + step))}
-        className="flex h-11 w-11 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
-        aria-label={`${naam} toevoegen`}
-      >
-        <Plus className="h-4 w-4" />
-      </button>
+      <span className="text-xs text-muted-foreground">{eenheid}</span>
     </div>
   );
 }
@@ -1069,20 +1086,29 @@ function Summary({
                 </div>
               )}
 
-              <div className="flex items-center justify-between rounded-lg bg-accent px-3 py-3">
-                <span className="font-semibold text-accent-foreground">Totaal (incl. btw)</span>
-                <span className="text-lg font-bold text-accent-foreground">
+              {/* Het totaal is de belangrijkste regel op de pagina — solide
+                  merkkleur-vlak (dezelfde veilige, contrastgecontroleerde
+                  voorgrondkleur als de header) i.p.v. de vaste accentkleur,
+                  met een duidelijk groter cijfer dan de rest van het
+                  overzicht. */}
+              <div
+                className="flex flex-col gap-1 rounded-lg px-4 py-4"
+                style={{ backgroundColor: "var(--brand-primary)" }}
+              >
+                <span className="text-xs font-medium uppercase tracking-wide text-[var(--brand-primary-foreground)]/75">
+                  Totaal (incl. btw)
+                </span>
+                <span className="text-3xl font-bold leading-tight text-[var(--brand-primary-foreground)]">
                   {formatCurrencyRange(breakdown.totaal)}
                 </span>
+                {breakdown.modus === "TOTAAL" &&
+                  breakdown.margeOmlaag != null &&
+                  breakdown.margeOmhoog != null && (
+                    <span className="text-xs text-[var(--brand-primary-foreground)]/60">
+                      Indicatie −{breakdown.margeOmlaag}% / +{breakdown.margeOmhoog}%
+                    </span>
+                  )}
               </div>
-              {breakdown.modus === "TOTAAL" &&
-                breakdown.margeOmlaag != null &&
-                breakdown.margeOmhoog != null && (
-                  <p className="text-xs text-muted-foreground">
-                    Indicatie −{breakdown.margeOmlaag}% / +{breakdown.margeOmhoog}%
-                  </p>
-                )}
-
               {heeftOntbrekendeVerplichteMaterialen && (
                 <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning">
                   Kies bij elk product een verplicht materiaal om een volledige prijsindicatie te
@@ -1157,16 +1183,9 @@ function Summary({
                 </form>
               ) : (
                 <div className="flex flex-col gap-2 print:hidden sm:flex-row">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="lg"
-                    className="w-full sm:flex-1"
-                    onClick={() => window.print()}
-                  >
-                    <Printer className="h-4 w-4" />
-                    Bewaar als PDF
-                  </Button>
+                  {/* Primaire actie eerst (bovenaan op mobiel, voorop in de
+                      rij op desktop) — "Bewaar als PDF" is bewust ghost, zo
+                      blijft de aandacht op het aanvragen liggen. */}
                   {magOfferteAanvragen && (
                     <Button
                       type="button"
@@ -1180,6 +1199,16 @@ function Summary({
                       Offerte aanvragen
                     </Button>
                   )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="lg"
+                    className="w-full sm:flex-1"
+                    onClick={() => window.print()}
+                  >
+                    <Printer className="h-4 w-4" />
+                    Bewaar als PDF
+                  </Button>
                 </div>
               )}
             </>
