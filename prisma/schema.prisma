@@ -115,6 +115,11 @@ enum LeadStatus {
   OFFERTE_VERSTUURD
   GEWONNEN
   VERLOREN
+  // Aanvraag afgehandeld buiten Kostenplan om (zie Deel 1 van de
+  // offerte-afhandelingsflow, app/lib/actions/offertes.ts
+  // markExternAfgehandeldAction) — de vakman heeft zelf een offerte gestuurd,
+  // Kostenplan houdt alleen het moment en een optionele notitie bij.
+  EXTERN_AFGEHANDELD
 }
 
 // id matches auth.users.id from Supabase Auth — the profile row is created
@@ -541,6 +546,11 @@ model Lead {
   notities LeadNote[]
   offerte  Offerte?
 
+  // Gezet door markExternAfgehandeldAction wanneer status EXTERN_AFGEHANDELD
+  // wordt. Notitie is bewust optioneel — geen verplichte stap.
+  externAfgehandeldOp       DateTime?
+  externAfgehandeldNotitie  String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -571,6 +581,12 @@ enum OfferteStatus {
   GEACCEPTEERD
   AFGEWEZEN
   VERLOPEN
+  // Zachte statuswijziging (geen verwijdering) voor een VERSTUURD-offerte die
+  // de vakman terugtrekt — de rij en de historie blijven bestaan, alleen de
+  // publieke link toont voortaan een "niet meer beschikbaar"-melding. Alleen
+  // bereikbaar vanuit VERSTUURD, zie intrekOfferteAction in
+  // app/lib/actions/offertes.ts.
+  INGETROKKEN
 }
 
 // Eén (bewerkbaar) offerte-object per Lead — losstaand van eventuele latere
@@ -610,6 +626,7 @@ model Offerte {
   pdfUrl    String?
 
   verstuurdOp   DateTime?
+  ingetrokkenOp DateTime?
   gereageerdOp  DateTime?
   klantReactie  String?
   // Voor de in-app "klant heeft gereageerd"-melding op de aanvragenpagina —

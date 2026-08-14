@@ -39,6 +39,7 @@ export const LEAD_STATUSSEN: LeadStatus[] = [
   "OFFERTE_VERSTUURD",
   "GEWONNEN",
   "VERLOREN",
+  "EXTERN_AFGEHANDELD",
 ];
 
 export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
@@ -47,6 +48,7 @@ export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
   OFFERTE_VERSTUURD: "Offerte verstuurd",
   GEWONNEN: "Gewonnen",
   VERLOREN: "Verloren",
+  EXTERN_AFGEHANDELD: "Extern afgehandeld",
 };
 
 // Alles behalve Verloren telt mee in de Pipeline Waarde-KPI — Gewonnen blijft

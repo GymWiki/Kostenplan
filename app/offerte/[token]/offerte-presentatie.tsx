@@ -22,8 +22,10 @@ export function OffertePresentatie({
   voorwaardenTekst,
   geldigTot,
   gereageerdOp,
+  updatedAt,
   btwPercentage,
   status,
+  nietBereikbaarVoorKlant = false,
   contactEmail,
   contactTelefoonnummer,
 }: {
@@ -39,13 +41,49 @@ export function OffertePresentatie({
   voorwaardenTekst: string | null;
   geldigTot: Date;
   gereageerdOp: Date | null;
+  updatedAt: Date;
   btwPercentage: number;
   status: OfferteStatus;
+  // Lead is gemarkeerd "extern afgehandeld" (Deel 1) — de offerte zelf blijft
+  // gewoon bestaan (en bekijkbaar voor de vakman), maar is vanaf dat moment
+  // niet meer bereikbaar voor de klant. Losstaand van offerte.status: dit
+  // kan bij elke status optreden, ongeacht wat er verder met de offerte zelf
+  // is gebeurd.
+  nietBereikbaarVoorKlant?: boolean;
   contactEmail: string | null;
   contactTelefoonnummer: string | null;
 }) {
   const { subtotaal, btw, totaal } = berekenOfferteTotalen(regels, btwPercentage);
   const heeftContact = Boolean(contactEmail || contactTelefoonnummer);
+
+  // Ingetrokken (een bewuste statuswijziging door de vakman) en "extern
+  // afgehandeld" (de aanvraag wordt buiten Kostenplan om afgehandeld) leiden
+  // voor de klant tot hetzelfde: geen offerte-inhoud meer, alleen een
+  // gebrande melding — geen kale 404.
+  if (status === "INGETROKKEN" || nietBereikbaarVoorKlant) {
+    return (
+      <div
+        data-portal-shell
+        className={brandingFontVariables()}
+        style={{ fontFamily, backgroundColor: achtergrondKleur, minHeight: "100vh" }}
+      >
+        <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-lg font-semibold" style={{ color: primaireKleur }}>
+              {bedrijfsnaam}
+            </p>
+            {logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element -- externe Supabase Storage-URL
+              <img src={logoUrl} alt="" className="h-10 w-auto max-w-[140px] object-contain" />
+            )}
+          </div>
+          <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
+            Deze offerte is niet meer beschikbaar.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -75,6 +113,7 @@ export function OffertePresentatie({
             </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">Geldig tot {dateFormatter.format(geldigTot)}</p>
+          <p className="text-xs text-muted-foreground">Laatst gewijzigd op {dateFormatter.format(updatedAt)}</p>
 
           {introTekst && <p className="mt-4 whitespace-pre-wrap text-sm text-foreground">{introTekst}</p>}
 

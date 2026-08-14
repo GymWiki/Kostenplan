@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState, useTransition } from "react";
+import { useActionState, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -12,18 +12,25 @@ import {
   Download,
   RefreshCw,
   TriangleAlert,
+  CheckCircle2,
+  Undo2,
 } from "lucide-react";
 import { Button, LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
 import { DecimalInput, Input, Label, Textarea } from "@/app/components/ui/input";
 import { CopyButton } from "@/app/components/dashboard/copy-link";
+import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
+import { DeleteButton } from "@/app/components/dashboard/delete-button";
 import { OfferteStatusBadge } from "../../offerte-status-badge";
 import { OffertePreview } from "./offerte-preview";
+import { VerzendBevestigingModal } from "./verzend-bevestiging-modal";
 import {
   saveOfferteAction,
   genereerDeelLinkAction,
   regenereerDeelLinkAction,
   herberekenOfferteAction,
+  intrekOfferteAction,
+  deleteOfferteAction,
   type OfferteFormState,
 } from "@/app/lib/actions/offertes";
 import { berekenOfferteTotalen, heeftVerouderdeBerekening, regelTotaal, type OfferteRegel } from "@/app/lib/offertes";
@@ -64,6 +71,7 @@ function naarDateInputValue(date: Date) {
 export function OfferteEditor({
   offerte,
   klantNaam,
+  klantEmail,
   bedrijfsnaam,
   branding,
   btwPercentage,
@@ -71,6 +79,7 @@ export function OfferteEditor({
 }: {
   offerte: Offerte & { regels: OfferteRegel[] };
   klantNaam: string;
+  klantEmail: string;
   bedrijfsnaam: string;
   branding: Branding | null;
   btwPercentage: number;
@@ -92,6 +101,23 @@ export function OfferteEditor({
   const [regenPending, startRegenTransition] = useTransition();
   function regenereerDeelLink() {
     startRegenTransition(() => regenereerDeelLinkAction(offerte.id));
+  }
+
+  const formRef = useRef<HTMLFormElement>(null);
+  const [verzendModalOpen, setVerzendModalOpen] = useState(false);
+  function bevestigVersturen() {
+    if (!formRef.current) return;
+    shareAction(new FormData(formRef.current));
+    setVerzendModalOpen(false);
+  }
+
+  const [intrekOpen, setIntrekOpen] = useState(false);
+  const [intrekPending, startIntrekTransition] = useTransition();
+  function bevestigIntrekken() {
+    startIntrekTransition(async () => {
+      await intrekOfferteAction(offerte.id);
+      setIntrekOpen(false);
+    });
   }
 
   const parsedRegels = useMemo(() => regels.map(naarOfferteRegel), [regels]);
@@ -152,7 +178,47 @@ export function OfferteEditor({
             <OfferteStatusBadge offerte={offerte} />
           </h1>
         </div>
+        <div className="flex items-center gap-2">
+          {offerte.status === "VERSTUURD" && (
+            <>
+              <Button type="button" variant="outline" size="sm" onClick={() => setIntrekOpen(true)}>
+                <Undo2 className="h-4 w-4" />
+                Intrekken
+              </Button>
+              <ConfirmDialog
+                open={intrekOpen}
+                onClose={() => setIntrekOpen(false)}
+                onConfirm={bevestigIntrekken}
+                pending={intrekPending}
+                variant="primary"
+                title="Offerte intrekken?"
+                description="De klant ziet voortaan een melding dat de offerte niet meer beschikbaar is; de link blijft bestaan. Je kunt de offerte later opnieuw versturen."
+                confirmLabel="Intrekken"
+              />
+            </>
+          )}
+          {offerte.status === "CONCEPT" && (
+            <DeleteButton
+              action={deleteOfferteAction}
+              id={offerte.id}
+              idField="offerteId"
+              confirmTitle="Concept verwijderen?"
+              confirmMessage="Dit concept is nooit verzonden en wordt definitief verwijderd. Dit kan niet ongedaan worden gemaakt."
+            />
+          )}
+        </div>
       </div>
+
+      {offerte.status === "GEACCEPTEERD" && (
+        <Card className="border-accent bg-accent/50">
+          <CardContent className="flex items-start gap-2.5">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent-foreground" />
+            <p className="text-sm text-accent-foreground">
+              Deze offerte is geaccepteerd door de klant en kan niet meer worden gewijzigd.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {verouderd && (
         <Card className="border-warning/30 bg-warning/10">
@@ -214,8 +280,22 @@ export function OfferteEditor({
         </Card>
       )}
 
+      {offerte.status === "GEACCEPTEERD" ? (
+        <div className="max-w-xl">
+          <OffertePreview
+            bedrijfsnaam={bedrijfsnaam}
+            klantNaam={klantNaam}
+            branding={branding}
+            regels={parsedRegels}
+            introTekst={introTekst}
+            voorwaardenTekst={voorwaardenTekst}
+            geldigTot={geldigTot ? new Date(geldigTot) : null}
+            btwPercentage={btwPercentage}
+          />
+        </div>
+      ) : (
       <div className="grid gap-6 lg:grid-cols-2">
-        <form className="flex flex-col gap-4">
+        <form ref={formRef} className="flex flex-col gap-4">
           <input type="hidden" name="regels" value={regelsJson} />
           <input type="hidden" name="introTekst" value={introTekst} />
           <input type="hidden" name="voorwaardenTekst" value={voorwaardenTekst} />
@@ -366,7 +446,13 @@ export function OfferteEditor({
           )}
 
           <div className="flex flex-col gap-2 sm:flex-row-reverse">
-            <Button type="submit" formAction={shareAction} size="lg" disabled={pending} className="w-full sm:flex-1">
+            <Button
+              type="button"
+              size="lg"
+              disabled={pending}
+              className="w-full sm:flex-1"
+              onClick={() => setVerzendModalOpen(true)}
+            >
               {sharePending ? "Bezig…" : "Genereer offerte om te delen"}
             </Button>
             <Button type="submit" formAction={saveAction} variant="outline" size="lg" disabled={pending} className="w-full sm:flex-1">
@@ -388,6 +474,19 @@ export function OfferteEditor({
           />
         </div>
       </div>
+      )}
+
+      <VerzendBevestigingModal
+        open={verzendModalOpen}
+        onClose={() => setVerzendModalOpen(false)}
+        onBevestig={bevestigVersturen}
+        pending={sharePending}
+        klantNaam={klantNaam}
+        klantEmail={klantEmail}
+        regels={parsedRegels}
+        totaal={totalen.totaal}
+        geldigTot={geldigTot ? new Date(geldigTot) : null}
+      />
     </div>
   );
 }

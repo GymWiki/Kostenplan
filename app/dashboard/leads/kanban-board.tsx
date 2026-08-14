@@ -25,6 +25,7 @@ const STATUS_ACCENT: Record<LeadStatus, string> = {
   OFFERTE_VERSTUURD: "border-t-violet-500",
   GEWONNEN: "border-t-emerald-500",
   VERLOREN: "border-t-rose-400",
+  EXTERN_AFGEHANDELD: "border-t-slate-400",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "short" });
@@ -60,7 +61,7 @@ export function KanbanBoard({
     // op de server en bij client-hydratie uiteen kan lopen (een hydration-
     // mismatch warning tot gevolg), zie dnd-kit's SSR-advies.
     <DndContext id="leads-kanban" sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {LEAD_STATUSSEN.map((status) => (
           <KanbanColumn
             key={status}

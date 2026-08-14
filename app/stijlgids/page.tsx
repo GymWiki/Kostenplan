@@ -283,6 +283,7 @@ function PortalPreview({
           voorwaardenTekst={null}
           geldigTot={new Date("2026-02-01")}
           gereageerdOp={null}
+          updatedAt={new Date("2026-01-15")}
           btwPercentage={21}
           status="VERSTUURD"
           contactEmail="voorbeeld@kostenplan.nl"

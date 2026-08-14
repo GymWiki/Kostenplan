@@ -19,6 +19,7 @@ export const OFFERTE_STATUS_LABELS: Record<OfferteStatus, string> = {
   GEACCEPTEERD: "Geaccepteerd",
   AFGEWEZEN: "Afgewezen",
   VERLOPEN: "Verlopen",
+  INGETROKKEN: "Ingetrokken",
 };
 
 export function regelTotaal(regel: OfferteRegel) {
@@ -87,6 +88,61 @@ export function prefillOfferteRegels(snapshot: LeadSnapshot): OfferteRegel[] {
 // die hier bewust nooit een VERSTUURD/definitieve offerte mee aanpast.
 export function heeftVerouderdeBerekening(regels: OfferteRegel[]): boolean {
   return regels.some((regel) => regel.id === "snapshot-restant");
+}
+
+// Controles vlak vóór versturen (zie de verzend-bevestiging in
+// offerte-editor.tsx en de server-side achtervang in genereerDeelLinkAction).
+// Eén blokkerende controle (ontbrekend e-mailadres) — versturen is dan
+// onmogelijk, geen "toch doorgaan"-optie. De rest zijn waarschuwingen die de
+// vakman bewust moet zien voordat hij toch verstuurt.
+export type VerzendControle = {
+  type: "emailOntbreekt" | "nulPrijsRegels" | "totaalIsNul" | "geldigTotVerlopen";
+  bericht: string;
+};
+
+export function berekenVerzendControles({
+  klantEmail,
+  regels,
+  totaal,
+  geldigTot,
+}: {
+  klantEmail: string;
+  regels: OfferteRegel[];
+  totaal: number;
+  geldigTot: Date;
+}): { blokkerend: VerzendControle[]; waarschuwingen: VerzendControle[] } {
+  const blokkerend: VerzendControle[] = [];
+  const waarschuwingen: VerzendControle[] = [];
+
+  if (!klantEmail.trim()) {
+    blokkerend.push({
+      type: "emailOntbreekt",
+      bericht: "De klant heeft geen e-mailadres — versturen is niet mogelijk.",
+    });
+  }
+
+  const nulPrijsRegels = regels.filter((regel) => regel.aantal > 0 && regel.prijsPerEenheid === 0);
+  if (nulPrijsRegels.length > 0) {
+    waarschuwingen.push({
+      type: "nulPrijsRegels",
+      bericht:
+        nulPrijsRegels.length === 1
+          ? `1 regel heeft een aantal groter dan 0 maar een prijs van €0,00 ("${nulPrijsRegels[0].omschrijving || "Zonder omschrijving"}").`
+          : `${nulPrijsRegels.length} regels hebben een aantal groter dan 0 maar een prijs van €0,00.`,
+    });
+  }
+
+  if (totaal === 0) {
+    waarschuwingen.push({ type: "totaalIsNul", bericht: "Het totaalbedrag van deze offerte is €0,00." });
+  }
+
+  const vandaag = new Date();
+  vandaag.setHours(0, 0, 0, 0);
+  if (geldigTot.getTime() < vandaag.getTime()) {
+    waarschuwingen.push({ type: "geldigTotVerlopen", bericht: "De \"geldig tot\"-datum ligt al in het verleden." });
+  }
+
+  return { blokkerend, waarschuwingen };
 }
 
 // Lazy weergave-status: VERSTUURD + geldigTot verstreken telt overal als

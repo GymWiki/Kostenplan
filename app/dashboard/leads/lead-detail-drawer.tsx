@@ -19,6 +19,7 @@ import { omzettenNaarOfferteAction, markOffertReactieGezienAction } from "@/app/
 import { whatsappLink } from "@/app/lib/leads";
 import { StatusSelect } from "./status-select";
 import { OfferteStatusBadge } from "./offerte-status-badge";
+import { AfhandelKeuzeModal } from "./afhandel-keuze-modal";
 import type { LeadWithNotes } from "./leads-view";
 import type { LeadNote } from "@/app/generated/prisma/client";
 
@@ -47,6 +48,10 @@ export function LeadDetailDrawer({
   }, [lead?.id]);
 
   const [omzettenPending, startOmzettenTransition] = useTransition();
+  const [keuzeModal, setKeuzeModal] = useState<{ open: boolean; startStap: "keuze" | "notitie"; waarschuwing?: string }>({
+    open: false,
+    startStap: "keuze",
+  });
 
   if (!lead) return null;
 
@@ -104,24 +109,76 @@ export function LeadDetailDrawer({
 
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-semibold text-foreground">Offerte</h3>
-            {lead.offerte ? (
-              <LinkButton href={`/dashboard/leads/${lead.id}/offerte`} variant="secondary" className="w-full">
-                <FileText className="h-4 w-4" />
-                Offerte bekijken/bewerken
-                <OfferteStatusBadge offerte={lead.offerte} />
-              </LinkButton>
+            {lead.status === "EXTERN_AFGEHANDELD" ? (
+              <div className="flex flex-col gap-2 rounded-lg border border-border bg-secondary/30 p-3">
+                <p className="text-sm font-medium text-foreground">Extern afgehandeld</p>
+                {lead.externAfgehandeldOp && (
+                  <p className="text-xs text-muted-foreground">
+                    Op {dateFormatter.format(lead.externAfgehandeldOp)}
+                  </p>
+                )}
+                {lead.externAfgehandeldNotitie && (
+                  <p className="text-xs italic text-muted-foreground">“{lead.externAfgehandeldNotitie}”</p>
+                )}
+                {lead.offerte && (
+                  <LinkButton href={`/dashboard/leads/${lead.id}/offerte`} variant="secondary" className="w-full">
+                    <FileText className="h-4 w-4" />
+                    Offerte bekijken/bewerken
+                    <OfferteStatusBadge offerte={lead.offerte} />
+                  </LinkButton>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={omzettenPending}
+                  onClick={() => startOmzettenTransition(() => omzettenNaarOfferteAction(lead.id))}
+                >
+                  {omzettenPending ? "Bezig…" : "Toch in Kostenplan afhandelen"}
+                </Button>
+              </div>
+            ) : lead.offerte ? (
+              <div className="flex flex-col gap-1.5">
+                <LinkButton href={`/dashboard/leads/${lead.id}/offerte`} variant="secondary" className="w-full">
+                  <FileText className="h-4 w-4" />
+                  Offerte bekijken/bewerken
+                  <OfferteStatusBadge offerte={lead.offerte} />
+                </LinkButton>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setKeuzeModal({
+                      open: true,
+                      startStap: "notitie",
+                      waarschuwing:
+                        lead.offerte!.status !== "CONCEPT"
+                          ? "Er is al een offerte verzonden of geaccepteerd bij deze aanvraag."
+                          : undefined,
+                    })
+                  }
+                  className="cursor-pointer self-start text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                >
+                  Ik verstuur deze offerte toch zelf
+                </button>
+              </div>
             ) : (
               <Button
                 type="button"
                 variant="secondary"
                 className="w-full"
-                disabled={omzettenPending}
-                onClick={() => startOmzettenTransition(() => omzettenNaarOfferteAction(lead.id))}
+                onClick={() => setKeuzeModal({ open: true, startStap: "keuze" })}
               >
                 <FileText className="h-4 w-4" />
-                {omzettenPending ? "Bezig…" : "Omzetten naar offerte"}
+                Aanvraag afhandelen
               </Button>
             )}
+            <AfhandelKeuzeModal
+              open={keuzeModal.open}
+              onClose={() => setKeuzeModal((k) => ({ ...k, open: false }))}
+              leadId={lead.id}
+              startStap={keuzeModal.startStap}
+              waarschuwing={keuzeModal.waarschuwing}
+            />
           </div>
 
           <div className="flex flex-col gap-2">

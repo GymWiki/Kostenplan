@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { offerteUpdateSchema, offerteReactieSchema } from "@/app/lib/validation";
+import { offerteUpdateSchema, offerteReactieSchema, externAfgehandeldNotitieSchema } from "@/app/lib/validation";
 import { genereerEnUploadOffertePdf } from "@/app/lib/offerte-pdf";
 import { prefillOfferteRegels, type OfferteRegel } from "@/app/lib/offertes";
 import type { LeadSnapshot } from "@/app/lib/leads";
@@ -34,6 +34,14 @@ export async function omzettenNaarOfferteAction(leadId: string) {
     include: { offerte: true },
   });
   if (!lead) redirect("/dashboard/leads");
+
+  // Gerichte uitzondering op de verder losstaande LeadStatus/OfferteStatus:
+  // komt de vakman via dit pad terug van "ik verstuur zelf" (Deel 1), dan
+  // klopt "extern afgehandeld" niet meer — er wordt nu juist een offerte in
+  // Kostenplan gemaakt/bewerkt. Ongeacht of er al een offerte bestond.
+  if (lead.status === "EXTERN_AFGEHANDELD") {
+    await prisma.lead.update({ where: { id: lead.id }, data: { status: "IN_BEHANDELING" } });
+  }
 
   if (!lead.offerte) {
     const branding = await prisma.branding.findUnique({ where: { companyId: company.id } });
@@ -107,9 +115,12 @@ function parseOfferteFormData(formData: FormData): ParsedOfferteFormData {
   };
 }
 
-// Bewaart het concept — mag ongeacht de huidige status, ook nadat er al
-// gedeeld is (de vakman is eigenaar van de inhoud; het publieke adres blijft
-// gewoon hetzelfde totdat er expliciet een nieuwe link wordt aangevraagd).
+// Bewaart het concept — mag ongeacht de status, behalve zodra de klant al
+// akkoord is: een geaccepteerde offerte is het bewijsstuk van wat er is
+// afgesproken en mag daarna nooit meer wijzigen, ook niet door de vakman
+// zelf. Dit is een harde regel op actie-niveau — de editor-UI toont
+// daarnaast een banner en zet zichzelf read-only, maar dat is een tweede
+// laag, niet de enige laag.
 export async function saveOfferteAction(
   offerteId: string,
   _prevState: OfferteFormState,
@@ -118,6 +129,9 @@ export async function saveOfferteAction(
   const { company } = await requireActiveCompany();
   const offerte = await requireOfferteOwnership(offerteId, company.id);
   if (!offerte) return { error: "Offerte niet gevonden" };
+  if (offerte.status === "GEACCEPTEERD") {
+    return { error: "Deze offerte is al geaccepteerd door de klant en kan niet meer worden gewijzigd." };
+  }
 
   const parsed = parseOfferteFormData(formData);
   if (!parsed.success) return { error: parsed.error, fieldErrors: parsed.fieldErrors };
@@ -144,6 +158,9 @@ export async function genereerDeelLinkAction(
   const { company } = await requireActiveCompany();
   const offerte = await requireOfferteOwnership(offerteId, company.id);
   if (!offerte) return { error: "Offerte niet gevonden" };
+  if (offerte.status === "GEACCEPTEERD") {
+    return { error: "Deze offerte is al geaccepteerd door de klant en kan niet meer worden gewijzigd." };
+  }
 
   const parsed = parseOfferteFormData(formData);
   if (!parsed.success) return { error: parsed.error, fieldErrors: parsed.fieldErrors };
@@ -153,6 +170,13 @@ export async function genereerDeelLinkAction(
     prisma.branding.findUnique({ where: { companyId: company.id } }),
     prisma.costSettings.findUnique({ where: { companyId: company.id }, select: { btwPercentage: true } }),
   ]);
+
+  // Achtervang naast de client-side verzend-bevestiging (zie berekenVerzend
+  // Controles in app/lib/offertes.ts) — Lead.email is al verplicht bij het
+  // aanmaken van een aanvraag, dit vangt alleen het randgeval af.
+  if (!lead.email.trim()) {
+    return { error: "De klant heeft geen e-mailadres — versturen is niet mogelijk." };
+  }
 
   const deelToken = offerte.deelToken ?? crypto.randomUUID();
 
@@ -242,6 +266,73 @@ export async function markOffertReactieGezienAction(offerteId: string) {
   if (!offerte || offerte.reactieGezien) return;
 
   await prisma.offerte.update({ where: { id: offerteId }, data: { reactieGezien: true } });
+  revalidatePath("/dashboard/leads");
+}
+
+// Trekt een verzonden offerte in — een zachte statuswijziging, geen
+// verwijdering: de rij en de historie blijven bestaan, alleen de publieke
+// link toont voortaan "niet meer beschikbaar" (zie de INGETROKKEN-tak in
+// offerte-presentatie.tsx). Alleen mogelijk vanuit VERSTUURD — een
+// geaccepteerde offerte trek je niet in (die is het bewijsstuk van wat is
+// afgesproken), en een concept heeft nog geen publieke link om in te
+// trekken. Opnieuw versturen is geen aparte actie: nog een keer op
+// "Genereer offerte om te delen" klikken zet de status terug naar VERSTUURD
+// op dezelfde link.
+export async function intrekOfferteAction(offerteId: string) {
+  const { company } = await requireActiveCompany();
+  const offerte = await requireOfferteOwnership(offerteId, company.id);
+  if (!offerte || offerte.status !== "VERSTUURD") return;
+
+  await prisma.offerte.update({
+    where: { id: offerteId },
+    data: { status: "INGETROKKEN", ingetrokkenOp: new Date() },
+  });
+
+  revalidatePath(`/dashboard/leads/${offerte.leadId}/offerte`);
+  revalidatePath("/dashboard/leads");
+}
+
+// Hard verwijderen — anders dan intrekken hierboven bestaat de rij daarna
+// niet meer. Alleen voor een CONCEPT: die heeft nooit een publieke link
+// gehad (geen deelToken) en is dus nooit door de klant gezien, in
+// tegenstelling tot een verzonden offerte (die je intrekt, niet verwijdert).
+export async function deleteOfferteAction(formData: FormData) {
+  const { company } = await requireActiveCompany();
+  const offerteId = formData.get("offerteId");
+  if (typeof offerteId !== "string") return;
+
+  const offerte = await requireOfferteOwnership(offerteId, company.id);
+  if (!offerte || offerte.status !== "CONCEPT") return;
+
+  await prisma.offerte.delete({ where: { id: offerteId } });
+
+  revalidatePath("/dashboard/leads");
+  redirect("/dashboard/leads");
+}
+
+// Deel 1: de vakman kiest om deze aanvraag zelf, buiten Kostenplan om, af te
+// handelen. Zet alleen Lead.status + tijdstip (+ optionele notitie) — een
+// eventueel bestaande offerte wordt hier nooit verwijderd of aangepast, die
+// blijft gewoon bestaan en door de vakman bekijkbaar, maar is vanaf nu niet
+// meer bereikbaar voor de klant (zie de check op lead.status in
+// app/offerte/[token]/page.tsx). Omgekeerd (alsnog "in Kostenplan"): zie de
+// reset in omzettenNaarOfferteAction hierboven.
+export async function markExternAfgehandeldAction(leadId: string, notitie: string) {
+  const { company } = await requireActiveCompany();
+  const parsed = externAfgehandeldNotitieSchema.safeParse({ notitie });
+
+  const lead = await prisma.lead.findFirst({ where: { id: leadId, companyId: company.id }, select: { id: true } });
+  if (!lead) return;
+
+  await prisma.lead.update({
+    where: { id: lead.id },
+    data: {
+      status: "EXTERN_AFGEHANDELD",
+      externAfgehandeldOp: new Date(),
+      externAfgehandeldNotitie: (parsed.success && parsed.data.notitie) || null,
+    },
+  });
+
   revalidatePath("/dashboard/leads");
 }
 

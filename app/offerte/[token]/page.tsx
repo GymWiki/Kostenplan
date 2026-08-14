@@ -81,8 +81,10 @@ export default async function PubliekeOffertePage({
       voorwaardenTekst={offerte.voorwaardenTekst}
       geldigTot={offerte.geldigTot}
       gereageerdOp={offerte.gereageerdOp}
+      updatedAt={offerte.updatedAt}
       btwPercentage={company.costSettings?.btwPercentage ?? 21}
       status={weergaveOfferteStatus(offerte)}
+      nietBereikbaarVoorKlant={lead.status === "EXTERN_AFGEHANDELD"}
       contactEmail={branding?.toonEmail ? company.creator.email : null}
       contactTelefoonnummer={branding?.toonTelefoonnummer ? branding.telefoonnummer : null}
     />

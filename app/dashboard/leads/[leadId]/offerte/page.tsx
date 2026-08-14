@@ -36,6 +36,7 @@ export default async function OffertePage({
         regels: lead.offerte.regels as unknown as OfferteRegel[],
       }}
       klantNaam={lead.naam}
+      klantEmail={lead.email}
       bedrijfsnaam={company.naam}
       branding={branding}
       btwPercentage={costSettings?.btwPercentage ?? 21}

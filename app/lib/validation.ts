@@ -322,7 +322,11 @@ export const offerteReactieSchema = z.object({
 
 export const leadStatusSchema = z.object({
   status: z.enum(
-    ["NIEUW", "IN_BEHANDELING", "OFFERTE_VERSTUURD", "GEWONNEN", "VERLOREN"],
+    ["NIEUW", "IN_BEHANDELING", "OFFERTE_VERSTUURD", "GEWONNEN", "VERLOREN", "EXTERN_AFGEHANDELD"],
     "Kies een status"
   ),
+});
+
+export const externAfgehandeldNotitieSchema = z.object({
+  notitie: z.string().trim().max(1000).optional().or(z.literal("")),
 });

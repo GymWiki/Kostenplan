@@ -8,6 +8,7 @@ const VARIANT_BY_STATUS: Record<OfferteStatus, "default" | "success" | "warning"
   GEACCEPTEERD: "success",
   AFGEWEZEN: "warning",
   VERLOPEN: "outline",
+  INGETROKKEN: "outline",
 };
 
 export function OfferteStatusBadge({ offerte }: { offerte: { status: OfferteStatus; geldigTot: Date } }) {
