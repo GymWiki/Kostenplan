@@ -21,7 +21,7 @@ import { StatusSelect } from "./status-select";
 import { OfferteStatusBadge } from "./offerte-status-badge";
 import { AfhandelKeuzeModal } from "./afhandel-keuze-modal";
 import type { LeadWithNotes } from "./leads-view";
-import type { LeadNote } from "@/app/generated/prisma/client";
+import type { LeadNote, LeadStatus } from "@/app/generated/prisma/client";
 
 const dateFormatter = new Intl.DateTimeFormat("nl-NL", {
   day: "numeric",
@@ -34,9 +34,11 @@ const dateFormatter = new Intl.DateTimeFormat("nl-NL", {
 export function LeadDetailDrawer({
   lead,
   onClose,
+  onUpdateStatus,
 }: {
   lead: LeadWithNotes | null;
   onClose: () => void;
+  onUpdateStatus: (leadId: string, status: LeadStatus) => void;
 }) {
   // De vakman "ziet" een klantreactie door de aanvraag te openen — dooft de
   // pulserende stip op de kanban-kaart/lijstregel (zie kanban-board.tsx).
@@ -77,7 +79,7 @@ export function LeadDetailDrawer({
 
         <div className="flex flex-col gap-6 p-5">
           <div className="flex flex-col gap-3">
-            <StatusSelect leadId={lead.id} status={lead.status} className="w-full" />
+            <StatusSelect leadId={lead.id} status={lead.status} className="w-full" onStatusChange={onUpdateStatus} />
 
             <div className="flex flex-col gap-0.5 text-sm text-muted-foreground">
               <span>{lead.email}</span>

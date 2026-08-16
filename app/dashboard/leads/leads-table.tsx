@@ -5,15 +5,18 @@ import { Card } from "@/app/components/ui/card";
 import { StatusSelect } from "./status-select";
 import { OfferteStatusBadge } from "./offerte-status-badge";
 import type { LeadWithNotes } from "./leads-view";
+import type { LeadStatus } from "@/app/generated/prisma/client";
 
 const dateFormatter = new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "short", year: "numeric" });
 
 export function LeadsTable({
   leads,
   onSelectLead,
+  onUpdateStatus,
 }: {
   leads: LeadWithNotes[];
   onSelectLead: (id: string) => void;
+  onUpdateStatus: (leadId: string, status: LeadStatus) => void;
 }) {
   return (
     <Card className="overflow-hidden">
@@ -40,7 +43,12 @@ export function LeadsTable({
                   <p className="text-xs text-muted-foreground">{lead.email}</p>
                 </td>
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                  <StatusSelect leadId={lead.id} status={lead.status} className="h-9 w-auto min-w-40" />
+                  <StatusSelect
+                    leadId={lead.id}
+                    status={lead.status}
+                    className="h-9 w-auto min-w-40"
+                    onStatusChange={onUpdateStatus}
+                  />
                 </td>
                 <td className="px-4 py-3">
                   {lead.offerte ? (

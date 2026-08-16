@@ -1,6 +1,5 @@
 "use client";
 
-import { useTransition } from "react";
 import {
   DndContext,
   useDraggable,
@@ -13,7 +12,6 @@ import {
 import { cn } from "@/app/lib/cn";
 import { formatCurrency } from "@/app/lib/format";
 import { Badge } from "@/app/components/ui/badge";
-import { updateLeadStatusAction } from "@/app/lib/actions/leads";
 import { LEAD_STATUSSEN, LEAD_STATUS_LABELS } from "@/app/lib/leads";
 import { OfferteStatusBadge } from "./offerte-status-badge";
 import type { LeadWithNotes } from "./leads-view";
@@ -33,11 +31,12 @@ const dateFormatter = new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: 
 export function KanbanBoard({
   leads,
   onSelectLead,
+  onUpdateStatus,
 }: {
   leads: LeadWithNotes[];
   onSelectLead: (id: string) => void;
+  onUpdateStatus: (leadId: string, status: LeadStatus) => void;
 }) {
-  const [, startTransition] = useTransition();
   // Kleine bewegingsdrempel zodat een gewone klik (kaart openen) niet als
   // begin van een drag wordt gezien.
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
@@ -50,10 +49,7 @@ export function KanbanBoard({
     const lead = leads.find((l) => l.id === active.id);
     if (!lead || lead.status === newStatus) return;
 
-    const formData = new FormData();
-    formData.set("leadId", lead.id);
-    formData.set("status", newStatus);
-    startTransition(() => updateLeadStatusAction(formData));
+    onUpdateStatus(lead.id, newStatus);
   }
 
   return (

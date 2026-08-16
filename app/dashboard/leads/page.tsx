@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { effectiveTier } from "@/app/lib/subscription";
-import { telItMeeVoorPipeline, type LeadSnapshot } from "@/app/lib/leads";
+import type { LeadSnapshot } from "@/app/lib/leads";
 import type { OfferteRegel } from "@/app/lib/offertes";
 import { LeadsView, type LeadWithNotes } from "./leads-view";
 
@@ -15,16 +15,7 @@ export default async function LeadsPage() {
   // Leads ontvangen is een Plus/Pro-feature — op Gratis tonen we alleen de
   // upsell in LeadsView, dus de data zelf hoeft niet opgehaald te worden.
   if (isGratis) {
-    return (
-      <LeadsView
-        leads={[]}
-        pipelineWaarde={0}
-        actieveCount={0}
-        gewonnenCount={0}
-        conversieRatio={null}
-        isGratis
-      />
-    );
+    return <LeadsView leads={[]} isGratis />;
   }
 
   const rawLeads = await prisma.lead.findMany({
@@ -41,21 +32,8 @@ export default async function LeadsPage() {
       : null,
   }));
 
-  const actief = leads.filter((lead) => telItMeeVoorPipeline(lead.status));
-  const pipelineWaarde = actief.reduce((sum, lead) => sum + lead.totaalIndicatie, 0);
-  const gewonnenCount = leads.filter((lead) => lead.status === "GEWONNEN").length;
-  const verlorenCount = leads.filter((lead) => lead.status === "VERLOREN").length;
-  const afgerondCount = gewonnenCount + verlorenCount;
-  const conversieRatio = afgerondCount > 0 ? Math.round((gewonnenCount / afgerondCount) * 100) : null;
-
-  return (
-    <LeadsView
-      leads={leads}
-      pipelineWaarde={pipelineWaarde}
-      actieveCount={actief.length}
-      gewonnenCount={gewonnenCount}
-      conversieRatio={conversieRatio}
-      isGratis={false}
-    />
-  );
+  // KPI's (pipelinewaarde, conversieratio, …) worden client-side in
+  // LeadsView afgeleid van `leads` — zo bewegen ze meteen mee met een
+  // optimistische statuswijziging in plaats van pas na de server-round-trip.
+  return <LeadsView leads={leads} isGratis={false} />;
 }

@@ -1,8 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
 import { Select } from "@/app/components/ui/input";
-import { updateLeadStatusAction } from "@/app/lib/actions/leads";
 import { LEAD_STATUSSEN, LEAD_STATUS_LABELS } from "@/app/lib/leads";
 import type { LeadStatus } from "@/app/generated/prisma/client";
 
@@ -10,24 +8,18 @@ export function StatusSelect({
   leadId,
   status,
   className,
+  onStatusChange,
 }: {
   leadId: string;
   status: LeadStatus;
   className?: string;
+  onStatusChange: (leadId: string, status: LeadStatus) => void;
 }) {
-  const [pending, startTransition] = useTransition();
-
   return (
     <Select
       defaultValue={status}
-      disabled={pending}
       className={className}
-      onChange={(e) => {
-        const formData = new FormData();
-        formData.set("leadId", leadId);
-        formData.set("status", e.target.value);
-        startTransition(() => updateLeadStatusAction(formData));
-      }}
+      onChange={(e) => onStatusChange(leadId, e.target.value as LeadStatus)}
     >
       {LEAD_STATUSSEN.map((s) => (
         <option key={s} value={s}>

@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useMemo, useOptimistic, useState, useSyncExternalStore, useTransition } from "react";
 import { LayoutGrid, List, TrendingUp, Users, Trophy, Target } from "lucide-react";
 import { cn } from "@/app/lib/cn";
 import { formatCurrency } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { HelpTip } from "@/app/components/ui/help-tip";
 import { ProFeatureLock } from "@/app/components/dashboard/pro-feature-lock";
+import { updateLeadStatusAction } from "@/app/lib/actions/leads";
+import { telItMeeVoorPipeline } from "@/app/lib/leads";
 import { KanbanBoard } from "./kanban-board";
 import { LeadsTable } from "./leads-table";
 import { LeadDetailDrawer } from "./lead-detail-drawer";
-import type { Lead, LeadNote, Offerte } from "@/app/generated/prisma/client";
+import type { Lead, LeadNote, LeadStatus, Offerte } from "@/app/generated/prisma/client";
 import type { LeadSnapshot } from "@/app/lib/leads";
 import type { OfferteRegel } from "@/app/lib/offertes";
 import type { HelpContentKey } from "@/app/lib/helpContent";
@@ -43,17 +45,9 @@ function useIsNarrowViewport() {
 
 export function LeadsView({
   leads,
-  pipelineWaarde,
-  actieveCount,
-  gewonnenCount,
-  conversieRatio,
   isGratis,
 }: {
   leads: LeadWithNotes[];
-  pipelineWaarde: number;
-  actieveCount: number;
-  gewonnenCount: number;
-  conversieRatio: number | null;
   isGratis: boolean;
 }) {
   // null = nog geen expliciete keuze door de gebruiker gemaakt — dan geldt
@@ -67,7 +61,47 @@ export function LeadsView({
   const view: View = gekozenView ?? (isNarrow ? "lijst" : "kanban");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
-  const selectedLead = leads.find((lead) => lead.id === selectedLeadId) ?? null;
+  // Optimistische statuswijziging: een sleep op het Kanban-bord of een keuze
+  // in de statusdropdown (tabelweergave/detailpaneel) verandert de UI meteen
+  // — de echte server-round-trip (die 1-2 seconden kan duren, zie
+  // requireActiveCompany() in app/lib/dal.ts) loopt op de achtergrond mee in
+  // dezelfde transition. React vervangt de optimistische waarde automatisch
+  // weer door de echte zodra de action (en de revalidatePath die 'm volgt)
+  // klaar is — geen handmatige rollback nodig.
+  const [optimisticLeads, applyOptimisticStatus] = useOptimistic(
+    leads,
+    (state, update: { leadId: string; status: LeadStatus }) =>
+      state.map((lead) => (lead.id === update.leadId ? { ...lead, status: update.status } : lead))
+  );
+  const [, startStatusTransition] = useTransition();
+  function updateLeadStatus(leadId: string, status: LeadStatus) {
+    startStatusTransition(async () => {
+      applyOptimisticStatus({ leadId, status });
+      const formData = new FormData();
+      formData.set("leadId", leadId);
+      formData.set("status", status);
+      await updateLeadStatusAction(formData);
+    });
+  }
+
+  const selectedLead = optimisticLeads.find((lead) => lead.id === selectedLeadId) ?? null;
+
+  // Zelfde berekening als voorheen server-side in page.tsx, nu hier zodat de
+  // KPI's direct meebewegen met een optimistische statuswijziging in plaats
+  // van pas na de server-round-trip bij te trekken.
+  const { pipelineWaarde, actieveCount, gewonnenCount, conversieRatio } = useMemo(() => {
+    const actief = optimisticLeads.filter((lead) => telItMeeVoorPipeline(lead.status));
+    const waarde = actief.reduce((sum, lead) => sum + lead.totaalIndicatie, 0);
+    const gewonnen = optimisticLeads.filter((lead) => lead.status === "GEWONNEN").length;
+    const verloren = optimisticLeads.filter((lead) => lead.status === "VERLOREN").length;
+    const afgerond = gewonnen + verloren;
+    return {
+      pipelineWaarde: waarde,
+      actieveCount: actief.length,
+      gewonnenCount: gewonnen,
+      conversieRatio: afgerond > 0 ? Math.round((gewonnen / afgerond) * 100) : null,
+    };
+  }, [optimisticLeads]);
 
   if (isGratis) {
     return (
@@ -149,7 +183,7 @@ export function LeadsView({
         />
       </div>
 
-      {leads.length === 0 ? (
+      {optimisticLeads.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-16 text-center">
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -162,12 +196,12 @@ export function LeadsView({
           </CardContent>
         </Card>
       ) : view === "kanban" ? (
-        <KanbanBoard leads={leads} onSelectLead={setSelectedLeadId} />
+        <KanbanBoard leads={optimisticLeads} onSelectLead={setSelectedLeadId} onUpdateStatus={updateLeadStatus} />
       ) : (
-        <LeadsTable leads={leads} onSelectLead={setSelectedLeadId} />
+        <LeadsTable leads={optimisticLeads} onSelectLead={setSelectedLeadId} onUpdateStatus={updateLeadStatus} />
       )}
 
-      <LeadDetailDrawer lead={selectedLead} onClose={() => setSelectedLeadId(null)} />
+      <LeadDetailDrawer lead={selectedLead} onClose={() => setSelectedLeadId(null)} onUpdateStatus={updateLeadStatus} />
     </div>
   );
 }
