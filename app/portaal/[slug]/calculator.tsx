@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Minus, Plus, Printer, Mail, Phone, Image as ImageIcon, Check } from "lucide-react";
 import {
@@ -36,6 +36,7 @@ import { cn } from "@/app/lib/cn";
 import { fontFamilyFor, brandingFontVariables } from "@/app/lib/fonts";
 import { accessibleTextColor } from "@/app/lib/color";
 import { createLeadAction, type LeadFormState } from "@/app/lib/actions/leads";
+import { recordPublicAnalyticsEventAction } from "@/app/lib/actions/analytics";
 import type { LeadSnapshot, LeadSnapshotLine } from "@/app/lib/leads";
 import type {
   Branding,
@@ -53,7 +54,7 @@ type ProductWithDetails = Product & {
 };
 
 type Props = {
-  slug: string;
+  toolId: string;
   bedrijfsnaam: string;
   email: string;
   subscriptionTier: SubscriptionTier;
@@ -79,7 +80,7 @@ function klantEenheidLabel(eenheid: string) {
 }
 
 export function Calculator({
-  slug,
+  toolId,
   bedrijfsnaam,
   email,
   subscriptionTier,
@@ -167,7 +168,7 @@ export function Calculator({
 
     function postHeight() {
       window.parent.postMessage(
-        { type: "kostenplan:resize", slug, height: document.body.scrollHeight },
+        { type: "kostenplan:resize", toolId, height: document.body.scrollHeight },
         "*"
       );
     }
@@ -181,7 +182,20 @@ export function Calculator({
       observer.disconnect();
       window.removeEventListener("resize", postHeight);
     };
-  }, [slug]);
+  }, [toolId]);
+
+  // VISIT — één keer per paginabezoek. Bewust een lege dependency-array
+  // (niet [toolId]) zodat dit ook standhoudt tegen React StrictMode se
+  // dubbele mount in dev; de eventuele échte tweede mount in productie is
+  // hetzelfde gedrag als vóór deze analytics-toevoeging sowieso al gold voor
+  // een paginabezoek.
+  const visitRecorded = useRef(false);
+  useEffect(() => {
+    if (visitRecorded.current) return;
+    visitRecorded.current = true;
+    void recordPublicAnalyticsEventAction(toolId, "VISIT");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const breakdown = useMemo(
     () =>
@@ -210,6 +224,24 @@ export function Calculator({
       }),
     [products, effectiveProductQty, productRegelsBedrag, materialSelections]
   );
+
+  // START — zodra de klant voor het eerst iets selecteert (heeftSelectie
+  // wordt al elders berekend, zie calculate.ts). COMPLETE — zodra dat leidt
+  // tot een geldige, volledige prijsindicatie (een positief totaalbedrag, en
+  // geen ontbrekende verplichte materiaalkeuze meer). Beide precies één keer
+  // per bezoek, ongeacht hoe vaak de klant daarna nog verder wijzigt.
+  const startRecorded = useRef(false);
+  const completeRecorded = useRef(false);
+  useEffect(() => {
+    if (!startRecorded.current && breakdown.heeftSelectie) {
+      startRecorded.current = true;
+      void recordPublicAnalyticsEventAction(toolId, "START");
+    }
+    if (!completeRecorded.current && breakdown.heeftSelectie && !heeftOntbrekendeVerplichteMaterialen && bedragTop(breakdown.totaal) > 0) {
+      completeRecorded.current = true;
+      void recordPublicAnalyticsEventAction(toolId, "COMPLETE");
+    }
+  }, [toolId, breakdown, heeftOntbrekendeVerplichteMaterialen]);
 
   // Bevroren "wat had de klant aangevinkt" voor de leads-CRM (zie
   // app/lib/leads.ts) — meegestuurd bij "Offerte aanvragen" zodat de vakman
@@ -375,7 +407,7 @@ export function Calculator({
             <div className="lg:order-2">
               <div className="flex flex-col gap-4 lg:sticky lg:top-6">
                 <Summary
-                  slug={slug}
+                  toolId={toolId}
                   breakdown={breakdown}
                   snapshot={snapshot}
                   costSettings={costSettings}
@@ -986,7 +1018,7 @@ function QuantityStepper({
 }
 
 function Summary({
-  slug,
+  toolId,
   breakdown,
   snapshot,
   costSettings,
@@ -994,7 +1026,7 @@ function Summary({
   magOfferteAanvragen,
   heeftOntbrekendeVerplichteMaterialen,
 }: {
-  slug: string;
+  toolId: string;
   breakdown: ReturnType<typeof calculateBreakdownRange>;
   snapshot: LeadSnapshot;
   costSettings: CostSettings;
@@ -1003,7 +1035,7 @@ function Summary({
   heeftOntbrekendeVerplichteMaterialen: boolean;
 }) {
   const [formOpen, setFormOpen] = useState(false);
-  const action = createLeadAction.bind(null, slug);
+  const action = createLeadAction.bind(null, toolId);
   const [state, formAction, pending] = useActionState<LeadFormState, FormData>(action, null);
   // Los bijgehouden (niet defaultValue): React reset uncontrolled velden na
   // elke form action, ook bij een fout. Zonder deze eigen state raakt de

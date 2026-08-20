@@ -18,11 +18,21 @@ export default async function LeadsPage() {
     return <LeadsView leads={[]} isGratis />;
   }
 
-  const rawLeads = await prisma.lead.findMany({
-    where: { companyId: company.id },
-    include: { notities: { orderBy: { createdAt: "asc" } }, offerte: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const [rawLeads, tools] = await Promise.all([
+    prisma.lead.findMany({
+      where: { companyId: company.id },
+      include: { notities: { orderBy: { createdAt: "asc" } }, offerte: true },
+      orderBy: { createdAt: "desc" },
+    }),
+    // Voor het toolfilter hierboven de <LeadsView> — alleen niet-verwijderde
+    // tools zijn te kiezen, een lead van een inmiddels verwijderde tool blijft
+    // gewoon zichtbaar in "Alle rekentools" via toolNaamSnapshot.
+    prisma.tool.findMany({
+      where: { companyId: company.id, deletedAt: null },
+      orderBy: { order: "asc" },
+      select: { id: true, naam: true },
+    }),
+  ]);
 
   const leads: LeadWithNotes[] = rawLeads.map((lead) => ({
     ...lead,
@@ -35,5 +45,5 @@ export default async function LeadsPage() {
   // KPI's (pipelinewaarde, conversieratio, …) worden client-side in
   // LeadsView afgeleid van `leads` — zo bewegen ze meteen mee met een
   // optimistische statuswijziging in plaats van pas na de server-round-trip.
-  return <LeadsView leads={leads} isGratis={false} />;
+  return <LeadsView leads={leads} isGratis={false} tools={tools} />;
 }

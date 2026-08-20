@@ -13,19 +13,17 @@ type CompanyOption = {
 };
 
 export function Topbar({
-  slug,
   bedrijfsnaam,
   activeCompanyId,
   alleBedrijven,
 }: {
-  slug: string;
   bedrijfsnaam: string;
   activeCompanyId: string;
   alleBedrijven: CompanyOption[];
 }) {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-8">
-      <MobileNav slug={slug} />
+      <MobileNav />
       {alleBedrijven.length > 1 ? (
         <CompanySwitcher activeCompanyId={activeCompanyId} companies={alleBedrijven} />
       ) : (

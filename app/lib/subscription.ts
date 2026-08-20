@@ -47,8 +47,31 @@ export function jaarlijkseBesparing(plan: "PLUS" | "PRO") {
 }
 
 // Boven deze grens kan een Gratis-tenant geen nieuwe producten meer
-// aanmaken (zie createProductAction).
+// aanmaken (zie createProductAction). Sinds Levering A (multi-tool) telt dit
+// bewust over alle tools van het bedrijf heen, niet per tool — zie
+// PLAN_LIMITS.maxProductsPerCompany hieronder en de toelichting daar.
 export const GRATIS_CATALOGUS_LIMIET = 10;
+
+// Centrale abonnementslimieten — één plek in plaats van losse magic numbers
+// verspreid door server actions (zie canCreateTool()/createProductAction).
+// `null` = onbeperkt. maxActiveTools telt niet-verwijderde tools (CONCEPT +
+// GEPUBLICEERD + GEPAUZEERD tellen allemaal mee, alleen deletedAt telt niet
+// mee — zie requireActiveCompany-achtige canCreateTool() in app/lib/dal.ts).
+// maxProductsPerCompany is bewust account-breed (niet per tool): 6 producten
+// in Tool A + 4 in Tool B telt als 10, niet 6 en 4 apart — zie sectie 30 van
+// de opdracht.
+export type PlanLimits = {
+  maxActiveTools: number | null;
+  maxProductsPerCompany: number | null;
+  embedEnabled: boolean;
+  customBranding: boolean;
+};
+
+export const PLAN_LIMITS: Record<SubscriptionTier, PlanLimits> = {
+  GRATIS: { maxActiveTools: 1, maxProductsPerCompany: GRATIS_CATALOGUS_LIMIET, embedEnabled: false, customBranding: false },
+  PLUS: { maxActiveTools: 5, maxProductsPerCompany: null, embedEnabled: false, customBranding: true },
+  PRO: { maxActiveTools: null, maxProductsPerCompany: null, embedEnabled: true, customBranding: true },
+};
 
 type TierUser = {
   subscriptionTier: SubscriptionTier;

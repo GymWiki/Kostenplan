@@ -23,8 +23,8 @@ export async function createMaterialCategoryAction(
   }
 
   const product = await prisma.product.findFirst({
-    where: { id: productId, companyId: company.id },
-    select: { id: true },
+    where: { id: productId, tool: { companyId: company.id } },
+    select: { id: true, toolId: true },
   });
   if (!product) {
     return { error: "Product niet gevonden" };
@@ -36,8 +36,7 @@ export async function createMaterialCategoryAction(
     data: { productId, naam: parsed.data.naam, verplicht: parsed.data.verplicht, order: count },
   });
 
-  revalidatePath(`/dashboard/producten/${productId}/bewerken`);
-  revalidatePath(`/portaal/${company.slug}`);
+  revalidatePath(`/dashboard/tools/${product.toolId}/producten/${productId}/bewerken`);
   return null;
 }
 
@@ -57,8 +56,8 @@ export async function updateMaterialCategoryAction(
   }
 
   const category = await prisma.materialCategory.findFirst({
-    where: { id: materialCategoryId, product: { companyId: company.id } },
-    select: { productId: true },
+    where: { id: materialCategoryId, product: { tool: { companyId: company.id } } },
+    select: { productId: true, product: { select: { toolId: true } } },
   });
   if (!category) {
     return { error: "Categorie niet gevonden" };
@@ -69,8 +68,7 @@ export async function updateMaterialCategoryAction(
     data: { naam: parsed.data.naam, verplicht: parsed.data.verplicht },
   });
 
-  revalidatePath(`/dashboard/producten/${category.productId}/bewerken`);
-  revalidatePath(`/portaal/${company.slug}`);
+  revalidatePath(`/dashboard/tools/${category.product.toolId}/producten/${category.productId}/bewerken`);
   return null;
 }
 
@@ -80,13 +78,12 @@ export async function deleteMaterialCategoryAction(formData: FormData) {
   if (typeof materialCategoryId !== "string") return;
 
   const category = await prisma.materialCategory.findFirst({
-    where: { id: materialCategoryId, product: { companyId: company.id } },
-    select: { productId: true },
+    where: { id: materialCategoryId, product: { tool: { companyId: company.id } } },
+    select: { productId: true, product: { select: { toolId: true } } },
   });
   if (!category) return;
 
   await prisma.materialCategory.delete({ where: { id: materialCategoryId } });
 
-  revalidatePath(`/dashboard/producten/${category.productId}/bewerken`);
-  revalidatePath(`/portaal/${company.slug}`);
+  revalidatePath(`/dashboard/tools/${category.product.toolId}/producten/${category.productId}/bewerken`);
 }

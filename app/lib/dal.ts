@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/server";
 import { prisma } from "@/app/lib/prisma";
 import { resolveActiveMembership } from "@/app/lib/active-company";
+import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
+import { resolveCostSettings, type AccountDefaults } from "@/app/lib/tools";
 
 // Onthoudt welk bedrijf de gebruiker laatst actief had gekozen (zie de
 // bedrijfsswitcher en switchActiveCompanyAction). Alleen relevant zodra
@@ -98,24 +100,139 @@ export const requireActiveCompany = cache(async () => {
   };
 });
 
-export async function getArbeidStapEenheid(companyId: string) {
+// De tool-tegenhanger van requireActiveCompany() hierboven — spiegelt exact
+// hetzelfde principe: de URL bepaalt welke tool wordt gevraagd
+// (/dashboard/tools/[toolId]/...), maar autorisatie gebeurt altijd hier,
+// server-side. Een toolId die niet bij het actieve bedrijf hoort (van een
+// ander bedrijf, vervalst, of gewoon een typo) of die (soft-)verwijderd is,
+// stuurt terug naar het toolsoverzicht in plaats van een 404 of — erger —
+// gewoon de data van dat bedrijf te tonen.
+export const requireActiveTool = cache(async (toolId: string) => {
+  const { user, company } = await requireActiveCompany();
+  const tool = await prisma.tool.findFirst({
+    where: { id: toolId, companyId: company.id, deletedAt: null },
+  });
+  if (!tool) redirect("/dashboard/tools");
+  return { user, company, tool };
+});
+
+// Server-side afdwinging van maxActiveTools (zie PLAN_LIMITS in
+// app/lib/subscription.ts) — nooit alleen in de UI verstoppen. Telt elke
+// niet-verwijderde tool mee, ongeacht status (CONCEPT/GEPUBLICEERD/
+// GEPAUZEERD tellen allemaal mee; alleen deletedAt telt niet mee).
+export async function canCreateTool(companyId: string, tier: ReturnType<typeof effectiveTier>) {
+  const limiet = PLAN_LIMITS[tier].maxActiveTools;
+  if (limiet === null) return true;
+  const aantal = await prisma.tool.count({ where: { companyId, deletedAt: null } });
+  return aantal < limiet;
+}
+
+// Publiceren verandert het aantal actieve tools niet (een CONCEPT-tool telt
+// al mee, zie canCreateTool hierboven) — dus bewust GEEN alias voor
+// canCreateTool(): die telt "is er nog ruimte voor een extra tool" (aantal <
+// limiet), terwijl de tool die hier gepubliceerd wordt zelf al meetelt in
+// aantal. Met de strikte "<" van canCreateTool zou een Gratis-gebruiker met
+// precies hun ene toegestane tool die tool nooit kunnen publiceren — hier dus
+// "aantal <= limiet" (mag niet over de limiet heen, mag er wel gelijk aan
+// zijn).
+export async function canPublishTool(companyId: string, tier: ReturnType<typeof effectiveTier>) {
+  const limiet = PLAN_LIMITS[tier].maxActiveTools;
+  if (limiet === null) return true;
+  const aantal = await prisma.tool.count({ where: { companyId, deletedAt: null } });
+  return aantal <= limiet;
+}
+
+// Gedeelde include-vorm voor beide publieke routes hieronder — precies wat
+// de calculator-renderer (Calculator in app/portaal/[slug]/calculator.tsx)
+// nodig heeft, niets meer (publieke, hoogfrequente route).
+const PUBLIEKE_TOOL_INCLUDE = {
+  company: { include: { creator: { select: { email: true } } } },
+  branding: true,
+  costSettings: true,
+  products: {
+    where: { actief: true },
+    orderBy: { order: "asc" as const },
+    include: {
+      materiaalCategorieen: {
+        orderBy: { order: "asc" as const },
+        include: { materialen: { where: { actief: true }, orderBy: { order: "asc" as const } } },
+      },
+      extraOpties: { where: { actief: true }, orderBy: { order: "asc" as const } },
+    },
+  },
+};
+
+// Resolvet een Tool voor de canonieke publieke route
+// (/t/[bedrijfsslug]/[toolslug]) — geen auth. Geeft bewust ook een
+// niet-gepubliceerde tool terug (i.p.v. meteen null): de aanroepende pagina
+// moet zelf onderscheid kunnen maken tussen "bestaat niet" (notFound) en
+// "bestaat wel, maar is CONCEPT/GEPAUZEERD" (een nette statusmelding i.p.v.
+// een kale 404 — zie ToolStatus in schema.prisma). Alleen (soft-)verwijderde
+// tools zijn hier nooit bereikbaar.
+export async function getToolForPublicRoute(bedrijfsSlug: string, toolSlug: string) {
+  return prisma.tool.findFirst({
+    where: {
+      slug: toolSlug,
+      deletedAt: null,
+      company: { slug: bedrijfsSlug },
+    },
+    include: PUBLIEKE_TOOL_INCLUDE,
+  });
+}
+
+// Legacy-compatibiliteit voor /portaal/[slug]: bestaande klanten kunnen deze
+// URL al op hun eigen website of in een iframe hebben staan van vóór
+// Levering A (multi-tool), toen een company nog maar één calculator had. In
+// plaats van te redirecten (kan bestaande iframes breken) rendert deze route
+// gewoon rechtstreeks de eerste gepubliceerde tool van dat bedrijf — zie
+// app/portaal/[slug]/page.tsx.
+export async function getLegacyToolForCompanySlug(companySlug: string) {
+  const tool = await prisma.tool.findFirst({
+    where: {
+      status: "GEPUBLICEERD",
+      deletedAt: null,
+      company: { slug: companySlug },
+    },
+    orderBy: { order: "asc" },
+    include: PUBLIEKE_TOOL_INCLUDE,
+  });
+  return tool;
+}
+
+// Voor /embed/[toolId] (zie Deel 26 van de opdracht) — laadt uitsluitend via
+// het onraadbare cuid, nooit via company/bedrijfsslug, zodat een embedcode
+// nooit per ongeluk een andere tool van hetzelfde bedrijf kan tonen. Geeft
+// (net als getToolForPublicRoute) ook een niet-gepubliceerde tool terug, zo
+// kan de embedpagina zelf de nette "niet beschikbaar"-status tonen i.p.v.
+// een kale 404.
+export async function getToolForEmbed(toolId: string) {
+  return prisma.tool.findFirst({
+    where: { id: toolId, deletedAt: null },
+    include: PUBLIEKE_TOOL_INCLUDE,
+  });
+}
+
+export async function getArbeidStapEenheid(toolId: string) {
   const costSettings = await prisma.costSettings.findUnique({
-    where: { companyId },
+    where: { toolId },
     select: { arbeidStapEenheid: true },
   });
   return costSettings?.arbeidStapEenheid ?? "UUR";
 }
 
 // Cost-settings fields de "Kosten"-sectie van het productformulier nodig
-// heeft: wat de company-brede standaardtarieven zijn (om te tonen als het
-// product niet afwijkt) en waar de link naar Kosteninstellingen naartoe
-// wijst.
-export async function getProductPricingSettings(companyId: string) {
+// heeft: wat de tool-standaardtarieven zijn (om te tonen als het product
+// niet afwijkt) en waar de link naar Kosteninstellingen naartoe wijst. Geeft
+// de EFFECTIEVE waarden terug (via resolveCostSettings — accounthoudt
+// rekening met "Gebruik accountinstelling" per veld), nooit de kolomwaarden
+// rechtstreeks.
+export async function getProductPricingSettings(toolId: string, company: AccountDefaults) {
   const costSettings = await prisma.costSettings.findUnique({
-    where: { companyId },
+    where: { toolId },
     select: {
       arbeidEnabled: true,
       arbeidStapEenheid: true,
+      gebruiktAccountArbeidTarief: true,
       arbeidTariefUur: true,
       arbeidTariefDagdeel: true,
       arbeidTariefDag: true,
@@ -123,25 +240,28 @@ export async function getProductPricingSettings(companyId: string) {
       transportEnabled: true,
       transportTarief: true,
       voorrijEnabled: true,
+      gebruiktAccountVoorrijTarief: true,
       voorrijTarief: true,
       materiaalEnabled: true,
+      gebruiktAccountBtw: true,
       btwPercentage: true,
     },
   });
-  return (
-    costSettings ?? {
-      arbeidEnabled: true,
-      arbeidStapEenheid: "UUR" as const,
-      arbeidTariefUur: 45,
-      arbeidTariefDagdeel: 180,
-      arbeidTariefDag: 360,
-      arbeidAfronden: false,
-      transportEnabled: true,
-      transportTarief: 0,
-      voorrijEnabled: true,
-      voorrijTarief: 35,
-      materiaalEnabled: true,
-      btwPercentage: 21,
-    }
-  );
+  const effectief = costSettings
+    ? resolveCostSettings(costSettings, company)
+    : {
+        arbeidEnabled: true,
+        arbeidStapEenheid: "UUR" as const,
+        arbeidTariefUur: company.standaardArbeidTariefUur,
+        arbeidTariefDagdeel: 180,
+        arbeidTariefDag: 360,
+        arbeidAfronden: false,
+        transportEnabled: true,
+        transportTarief: 0,
+        voorrijEnabled: true,
+        voorrijTarief: company.standaardVoorrijTarief,
+        materiaalEnabled: true,
+        btwPercentage: company.standaardBtwPercentage,
+      };
+  return effectief;
 }

@@ -44,7 +44,7 @@ export async function omzettenNaarOfferteAction(leadId: string) {
   }
 
   if (!lead.offerte) {
-    const branding = await prisma.branding.findUnique({ where: { companyId: company.id } });
+    const branding = await prisma.branding.findUnique({ where: { toolId: lead.toolId } });
     const geldigheidsdagen = branding?.offerteGeldigheidsdagen ?? 30;
     const geldigTot = new Date();
     geldigTot.setDate(geldigTot.getDate() + geldigheidsdagen);
@@ -165,11 +165,19 @@ export async function genereerDeelLinkAction(
   const parsed = parseOfferteFormData(formData);
   if (!parsed.success) return { error: parsed.error, fieldErrors: parsed.fieldErrors };
 
-  const [lead, branding, costSettings] = await Promise.all([
-    prisma.lead.findUniqueOrThrow({ where: { id: offerte.leadId } }),
-    prisma.branding.findUnique({ where: { companyId: company.id } }),
-    prisma.costSettings.findUnique({ where: { companyId: company.id }, select: { btwPercentage: true } }),
+  const lead = await prisma.lead.findUniqueOrThrow({ where: { id: offerte.leadId } });
+  const [branding, costSettings] = await Promise.all([
+    prisma.branding.findUnique({ where: { toolId: lead.toolId } }),
+    prisma.costSettings.findUnique({
+      where: { toolId: lead.toolId },
+      select: { gebruiktAccountBtw: true, btwPercentage: true },
+    }),
   ]);
+  const effectieveBtw = costSettings
+    ? costSettings.gebruiktAccountBtw
+      ? company.standaardBtwPercentage
+      : costSettings.btwPercentage
+    : company.standaardBtwPercentage;
 
   // Achtervang naast de client-side verzend-bevestiging (zie berekenVerzend
   // Controles in app/lib/offertes.ts) — Lead.email is al verplicht bij het
@@ -189,7 +197,7 @@ export async function genereerDeelLinkAction(
       introTekst: parsed.data.introTekst,
       voorwaardenTekst: parsed.data.voorwaardenTekst,
       geldigTot: parsed.data.geldigTot,
-      btwPercentage: costSettings?.btwPercentage ?? 21,
+      btwPercentage: effectieveBtw,
       bedrijfsnaam: company.naam,
       klantNaam: lead.naam,
       branding,

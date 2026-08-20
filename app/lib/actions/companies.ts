@@ -54,7 +54,6 @@ export async function createCompanyAction(
       naam: parsed.data.naam,
       slug,
       createdBy: user.id,
-      costSettings: { create: {} },
       members: { create: { userId: user.id, rol: "owner" } },
     },
   });
@@ -62,10 +61,12 @@ export async function createCompanyAction(
   // Meteen naar het nieuwe bedrijf schakelen, zodat de gebruiker na het
   // aanmaken direct in de (lege) context van dat bedrijf terechtkomt.
   await setActiefBedrijfCookie(company.id);
-  // Eerst het auto-branding-wow-moment (gratis, zie /onboarding/huisstijl)
-  // in plaats van meteen naar het lege dashboard — geldt voor zowel de
-  // allereerste onboarding als een extra bedrijf later.
-  redirect("/onboarding/huisstijl");
+  // Een bedrijf zonder rekentool kan geen huisstijl/producten hebben (die
+  // horen nu bij Tool, niet bij Company) — eerst de naam van de eerste
+  // rekentool vragen, dan pas het auto-branding-wow-moment
+  // (/onboarding/huisstijl). Geldt voor zowel de allereerste onboarding als
+  // een extra bedrijf later.
+  redirect("/onboarding/rekentool");
 }
 
 // Interne bestemmingen na het wisselen van bedrijf — bewust een allowlist

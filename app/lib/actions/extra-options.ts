@@ -60,8 +60,8 @@ export async function createExtraOptionAction(
   }
 
   const product = await prisma.product.findFirst({
-    where: { id: productId, companyId: company.id },
-    select: { id: true },
+    where: { id: productId, tool: { companyId: company.id } },
+    select: { id: true, toolId: true },
   });
   if (!product) {
     return { error: "Product niet gevonden" };
@@ -78,8 +78,7 @@ export async function createExtraOptionAction(
     data: { ...parsed.data, foto: fotoResult.foto, productId, order: count },
   });
 
-  revalidatePath(`/dashboard/producten/${productId}/bewerken`);
-  revalidatePath(`/portaal/${company.slug}`);
+  revalidatePath(`/dashboard/tools/${product.toolId}/producten/${productId}/bewerken`);
   return null;
 }
 
@@ -100,8 +99,8 @@ export async function updateExtraOptionAction(
   }
 
   const option = await prisma.extraOption.findFirst({
-    where: { id: extraOptionId, product: { companyId: company.id } },
-    select: { foto: true, productId: true },
+    where: { id: extraOptionId, product: { tool: { companyId: company.id } } },
+    select: { foto: true, productId: true, product: { select: { toolId: true } } },
   });
   if (!option) {
     return { error: "Extra optie niet gevonden" };
@@ -117,8 +116,7 @@ export async function updateExtraOptionAction(
     data: { ...parsed.data, foto: fotoResult.foto },
   });
 
-  revalidatePath(`/dashboard/producten/${option.productId}/bewerken`);
-  revalidatePath(`/portaal/${company.slug}`);
+  revalidatePath(`/dashboard/tools/${option.product.toolId}/producten/${option.productId}/bewerken`);
   return null;
 }
 
@@ -128,16 +126,15 @@ export async function deleteExtraOptionAction(formData: FormData) {
   if (typeof extraOptionId !== "string") return;
 
   const option = await prisma.extraOption.findFirst({
-    where: { id: extraOptionId, product: { companyId: company.id } },
-    select: { foto: true, productId: true },
+    where: { id: extraOptionId, product: { tool: { companyId: company.id } } },
+    select: { foto: true, productId: true, product: { select: { toolId: true } } },
   });
   if (!option) return;
 
   await prisma.extraOption.delete({ where: { id: extraOptionId } });
   if (option.foto) await deleteFoto(option.foto);
 
-  revalidatePath(`/dashboard/producten/${option.productId}/bewerken`);
-  revalidatePath(`/portaal/${company.slug}`);
+  revalidatePath(`/dashboard/tools/${option.product.toolId}/producten/${option.productId}/bewerken`);
 }
 
 export async function toggleExtraOptionActiveAction(formData: FormData) {
@@ -147,8 +144,8 @@ export async function toggleExtraOptionActiveAction(formData: FormData) {
   if (typeof extraOptionId !== "string") return;
 
   const option = await prisma.extraOption.findFirst({
-    where: { id: extraOptionId, product: { companyId: company.id } },
-    select: { productId: true },
+    where: { id: extraOptionId, product: { tool: { companyId: company.id } } },
+    select: { productId: true, product: { select: { toolId: true } } },
   });
   if (!option) return;
 
@@ -157,6 +154,5 @@ export async function toggleExtraOptionActiveAction(formData: FormData) {
     data: { actief: !actief },
   });
 
-  revalidatePath(`/dashboard/producten/${option.productId}/bewerken`);
-  revalidatePath(`/portaal/${company.slug}`);
+  revalidatePath(`/dashboard/tools/${option.product.toolId}/producten/${option.productId}/bewerken`);
 }

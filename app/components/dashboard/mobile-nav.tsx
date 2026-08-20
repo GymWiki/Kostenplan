@@ -5,7 +5,7 @@ import { Menu, X } from "lucide-react";
 import { Overlay } from "@/app/components/ui/overlay";
 import { Sidebar } from "./sidebar";
 
-export function MobileNav({ slug }: { slug: string }) {
+export function MobileNav() {
   const [open, setOpen] = useState(false);
 
   return (
@@ -35,7 +35,7 @@ export function MobileNav({ slug }: { slug: string }) {
           >
             <X className="h-4 w-4" />
           </button>
-          <Sidebar slug={slug} onNavigate={() => setOpen(false)} />
+          <Sidebar onNavigate={() => setOpen(false)} />
         </div>
       </Overlay>
     </>

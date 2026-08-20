@@ -26,11 +26,11 @@ async function getOfferteData(token: string) {
     include: {
       lead: {
         include: {
-          company: {
+          company: { include: { creator: { select: { email: true } } } },
+          tool: {
             include: {
               branding: true,
-              costSettings: { select: { btwPercentage: true } },
-              creator: { select: { email: true } },
+              costSettings: { select: { gebruiktAccountBtw: true, btwPercentage: true } },
             },
           },
         },
@@ -53,8 +53,13 @@ export default async function PubliekeOffertePage({
   if (!offerte) notFound();
 
   const { lead } = offerte;
-  const { company } = lead;
-  const branding = company.branding;
+  const { company, tool } = lead;
+  const branding = tool.branding;
+  const btwPercentage = tool.costSettings
+    ? tool.costSettings.gebruiktAccountBtw
+      ? company.standaardBtwPercentage
+      : tool.costSettings.btwPercentage
+    : company.standaardBtwPercentage;
 
   // Kleuren/lettertype/logo zijn een Plus/Pro-feature — zelfde afdwinging als
   // op het klantenportaal (calculator.tsx), voor het geval een bedrijf sinds
@@ -82,7 +87,7 @@ export default async function PubliekeOffertePage({
       geldigTot={offerte.geldigTot}
       gereageerdOp={offerte.gereageerdOp}
       updatedAt={offerte.updatedAt}
-      btwPercentage={company.costSettings?.btwPercentage ?? 21}
+      btwPercentage={btwPercentage}
       status={weergaveOfferteStatus(offerte)}
       nietBereikbaarVoorKlant={lead.status === "EXTERN_AFGEHANDELD"}
       contactEmail={branding?.toonEmail ? company.creator.email : null}

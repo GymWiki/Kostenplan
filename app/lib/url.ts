@@ -30,6 +30,13 @@ export async function getPortalUrl(slug: string) {
   return `${baseUrl}/portaal/${slug}`;
 }
 
+// De canonieke publieke URL van één specifieke tool sinds Levering A
+// (multi-tool) — zie /t/[bedrijfsslug]/[toolslug]/page.tsx.
+export async function getToolUrl(bedrijfsSlug: string, toolSlug: string) {
+  const baseUrl = await getBaseUrl();
+  return `${baseUrl}/t/${bedrijfsSlug}/${toolSlug}`;
+}
+
 function escapeHtmlAttribute(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -38,28 +45,51 @@ function escapeHtmlAttribute(value: string) {
     .replace(/>/g, "&gt;");
 }
 
-export async function getEmbedCode(slug: string, bedrijfsnaam: string) {
+// Insluitcode voor één specifieke tool (zie Deel 26/28 van de opdracht) —
+// laadt uitsluitend via /embed/[toolId], nooit via een company/bedrijfsslug,
+// zodat de code van Tool A nooit per ongeluk Tool B van hetzelfde bedrijf
+// kan tonen. De auto-resize (ResizeObserver + postMessage, al aanwezig in
+// Calculator) blijft ongewijzigd — alleen de bron-URL en de resize-sleutel
+// (toolId i.p.v. de oude company-slug) zijn nieuw.
+export async function getToolEmbedCode(
+  toolId: string,
+  toolNaam: string,
+  embedConfig: import("@/app/lib/tools").ToolEmbedConfig
+) {
   const baseUrl = await getBaseUrl();
-  const portalUrl = `${baseUrl}/portaal/${slug}`;
-  const iframeId = `kostenplan-${slug}`;
-  const title = escapeHtmlAttribute(`Kostencalculator van ${bedrijfsnaam}`);
+  const embedUrl = `${baseUrl}/embed/${toolId}`;
+  const iframeId = `kostenplan-${toolId}`;
+  const title = escapeHtmlAttribute(`Rekentool ${toolNaam}`);
+
+  const breedteStyle = embedConfig.breedte === "VAST" ? `${embedConfig.vasteBreedtePx}px` : "100%";
+  const border = embedConfig.toonBorder ? "1px solid #e2e8f0" : "0";
+  const style = [
+    `width: ${breedteStyle}`,
+    `min-height: ${embedConfig.minimaleHoogtePx}px`,
+    `border: ${border}`,
+    `border-radius: ${embedConfig.radiusPx}px`,
+    embedConfig.transparanteAchtergrond ? "background: transparent" : null,
+  ]
+    .filter(Boolean)
+    .join("; ");
 
   return `<iframe
   id="${iframeId}"
-  src="${portalUrl}"
+  src="${embedUrl}"
   title="${title}"
-  style="width: 100%; border: 0;"
-  height="900"
+  style="${style};"
+  height="${embedConfig.minimaleHoogtePx}"
   loading="lazy"
+  allowtransparency="${embedConfig.transparanteAchtergrond ? "true" : "false"}"
 ></iframe>
 <script>
   (function () {
     window.addEventListener("message", function (event) {
       if (event.origin !== ${JSON.stringify(baseUrl)}) return;
       var data = event.data;
-      if (!data || data.type !== "kostenplan:resize" || data.slug !== ${JSON.stringify(slug)}) return;
+      if (!data || data.type !== "kostenplan:resize" || data.toolId !== ${JSON.stringify(toolId)}) return;
       var iframe = document.getElementById(${JSON.stringify(iframeId)});
-      if (iframe) iframe.style.height = data.height + "px";
+      if (iframe) iframe.style.height = Math.max(data.height, ${embedConfig.minimaleHoogtePx}) + "px";
     });
   })();
 </script>`;

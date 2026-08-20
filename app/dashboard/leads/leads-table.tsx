@@ -11,10 +11,12 @@ const dateFormatter = new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: 
 
 export function LeadsTable({
   leads,
+  showTool = false,
   onSelectLead,
   onUpdateStatus,
 }: {
   leads: LeadWithNotes[];
+  showTool?: boolean;
   onSelectLead: (id: string) => void;
   onUpdateStatus: (leadId: string, status: LeadStatus) => void;
 }) {
@@ -25,6 +27,7 @@ export function LeadsTable({
           <thead>
             <tr className="border-b border-border bg-muted/50 text-left text-muted-foreground">
               <th className="px-4 py-3 font-medium">Naam</th>
+              {showTool && <th className="px-4 py-3 font-medium">Rekentool</th>}
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Offerte</th>
               <th className="px-4 py-3 font-medium">Pipeline waarde</th>
@@ -42,6 +45,9 @@ export function LeadsTable({
                   <p className="font-medium text-foreground">{lead.naam}</p>
                   <p className="text-xs text-muted-foreground">{lead.email}</p>
                 </td>
+                {showTool && (
+                  <td className="px-4 py-3 text-muted-foreground">{lead.toolNaamSnapshot}</td>
+                )}
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                   <StatusSelect
                     leadId={lead.id}

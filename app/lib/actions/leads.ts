@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
+import { recordAnalyticsEvent } from "@/app/lib/actions/analytics";
 import {
   leadContactSchema,
   leadNoteSchema,
@@ -18,10 +19,12 @@ export type LeadFormState = {
 } | null;
 
 // Aangeroepen vanuit het publieke klantenportaal (geen ingelogde gebruiker) —
-// zie app/portaal/[slug]/calculator.tsx. Zoekt de tenant op via de slug in
-// plaats van requireActiveCompany().
+// zie app/portaal/[slug]/calculator.tsx. Neemt een toolId (niet een slug):
+// die is al server-side geresolved en op publicatie gecontroleerd door de
+// aanroepende route (getToolForPublicRoute), dus hier alleen nog een lichte
+// achtervang-check + de daadwerkelijke aanmaak.
 export async function createLeadAction(
-  slug: string,
+  toolId: string,
   _prevState: LeadFormState,
   formData: FormData
 ): Promise<LeadFormState> {
@@ -49,24 +52,31 @@ export async function createLeadAction(
     return { error: "Ongeldige aanvraag. Ververs de pagina en probeer het opnieuw." };
   }
 
-  const tenant = await prisma.company.findUnique({
-    where: { slug },
-    select: { id: true, subscriptionTier: true, overrideTier: true },
+  const tool = await prisma.tool.findFirst({
+    where: { id: toolId, deletedAt: null, status: "GEPUBLICEERD" },
+    select: {
+      id: true,
+      naam: true,
+      companyId: true,
+      company: { select: { subscriptionTier: true, overrideTier: true } },
+    },
   });
-  if (!tenant) {
-    return { error: "Dit klantenportaal bestaat niet (meer)." };
+  if (!tool) {
+    return { error: "Deze rekentool is niet (meer) beschikbaar." };
   }
 
   // Zelfde poort als de "Offerte aanvragen"-knop zelf (Plus/Pro-only) — een
   // rechtstreekse POST kan deze client-side gate omzeilen, dus hier nogmaals
   // afdwingen.
-  if (effectiveTier(tenant) === "GRATIS") {
+  if (effectiveTier(tool.company) === "GRATIS") {
     return { error: "Offertes aanvragen is niet beschikbaar voor dit bedrijf." };
   }
 
   await prisma.lead.create({
     data: {
-      companyId: tenant.id,
+      companyId: tool.companyId,
+      toolId: tool.id,
+      toolNaamSnapshot: tool.naam,
       naam: parsed.data.naam,
       email: parsed.data.email,
       telefoonnummer: parsed.data.telefoonnummer || null,
@@ -74,6 +84,8 @@ export async function createLeadAction(
       totaalIndicatie: snapshotParsed.data.totaal,
     },
   });
+
+  await recordAnalyticsEvent(tool.companyId, tool.id, "LEAD");
 
   revalidatePath("/dashboard/leads");
   return { success: true };

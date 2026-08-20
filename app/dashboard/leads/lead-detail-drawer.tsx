@@ -65,7 +65,9 @@ export function LeadDetailDrawer({
         <div className="flex items-start justify-between gap-4 border-b border-border p-5">
           <div className="min-w-0">
             <p className="truncate text-lg font-semibold text-foreground">{lead.naam}</p>
-            <p className="text-xs text-muted-foreground">{dateFormatter.format(lead.createdAt)}</p>
+            <p className="text-xs text-muted-foreground">
+              {lead.toolNaamSnapshot} · {dateFormatter.format(lead.createdAt)}
+            </p>
           </div>
           <button
             type="button"

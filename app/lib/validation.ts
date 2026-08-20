@@ -46,6 +46,43 @@ export const companySchema = z.object({
   naam: z.string().trim().min(2, "Vul een bedrijfsnaam in").max(80),
 });
 
+export const onboardingToolSchema = z.object({
+  naam: z.string().trim().min(2, "Vul een naam voor je rekentool in").max(80),
+});
+
+export const toolSchema = z.object({
+  naam: z.string().trim().min(2, "Vul een naam in").max(80),
+  icoon: optionalIconName,
+});
+
+export const toolResultaatConfigSchema = z.object({
+  prijsWeergave: z.enum(["EXACT", "VANAF", "RANGE", "GEEN"], "Kies een prijsweergave"),
+  afronding: z.enum(["GEEN", "HEEL_EURO", "VIJF_EURO", "TIEN_EURO"], "Kies een afronding"),
+  ctaType: z.enum(
+    ["OFFERTE_AANVRAGEN", "AANVRAAG_VERSTUREN", "CONTACT_OPNEMEN", "BEL_MIJ", "WHATSAPP", "AFSPRAAK_MAKEN"],
+    "Kies een actietype"
+  ),
+  ctaTekst: z.string().trim().max(60).optional().or(z.literal("")),
+  toelichting: z.string().trim().max(300).optional().or(z.literal("")),
+});
+
+export const toolEmbedConfigSchema = z.object({
+  breedte: z.enum(["VOLLEDIG", "VAST"], "Kies een breedte"),
+  vasteBreedtePx: z.coerce.number().int().min(200).max(2000),
+  minimaleHoogtePx: z.coerce.number().int().min(200).max(4000),
+  transparanteAchtergrond: z.boolean(),
+  toonBorder: z.boolean(),
+  radiusPx: z.coerce.number().int().min(0).max(48),
+});
+
+export const toolLeadFormConfigSchema = z.object({
+  vraagTelefoon: z.boolean(),
+  vraagAdres: z.boolean(),
+  vraagPostcode: z.boolean(),
+  vraagHuisnummer: z.boolean(),
+  vraagOpmerking: z.boolean(),
+});
+
 export const companyDetailsSchema = z.object({
   naam: z.string().trim().min(2, "Vul een bedrijfsnaam in").max(80),
   kvkNummer: z.string().trim().max(20).optional(),

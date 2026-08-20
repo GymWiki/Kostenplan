@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Package, SlidersHorizontal, Users } from "lucide-react";
+import { Wrench, Package, Users, ArrowRight } from "lucide-react";
 import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { getPortalUrl, getEmbedCode } from "@/app/lib/url";
-import { effectiveTier, isProTier } from "@/app/lib/subscription";
 import { bouwOnboardingStappen } from "@/app/lib/onboarding";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { SharePortalCard } from "@/app/components/dashboard/share-portal-card";
+import { LinkButton } from "@/app/components/ui/button";
 import { OnboardingChecklist } from "@/app/components/dashboard/onboarding-checklist";
 
 export const metadata: Metadata = { title: "Overzicht" };
@@ -15,40 +13,29 @@ export const metadata: Metadata = { title: "Overzicht" };
 export default async function DashboardPage() {
   const { company } = await requireActiveCompany();
 
-  const [productsCount, costSettings, branding, portalUrl, embedCode, leadsCount, nieuweLeadsCount] =
-    await Promise.all([
-      prisma.product.count({ where: { companyId: company.id } }),
-      prisma.costSettings.findUnique({
-        where: { companyId: company.id },
-        select: { arbeidEnabled: true, transportEnabled: true, voorrijEnabled: true, materiaalEnabled: true },
-      }),
-      prisma.branding.findUnique({
-        where: { companyId: company.id },
-        select: { logoUrl: true, telefoonnummer: true },
-      }),
-      getPortalUrl(company.slug),
-      getEmbedCode(company.slug, company.naam),
-      prisma.lead.count({ where: { companyId: company.id } }),
-      prisma.lead.count({ where: { companyId: company.id, status: "NIEUW" } }),
-    ]);
+  const [toolsCount, publishedTool, productsCount, leadsCount, nieuweLeadsCount] = await Promise.all([
+    prisma.tool.count({ where: { companyId: company.id, deletedAt: null } }),
+    prisma.tool.findFirst({
+      where: { companyId: company.id, deletedAt: null },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, status: true },
+    }),
+    prisma.product.count({ where: { tool: { companyId: company.id } } }),
+    prisma.lead.count({ where: { companyId: company.id } }),
+    prisma.lead.count({ where: { companyId: company.id, status: "NIEUW" } }),
+  ]);
+  const heeftGepubliceerdeTool =
+    publishedTool?.status === "GEPUBLICEERD" ||
+    (await prisma.tool.count({ where: { companyId: company.id, deletedAt: null, status: "GEPUBLICEERD" } })) > 0;
 
-  const enabledCostTypes = costSettings
-    ? [
-        costSettings.arbeidEnabled,
-        costSettings.transportEnabled,
-        costSettings.voorrijEnabled,
-        costSettings.materiaalEnabled,
-      ].filter(Boolean).length
-    : 0;
-
-  // Onboarding-checklist: de eerste twee stappen live afgeleid van bestaande
-  // data (nooit apart opgeslagen, zie schema), de derde expliciet
-  // bijgehouden zodra de portaal-link is aangeklikt.
+  // Onboarding-checklist: alle drie stappen live afgeleid van bestaande data
+  // (zie app/lib/onboarding.ts) — geen aparte "voltooid"-vlaggen om te laten
+  // verlopen.
   const onboardingStappen = bouwOnboardingStappen({
-    heeftBedrijfsgegevens: Boolean(branding?.logoUrl || branding?.telefoonnummer),
+    heeftRekentool: toolsCount > 0,
     heeftCatalogusItem: productsCount > 0,
-    heeftPortaalBekeken: company.onboardingPortaalBekeken,
-    portalUrl,
+    heeftGepubliceerdeTool,
+    eersteToolHref: publishedTool ? `/dashboard/tools/${publishedTool.id}` : "/dashboard/tools",
   });
   const alleStappenVoltooid = onboardingStappen.every((stap) => stap.voltooid);
   let justCompletedOnboarding = false;
@@ -65,7 +52,7 @@ export default async function DashboardPage() {
           Welkom terug, {company.naam}
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Dit is jouw Kostenplan-dashboard. Beheer je calculator en deel de link met klanten.
+          Dit is jouw Kostenplan-dashboard. Beheer je rekentools en deel ze met klanten.
         </p>
       </div>
 
@@ -73,20 +60,9 @@ export default async function DashboardPage() {
         <OnboardingChecklist stappen={onboardingStappen} justCompleted={justCompletedOnboarding} />
       )}
 
-      <SharePortalCard
-        portalUrl={portalUrl}
-        embedCode={embedCode}
-        magEmbedden={isProTier(effectiveTier(company))}
-      />
-
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard icon={Package} label="Producten" value={productsCount} href="/dashboard/producten" />
-        <StatCard
-          icon={SlidersHorizontal}
-          label="Actieve kostentypes"
-          value={`${enabledCostTypes} / 4`}
-          href="/dashboard/instellingen"
-        />
+        <StatCard icon={Wrench} label="Rekentools" value={toolsCount} href="/dashboard/tools" />
+        <StatCard icon={Package} label="Producten (alle tools)" value={productsCount} href="/dashboard/tools" />
         <StatCard
           icon={Users}
           label="Leads"
@@ -95,6 +71,22 @@ export default async function DashboardPage() {
           badge={nieuweLeadsCount > 0 ? `${nieuweLeadsCount} nieuw${nieuweLeadsCount > 1 ? "e" : ""}` : undefined}
         />
       </div>
+
+      <Card className="border-primary/20 bg-gradient-to-br from-accent to-card">
+        <CardContent className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <p className="font-semibold text-foreground">Mijn rekentools</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Elke rekentool heeft zijn eigen producten, prijzen, huisstijl en publieke link — beheer ze
+              allemaal op één plek.
+            </p>
+          </div>
+          <LinkButton href="/dashboard/tools" className="shrink-0">
+            Naar mijn rekentools
+            <ArrowRight className="h-4 w-4" />
+          </LinkButton>
+        </CardContent>
+      </Card>
     </div>
   );
 }

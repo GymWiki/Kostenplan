@@ -40,21 +40,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/privacybeleid`, lastModified, changeFrequency: "yearly", priority: 0.3 },
   ];
 
-  // Publieke klantenportalen: alleen bedrijven met minstens één actief
-  // product — een leeg portaal is dunne content en voegt niets toe aan de
-  // sitemap. slug is uniek en publiek (bepaalt de portaal-URL), dus geen
-  // andere Company-velden nodig.
-  const companies = await prisma.company.findMany({
-    where: { products: { some: { actief: true } } },
-    select: { slug: true, updatedAt: true },
+  // Publieke rekentools: alleen gepubliceerde tools met minstens één actief
+  // product — een lege of niet-gepubliceerde tool is dunne/ontoegankelijke
+  // content en voegt niets toe aan de sitemap. Canonieke URL sinds
+  // Levering A (multi-tool) is /t/[bedrijfsslug]/[toolslug], niet meer de
+  // legacy /portaal/[slug] (die blijft wél werken, maar wordt bewust niet
+  // meer actief gepromoot voor indexering — voorkomt dubbele content).
+  const tools = await prisma.tool.findMany({
+    where: {
+      status: "GEPUBLICEERD",
+      deletedAt: null,
+      products: { some: { actief: true } },
+    },
+    select: { slug: true, updatedAt: true, company: { select: { slug: true } } },
   });
 
-  const portalPages: MetadataRoute.Sitemap = companies.map((company) => ({
-    url: `${BASE_URL}/portaal/${company.slug}`,
-    lastModified: company.updatedAt,
+  const toolPages: MetadataRoute.Sitemap = tools.map((tool) => ({
+    url: `${BASE_URL}/t/${tool.company.slug}/${tool.slug}`,
+    lastModified: tool.updatedAt,
     changeFrequency: "monthly",
     priority: 0.5,
   }));
 
-  return [...staticPages, ...portalPages];
+  return [...staticPages, ...toolPages];
 }

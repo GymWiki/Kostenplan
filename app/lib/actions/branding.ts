@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireActiveCompany } from "@/app/lib/dal";
+import { requireActiveTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { brandingSchema } from "@/app/lib/validation";
 import { uploadFoto, deleteFoto, isUploadedFile, isOwnStorageUrl } from "@/app/lib/storage";
@@ -44,10 +44,11 @@ async function resolveLogo(
 }
 
 export async function updateBrandingAction(
+  toolId: string,
   _prevState: BrandingFormState,
   formData: FormData
 ): Promise<BrandingFormState> {
-  const { company } = await requireActiveCompany();
+  const { company, tool } = await requireActiveTool(toolId);
 
   const parsed = brandingSchema.safeParse({
     primaireKleur: formData.get("primaireKleur"),
@@ -74,7 +75,7 @@ export async function updateBrandingAction(
   }
 
   const existing = await prisma.branding.findUnique({
-    where: { companyId: company.id },
+    where: { toolId },
     select: { logoUrl: true },
   });
 
@@ -106,12 +107,13 @@ export async function updateBrandingAction(
   };
 
   await prisma.branding.upsert({
-    where: { companyId: company.id },
-    create: { companyId: company.id, ...data },
+    where: { toolId },
+    create: { toolId, ...data },
     update: data,
   });
 
-  revalidatePath("/dashboard/branding");
+  revalidatePath(`/dashboard/tools/${toolId}/uiterlijk`);
+  revalidatePath(`/t/${company.slug}/${tool.slug}`);
   revalidatePath(`/portaal/${company.slug}`);
 
   return { success: true };

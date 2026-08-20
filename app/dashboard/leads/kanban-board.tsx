@@ -30,10 +30,12 @@ const dateFormatter = new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: 
 
 export function KanbanBoard({
   leads,
+  showTool = false,
   onSelectLead,
   onUpdateStatus,
 }: {
   leads: LeadWithNotes[];
+  showTool?: boolean;
   onSelectLead: (id: string) => void;
   onUpdateStatus: (leadId: string, status: LeadStatus) => void;
 }) {
@@ -63,6 +65,7 @@ export function KanbanBoard({
             key={status}
             status={status}
             leads={leads.filter((lead) => lead.status === status)}
+            showTool={showTool}
             onSelectLead={onSelectLead}
           />
         ))}
@@ -74,10 +77,12 @@ export function KanbanBoard({
 function KanbanColumn({
   status,
   leads,
+  showTool,
   onSelectLead,
 }: {
   status: LeadStatus;
   leads: LeadWithNotes[];
+  showTool: boolean;
   onSelectLead: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
@@ -101,14 +106,22 @@ function KanbanColumn({
       )}
       <div className="flex min-h-24 flex-col gap-2">
         {leads.map((lead) => (
-          <LeadCard key={lead.id} lead={lead} onClick={() => onSelectLead(lead.id)} />
+          <LeadCard key={lead.id} lead={lead} showTool={showTool} onClick={() => onSelectLead(lead.id)} />
         ))}
       </div>
     </div>
   );
 }
 
-function LeadCard({ lead, onClick }: { lead: LeadWithNotes; onClick: () => void }) {
+function LeadCard({
+  lead,
+  showTool,
+  onClick,
+}: {
+  lead: LeadWithNotes;
+  showTool: boolean;
+  onClick: () => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: lead.id,
   });
@@ -136,6 +149,9 @@ function LeadCard({ lead, onClick }: { lead: LeadWithNotes; onClick: () => void 
         />
       )}
       <p className="truncate font-medium text-foreground">{lead.naam}</p>
+      {showTool && (
+        <p className="truncate text-xs text-muted-foreground">{lead.toolNaamSnapshot}</p>
+      )}
       <p className="mt-1 text-sm font-semibold text-primary">
         {formatCurrency(lead.totaalIndicatie)}
       </p>

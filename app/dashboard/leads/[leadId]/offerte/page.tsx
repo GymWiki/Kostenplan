@@ -16,18 +16,27 @@ export default async function OffertePage({
   const { leadId } = await params;
   const { company } = await requireActiveCompany();
 
-  const [lead, branding, costSettings] = await Promise.all([
-    prisma.lead.findFirst({
-      where: { id: leadId, companyId: company.id },
-      include: { offerte: true },
-    }),
-    prisma.branding.findUnique({ where: { companyId: company.id } }),
-    prisma.costSettings.findUnique({ where: { companyId: company.id }, select: { btwPercentage: true } }),
-  ]);
+  const lead = await prisma.lead.findFirst({
+    where: { id: leadId, companyId: company.id },
+    include: { offerte: true },
+  });
 
   // Er bestaat geen editor zonder offerte — die wordt aangemaakt door
   // omzettenNaarOfferteAction (zie de aanvragenpagina), niet hier.
   if (!lead || !lead.offerte) notFound();
+
+  const [branding, costSettings] = await Promise.all([
+    prisma.branding.findUnique({ where: { toolId: lead.toolId } }),
+    prisma.costSettings.findUnique({
+      where: { toolId: lead.toolId },
+      select: { gebruiktAccountBtw: true, btwPercentage: true },
+    }),
+  ]);
+  const effectieveBtw = costSettings
+    ? costSettings.gebruiktAccountBtw
+      ? company.standaardBtwPercentage
+      : costSettings.btwPercentage
+    : company.standaardBtwPercentage;
 
   return (
     <OfferteEditor
@@ -39,7 +48,7 @@ export default async function OffertePage({
       klantEmail={lead.email}
       bedrijfsnaam={company.naam}
       branding={branding}
-      btwPercentage={costSettings?.btwPercentage ?? 21}
+      btwPercentage={effectieveBtw}
       siteUrl={getSiteUrl()}
     />
   );

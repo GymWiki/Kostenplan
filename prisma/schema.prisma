@@ -107,6 +107,55 @@ enum ContactPositie {
   ONDERAAN
 }
 
+// Levenscyclus van een Tool (rekentool) — zie Tool hieronder.
+enum ToolStatus {
+  // Niet publiek bereikbaar — de vakman bouwt/bewerkt nog.
+  CONCEPT
+  // Publiek bereikbaar via de tool-URL en embed.
+  GEPUBLICEERD
+  // Niet publiek bereikbaar (zelfde als CONCEPT voor bezoekers), maar
+  // expliciet een aparte status: de vakman heeft 'm bewust stopgezet i.p.v.
+  // nog nooit voltooid — data/leads/analytics blijven gewoon bestaan.
+  GEPAUZEERD
+}
+
+// Hoe de eindprijs aan de klant wordt getoond — per tool instelbaar, zie
+// Tool.resultaatConfig. ExactType.EXACT is het huidige/enige gedrag van
+// vóór multi-tool, dus de standaardwaarde voor elke bestaande tool na
+// migratie.
+enum ToolPrijsWeergave {
+  EXACT
+  VANAF
+  RANGE
+  GEEN
+}
+
+enum ToolPrijsAfronding {
+  GEEN
+  HEEL_EURO
+  VIJF_EURO
+  TIEN_EURO
+}
+
+enum ToolCtaType {
+  OFFERTE_AANVRAGEN
+  AANVRAAG_VERSTUREN
+  CONTACT_OPNEMEN
+  BEL_MIJ
+  WHATSAPP
+  AFSPRAAK_MAKEN
+}
+
+// Eenvoudige, uitbreidbare basis voor tool-analytics (zie app/lib/analytics.ts)
+// — één rij per gebeurtenis, bewust plat (geen sessies/aggregaten) zodat
+// latere uitbreiding (bijv. per-stap-funnel) geen schema-breuk is.
+enum AnalyticsEventType {
+  VISIT
+  START
+  COMPLETE
+  LEAD
+}
+
 // Doorloopt de pipeline van links (NIEUW) naar rechts (GEWONNEN/VERLOREN) op
 // het Kanban-board in /dashboard/leads.
 enum LeadStatus {
@@ -138,7 +187,7 @@ model User {
   // gebruiker is dit (na de multi-company-migratie) hun oorspronkelijke,
   // automatisch aangemaakte bedrijf; bij een nieuw bedrijf (zie
   // company_members) de daadwerkelijke aanmaker.
-  createdCompanies   Company[] @relation("CompanyCreator")
+  createdCompanies   Company[]       @relation("CompanyCreator")
 
   brandingExtractionAttempts BrandingExtractionAttempt[]
 }
@@ -175,12 +224,12 @@ enum OpzegReden {
 // opzeggen (opnieuw abonneren, later weer opzeggen), en elke reden blijft zo
 // een eigen tijdgebonden rij.
 model CancellationFeedback {
-  id         String     @id @default(cuid())
-  companyId  String
-  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  reden      OpzegReden
+  id          String     @id @default(cuid())
+  companyId   String
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  reden       OpzegReden
   toelichting String?
-  createdAt  DateTime   @default(now())
+  createdAt   DateTime   @default(now())
 
   @@index([companyId])
 }
@@ -253,15 +302,93 @@ model Company {
   onboardingPortaalBekeken Boolean @default(false)
   onboardingVoltooid       Boolean @default(false)
 
+  // Account-defaults (zie Levering A, "Beslissing 4"): een nieuwe Tool
+  // gebruikt deze standaard (CostSettings.gebruiktAccountArbeidTarief e.d.
+  // staat dan op true); een tool mag dit altijd individueel overriden. Zelfde
+  // waarden als de bestaande CostSettings-defaults hieronder, bewust — zo
+  // verandert er voor een net-gemigreerd bedrijf feitelijk niets.
+  standaardArbeidTariefUur Float @default(45)
+  standaardVoorrijTarief   Float @default(35)
+  standaardBtwPercentage   Float @default(21)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   members              CompanyMember[]
-  costSettings         CostSettings?
-  branding             Branding?
-  products             Product[]
+  tools                Tool[]
   leads                Lead[]
+  analyticsEvents      AnalyticsEvent[]
   cancellationFeedback CancellationFeedback[]
+}
+
+// Eén rekentool — de centrale calculator-eenheid (zie Levering A). Een
+// Company kan er meerdere hebben, elk volledig zelfstandig: eigen branding,
+// prijzen, producten, resultaatweergave, aanvraagformulier, publieke URL,
+// embed en analytics. Company blijft de account-/facturatie-/team-eenheid,
+// Tool is waar de daadwerkelijke berekening en klantweergave om draait.
+model Tool {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  naam   String
+  // Uniek binnen het bedrijf (niet globaal) — de publieke URL is
+  // /t/[bedrijfsslug]/[toolslug], dus alleen de combinatie hoeft uniek te
+  // zijn. Zie @@unique([companyId, slug]) hieronder.
+  slug   String
+  status ToolStatus @default(CONCEPT)
+  // Naam van een lucide-react icoon (zie app/lib/icons.ts), voor het
+  // toolkaartje op /dashboard/tools. Optioneel, puur decoratief.
+  icoon  String?
+  order  Int        @default(0)
+
+  // Resultaatinstellingen (prijsweergave/afronding/CTA) en
+  // aanvraagformulier-configuratie — bewust Json i.p.v. losse kolommen,
+  // zelfde patroon als Product.sjabloonConfig: houdt dit uitbreidbaar
+  // richting Levering B zonder telkens een schema-migratie. Vorm + defaults:
+  // zie ToolResultaatConfig/ToolLeadFormConfig in app/lib/tools.ts.
+  resultaatConfig Json @default("{}")
+  leadFormConfig  Json @default("{}")
+  // Embedinstellingen (breedte/minimale hoogte/transparantie/border-radius) —
+  // zelfde Json-patroon, vorm + defaults in ToolEmbedConfig (app/lib/tools.ts).
+  embedConfig     Json @default("{}")
+
+  // Soft delete — een verwijderde tool blijft (met al zijn historische
+  // leads/offertes/analytics) gewoon in de database staan, maar verdwijnt
+  // uit elk normaal dashboard/overzicht en is nergens meer publiek
+  // bereikbaar. Zie requireActiveTool()/canCreateTool() in app/lib/dal.ts.
+  deletedAt DateTime?
+
+  branding        Branding?
+  costSettings    CostSettings?
+  products        Product[]
+  leads           Lead[]
+  analyticsEvents AnalyticsEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, slug])
+  @@index([companyId])
+}
+
+// Eén rij per meetbare gebeurtenis op een publieke tool (bezoek, calculator
+// gestart, calculator afgerond, aanvraag verstuurd) — bewust plat/simpel
+// (geen sessie-tabel, geen funnel-stappen) zodat dit een lichte, uitbreidbare
+// basis is i.p.v. een voorbarig complex analytics-systeem. companyId staat
+// er (net als bij Lead) denormalized bij voor snelle "alle tools"-query's.
+model AnalyticsEvent {
+  id        String             @id @default(cuid())
+  companyId String
+  company   Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  toolId    String
+  tool      Tool               @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  type      AnalyticsEventType
+
+  createdAt DateTime @default(now())
+
+  @@index([toolId, type, createdAt])
+  @@index([companyId, createdAt])
 }
 
 // Koppelt een User aan een Company waar die toegang toe heeft. `rol` is
@@ -284,10 +411,12 @@ model CompanyMember {
 
 // White-label/personalisatie-instellingen voor het klantenportaal. Los van
 // CostSettings (dat gaat over prijslogica, dit over uitstraling en copy).
+// 1-op-1 met Tool: elke rekentool heeft zijn eigen huisstijl, volledig
+// onafhankelijk van andere tools van hetzelfde bedrijf.
 model Branding {
-  id        String  @id @default(cuid())
-  companyId String  @unique
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  toolId String @unique
+  tool   Tool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
 
   // Publieke URL van een logo in Supabase Storage. Optioneel — zonder logo
   // toont het portaal het standaard Kostenplan-merkteken.
@@ -323,37 +452,52 @@ model Branding {
   updatedAt DateTime @updatedAt
 }
 
+// 1-op-1 met Tool (elke rekentool heeft zijn eigen prijsinstellingen).
+// arbeidTariefUur/voorrijTarief/btwPercentage kunnen de company-brede
+// account-default (Company.standaardArbeidTariefUur e.d.) volgen — zie de
+// gebruiktAccount*-vlaggen hieronder — of een eigen tool-waarde gebruiken.
+// De kolom zelf bevat altijd een concrete waarde (nooit null): bij
+// gebruiktAccount*=true is dat de laatst bekende/voorgevulde waarde, puur
+// als startpunt mocht de vakman later naar "eigen waarde" overschakelen; de
+// daadwerkelijk GEBRUIKTE waarde wordt bepaald door resolveCostSettings() in
+// app/lib/tools.ts, nooit door deze kolom rechtstreeks te lezen.
 model CostSettings {
-  id        String  @id @default(cuid())
-  companyId String  @unique
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  toolId String @unique
+  tool   Tool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
 
   // Arbeidskosten — geldt voor Producten (Product.productiviteit). Drie
   // losse tarieven (i.p.v. één) zodat het wisselen van arbeidStapEenheid
   // nooit een bestaand tarief herinterpreteert als een bedrag voor een
-  // andere tijdseenheid.
-  arbeidEnabled       Boolean           @default(true)
-  arbeidZichtbaar     Boolean           @default(true)
-  arbeidStapEenheid   ArbeidStapEenheid @default(UUR)
-  arbeidTariefUur     Float             @default(45)
-  arbeidTariefDagdeel Float             @default(180)
-  arbeidTariefDag     Float             @default(360)
+  // andere tijdseenheid. Alleen arbeidTariefUur kent een account-default
+  // (dagdeel/dag-tarieven zijn altijd tool-specifiek — te uiteenlopend per
+  // vakgebied om een zinnig bedrijfsbreed gemiddelde voor te definiëren).
+  arbeidEnabled               Boolean           @default(true)
+  arbeidZichtbaar             Boolean           @default(true)
+  arbeidStapEenheid           ArbeidStapEenheid @default(UUR)
+  gebruiktAccountArbeidTarief Boolean           @default(true)
+  arbeidTariefUur             Float             @default(45)
+  arbeidTariefDagdeel         Float             @default(180)
+  arbeidTariefDag             Float             @default(360)
   // Rond de arbeidstijd van een product af op hele arbeidStapEenheid-stappen
   // (bijv. altijd hele dagdelen) i.p.v. 'm continu (lineair) door te rekenen.
   // Uit (continu) is de standaard — zie calculate.ts.
-  arbeidAfronden      Boolean           @default(false)
+  arbeidAfronden              Boolean           @default(false)
 
-  // Transportkosten — company-brede standaard, per product te overschrijven
-  // (Product.transportkostenOverride) en optioneel meeschalend met de
-  // hoeveelheid (Product.transportMeeschalend, standaard uit).
+  // Transportkosten — geen account-default (te productafhankelijk), per
+  // product te overschrijven (Product.transportkostenOverride) en optioneel
+  // meeschalend met de hoeveelheid (Product.transportMeeschalend, standaard
+  // uit).
   transportEnabled   Boolean @default(true)
   transportZichtbaar Boolean @default(true)
   transportTarief    Float   @default(0)
 
-  // Voorrijkosten — zelfde opzet als transport hierboven.
-  voorrijEnabled   Boolean @default(true)
-  voorrijZichtbaar Boolean @default(true)
-  voorrijTarief    Float   @default(35)
+  // Voorrijkosten — zelfde opzet als arbeid hierboven, wél met
+  // account-default.
+  voorrijEnabled               Boolean @default(true)
+  voorrijZichtbaar             Boolean @default(true)
+  gebruiktAccountVoorrijTarief Boolean @default(true)
+  voorrijTarief                Float   @default(35)
 
   // Materiaalkosten — geldt voor Producten (materiaalCategorieen).
   // Geen aparte marge-/opslaglaag meer: elke ingevulde materiaalprijs is al
@@ -361,13 +505,14 @@ model CostSettings {
   materiaalEnabled   Boolean @default(true)
   materiaalZichtbaar Boolean @default(true)
 
-  btwPercentage Float @default(21)
+  gebruiktAccountBtw Boolean @default(true)
+  btwPercentage      Float   @default(21)
 
   // Prijsbandbreedte — per berekening, sluit de drie standen wederzijds uit
   // (zie BandbreedteModus). Marges gelden alleen voor modus TOTAAL.
-  bandbreedteModus        BandbreedteModus @default(GEEN)
-  bandbreedteMargeOmlaag  Float            @default(10)
-  bandbreedteMargeOmhoog  Float            @default(10)
+  bandbreedteModus       BandbreedteModus @default(GEEN)
+  bandbreedteMargeOmlaag Float            @default(10)
+  bandbreedteMargeOmhoog Float            @default(10)
 
   updatedAt DateTime @updatedAt
 }
@@ -376,9 +521,9 @@ model CostSettings {
 // hoeveelheid, een materiaal per materiaalcategorie (bijv. "Palen") en
 // eventueel extra opties.
 model Product {
-  id        String  @id @default(cuid())
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  toolId String
+  tool   Tool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
 
   naam         String
   omschrijving String?
@@ -435,7 +580,7 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([companyId])
+  @@index([toolId])
 }
 
 // Onderdeel van een product waarvoor de klant één materiaal kiest,
@@ -445,8 +590,8 @@ model MaterialCategory {
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  naam  String
-  order Int    @default(0)
+  naam      String
+  order     Int     @default(0)
   // Verplicht een keuze uit deze categorie voordat de klant een offerte kan
   // aanvragen. Zonder dit blijft een prijsindicatie mogelijk terwijl
   // materiaalkosten stil op €0 blijven staan omdat er niets is gekozen.
@@ -469,25 +614,25 @@ model MaterialOption {
   materialCategoryId String
   materialCategory   MaterialCategory @relation(fields: [materialCategoryId], references: [id], onDelete: Cascade)
 
-  naam        String
-  prijs       Float   @default(0)
+  naam                   String
+  prijs                  Float     @default(0)
   // Vast (default) of bandbreedte — zie PrijsType. Bij BANDBREEDTE wordt
   // prijsMin/prijsMax gebruikt in plaats van het vaste `prijs`-veld.
-  prijsType   PrijsType @default(VAST)
-  prijsMin    Float?
-  prijsMax    Float?
+  prijsType              PrijsType @default(VAST)
+  prijsMin               Float?
+  prijsMax               Float?
   // Wordt verkocht per veelvoud van deze hoeveelheid (in de eenheid van het
   // product), bijv. 1.8 voor een paal die per 1,8 m wordt ingekocht. Leeg
   // betekent doorlopend geprijsd, zonder afronding.
-  stapgrootte Float?
+  stapgrootte            Float?
   // Vervangt Product.productiviteit voor dit ene materiaal — sommige
   // materialen (bijv. natuursteen t.o.v. betontegel) leggen trager. Leeg =
   // gebruik de productiviteit van het product.
   productiviteitOverride Float?
   // Publieke URL van een foto in Supabase Storage. Optioneel.
-  foto        String?
-  actief      Boolean @default(true)
-  order       Int     @default(0)
+  foto                   String?
+  actief                 Boolean   @default(true)
+  order                  Int       @default(0)
 
   createdAt DateTime @default(now())
 
@@ -524,9 +669,18 @@ model ExtraOption {
 // effectiveTier() in app/lib/subscription.ts) — dit is dezelfde gate als de
 // "Offerte aanvragen"-knop zelf op het portaal.
 model Lead {
-  id        String  @id @default(cuid())
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id               String  @id @default(cuid())
+  // Denormalized naast toolId — bewust bewaard voor efficiënte, company-brede
+  // CRM-query's ("Alle rekentools"-weergave op /dashboard/leads) zonder
+  // telkens via Tool te hoeven joinen.
+  companyId        String
+  company          Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  toolId           String
+  tool             Tool    @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  // Bevroren toolnaam op het moment van aanvragen — overleeft het hernoemen
+  // (of zelfs soft-deleten) van de tool, zodat een historische lead in het
+  // CRM altijd correct laat zien waar hij vandaan kwam.
+  toolNaamSnapshot String
 
   naam           String
   email          String
@@ -548,13 +702,14 @@ model Lead {
 
   // Gezet door markExternAfgehandeldAction wanneer status EXTERN_AFGEHANDELD
   // wordt. Notitie is bewust optioneel — geen verplichte stap.
-  externAfgehandeldOp       DateTime?
-  externAfgehandeldNotitie  String?
+  externAfgehandeldOp      DateTime?
+  externAfgehandeldNotitie String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([companyId, status])
+  @@index([toolId, status])
 }
 
 // Individuele, los bewerkbare/verwijderbare aantekening bij een Lead (zie

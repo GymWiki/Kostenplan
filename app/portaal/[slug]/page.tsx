@@ -1,54 +1,17 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
-import { prisma } from "@/app/lib/prisma";
+import { getLegacyToolForCompanySlug } from "@/app/lib/dal";
+import { resolveCostSettings } from "@/app/lib/tools";
 import { effectiveTier } from "@/app/lib/subscription";
 import { Calculator } from "./calculator";
 
 // Cached per request: generateMetadata() and the page component below are
 // called separately by Next.js and would otherwise each hit Postgres for
-// this same tenant — on the single highest-traffic route in the app (every
-// visitor of every tenant's public calculator). cache() makes them share
-// one fetch.
-const getPortalData = cache(async (slug: string) => {
-  return prisma.company.findUnique({
-    where: { slug },
-    // select (not include) at the top level so this public, unauthenticated,
-    // highest-traffic query only pulls the scalar Company columns actually
-    // used below — not Mollie IDs, onboarding flags, timestamps, etc.
-    select: {
-      naam: true,
-      subscriptionTier: true,
-      overrideTier: true,
-      costSettings: true,
-      branding: true,
-      // De contact-e-mail die (indien Branding.toonEmail aanstaat) publiek
-      // op het portaal wordt getoond — dat was vóór multi-company altijd
-      // het login-e-mailadres van de tenant zelf, dus voor gemigreerde
-      // bedrijven levert de aanmaker-relatie exact hetzelfde adres op.
-      creator: { select: { email: true } },
-      products: {
-        where: { actief: true },
-        orderBy: { order: "asc" },
-        include: {
-          materiaalCategorieen: {
-            orderBy: { order: "asc" },
-            include: {
-              materialen: {
-                where: { actief: true },
-                orderBy: { order: "asc" },
-              },
-            },
-          },
-          extraOpties: {
-            where: { actief: true },
-            orderBy: { order: "asc" },
-          },
-        },
-      },
-    },
-  });
-});
+// this same tenant — on one of the highest-traffic routes in the app (every
+// visitor of every legacy pre-Levering-A link). cache() makes them share one
+// fetch.
+const getLegacyPortalData = cache(getLegacyToolForCompanySlug);
 
 export async function generateMetadata({
   params,
@@ -56,11 +19,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const company = await getPortalData(slug);
-  if (!company) return { title: "Kostencalculator" };
+  const tool = await getLegacyPortalData(slug);
+  if (!tool) return { title: "Kostencalculator" };
 
-  const title = `Kostencalculator ${company.naam}`;
-  const description = `Bereken direct een schatting van de kosten voor jouw project bij ${company.naam}.`;
+  const title = `Kostencalculator ${tool.company.naam}`;
+  const description = `Bereken direct een schatting van de kosten voor jouw project bij ${tool.company.naam}.`;
 
   return {
     title,
@@ -84,6 +47,14 @@ export async function generateMetadata({
   };
 }
 
+// Legacy-route van vóór Levering A (multi-tool) — bestaande klanten kunnen
+// deze URL al op hun website of in een iframe hebben staan. Rendert bewust
+// rechtstreeks (geen redirect naar /t/[bedrijfsslug]/[toolslug]) om
+// bestaande embeds nooit te breken: zie getLegacyToolForCompanySlug in
+// app/lib/dal.ts. Toont de eerste (laagste `order`) gepubliceerde tool van
+// het bedrijf; heeft een bedrijf meerdere gepubliceerde tools, dan is dit
+// een bewuste vereenvoudiging — nieuwe tools horen bij hun eigen
+// /t/-adres, niet bij deze historische URL.
 export default async function PortaalPage({
   params,
 }: {
@@ -91,19 +62,20 @@ export default async function PortaalPage({
 }) {
   const { slug } = await params;
 
-  const company = await getPortalData(slug);
+  const tool = await getLegacyPortalData(slug);
+  if (!tool || !tool.costSettings) notFound();
 
-  if (!company || !company.costSettings) notFound();
+  const effectieveCostSettings = resolveCostSettings(tool.costSettings, tool.company);
 
   return (
     <Calculator
-      slug={slug}
-      bedrijfsnaam={company.naam}
-      email={company.creator.email}
-      subscriptionTier={effectiveTier(company)}
-      branding={company.branding}
-      costSettings={company.costSettings}
-      products={company.products}
+      toolId={tool.id}
+      bedrijfsnaam={tool.company.naam}
+      email={tool.company.creator.email}
+      subscriptionTier={effectiveTier(tool.company)}
+      branding={tool.branding}
+      costSettings={effectieveCostSettings}
+      products={tool.products}
     />
   );
 }

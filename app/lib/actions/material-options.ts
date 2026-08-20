@@ -56,8 +56,8 @@ export async function createMaterialOptionAction(
   }
 
   const category = await prisma.materialCategory.findFirst({
-    where: { id: materialCategoryId, product: { companyId: company.id } },
-    select: { productId: true },
+    where: { id: materialCategoryId, product: { tool: { companyId: company.id } } },
+    select: { productId: true, product: { select: { toolId: true } } },
   });
   if (!category) {
     return { error: "Categorie niet gevonden" };
@@ -74,8 +74,7 @@ export async function createMaterialOptionAction(
     data: { ...parsed.data, foto: fotoResult.foto, materialCategoryId, order: count },
   });
 
-  revalidatePath(`/dashboard/producten/${category.productId}/bewerken`);
-  revalidatePath(`/portaal/${company.slug}`);
+  revalidatePath(`/dashboard/tools/${category.product.toolId}/producten/${category.productId}/bewerken`);
   return null;
 }
 
@@ -92,8 +91,11 @@ export async function updateMaterialOptionAction(
   }
 
   const option = await prisma.materialOption.findFirst({
-    where: { id: materialOptionId, materialCategory: { product: { companyId: company.id } } },
-    select: { foto: true, materialCategory: { select: { productId: true } } },
+    where: { id: materialOptionId, materialCategory: { product: { tool: { companyId: company.id } } } },
+    select: {
+      foto: true,
+      materialCategory: { select: { productId: true, product: { select: { toolId: true } } } },
+    },
   });
   if (!option) {
     return { error: "Materiaal niet gevonden" };
@@ -109,8 +111,9 @@ export async function updateMaterialOptionAction(
     data: { ...parsed.data, foto: fotoResult.foto },
   });
 
-  revalidatePath(`/dashboard/producten/${option.materialCategory.productId}/bewerken`);
-  revalidatePath(`/portaal/${company.slug}`);
+  revalidatePath(
+    `/dashboard/tools/${option.materialCategory.product.toolId}/producten/${option.materialCategory.productId}/bewerken`
+  );
   return null;
 }
 
@@ -120,16 +123,20 @@ export async function deleteMaterialOptionAction(formData: FormData) {
   if (typeof materialOptionId !== "string") return;
 
   const option = await prisma.materialOption.findFirst({
-    where: { id: materialOptionId, materialCategory: { product: { companyId: company.id } } },
-    select: { foto: true, materialCategory: { select: { productId: true } } },
+    where: { id: materialOptionId, materialCategory: { product: { tool: { companyId: company.id } } } },
+    select: {
+      foto: true,
+      materialCategory: { select: { productId: true, product: { select: { toolId: true } } } },
+    },
   });
   if (!option) return;
 
   await prisma.materialOption.delete({ where: { id: materialOptionId } });
   if (option.foto) await deleteFoto(option.foto);
 
-  revalidatePath(`/dashboard/producten/${option.materialCategory.productId}/bewerken`);
-  revalidatePath(`/portaal/${company.slug}`);
+  revalidatePath(
+    `/dashboard/tools/${option.materialCategory.product.toolId}/producten/${option.materialCategory.productId}/bewerken`
+  );
 }
 
 export async function toggleMaterialOptionActiveAction(formData: FormData) {
@@ -139,8 +146,10 @@ export async function toggleMaterialOptionActiveAction(formData: FormData) {
   if (typeof materialOptionId !== "string") return;
 
   const option = await prisma.materialOption.findFirst({
-    where: { id: materialOptionId, materialCategory: { product: { companyId: company.id } } },
-    select: { materialCategory: { select: { productId: true } } },
+    where: { id: materialOptionId, materialCategory: { product: { tool: { companyId: company.id } } } },
+    select: {
+      materialCategory: { select: { productId: true, product: { select: { toolId: true } } } },
+    },
   });
   if (!option) return;
 
@@ -149,6 +158,7 @@ export async function toggleMaterialOptionActiveAction(formData: FormData) {
     data: { actief: !actief },
   });
 
-  revalidatePath(`/dashboard/producten/${option.materialCategory.productId}/bewerken`);
-  revalidatePath(`/portaal/${company.slug}`);
+  revalidatePath(
+    `/dashboard/tools/${option.materialCategory.product.toolId}/producten/${option.materialCategory.productId}/bewerken`
+  );
 }

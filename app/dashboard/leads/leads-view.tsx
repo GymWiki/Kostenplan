@@ -46,9 +46,11 @@ function useIsNarrowViewport() {
 export function LeadsView({
   leads,
   isGratis,
+  tools = [],
 }: {
   leads: LeadWithNotes[];
   isGratis: boolean;
+  tools?: { id: string; naam: string }[];
 }) {
   // null = nog geen expliciete keuze door de gebruiker gemaakt — dan geldt
   // de viewport-afhankelijke standaard hieronder. Zodra iemand zelf op
@@ -60,6 +62,10 @@ export function LeadsView({
   // veel minder bruikbaar dan de Lijst-weergave daar.
   const view: View = gekozenView ?? (isNarrow ? "lijst" : "kanban");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  // "alle" = company-brede weergave (standaard) — een gebruiker met precies
+  // één rekentool ziet deze filter niet eens (zie de check bij het renderen
+  // hieronder), voor hen is "alle" en "die ene tool" toch hetzelfde.
+  const [toolFilter, setToolFilter] = useState<string>("alle");
 
   // Optimistische statuswijziging: een sleep op het Kanban-bord of een keuze
   // in de statusdropdown (tabelweergave/detailpaneel) verandert de UI meteen
@@ -86,14 +92,20 @@ export function LeadsView({
 
   const selectedLead = optimisticLeads.find((lead) => lead.id === selectedLeadId) ?? null;
 
+  const zichtbareLeads = useMemo(
+    () => (toolFilter === "alle" ? optimisticLeads : optimisticLeads.filter((lead) => lead.toolId === toolFilter)),
+    [optimisticLeads, toolFilter]
+  );
+
   // Zelfde berekening als voorheen server-side in page.tsx, nu hier zodat de
   // KPI's direct meebewegen met een optimistische statuswijziging in plaats
-  // van pas na de server-round-trip bij te trekken.
+  // van pas na de server-round-trip bij te trekken. Beweegt ook mee met het
+  // toolfilter hierboven.
   const { pipelineWaarde, actieveCount, gewonnenCount, conversieRatio } = useMemo(() => {
-    const actief = optimisticLeads.filter((lead) => telItMeeVoorPipeline(lead.status));
+    const actief = zichtbareLeads.filter((lead) => telItMeeVoorPipeline(lead.status));
     const waarde = actief.reduce((sum, lead) => sum + lead.totaalIndicatie, 0);
-    const gewonnen = optimisticLeads.filter((lead) => lead.status === "GEWONNEN").length;
-    const verloren = optimisticLeads.filter((lead) => lead.status === "VERLOREN").length;
+    const gewonnen = zichtbareLeads.filter((lead) => lead.status === "GEWONNEN").length;
+    const verloren = zichtbareLeads.filter((lead) => lead.status === "VERLOREN").length;
     const afgerond = gewonnen + verloren;
     return {
       pipelineWaarde: waarde,
@@ -101,7 +113,7 @@ export function LeadsView({
       gewonnenCount: gewonnen,
       conversieRatio: afgerond > 0 ? Math.round((gewonnen / afgerond) * 100) : null,
     };
-  }, [optimisticLeads]);
+  }, [zichtbareLeads]);
 
   if (isGratis) {
     return (
@@ -132,7 +144,22 @@ export function LeadsView({
             Offerte-aanvragen vanuit je klantenportaal, op één plek.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {tools.length > 1 && (
+            <select
+              value={toolFilter}
+              onChange={(e) => setToolFilter(e.target.value)}
+              aria-label="Filter op rekentool"
+              className="h-10 rounded-md border border-input bg-card px-3 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="alle">Alle rekentools</option>
+              {tools.map((tool) => (
+                <option key={tool.id} value={tool.id}>
+                  {tool.naam}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
             <button
               type="button"
@@ -183,7 +210,7 @@ export function LeadsView({
         />
       </div>
 
-      {optimisticLeads.length === 0 ? (
+      {zichtbareLeads.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-16 text-center">
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -191,14 +218,26 @@ export function LeadsView({
             </span>
             <p className="font-medium text-foreground">Nog geen aanvragen</p>
             <p className="max-w-sm text-sm text-muted-foreground">
-              Zodra een bezoeker via je klantenportaal een offerte aanvraagt, verschijnt die hier.
+              {toolFilter === "alle"
+                ? "Zodra een bezoeker via je rekentool een offerte aanvraagt, verschijnt die hier."
+                : "Deze rekentool heeft nog geen aanvragen."}
             </p>
           </CardContent>
         </Card>
       ) : view === "kanban" ? (
-        <KanbanBoard leads={optimisticLeads} onSelectLead={setSelectedLeadId} onUpdateStatus={updateLeadStatus} />
+        <KanbanBoard
+          leads={zichtbareLeads}
+          showTool={tools.length > 1}
+          onSelectLead={setSelectedLeadId}
+          onUpdateStatus={updateLeadStatus}
+        />
       ) : (
-        <LeadsTable leads={optimisticLeads} onSelectLead={setSelectedLeadId} onUpdateStatus={updateLeadStatus} />
+        <LeadsTable
+          leads={zichtbareLeads}
+          showTool={tools.length > 1}
+          onSelectLead={setSelectedLeadId}
+          onUpdateStatus={updateLeadStatus}
+        />
       )}
 
       <LeadDetailDrawer lead={selectedLead} onClose={() => setSelectedLeadId(null)} onUpdateStatus={updateLeadStatus} />

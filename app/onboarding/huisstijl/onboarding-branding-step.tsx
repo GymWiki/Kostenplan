@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { LinkButton, Button } from "@/app/components/ui/button";
-import { AutoBranding, type AutoBrandingResult } from "@/app/dashboard/branding/auto-branding";
+import { AutoBranding, type AutoBrandingResult } from "@/app/dashboard/tools/[toolId]/uiterlijk/auto-branding";
 import { applyOnboardingBrandingAction } from "@/app/lib/actions/onboarding";
 
 // Het wow-moment: meteen na het aanmaken van een bedrijf, vóór het

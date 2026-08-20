@@ -43,10 +43,11 @@ const PLACEHOLDER_FOTO =
 function maakCostSettings(): CostSettings {
   return {
     id: "stijlgids-cost-settings",
-    companyId: "stijlgids-company",
+    toolId: "stijlgids-tool",
     arbeidEnabled: true,
     arbeidZichtbaar: true,
     arbeidStapEenheid: "UUR",
+    gebruiktAccountArbeidTarief: false,
     arbeidTariefUur: 45,
     arbeidTariefDagdeel: 180,
     arbeidTariefDag: 360,
@@ -56,9 +57,11 @@ function maakCostSettings(): CostSettings {
     transportTarief: 25,
     voorrijEnabled: true,
     voorrijZichtbaar: true,
+    gebruiktAccountVoorrijTarief: false,
     voorrijTarief: 35,
     materiaalEnabled: true,
     materiaalZichtbaar: true,
+    gebruiktAccountBtw: false,
     btwPercentage: 21,
     bandbreedteModus: "GEEN",
     bandbreedteMargeOmlaag: 10,
@@ -90,7 +93,7 @@ function maakProducten(): (Product & {
   return [
     {
       id: "product-schutting",
-      companyId: "stijlgids-company",
+      toolId: "stijlgids-tool",
       naam: "Schutting",
       omschrijving: "Op maat gemaakte tuinschutting, inclusief plaatsing.",
       eenheid: "m1",
@@ -140,7 +143,7 @@ function maakProducten(): (Product & {
     },
     {
       id: "product-kozijnen",
-      companyId: "stijlgids-company",
+      toolId: "stijlgids-tool",
       naam: "Kozijnen",
       omschrijving: "Per stuk geprijsde kozijnen, op afmeting.",
       eenheid: "stuk",
@@ -177,7 +180,7 @@ function maakProducten(): (Product & {
     },
     {
       id: "product-terras",
-      companyId: "stijlgids-company",
+      toolId: "stijlgids-tool",
       naam: "Terras aanleggen",
       omschrijving: "Lengte × breedte, geprijsd per m².",
       eenheid: "m2",
@@ -216,7 +219,7 @@ function maakProducten(): (Product & {
 function maakBranding(primaireKleur: string, achtergrondKleur: string): Branding {
   return {
     id: "stijlgids-branding",
-    companyId: "stijlgids-company",
+    toolId: "stijlgids-tool",
     logoUrl: null,
     primaireKleur,
     achtergrondKleur,
@@ -257,7 +260,7 @@ function PortalPreview({
       </div>
       <div className="overflow-hidden rounded-xl border border-border">
         <Calculator
-          slug="stijlgids-preview"
+          toolId="stijlgids-preview"
           bedrijfsnaam="Voorbeeldbedrijf"
           email="voorbeeld@kostenplan.nl"
           subscriptionTier="PRO"

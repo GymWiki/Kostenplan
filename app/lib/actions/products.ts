@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireActiveCompany } from "@/app/lib/dal";
+import { requireActiveCompany, requireActiveTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { productSchema } from "@/app/lib/validation";
-import { effectiveTier, GRATIS_CATALOGUS_LIMIET } from "@/app/lib/subscription";
+import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
 import type { Prisma } from "@/app/generated/prisma/client";
 
 export type ProductFormState = {
@@ -33,6 +33,22 @@ function parseProductForm(formData: FormData) {
 
 type ActiveCompany = Awaited<ReturnType<typeof requireActiveCompany>>["company"];
 
+function revalidateToolPaths(toolId: string, companySlug: string, toolSlug: string) {
+  revalidatePath(`/dashboard/tools/${toolId}/producten`);
+  revalidatePath(`/t/${companySlug}/${toolSlug}`);
+  revalidatePath(`/portaal/${companySlug}`);
+}
+
+// Boven deze grens kan een Gratis-tenant geen nieuw product meer aanmaken —
+// telt (sinds Levering A) bewust over alle tools van het bedrijf heen, niet
+// per tool, zie PLAN_LIMITS.maxProductsPerCompany in app/lib/subscription.ts.
+async function magNieuwProduct(company: ActiveCompany) {
+  const limiet = PLAN_LIMITS[effectiveTier(company)].maxProductsPerCompany;
+  if (limiet === null) return true;
+  const count = await prisma.product.count({ where: { tool: { companyId: company.id } } });
+  return count < limiet;
+}
+
 type CreateProductResult =
   | { success: true; productId: string; materiaalOptieId: string }
   | { success: false; state: ProductFormState };
@@ -41,7 +57,11 @@ type CreateProductResult =
 // daarna doorstuurt (createProductAction, het gewone formulier) of in dezelfde
 // pagina blijft om verder te gaan met een volgende wizardstap
 // (createProductDraftAction, zie nieuw/product-wizard.tsx).
-async function createProduct(company: ActiveCompany, formData: FormData): Promise<CreateProductResult> {
+async function createProduct(
+  company: ActiveCompany,
+  toolId: string,
+  formData: FormData
+): Promise<CreateProductResult> {
   const parsed = parseProductForm(formData);
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};
@@ -51,24 +71,16 @@ async function createProduct(company: ActiveCompany, formData: FormData): Promis
     return { success: false, state: { fieldErrors } };
   }
 
-  // Alvast opgehaald voor de Gratis-limietcheck hieronder — meteen ook
-  // hergebruikt voor "order" verderop, zodat dezelfde telling niet twee keer
-  // wordt uitgevoerd.
-  let productCount: number | undefined;
-  if (effectiveTier(company) === "GRATIS") {
-    const count = await prisma.product.count({ where: { companyId: company.id } });
-    productCount = count;
-    if (count >= GRATIS_CATALOGUS_LIMIET) {
-      return {
-        success: false,
-        state: {
-          error: `Je hebt de limiet van ${GRATIS_CATALOGUS_LIMIET} producten voor het Gratis-pakket bereikt. Upgrade naar Plus of Pro voor onbeperkt producten.`,
-        },
-      };
-    }
+  if (!(await magNieuwProduct(company))) {
+    return {
+      success: false,
+      state: {
+        error: `Je hebt de limiet van ${PLAN_LIMITS.GRATIS.maxProductsPerCompany} producten (over al je rekentools heen) voor het Gratis-pakket bereikt. Upgrade naar Plus of Pro voor onbeperkt producten.`,
+      },
+    };
   }
 
-  const count = productCount ?? (await prisma.product.count({ where: { companyId: company.id } }));
+  const count = await prisma.product.count({ where: { toolId } });
 
   // Elk product krijgt meteen een standaard-materiaalcategorie met één optie
   // — blok 1 (materiaalkosten) heeft altijd iets om een prijs aan te hangen,
@@ -78,7 +90,7 @@ async function createProduct(company: ActiveCompany, formData: FormData): Promis
     data: {
       ...parsed.data,
       sjabloonConfig: parsed.data.sjabloonConfig as Prisma.InputJsonValue,
-      companyId: company.id,
+      toolId,
       order: count,
       materiaalCategorieen: {
         create: [
@@ -94,19 +106,19 @@ async function createProduct(company: ActiveCompany, formData: FormData): Promis
     include: { materiaalCategorieen: { include: { materialen: true } } },
   });
 
-  revalidatePath("/dashboard/producten");
-  revalidatePath(`/portaal/${company.slug}`);
   return { success: true, productId: product.id, materiaalOptieId: product.materiaalCategorieen[0].materialen[0].id };
 }
 
 export async function createProductAction(
+  toolId: string,
   _prevState: ProductFormState,
   formData: FormData
 ): Promise<ProductFormState> {
-  const { company } = await requireActiveCompany();
-  const result = await createProduct(company, formData);
+  const { company, tool } = await requireActiveTool(toolId);
+  const result = await createProduct(company, toolId, formData);
   if (!result.success) return result.state;
-  redirect(`/dashboard/producten/${result.productId}/bewerken`);
+  revalidateToolPaths(toolId, company.slug, tool.slug);
+  redirect(`/dashboard/tools/${toolId}/producten/${result.productId}/bewerken`);
 }
 
 // Voor de wizard (nieuw/product-wizard.tsx): maakt het product aan zonder
@@ -117,12 +129,14 @@ export type CreateProductDraftState =
   | null;
 
 export async function createProductDraftAction(
+  toolId: string,
   _prevState: CreateProductDraftState,
   formData: FormData
 ): Promise<CreateProductDraftState> {
-  const { company } = await requireActiveCompany();
-  const result = await createProduct(company, formData);
+  const { company, tool } = await requireActiveTool(toolId);
+  const result = await createProduct(company, toolId, formData);
   if (!result.success) return result.state;
+  revalidateToolPaths(toolId, company.slug, tool.slug);
   return { productId: result.productId, materiaalOptieId: result.materiaalOptieId };
 }
 
@@ -130,7 +144,7 @@ type SaveProductResult = { success: true } | { success: false; state: ProductFor
 
 async function saveProduct(
   productId: string,
-  company: ActiveCompany,
+  companyId: string,
   formData: FormData
 ): Promise<SaveProductResult> {
   const parsed = parseProductForm(formData);
@@ -143,7 +157,7 @@ async function saveProduct(
   }
 
   const existing = await prisma.product.findFirst({
-    where: { id: productId, companyId: company.id },
+    where: { id: productId, tool: { companyId } },
     select: { id: true },
   });
   if (!existing) return { success: false, state: { error: "Product niet gevonden." } };
@@ -156,8 +170,6 @@ async function saveProduct(
     },
   });
 
-  revalidatePath("/dashboard/producten");
-  revalidatePath(`/portaal/${company.slug}`);
   return { success: true };
 }
 
@@ -167,9 +179,15 @@ export async function updateProductAction(
   formData: FormData
 ): Promise<ProductFormState> {
   const { company } = await requireActiveCompany();
-  const result = await saveProduct(productId, company, formData);
+  const result = await saveProduct(productId, company.id, formData);
   if (!result.success) return result.state;
-  redirect("/dashboard/producten");
+
+  const product = await prisma.product.findUniqueOrThrow({
+    where: { id: productId },
+    select: { toolId: true, tool: { select: { slug: true } } },
+  });
+  revalidateToolPaths(product.toolId, company.slug, product.tool.slug);
+  redirect(`/dashboard/tools/${product.toolId}/producten`);
 }
 
 // Voor de wizard: dezelfde opslag als updateProductAction, maar zonder
@@ -181,8 +199,14 @@ export async function updateProductDraftAction(
   formData: FormData
 ): Promise<ProductFormState> {
   const { company } = await requireActiveCompany();
-  const result = await saveProduct(productId, company, formData);
+  const result = await saveProduct(productId, company.id, formData);
   if (!result.success) return result.state;
+
+  const product = await prisma.product.findUniqueOrThrow({
+    where: { id: productId },
+    select: { toolId: true, tool: { select: { slug: true } } },
+  });
+  revalidateToolPaths(product.toolId, company.slug, product.tool.slug);
   return null;
 }
 
@@ -191,41 +215,46 @@ export async function deleteProductAction(formData: FormData) {
   const productId = formData.get("productId");
   if (typeof productId !== "string") return;
 
-  await prisma.product.deleteMany({ where: { id: productId, companyId: company.id } });
+  const product = await prisma.product.findFirst({
+    where: { id: productId, tool: { companyId: company.id } },
+    select: { toolId: true, tool: { select: { slug: true } } },
+  });
+  if (!product) return;
 
-  revalidatePath("/dashboard/producten");
-  revalidatePath(`/portaal/${company.slug}`);
+  await prisma.product.delete({ where: { id: productId } });
+
+  revalidateToolPaths(product.toolId, company.slug, product.tool.slug);
 }
 
 // "Kopieer bestaand product" (zie producten-lijst): slaat de wizard over en
 // stuurt direct door naar het bewerkscherm van de kopie — alle instellingen
 // (sjabloon, kostenopbouw, materiaalcategorieën, extra opties) komen mee,
 // alleen actief staat uit zodat de kopie niet ongemerkt live gaat voor de
-// klant terwijl de vakman 'm nog aan het aanpassen is.
+// klant terwijl de vakman 'm nog aan het aanpassen is. Kopieert altijd
+// binnen dezelfde tool — een product tussen tools kopiëren is een bewuste
+// keuze voor de gedeelde-productbibliotheek uit Levering B, niet hier.
 export async function copyProductAction(formData: FormData) {
   const { company } = await requireActiveCompany();
   const productId = formData.get("productId");
   if (typeof productId !== "string") return;
 
   const origineel = await prisma.product.findFirst({
-    where: { id: productId, companyId: company.id },
+    where: { id: productId, tool: { companyId: company.id } },
     include: {
       materiaalCategorieen: { include: { materialen: true } },
       extraOpties: true,
+      tool: { select: { slug: true } },
     },
   });
   if (!origineel) return;
 
-  if (effectiveTier(company) === "GRATIS") {
-    const count = await prisma.product.count({ where: { companyId: company.id } });
-    if (count >= GRATIS_CATALOGUS_LIMIET) return;
-  }
+  if (!(await magNieuwProduct(company))) return;
 
-  const count = await prisma.product.count({ where: { companyId: company.id } });
+  const count = await prisma.product.count({ where: { toolId: origineel.toolId } });
 
   const kopie = await prisma.product.create({
     data: {
-      companyId: company.id,
+      toolId: origineel.toolId,
       naam: `${origineel.naam} (kopie)`,
       omschrijving: origineel.omschrijving,
       eenheid: origineel.eenheid,
@@ -275,8 +304,8 @@ export async function copyProductAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/dashboard/producten");
-  redirect(`/dashboard/producten/${kopie.id}/bewerken`);
+  revalidatePath(`/dashboard/tools/${origineel.toolId}/producten`);
+  redirect(`/dashboard/tools/${origineel.toolId}/producten/${kopie.id}/bewerken`);
 }
 
 export async function toggleProductActiveAction(formData: FormData) {
@@ -285,11 +314,16 @@ export async function toggleProductActiveAction(formData: FormData) {
   const actief = formData.get("actief") === "true";
   if (typeof productId !== "string") return;
 
+  const product = await prisma.product.findFirst({
+    where: { id: productId, tool: { companyId: company.id } },
+    select: { toolId: true, tool: { select: { slug: true } } },
+  });
+  if (!product) return;
+
   await prisma.product.updateMany({
-    where: { id: productId, companyId: company.id },
+    where: { id: productId },
     data: { actief: !actief },
   });
 
-  revalidatePath("/dashboard/producten");
-  revalidatePath(`/portaal/${company.slug}`);
+  revalidateToolPaths(product.toolId, company.slug, product.tool.slug);
 }

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireActiveCompany } from "@/app/lib/dal";
+import { requireActiveTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { costSettingsSchema } from "@/app/lib/validation";
 
@@ -12,10 +12,11 @@ export type CostSettingsFormState = {
 } | null;
 
 export async function updateCostSettingsAction(
+  toolId: string,
   _prevState: CostSettingsFormState,
   formData: FormData
 ): Promise<CostSettingsFormState> {
-  const { company } = await requireActiveCompany();
+  const { company, tool } = await requireActiveTool(toolId);
 
   const raw = {
     arbeidEnabled: formData.get("arbeidEnabled") === "on",
@@ -56,14 +57,27 @@ export async function updateCostSettingsAction(
     };
   }
 
+  // Account-defaults-cascade (zie resolveCostSettings in app/lib/tools.ts):
+  // deze drie vlaggen bepalen of de bovenstaande arbeidTariefUur/
+  // voorrijTarief/btwPercentage daadwerkelijk gebruikt worden, of dat de
+  // company-brede standaard geldt. Checkbox afwezig in de formData = uit
+  // (eigen waarde), aanwezig ("on") = aan (accountinstelling volgen).
+  const data = {
+    ...parsed.data,
+    gebruiktAccountArbeidTarief: formData.get("gebruiktAccountArbeidTarief") === "on",
+    gebruiktAccountVoorrijTarief: formData.get("gebruiktAccountVoorrijTarief") === "on",
+    gebruiktAccountBtw: formData.get("gebruiktAccountBtw") === "on",
+  };
+
   await prisma.costSettings.upsert({
-    where: { companyId: company.id },
-    create: { companyId: company.id, ...parsed.data },
-    update: parsed.data,
+    where: { toolId },
+    create: { toolId, ...data },
+    update: data,
   });
 
-  revalidatePath("/dashboard/instellingen");
+  revalidatePath(`/dashboard/tools/${toolId}/prijzen`);
   revalidatePath("/dashboard");
+  revalidatePath(`/t/${company.slug}/${tool.slug}`);
   revalidatePath(`/portaal/${company.slug}`);
 
   return { success: true };

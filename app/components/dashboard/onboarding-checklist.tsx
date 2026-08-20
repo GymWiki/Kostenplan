@@ -1,11 +1,9 @@
 "use client";
 
-import { useTransition } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, PartyPopper } from "lucide-react";
 import { cn } from "@/app/lib/cn";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { markPortaalBekekenAction } from "@/app/lib/actions/onboarding";
 import type { OnboardingStap } from "@/app/lib/onboarding";
 
 export function OnboardingChecklist({
@@ -73,8 +71,6 @@ export function OnboardingChecklist({
 }
 
 function OnboardingStapItem({ stap, nummer }: { stap: OnboardingStap; nummer: number }) {
-  const [, startTransition] = useTransition();
-
   const rowClassName = cn(
     "flex items-center gap-3 rounded-lg border p-3 transition-colors",
     stap.voltooid
@@ -111,22 +107,6 @@ function OnboardingStapItem({ stap, nummer }: { stap: OnboardingStap; nummer: nu
 
   if (stap.voltooid) {
     return <li className={rowClassName}>{inhoud}</li>;
-  }
-
-  if (stap.extern) {
-    return (
-      <li>
-        <a
-          href={stap.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => startTransition(() => markPortaalBekekenAction())}
-          className={rowClassName}
-        >
-          {inhoud}
-        </a>
-      </li>
-    );
   }
 
   return (

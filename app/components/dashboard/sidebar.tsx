@@ -5,13 +5,10 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/app/lib/cn";
 import { navLinks } from "./nav-links";
 import { Logo } from "@/app/components/ui/logo";
-import { ExternalLink } from "lucide-react";
 
 export function Sidebar({
-  slug,
   onNavigate,
 }: {
-  slug: string;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
@@ -50,19 +47,6 @@ export function Sidebar({
           </Link>
         );
       })}
-
-      <div className="mt-auto flex flex-col gap-1 border-t border-border pt-4">
-        <a
-          href={`/portaal/${slug}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={onNavigate}
-          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        >
-          <ExternalLink className="h-4 w-4" />
-          Bekijk klantenportaal
-        </a>
-      </div>
     </nav>
   );
 }
