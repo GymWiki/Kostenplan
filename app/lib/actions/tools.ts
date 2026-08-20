@@ -12,6 +12,7 @@ import {
 } from "@/app/lib/validation";
 import { generateUniqueToolSlug } from "@/app/lib/slug";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
+import { calculatorTemplateById } from "@/app/lib/calculator-engine/templates";
 import type { Prisma, ToolStatus } from "@/app/generated/prisma/client";
 
 export type ToolFormState = { error?: string; fieldErrors?: Record<string, string> } | null;
@@ -63,6 +64,86 @@ export async function createToolAction(_prevState: ToolFormState, formData: Form
 
   revalidatePath("/dashboard/tools");
   redirect(`/dashboard/tools/${tool.id}`);
+}
+
+export type TemplateToolFormState = { error?: string } | null;
+
+// "Kies een startpunt" (Levering B, Fase 15/Deel 24/28): maakt een nieuwe,
+// volledig zelfstandige Tool aan op basis van een template — een kopie, geen
+// live afhankelijkheid (Deel 29). Elk PRODUCT_KEUZE-veld in de template
+// krijgt hier zijn eigen, echte MaterialCategory/MaterialOption-rijen (zie
+// upsertProductKeuzeOptiesAction in calculator-config.ts voor hetzelfde
+// patroon vanuit de bouwer zelf); de tool start als CONCEPT met een DRAFT-
+// CalculatorConfig — de vakman bekijkt en publiceert 'm zelf vanuit de
+// bouwer, precies zoals elke andere wijziging (Deel 20).
+export async function createToolFromTemplateAction(
+  templateId: string,
+  _prevState: TemplateToolFormState,
+  formData: FormData
+): Promise<TemplateToolFormState> {
+  const { company } = await requireActiveCompany();
+
+  const template = calculatorTemplateById(templateId);
+  if (!template) {
+    return { error: "Onbekende template." };
+  }
+
+  const parsed = parseToolForm(formData);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Vul een naam in." };
+  }
+
+  if (!(await canCreateTool(company.id, effectiveTier(company)))) {
+    return { error: limietBereiktMelding(effectiveTier(company)) };
+  }
+
+  const slug = await generateUniqueToolSlug(company.id, parsed.data.naam);
+  const count = await prisma.tool.count({ where: { companyId: company.id } });
+
+  const tool = await prisma.tool.create({
+    data: {
+      companyId: company.id,
+      naam: parsed.data.naam,
+      icoon: template.icoon,
+      slug,
+      order: count,
+      costSettings: { create: {} },
+    },
+  });
+
+  // Elk PRODUCT_KEUZE-veld krijgt zijn eigen, verborgen "drager"-Product +
+  // MaterialCategory + MaterialOption-rijen (Deel 11: hergebruik van de
+  // bestaande materiaalstructuur, geen tweede productcatalogus).
+  const materialCategoryIdPerVeld = new Map<string, string>();
+  for (const keuze of template.materiaalKeuzes) {
+    const product = await prisma.product.create({
+      data: { toolId: tool.id, naam: `${keuze.veldId} (calculator-bouwer)`, actief: false, order: -1 },
+    });
+    const category = await prisma.materialCategory.create({
+      data: { productId: product.id, naam: keuze.veldId, order: 0 },
+    });
+    await prisma.materialOption.createMany({
+      data: keuze.opties.map((optie, i) => ({
+        materialCategoryId: category.id,
+        naam: optie.naam,
+        prijs: optie.prijs,
+        order: i,
+      })),
+    });
+    materialCategoryIdPerVeld.set(keuze.veldId, category.id);
+  }
+
+  const config = template.bouwConfig();
+  config.velden = config.velden.map((veld) =>
+    veld.soort === "PRODUCT_KEUZE" ? { ...veld, materialCategoryId: materialCategoryIdPerVeld.get(veld.id) ?? veld.materialCategoryId } : veld
+  );
+
+  await prisma.calculatorConfig.create({
+    data: { toolId: tool.id, version: 1, status: "DRAFT", config: config as unknown as Prisma.InputJsonValue },
+  });
+
+  revalidatePath("/dashboard/tools");
+  redirect(`/dashboard/tools/${tool.id}/bouwer`);
 }
 
 // Dupliceert een bestaande tool volledig (configuratie, producten,

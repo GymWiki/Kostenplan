@@ -96,7 +96,7 @@ export const kozijnenTemplate: CalculatorTemplate = {
   beschrijving: "De meest uitgebreide template: materiaal, glassoort, kleur en montage in één configurator.",
   watHetBerekent: "Een gedetailleerde kostenuitsplitsing per kozijn, op basis van afmetingen, materiaal, glas en extra's.",
   resterendWerk: "Vul je eigen materiaal- en glasprijzen in — de rest, inclusief de kostenuitsplitsing, werkt direct.",
-  icoon: "PanelsTopLeft",
+  icoon: "AppWindow",
   calculatorType: "CONFIGURATOR",
   bouwConfig,
   materiaalKeuzes: [
