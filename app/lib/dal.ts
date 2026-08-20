@@ -143,8 +143,13 @@ export async function canPublishTool(companyId: string, tier: ReturnType<typeof 
 }
 
 // Gedeelde include-vorm voor beide publieke routes hieronder — precies wat
-// de calculator-renderer (Calculator in app/portaal/[slug]/calculator.tsx)
-// nodig heeft, niets meer (publieke, hoogfrequente route).
+// de calculator-renderer nodig heeft, niets meer (publieke, hoogfrequente
+// route). Dekt zowel het bestaande, sjabloon-gedreven pad (Calculator in
+// app/portaal/[slug]/calculator.tsx: branding/costSettings/products) als,
+// sinds Levering B, het generieke-engine-pad (EngineCalculator in
+// app/portaal/[slug]/engine-calculator.tsx: activeCalculatorConfig) — een
+// Tool gebruikt precies één van de twee, zie welkeCalculatorVoorTool()
+// hieronder.
 const PUBLIEKE_TOOL_INCLUDE = {
   company: { include: { creator: { select: { email: true } } } },
   branding: true,
@@ -160,6 +165,7 @@ const PUBLIEKE_TOOL_INCLUDE = {
       extraOpties: { where: { actief: true }, orderBy: { order: "asc" as const } },
     },
   },
+  activeCalculatorConfig: true,
 };
 
 // Resolvet een Tool voor de canonieke publieke route
@@ -210,6 +216,28 @@ export async function getToolForEmbed(toolId: string) {
     where: { id: toolId, deletedAt: null },
     include: PUBLIEKE_TOOL_INCLUDE,
   });
+}
+
+// Levering B: haalt de MaterialCategory/MaterialOption-opties op waar de
+// PRODUCT_KEUZE-velden van een gepubliceerde CalculatorConfig naar
+// verwijzen (Deel 11: hergebruikt bewust de bestaande materiaalstructuur
+// i.p.v. een tweede productcatalogus). Scoped op `toolId` — een
+// materialCategoryId die niet bij DEZE tool hoort (via zijn Product) komt
+// nooit terug, ook niet als een (nooit via de builder-UI opgeslagen, maar
+// theoretisch verzonnen) config ernaar zou verwijzen.
+export async function getMateriaalOptiesVoorEngineVelden(toolId: string, materialCategoryIds: string[]) {
+  if (materialCategoryIds.length === 0) return {};
+
+  const categorieen = await prisma.materialCategory.findMany({
+    where: { id: { in: materialCategoryIds }, product: { toolId } },
+    include: { materialen: { where: { actief: true }, orderBy: { order: "asc" } } },
+  });
+
+  const resultaat: Record<string, { id: string; naam: string; prijs: number }[]> = {};
+  for (const categorie of categorieen) {
+    resultaat[categorie.id] = categorie.materialen.map((m) => ({ id: m.id, naam: m.naam, prijs: m.prijs }));
+  }
+  return resultaat;
 }
 
 export async function getArbeidStapEenheid(toolId: string) {

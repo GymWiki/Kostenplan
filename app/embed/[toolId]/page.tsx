@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getToolForEmbed } from "@/app/lib/dal";
+import { getToolForEmbed, getMateriaalOptiesVoorEngineVelden } from "@/app/lib/dal";
 import { resolveCostSettings } from "@/app/lib/tools";
 import { effectiveTier } from "@/app/lib/subscription";
+import { parseCalculatorConfig, publicCalculatorConfig } from "@/app/lib/calculator-engine";
 import { Calculator } from "@/app/portaal/[slug]/calculator";
+import { EngineCalculator } from "@/app/portaal/[slug]/engine-calculator";
 
 export const metadata: Metadata = {
   title: "Rekentool",
@@ -39,6 +41,28 @@ export default async function EmbedPage({
   }
 
   const effectieveCostSettings = resolveCostSettings(tool.costSettings, tool.company);
+
+  // Levering B: zelfde dubbele pad als de publieke /t/-route — dezelfde
+  // <EngineCalculator>, geen aparte embed-specifieke berekeningslogica.
+  if (tool.activeCalculatorConfig) {
+    const config = publicCalculatorConfig(parseCalculatorConfig(tool.activeCalculatorConfig.config));
+    const materialCategoryIds = config.velden
+      .filter((veld) => veld.soort === "PRODUCT_KEUZE")
+      .map((veld) => veld.materialCategoryId);
+    const materiaalOpties = await getMateriaalOptiesVoorEngineVelden(tool.id, materialCategoryIds);
+    return (
+      <EngineCalculator
+        toolId={tool.id}
+        bedrijfsnaam={tool.company.naam}
+        email={tool.company.creator.email}
+        subscriptionTier={effectiveTier(tool.company)}
+        branding={tool.branding}
+        config={config}
+        btwPercentage={effectieveCostSettings.btwPercentage}
+        materiaalOpties={materiaalOpties}
+      />
+    );
+  }
 
   return (
     <Calculator

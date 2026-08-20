@@ -3,11 +3,13 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { PauseCircle } from "lucide-react";
-import { getToolForPublicRoute } from "@/app/lib/dal";
+import { getToolForPublicRoute, getMateriaalOptiesVoorEngineVelden } from "@/app/lib/dal";
 import { resolveCostSettings } from "@/app/lib/tools";
 import { effectiveTier } from "@/app/lib/subscription";
+import { parseCalculatorConfig, publicCalculatorConfig } from "@/app/lib/calculator-engine";
 import { Logo } from "@/app/components/ui/logo";
 import { Calculator } from "@/app/portaal/[slug]/calculator";
+import { EngineCalculator } from "@/app/portaal/[slug]/engine-calculator";
 
 // Cached per request: generateMetadata() en de paginacomponent hieronder
 // worden apart door Next.js aangeroepen en zouden anders allebei Postgres
@@ -70,6 +72,33 @@ export default async function ToolPage({
   }
 
   const effectieveCostSettings = resolveCostSettings(tool.costSettings, tool.company);
+
+  // Levering B: een tool met een gepubliceerde CalculatorConfig gebruikt de
+  // generieke engine; een tool zonder (elke tool van vóór Levering B, en
+  // elke nieuwe tool totdat de vakman 'm expliciet publiceert) blijft
+  // ongewijzigd op het bestaande, sjabloon-gedreven pad draaien (Deel 20/31
+  // — geen breaking change). Geen aparte pagina/route voor het één of het
+  // ander: dezelfde /t/-pagina bedient beide, precies zoals de opdracht
+  // vraagt ("geen aparte calculatorlogica").
+  if (tool.activeCalculatorConfig) {
+    const config = publicCalculatorConfig(parseCalculatorConfig(tool.activeCalculatorConfig.config));
+    const materialCategoryIds = config.velden
+      .filter((veld) => veld.soort === "PRODUCT_KEUZE")
+      .map((veld) => veld.materialCategoryId);
+    const materiaalOpties = await getMateriaalOptiesVoorEngineVelden(tool.id, materialCategoryIds);
+    return (
+      <EngineCalculator
+        toolId={tool.id}
+        bedrijfsnaam={tool.company.naam}
+        email={tool.company.creator.email}
+        subscriptionTier={effectiveTier(tool.company)}
+        branding={tool.branding}
+        config={config}
+        btwPercentage={effectieveCostSettings.btwPercentage}
+        materiaalOpties={materiaalOpties}
+      />
+    );
+  }
 
   return (
     <Calculator

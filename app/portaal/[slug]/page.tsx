@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
-import { getLegacyToolForCompanySlug } from "@/app/lib/dal";
+import { getLegacyToolForCompanySlug, getMateriaalOptiesVoorEngineVelden } from "@/app/lib/dal";
 import { resolveCostSettings } from "@/app/lib/tools";
 import { effectiveTier } from "@/app/lib/subscription";
+import { parseCalculatorConfig, publicCalculatorConfig } from "@/app/lib/calculator-engine";
 import { Calculator } from "./calculator";
+import { EngineCalculator } from "./engine-calculator";
 
 // Cached per request: generateMetadata() and the page component below are
 // called separately by Next.js and would otherwise each hit Postgres for
@@ -66,6 +68,27 @@ export default async function PortaalPage({
   if (!tool || !tool.costSettings) notFound();
 
   const effectieveCostSettings = resolveCostSettings(tool.costSettings, tool.company);
+
+  // Levering B: zelfde dubbele pad als de canonieke /t/-route.
+  if (tool.activeCalculatorConfig) {
+    const config = publicCalculatorConfig(parseCalculatorConfig(tool.activeCalculatorConfig.config));
+    const materialCategoryIds = config.velden
+      .filter((veld) => veld.soort === "PRODUCT_KEUZE")
+      .map((veld) => veld.materialCategoryId);
+    const materiaalOpties = await getMateriaalOptiesVoorEngineVelden(tool.id, materialCategoryIds);
+    return (
+      <EngineCalculator
+        toolId={tool.id}
+        bedrijfsnaam={tool.company.naam}
+        email={tool.company.creator.email}
+        subscriptionTier={effectiveTier(tool.company)}
+        branding={tool.branding}
+        config={config}
+        btwPercentage={effectieveCostSettings.btwPercentage}
+        materiaalOpties={materiaalOpties}
+      />
+    );
+  }
 
   return (
     <Calculator
