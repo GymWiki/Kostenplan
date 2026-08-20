@@ -188,7 +188,10 @@ export async function upsertProductKeuzeOptiesAction(
 // historische leads blijven ernaar verwijzen), alleen de "welke wint"-
 // aanwijzer op Tool wordt losgekoppeld.
 export async function schakelUitCalculatorEngineAction(toolId: string) {
-  const { tool } = await requireActiveTool(toolId);
+  const { company, tool } = await requireActiveTool(toolId);
   await prisma.tool.update({ where: { id: tool.id }, data: { activeCalculatorConfigId: null } });
   revalidatePath(`/dashboard/tools/${toolId}`);
+  revalidatePath(`/dashboard/tools/${toolId}/bouwer`);
+  revalidatePath(`/t/${company.slug}/${tool.slug}`);
+  revalidatePath(`/portaal/${company.slug}`);
 }

@@ -7,11 +7,16 @@ import {
   valideerCalculatorConfig,
   type CalculatorConfigData,
 } from "@/app/lib/calculator-engine";
-import { saveCalculatorConfigDraftAction, publishCalculatorConfigAction } from "@/app/lib/actions/calculator-config";
+import {
+  saveCalculatorConfigDraftAction,
+  publishCalculatorConfigAction,
+  schakelUitCalculatorEngineAction,
+} from "@/app/lib/actions/calculator-config";
 import { EngineCalculator } from "@/app/portaal/[slug]/engine-calculator";
 import type { MateriaalOptie } from "@/app/portaal/[slug]/engine-fields";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
+import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import { cn } from "@/app/lib/cn";
 import { VeldenTab } from "./velden-tab";
 import { RegelsTab } from "./regels-tab";
@@ -58,6 +63,8 @@ export function CalculatorBouwer({
   const [gepubliceerd, setGepubliceerd] = useState(heeftLiveVersie);
   const [publiceerFout, setPubliceerFout] = useState<string | null>(null);
   const [publiceren, startPublicerenTransition] = useTransition();
+  const [uitschakelenOpen, setUitschakelenOpen] = useState(false);
+  const [uitschakelen, startUitschakelenTransition] = useTransition();
 
   const meldingen = useMemo(() => valideerCalculatorConfig(config), [config]);
   const fouten = meldingen.filter((m) => m.ernst === "FOUT");
@@ -90,6 +97,14 @@ export function CalculatorBouwer({
         return;
       }
       setGepubliceerd(true);
+    });
+  }
+
+  function handleSchakelUit() {
+    startUitschakelenTransition(async () => {
+      await schakelUitCalculatorEngineAction(toolId);
+      setGepubliceerd(false);
+      setUitschakelenOpen(false);
     });
   }
 
@@ -205,6 +220,30 @@ export function CalculatorBouwer({
           </div>
         </div>
       </div>
+
+      {gepubliceerd && (
+        <div className="mt-2 border-t border-border pt-4">
+          <p className="text-sm font-medium text-foreground">Terug naar de oude rekentool-editor</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Schakelt de publieke rekentool terug naar de vorige, sjabloon-gedreven editor (Producten/Prijzen/enz.). Je
+            bouwer-configuratie blijft bewaard en kan je later gewoon weer publiceren.
+          </p>
+          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => setUitschakelenOpen(true)}>
+            Terugschakelen
+          </Button>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={uitschakelenOpen}
+        onClose={() => setUitschakelenOpen(false)}
+        onConfirm={handleSchakelUit}
+        pending={uitschakelen}
+        title="Terugschakelen naar de oude editor?"
+        description="De publieke rekentool toont hierna weer de sjabloon-gedreven calculator (Producten/Prijzen). Je bouwer-configuratie blijft bewaard."
+        confirmLabel="Terugschakelen"
+        variant="primary"
+      />
     </div>
   );
 }
