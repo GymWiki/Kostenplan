@@ -13,6 +13,7 @@ import {
   Rocket,
   Code2,
   Settings,
+  Wand2,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/app/lib/cn";
@@ -25,6 +26,12 @@ import { cn } from "@/app/lib/cn";
 const TOOL_NAV_ITEMS: { segment: string; label: string; icon: LucideIcon }[] = [
   { segment: "", label: "Overzicht", icon: LayoutDashboard },
   { segment: "calculator", label: "Calculator", icon: Eye },
+  // Levering B: de generieke calculator-bouwer — los van "Calculator"
+  // hierboven (dat blijft de live preview van het bestaande, sjabloon-
+  // gedreven pad). Altijd zichtbaar, ook vóórdat een tool de engine
+  // gebruikt: zo kan elke vakman starten, zonder een aparte "activeer de
+  // nieuwe engine"-stap.
+  { segment: "bouwer", label: "Bouwer", icon: Wand2 },
   { segment: "producten", label: "Producten", icon: Package },
   { segment: "prijzen", label: "Prijzen", icon: Euro },
   { segment: "uiterlijk", label: "Uiterlijk", icon: Palette },

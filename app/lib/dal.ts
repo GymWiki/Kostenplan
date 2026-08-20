@@ -8,6 +8,8 @@ import { prisma } from "@/app/lib/prisma";
 import { resolveActiveMembership } from "@/app/lib/active-company";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
 import { resolveCostSettings, type AccountDefaults } from "@/app/lib/tools";
+import { legeCalculatorConfig } from "@/app/lib/calculator-engine";
+import type { Prisma } from "@/app/generated/prisma/client";
 
 // Onthoudt welk bedrijf de gebruiker laatst actief had gekozen (zie de
 // bedrijfsswitcher en switchActiveCompanyAction). Alleen relevant zodra
@@ -114,6 +116,45 @@ export const requireActiveTool = cache(async (toolId: string) => {
   });
   if (!tool) redirect("/dashboard/tools");
   return { user, company, tool };
+});
+
+// Levering B: het DRAFT-exemplaar van de CalculatorConfig van een tool —
+// waar de builder altijd op bewerkt (nooit rechtstreeks op een PUBLISHED-
+// of ARCHIVED-rij, zie CalculatorConfig in schema.prisma). Bestaat er nog
+// geen, dan wordt er één aangemaakt: leeg voor een tool die de engine nog
+// nooit heeft gebruikt, of een kopie van de huidige live (PUBLISHED)
+// configuratie als die er al is — zo begint "verder bouwen aan een live
+// tool" altijd bij wat de klant nu al ziet, nooit bij een lege configuratie.
+// Geeft ook de company terug (net als requireActiveTool) zodat callers geen
+// tweede round-trip nodig hebben.
+export const requireDraftCalculatorConfig = cache(async (toolId: string) => {
+  const { user, company, tool } = await requireActiveTool(toolId);
+
+  const bestaandeDraft = await prisma.calculatorConfig.findFirst({
+    where: { toolId, status: "DRAFT" },
+    orderBy: { version: "desc" },
+  });
+  if (bestaandeDraft) return { user, company, tool, draft: bestaandeDraft };
+
+  const gepubliceerd = tool.activeCalculatorConfigId
+    ? await prisma.calculatorConfig.findUnique({ where: { id: tool.activeCalculatorConfigId } })
+    : null;
+
+  const hoogsteVersie = await prisma.calculatorConfig.aggregate({
+    where: { toolId },
+    _max: { version: true },
+  });
+  const volgendeVersie = (hoogsteVersie._max.version ?? 0) + 1;
+
+  const draft = await prisma.calculatorConfig.create({
+    data: {
+      toolId,
+      version: volgendeVersie,
+      status: "DRAFT",
+      config: (gepubliceerd ? gepubliceerd.config : legeCalculatorConfig()) as Prisma.InputJsonValue,
+    },
+  });
+  return { user, company, tool, draft };
 });
 
 // Server-side afdwinging van maxActiveTools (zie PLAN_LIMITS in

@@ -39,6 +39,13 @@ type Props = {
   config: CalculatorConfigData;
   btwPercentage: number;
   materiaalOpties: Record<string, MateriaalOptie[]>;
+  // Live voorbeeld in de calculator-bouwer (Deel 19: "dezelfde engine, geen
+  // aparte preview-berekeningslogica" — dit ÉÉN component, alleen de
+  // bijwerkingen eromheen worden onderdrukt): geen VISIT/START/COMPLETE-
+  // analytics en geen echte offerte-aanvraag, ook niet als de tool zelf
+  // al gepubliceerd staat (anders zou de vakman zijn eigen statistieken/
+  // leads-CRM vervuilen door in zijn eigen bouwer te testen).
+  previewModus?: boolean;
 };
 
 function veldIsIngevuld(veld: CalculatorField, waarde: unknown): boolean {
@@ -80,6 +87,7 @@ export function EngineCalculator({
   config,
   btwPercentage,
   materiaalOpties,
+  previewModus = false,
 }: Props) {
   const stappen = useMemo(
     () =>
@@ -174,7 +182,7 @@ export function EngineCalculator({
   // (Deel 37: geen dubbele registratie, dezelfde levenscyclus-momenten).
   const visitRecorded = useRef(false);
   useEffect(() => {
-    if (visitRecorded.current) return;
+    if (previewModus || visitRecorded.current) return;
     visitRecorded.current = true;
     void recordPublicAnalyticsEventAction(toolId, "VISIT");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -183,6 +191,7 @@ export function EngineCalculator({
   const startRecorded = useRef(false);
   const completeRecorded = useRef(false);
   useEffect(() => {
+    if (previewModus) return;
     if (!startRecorded.current && heeftInvoer) {
       startRecorded.current = true;
       void recordPublicAnalyticsEventAction(toolId, "START");
@@ -191,7 +200,7 @@ export function EngineCalculator({
       completeRecorded.current = true;
       void recordPublicAnalyticsEventAction(toolId, "COMPLETE");
     }
-  }, [toolId, heeftInvoer, resultaat]);
+  }, [toolId, heeftInvoer, resultaat, previewModus]);
 
   const snapshot: LeadSnapshot = useMemo(() => {
     const zichtbareRegels = evaluatie.lineItems.filter((item) => item.toonInUitsplitsing && !item.intern);
@@ -291,6 +300,7 @@ export function EngineCalculator({
             weergave={config.resultaatInstellingen.weergave}
             bedankTekst={bedankTekst}
             magOfferteAanvragen={magOfferteAanvragen}
+            previewModus={previewModus}
             onTerug={() => setToonResultaat(false)}
           />
         ) : (
@@ -384,6 +394,7 @@ function ResultaatKaart({
   weergave,
   bedankTekst,
   magOfferteAanvragen,
+  previewModus,
   onTerug,
 }: {
   toolId: string;
@@ -394,6 +405,7 @@ function ResultaatKaart({
   weergave: CalculatorConfigData["resultaatInstellingen"]["weergave"];
   bedankTekst: string;
   magOfferteAanvragen: boolean;
+  previewModus: boolean;
   onTerug: () => void;
 }) {
   const [formOpen, setFormOpen] = useState(false);
@@ -458,7 +470,11 @@ function ResultaatKaart({
                 </div>
               )}
 
-              {formOpen ? (
+              {previewModus ? (
+                <p className="rounded-md border border-dashed border-border px-3 py-2 text-center text-xs text-muted-foreground print:hidden">
+                  Dit is een voorbeeld — hier kan niemand echt een aanvraag versturen.
+                </p>
+              ) : formOpen ? (
                 <form action={formAction} noValidate className="flex flex-col gap-3">
                   <input type="hidden" name="snapshot" value={JSON.stringify(snapshot)} />
                   <div className="flex flex-col gap-1.5">
