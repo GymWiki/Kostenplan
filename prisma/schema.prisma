@@ -365,11 +365,70 @@ model Tool {
   leads           Lead[]
   analyticsEvents AnalyticsEvent[]
 
+  // Levering B (generieke calculator-engine): een Tool "gebruikt de engine"
+  // zodra dit gezet is — pas dan wijkt de publieke calculator af van het
+  // bestaande, sjabloon-gedreven Product/CostSettings-pad (zie Deel 20/31:
+  // gefaseerde migratie, geen breaking change voor bestaande tools). Wijst
+  // altijd naar een CalculatorConfig met status PUBLISHED van deze zelfde
+  // Tool — nooit rechtstreeks naar een DRAFT (zie publishCalculatorConfig-
+  // Action in app/lib/actions/calculator-config.ts).
+  activeCalculatorConfigId String?            @unique
+  activeCalculatorConfig   CalculatorConfig?  @relation("ActiefVoorTool", fields: [activeCalculatorConfigId], references: [id])
+  calculatorConfigs        CalculatorConfig[] @relation("CalculatorConfigsVanTool")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([companyId, slug])
   @@index([companyId])
+}
+
+// Levenscyclus van één editie van een CalculatorConfig (Deel 20/21) — een
+// Tool kan meerdere versies hebben, maar er is er altijd maximaal één
+// PUBLISHED tegelijk (die is dan ook Tool.activeCalculatorConfig). Bewerken
+// gebeurt altijd op een DRAFT; publiceren zet de vorige PUBLISHED-rij op
+// ARCHIVED (nooit verwijderd — historische Leads blijven ernaar verwijzen,
+// zie Lead.calculatorConfigId) en maakt de nieuwe DRAFT de PUBLISHED/actieve
+// versie.
+enum CalculatorConfigStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// Eén versie van de generieke calculatorconfiguratie van een Tool (Deel 4:
+// "Tool -> CalculatorConfig -> type/version/steps/fields/rules/
+// resultSettings/leadSettings"). De volledige, samenhangende structuur
+// (velden/regels/stappen/resultaatinstellingen/afgeleide variabelen) staat
+// als Json in `config` — getypeerd en geparsed via CalculatorConfigData in
+// app/lib/calculator-engine/types.ts, hetzelfde Json-op-model-patroon als
+// Product.sjabloonConfig en Tool.resultaatConfig. `version` is de
+// Tool-brede, oplopende editie (1, 2, 3, ...) — bewust een gewoon Int-veld
+// i.p.v. afgeleid uit `createdAt`, zodat "welke versie is dit" ondubbelzinnig
+// blijft, ook na een eventuele toekomstige databewerking.
+model CalculatorConfig {
+  id     String @id @default(cuid())
+  toolId String
+  tool   Tool   @relation("CalculatorConfigsVanTool", fields: [toolId], references: [id], onDelete: Cascade)
+
+  version     Int
+  status      CalculatorConfigStatus @default(DRAFT)
+  config      Json
+  publishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  activeForTool Tool?  @relation("ActiefVoorTool")
+  // Elke Lead die is aangevraagd terwijl deze specifieke versie live stond —
+  // Deel 21/36: "wanneer een vakman een berekening uitvoert, moet duidelijk
+  // zijn welke versie is gebruikt". Bewust geen onDelete: Cascade (een Lead
+  // moet nooit verdwijnen omdat een CalculatorConfig-rij ooit zou worden
+  // opgeruimd) — zie Lead.calculatorConfigId hieronder.
+  leads         Lead[]
+
+  @@unique([toolId, version])
+  @@index([toolId, status])
 }
 
 // Eén rij per meetbare gebeurtenis op een publieke tool (bezoek, calculator
@@ -681,6 +740,16 @@ model Lead {
   // (of zelfs soft-deleten) van de tool, zodat een historische lead in het
   // CRM altijd correct laat zien waar hij vandaan kwam.
   toolNaamSnapshot String
+
+  // Levering B: welke CalculatorConfig-versie deze aanvraag heeft berekend —
+  // null voor een lead via het bestaande, niet-engine-gedreven pad (Deel 21:
+  // "duidelijk welke versie is gebruikt... belangrijk voor historische
+  // gegevens"). Bewust geen onDelete: Cascade — een Lead mag nooit
+  // verdwijnen als er ooit met een CalculatorConfig-rij geschoond wordt
+  // (wat de app zelf trouwens nooit doet, zie CalculatorConfig hierboven);
+  // SetNull behoudt de Lead en zijn al-bevroren Lead.snapshot gewoon.
+  calculatorConfigId String?
+  calculatorConfig   CalculatorConfig? @relation(fields: [calculatorConfigId], references: [id], onDelete: SetNull)
 
   naam           String
   email          String
