@@ -162,7 +162,13 @@ export async function upsertProductKeuzeOptiesAction(
     where: { materialCategoryId: categoryId },
     select: { id: true },
   });
-  const behoudenIds = new Set(schoneOpties.map((o) => o.id).filter((id): id is string => Boolean(id)));
+  // Alleen id's die daadwerkelijk bij DEZE categorie horen mogen als
+  // "bijwerken" behandeld worden — een client-aangeleverd optie.id dat niet
+  // in deze set zit (bijv. het MaterialOption-id van een andere company) is
+  // nooit een geldig doelwit om te overschrijven, en wordt hier behandeld
+  // als een nieuwe optie in plaats van vertrouwd als bestaand.
+  const geldigeBestaandeIds = new Set(bestaandeOpties.map((o) => o.id));
+  const behoudenIds = new Set(schoneOpties.map((o) => o.id).filter((id): id is string => id != null && geldigeBestaandeIds.has(id)));
   const teVerwijderenIds = bestaandeOpties.filter((o) => !behoudenIds.has(o.id)).map((o) => o.id);
 
   await prisma.$transaction([
@@ -170,7 +176,7 @@ export async function upsertProductKeuzeOptiesAction(
       ? [prisma.materialOption.deleteMany({ where: { id: { in: teVerwijderenIds } } })]
       : []),
     ...schoneOpties.map((optie, i) =>
-      optie.id
+      optie.id && geldigeBestaandeIds.has(optie.id)
         ? prisma.materialOption.update({ where: { id: optie.id }, data: { naam: optie.naam, prijs: optie.prijs, order: i } })
         : prisma.materialOption.create({
             data: { materialCategoryId: categoryId!, naam: optie.naam, prijs: optie.prijs, order: i },
