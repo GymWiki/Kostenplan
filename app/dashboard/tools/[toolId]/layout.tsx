@@ -1,7 +1,6 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { requireActiveTool } from "@/app/lib/dal";
 import { Badge } from "@/app/components/ui/badge";
+import { Breadcrumbs } from "@/app/components/dashboard/breadcrumbs";
 import { getProductIcon } from "@/app/lib/icons";
 import { TOOL_STATUS_LABELS } from "@/app/lib/tools";
 import { ToolNav } from "./tool-nav";
@@ -33,13 +32,7 @@ export default async function ToolLayout({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <Link
-          href="/dashboard/tools"
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Al mijn rekentools
-        </Link>
+        <Breadcrumbs items={[{ label: "Mijn rekentools", href: "/dashboard/tools" }, { label: tool.naam }]} />
         <div className="flex items-center gap-3">
           {ToolIcon && (
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">

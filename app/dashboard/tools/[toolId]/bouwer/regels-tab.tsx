@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, EyeOff } from "lucide-react";
+import { Coins, Copy, EyeOff, Plus, Trash2 } from "lucide-react";
 import type { CalculatorField, DerivedVariable, Expression, PriceRule, PriceRuleCategory, StaffelSchijf } from "@/app/lib/calculator-engine";
 import { RUNNING_SUBTOTAL_VARIABLE } from "@/app/lib/calculator-engine";
 import { Button } from "@/app/components/ui/button";
@@ -11,8 +11,11 @@ import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import { DecimalInput, Input, Label, Select } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { HelpTip } from "@/app/components/ui/help-tip";
+import { SortableList } from "@/app/components/ui/sortable-list";
 import { beschikbareVariabelen, numeriekeVariabelen } from "./variabelen-utils";
 import { VoorwaardeEditor, ontleedVoorwaarde, bouwVoorwaarde, legeConditie, type VoorwaardeGroep } from "./voorwaarde-editor";
+import { BuilderListRow } from "./builder-list-row";
+import { regelSamenvatting } from "./regel-samenvatting";
 
 type BouwbaarType = "VAST" | "PER_EENHEID" | "PERCENTAGE" | "TOESLAG" | "KORTING" | "STAFFEL";
 
@@ -49,14 +52,6 @@ export function RegelsTab({
   const [verwijderRegel, setVerwijderRegel] = useState<PriceRule | null>(null);
   const variabelen = beschikbareVariabelen(velden, afgeleideVariabelen);
 
-  function verplaats(index: number, richting: -1 | 1) {
-    const nieuw = [...regels];
-    const doel = index + richting;
-    if (doel < 0 || doel >= nieuw.length) return;
-    [nieuw[index], nieuw[doel]] = [nieuw[doel], nieuw[index]];
-    onChange(nieuw);
-  }
-
   function opslaan(regel: PriceRule) {
     const bestaatAl = regels.some((r) => r.id === regel.id);
     onChange(bestaatAl ? regels.map((r) => (r.id === regel.id ? regel : r)) : [...regels, regel]);
@@ -68,16 +63,25 @@ export function RegelsTab({
     setVerwijderRegel(null);
   }
 
+  // Prijsregels verwijzen (via Expression's VARIABELE-naam) nooit rechtstreeks
+  // naar een database-rij, dus een client-side kloon is hier altijd veilig —
+  // in tegenstelling tot een PRODUCT_KEUZE-vraag in VeldenTab.
+  function dupliceerRegel(regel: PriceRule) {
+    const nieuweId = nieuwRegelId(new Set(regels.map((r) => r.id)));
+    onChange([...regels, { ...regel, id: nieuweId, label: `${regel.label} (kopie)` }]);
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Berekening</h2>
+          <h2 className="text-lg font-semibold text-foreground">Prijsregels</h2>
           <p className="mt-1 text-sm text-muted-foreground">Hoe wordt de prijs berekend? Elke regel telt op bij het totaal.</p>
         </div>
         <Button type="button" onClick={() => setBewerkRegel("nieuw")} disabled={velden.length === 0}>
           <Plus className="h-4 w-4" />
-          Prijsregel toevoegen
+          <span className="hidden sm:inline">Prijsregel toevoegen</span>
+          <span className="sm:hidden">Toevoegen</span>
         </Button>
       </div>
 
@@ -89,44 +93,52 @@ export function RegelsTab({
 
       {regels.length === 0 ? (
         <Card>
-          <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            Nog geen prijsregels. Voeg je eerste regel toe, bijv. &ldquo;Materiaal: oppervlakte × prijs per m²&rdquo;.
+          <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+              <Coins className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-sm font-medium text-foreground">Nog geen prijsregels</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Voeg je eerste regel toe, bijv. &ldquo;Materiaal: oppervlakte × prijs per m²&rdquo;.
+              </p>
+            </div>
+            <Button type="button" size="sm" onClick={() => setBewerkRegel("nieuw")} disabled={velden.length === 0}>
+              <Plus className="h-4 w-4" />
+              Prijsregel toevoegen
+            </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="flex flex-col gap-2">
-          {regels.map((regel, i) => (
-            <Card key={regel.id} className={!regel.actief ? "opacity-60" : undefined}>
-              <CardContent className="flex items-center gap-3 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-1.5 truncate font-medium text-foreground">
-                    {regel.label}
-                    {regel.intern && <EyeOff className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-label="Alleen voor jou zichtbaar" />}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {CATEGORIE_LABELS[regel.categorie]}
-                    {regel.voorwaarde && " · heeft een voorwaarde"}
-                    {!regel.actief && " · uitgeschakeld"}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <Button type="button" variant="ghost" size="icon" onClick={() => verplaats(i, -1)} disabled={i === 0} aria-label="Omhoog">
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => verplaats(i, 1)} disabled={i === regels.length - 1} aria-label="Omlaag">
-                    <ArrowDown className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => setBewerkRegel(regel)} aria-label="Bewerken">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => setVerwijderRegel(regel)} aria-label="Verwijderen">
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <SortableList
+          dndContextId="regels-lijst"
+          items={regels}
+          onReorder={onChange}
+          renderItem={(regel, dragHandleProps) => (
+            <BuilderListRow
+              dragHandleProps={dragHandleProps}
+              muted={!regel.actief}
+              title={regel.label}
+              badge={
+                regel.intern ? (
+                  <EyeOff className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-label="Alleen voor jou zichtbaar" />
+                ) : undefined
+              }
+              meta={
+                <>
+                  {regelSamenvatting(regel, variabelen)}
+                  {regel.voorwaarde && " · heeft een voorwaarde"}
+                  {!regel.actief && " · uitgeschakeld"}
+                </>
+              }
+              onEdit={() => setBewerkRegel(regel)}
+              menuItems={[
+                { label: "Dupliceren", icon: Copy, onSelect: () => dupliceerRegel(regel) },
+                { label: "Verwijderen", icon: Trash2, onSelect: () => setVerwijderRegel(regel), destructive: true },
+              ]}
+            />
+          )}
+        />
       )}
 
       {bewerkRegel && (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
+import { Copy, HelpCircle, Plus, Trash2 } from "lucide-react";
 import type { CalculatorField, DerivedVariable, Expression, KeuzeOptie } from "@/app/lib/calculator-engine";
 import { upsertProductKeuzeOptiesAction, type ProductKeuzeOptieInvoer } from "@/app/lib/actions/calculator-config";
 import { Button } from "@/app/components/ui/button";
@@ -10,9 +10,11 @@ import { Overlay } from "@/app/components/ui/overlay";
 import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import { DecimalInput, Input, Label, Select } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
+import { SortableList } from "@/app/components/ui/sortable-list";
 import { genereerId } from "./id-utils";
 import { beschikbareVariabelen } from "./variabelen-utils";
 import { VoorwaardeEditor, ontleedVoorwaarde, bouwVoorwaarde, legeConditie, type VoorwaardeGroep } from "./voorwaarde-editor";
+import { BuilderListRow } from "./builder-list-row";
 import type { MateriaalOptie } from "@/app/portaal/[slug]/engine-fields";
 
 const SOORT_LABELS: Record<CalculatorField["soort"], string> = {
@@ -45,6 +47,16 @@ const SOORT_UITLEG: Record<CalculatorField["soort"], string> = {
   PRODUCT_KEUZE: "De klant kiest een materiaal of product, elk met een eigen prijs.",
 };
 
+// Compacte meta-regel per vraag (Deel 7: "Getal · m² · Verplicht") i.p.v.
+// alleen het type — toont in één oogopslag ook eenheid en verplicht-status.
+function veldMeta(veld: CalculatorField): string {
+  const delen = [SOORT_LABELS[veld.soort]];
+  if ("eenheid" in veld && veld.eenheid) delen.push(veld.eenheid);
+  if ("opties" in veld) delen.push(`${veld.opties.length} ${veld.opties.length === 1 ? "optie" : "opties"}`);
+  if (veld.verplicht) delen.push("Verplicht");
+  return delen.join(" · ");
+}
+
 export function VeldenTab({
   toolId,
   velden,
@@ -63,14 +75,6 @@ export function VeldenTab({
   const [bewerkVeld, setBewerkVeld] = useState<CalculatorField | "nieuw" | null>(null);
   const [verwijderVeld, setVerwijderVeld] = useState<CalculatorField | null>(null);
 
-  function verplaats(index: number, richting: -1 | 1) {
-    const nieuw = [...velden];
-    const doel = index + richting;
-    if (doel < 0 || doel >= nieuw.length) return;
-    [nieuw[index], nieuw[doel]] = [nieuw[doel], nieuw[index]];
-    onChange(nieuw);
-  }
-
   function opslaan(veld: CalculatorField) {
     const bestaatAl = velden.some((v) => v.id === veld.id);
     onChange(bestaatAl ? velden.map((v) => (v.id === veld.id ? veld : v)) : [...velden, veld]);
@@ -80,6 +84,16 @@ export function VeldenTab({
   function verwijder(veld: CalculatorField) {
     onChange(velden.filter((v) => v.id !== veld.id));
     setVerwijderVeld(null);
+  }
+
+  // Client-side kloon (geen server-actie nodig, in tegenstelling tot
+  // Onderdelen dupliceren): veilig voor elk veldtype behalve PRODUCT_KEUZE,
+  // dat naar een echte database-rij (materialCategoryId) verwijst — twee
+  // velden die er hetzelfde id voor delen zouden elkaars materiaalopties
+  // overschrijven. Voor dat type wordt "Dupliceren" daarom niet getoond.
+  function dupliceerVeld(veld: CalculatorField) {
+    const nieuweId = genereerId(`${veld.label} kopie`, new Set(velden.map((v) => v.id)));
+    onChange([...velden, { ...veld, id: nieuweId, label: `${veld.label} (kopie)` }]);
   }
 
   return (
@@ -97,38 +111,40 @@ export function VeldenTab({
 
       {velden.length === 0 ? (
         <Card>
-          <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            Nog geen vragen. Voeg je eerste vraag toe om te beginnen.
+          <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+              <HelpCircle className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-sm font-medium text-foreground">Nog geen vragen</p>
+              <p className="mt-1 text-sm text-muted-foreground">Voeg je eerste vraag toe om te beginnen.</p>
+            </div>
+            <Button type="button" size="sm" onClick={() => setBewerkVeld("nieuw")}>
+              <Plus className="h-4 w-4" />
+              Vraag toevoegen
+            </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="flex flex-col gap-2">
-          {velden.map((veld, i) => (
-            <Card key={veld.id}>
-              <CardContent className="flex items-center gap-3 py-3">
-                <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-foreground">{veld.label}</p>
-                  <p className="text-xs text-muted-foreground">{SOORT_LABELS[veld.soort]}</p>
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <Button type="button" variant="ghost" size="icon" onClick={() => verplaats(i, -1)} disabled={i === 0} aria-label="Omhoog">
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => verplaats(i, 1)} disabled={i === velden.length - 1} aria-label="Omlaag">
-                    <ArrowDown className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => setBewerkVeld(veld)} aria-label="Bewerken">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => setVerwijderVeld(veld)} aria-label="Verwijderen">
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <SortableList
+          dndContextId="velden-lijst"
+          items={velden}
+          onReorder={onChange}
+          renderItem={(veld, dragHandleProps) => (
+            <BuilderListRow
+              dragHandleProps={dragHandleProps}
+              title={veld.label}
+              meta={veldMeta(veld)}
+              onEdit={() => setBewerkVeld(veld)}
+              menuItems={[
+                ...(veld.soort === "PRODUCT_KEUZE"
+                  ? []
+                  : [{ label: "Dupliceren", icon: Copy, onSelect: () => dupliceerVeld(veld) }]),
+                { label: "Verwijderen", icon: Trash2, onSelect: () => setVerwijderVeld(veld), destructive: true },
+              ]}
+            />
+          )}
+        />
       )}
 
       {bewerkVeld && (

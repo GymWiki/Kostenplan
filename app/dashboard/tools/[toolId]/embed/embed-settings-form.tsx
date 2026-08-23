@@ -5,6 +5,7 @@ import { updateEmbedConfigAction } from "@/app/lib/actions/tools";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
 import { DecimalInput, Label, Select } from "@/app/components/ui/input";
+import { Switch } from "@/app/components/ui/switch";
 import type { ToolEmbedConfig } from "@/app/lib/tools";
 
 // Embedinstellingen (Deel 27 van de opdracht) — updateEmbedConfigAction
@@ -60,24 +61,16 @@ export function EmbedSettingsForm({
             <DecimalInput id="radiusPx" name="radiusPx" defaultValue={embedConfig.radiusPx} />
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-foreground">
-            <input
-              type="checkbox"
-              name="toonBorder"
-              defaultChecked={embedConfig.toonBorder}
-              className="h-4 w-4 rounded border-input accent-primary"
-            />
-            Rand tonen rond de rekentool
+          <label className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3">
+            <span className="text-sm font-medium text-foreground">Rand tonen rond de rekentool</span>
+            <Switch name="toonBorder" defaultChecked={embedConfig.toonBorder} />
           </label>
 
-          <label className="flex items-center gap-2 text-sm text-foreground">
-            <input
-              type="checkbox"
-              name="transparanteAchtergrond"
-              defaultChecked={embedConfig.transparanteAchtergrond}
-              className="h-4 w-4 rounded border-input accent-primary"
-            />
-            Transparante achtergrond (neemt de achtergrondkleur van je website over)
+          <label className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3">
+            <span className="text-sm font-medium text-foreground">
+              Transparante achtergrond (neemt de achtergrondkleur van je website over)
+            </span>
+            <Switch name="transparanteAchtergrond" defaultChecked={embedConfig.transparanteAchtergrond} />
           </label>
 
           <div className="flex justify-end">

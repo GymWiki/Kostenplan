@@ -17,7 +17,8 @@ import type { MateriaalOptie } from "@/app/portaal/[slug]/engine-fields";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
-import { cn } from "@/app/lib/cn";
+import { Tabs, type TabItem } from "@/app/components/ui/tabs";
+import { BouwerPreviewLayout } from "./bouwer-preview-layout";
 import { VeldenTab } from "./velden-tab";
 import { RegelsTab } from "./regels-tab";
 import { ResultaatTab } from "./resultaat-tab";
@@ -26,11 +27,11 @@ import type { Branding, SubscriptionTier } from "@/app/generated/prisma/client";
 
 type Tab = "vragen" | "berekening" | "resultaat" | "stappen";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "vragen", label: "Vragen" },
-  { id: "berekening", label: "Berekening" },
-  { id: "resultaat", label: "Resultaat" },
-  { id: "stappen", label: "Stappen" },
+const TABS: TabItem<Tab>[] = [
+  { value: "vragen", label: "Vragen" },
+  { value: "berekening", label: "Prijsregels" },
+  { value: "resultaat", label: "Resultaat" },
+  { value: "stappen", label: "Stappen" },
 ];
 
 export function CalculatorBouwer({
@@ -155,72 +156,54 @@ export function CalculatorBouwer({
         </p>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_400px]">
-        <div className="flex flex-col gap-4">
-          <nav className="flex gap-1 overflow-x-auto border-b border-border">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={cn(
-                  "shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition-colors",
-                  tab === t.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {t.label}
-              </button>
-            ))}
-          </nav>
+      <BouwerPreviewLayout
+        bewerken={
+          <div className="flex flex-col gap-4">
+            <Tabs tabs={TABS} value={tab} onChange={setTab} />
 
-          {tab === "vragen" && (
-            <VeldenTab
-              toolId={toolId}
-              velden={config.velden}
-              onChange={(velden) => setConfig((c) => ({ ...c, velden }))}
-              materiaalOpties={materiaalOpties}
-              onMateriaalOptiesChange={setMateriaalOpties}
-              afgeleideVariabelen={config.afgeleideVariabelen}
-            />
-          )}
-          {tab === "berekening" && (
-            <RegelsTab
-              velden={config.velden}
-              afgeleideVariabelen={config.afgeleideVariabelen}
-              regels={config.regels}
-              onChange={(regels) => setConfig((c) => ({ ...c, regels }))}
-            />
-          )}
-          {tab === "resultaat" && (
-            <ResultaatTab
-              instellingen={config.resultaatInstellingen}
-              onChange={(resultaatInstellingen) => setConfig((c) => ({ ...c, resultaatInstellingen }))}
-            />
-          )}
-          {tab === "stappen" && (
-            <StappenTab velden={config.velden} stappen={config.stappen} onChange={(stappen) => setConfig((c) => ({ ...c, stappen }))} />
-          )}
-        </div>
-
-        <div className="lg:sticky lg:top-6 lg:self-start">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-medium text-muted-foreground">Live voorbeeld</p>
+            {tab === "vragen" && (
+              <VeldenTab
+                toolId={toolId}
+                velden={config.velden}
+                onChange={(velden) => setConfig((c) => ({ ...c, velden }))}
+                materiaalOpties={materiaalOpties}
+                onMateriaalOptiesChange={setMateriaalOpties}
+                afgeleideVariabelen={config.afgeleideVariabelen}
+              />
+            )}
+            {tab === "berekening" && (
+              <RegelsTab
+                velden={config.velden}
+                afgeleideVariabelen={config.afgeleideVariabelen}
+                regels={config.regels}
+                onChange={(regels) => setConfig((c) => ({ ...c, regels }))}
+              />
+            )}
+            {tab === "resultaat" && (
+              <ResultaatTab
+                instellingen={config.resultaatInstellingen}
+                onChange={(resultaatInstellingen) => setConfig((c) => ({ ...c, resultaatInstellingen }))}
+              />
+            )}
+            {tab === "stappen" && (
+              <StappenTab velden={config.velden} stappen={config.stappen} onChange={(stappen) => setConfig((c) => ({ ...c, stappen }))} />
+            )}
           </div>
-          <div className="h-[70vh] overflow-y-auto rounded-xl border border-border">
-            <EngineCalculator
-              toolId={toolId}
-              bedrijfsnaam={bedrijfsnaam}
-              email={email}
-              subscriptionTier={subscriptionTier}
-              branding={branding}
-              config={previewConfig}
-              btwPercentage={btwPercentage}
-              materiaalOpties={materiaalOpties}
-              previewModus
-            />
-          </div>
-        </div>
-      </div>
+        }
+        preview={
+          <EngineCalculator
+            toolId={toolId}
+            bedrijfsnaam={bedrijfsnaam}
+            email={email}
+            subscriptionTier={subscriptionTier}
+            branding={branding}
+            config={previewConfig}
+            btwPercentage={btwPercentage}
+            materiaalOpties={materiaalOpties}
+            previewModus
+          />
+        }
+      />
 
       {gepubliceerd && (
         <div className="mt-2 border-t border-border pt-4">

@@ -9,11 +9,19 @@ import { saveOnderdeelBibliotheekAction } from "@/app/lib/actions/onderdelen";
 import { Overlay } from "@/app/components/ui/overlay";
 import { Button } from "@/app/components/ui/button";
 import { Input, Label } from "@/app/components/ui/input";
+import { Tabs, type TabItem } from "@/app/components/ui/tabs";
+import { Breadcrumbs } from "@/app/components/dashboard/breadcrumbs";
+import { BouwerPreviewLayout } from "./bouwer-preview-layout";
 import { VeldenTab } from "./velden-tab";
 import { RegelsTab } from "./regels-tab";
 import type { Branding, OnderdeelBibliotheek, SubscriptionTier } from "@/app/generated/prisma/client";
 
 type SubTab = "vragen" | "berekening";
+
+const SUB_TABS: TabItem<SubTab>[] = [
+  { value: "vragen", label: "Vragen" },
+  { value: "berekening", label: "Prijsregels" },
+];
 
 // Fase 5/9 (Deel 3/9 van de opdracht): de builder voor één Onderdeel —
 // hergebruikt VeldenTab/RegelsTab ONGEWIJZIGD, alleen gescoped op de
@@ -92,14 +100,17 @@ export function OnderdeelEditorOverlay({
   return (
     <Overlay open onClose={onClose} ariaLabel="Onderdeel bewerken" className="flex items-stretch justify-center bg-background">
       <div className="flex w-full max-w-6xl flex-col gap-4 overflow-y-auto p-4 sm:p-6">
-        <div className="flex items-center justify-between gap-3">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Klaar
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={opslaanAlsMijnOnderdeel} disabled={opslaanInBibliotheekBezig}>
-            <Save className="h-4 w-4" />
-            {opgeslagenInBibliotheek ? "Opgeslagen als Mijn onderdeel" : "Opslaan als Mijn onderdeel"}
-          </Button>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Breadcrumbs items={[{ label: "Onderdelen" }, { label: onderdeel.naam }]} />
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={opslaanAlsMijnOnderdeel} disabled={opslaanInBibliotheekBezig}>
+              <Save className="h-4 w-4" />
+              {opgeslagenInBibliotheek ? "Opgeslagen als Mijn onderdeel" : "Opslaan als Mijn onderdeel"}
+            </Button>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Klaar
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -119,60 +130,46 @@ export function OnderdeelEditorOverlay({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_400px]">
-          <div className="flex flex-col gap-4">
-            <nav className="flex gap-1 border-b border-border">
-              {(["vragen", "berekening"] as SubTab[]).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTab(t)}
-                  className={`shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-                    tab === t ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {t === "vragen" ? "Vragen" : "Berekening"}
-                </button>
-              ))}
-            </nav>
+        <BouwerPreviewLayout
+          previewLabel="Live voorbeeld van dit onderdeel"
+          bewerken={
+            <div className="flex flex-col gap-4">
+              <Tabs tabs={SUB_TABS} value={tab} onChange={setTab} />
 
-            {tab === "vragen" && (
-              <VeldenTab
-                toolId={toolId}
-                velden={onderdeel.velden}
-                onChange={metVelden}
-                materiaalOpties={materiaalOpties}
-                onMateriaalOptiesChange={onMateriaalOptiesChange}
-                afgeleideVariabelen={onderdeel.afgeleideVariabelen}
-              />
-            )}
-            {tab === "berekening" && (
-              <RegelsTab
-                velden={onderdeel.velden}
-                afgeleideVariabelen={onderdeel.afgeleideVariabelen}
-                regels={onderdeel.regels}
-                onChange={metRegels}
-              />
-            )}
-          </div>
-
-          <div className="lg:sticky lg:top-6 lg:self-start">
-            <p className="mb-2 text-sm font-medium text-muted-foreground">Live voorbeeld van dit onderdeel</p>
-            <div className="h-[70vh] overflow-y-auto rounded-xl border border-border">
-              <EngineCalculator
-                toolId={toolId}
-                bedrijfsnaam={bedrijfsnaam}
-                email={email}
-                subscriptionTier={subscriptionTier}
-                branding={branding}
-                config={previewConfig}
-                btwPercentage={btwPercentage}
-                materiaalOpties={materiaalOpties}
-                previewModus
-              />
+              {tab === "vragen" && (
+                <VeldenTab
+                  toolId={toolId}
+                  velden={onderdeel.velden}
+                  onChange={metVelden}
+                  materiaalOpties={materiaalOpties}
+                  onMateriaalOptiesChange={onMateriaalOptiesChange}
+                  afgeleideVariabelen={onderdeel.afgeleideVariabelen}
+                />
+              )}
+              {tab === "berekening" && (
+                <RegelsTab
+                  velden={onderdeel.velden}
+                  afgeleideVariabelen={onderdeel.afgeleideVariabelen}
+                  regels={onderdeel.regels}
+                  onChange={metRegels}
+                />
+              )}
             </div>
-          </div>
-        </div>
+          }
+          preview={
+            <EngineCalculator
+              toolId={toolId}
+              bedrijfsnaam={bedrijfsnaam}
+              email={email}
+              subscriptionTier={subscriptionTier}
+              branding={branding}
+              config={previewConfig}
+              btwPercentage={btwPercentage}
+              materiaalOpties={materiaalOpties}
+              previewModus
+            />
+          }
+        />
       </div>
     </Overlay>
   );

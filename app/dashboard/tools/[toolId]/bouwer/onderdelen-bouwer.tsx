@@ -13,16 +13,17 @@ import type { MateriaalOptie } from "@/app/portaal/[slug]/engine-fields";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
-import { cn } from "@/app/lib/cn";
+import { Tabs, type TabItem } from "@/app/components/ui/tabs";
+import { BouwerPreviewLayout } from "./bouwer-preview-layout";
 import { OnderdelenTab } from "./onderdelen-tab";
 import { ResultaatTab } from "./resultaat-tab";
 import type { Branding, SubscriptionTier, OnderdeelBibliotheek } from "@/app/generated/prisma/client";
 
 type Tab = "onderdelen" | "resultaat";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "onderdelen", label: "Onderdelen" },
-  { id: "resultaat", label: "Resultaat" },
+const TABS: TabItem<Tab>[] = [
+  { value: "onderdelen", label: "Onderdelen" },
+  { value: "resultaat", label: "Resultaat" },
 ];
 
 // Levering B v2 — de modulaire tegenhanger van CalculatorBouwer (blijft
@@ -150,68 +151,51 @@ export function OnderdelenBouwer({
         </p>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_400px]">
-        <div className="flex flex-col gap-4">
-          <nav className="flex gap-1 overflow-x-auto border-b border-border">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={cn(
-                  "shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition-colors",
-                  tab === t.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {t.label}
-              </button>
-            ))}
-          </nav>
+      <BouwerPreviewLayout
+        bewerken={
+          <div className="flex flex-col gap-4">
+            <Tabs tabs={TABS} value={tab} onChange={setTab} />
 
-          {tab === "onderdelen" && (
-            <OnderdelenTab
-              toolId={toolId}
-              onderdelen={config.onderdelen}
-              onChange={(onderdelen) => setConfig((c) => ({ ...c, onderdelen }))}
-              materiaalOpties={materiaalOpties}
-              onMateriaalOptiesChange={setMateriaalOpties}
-              resultaatInstellingen={config.resultaatInstellingen}
-              btwPercentage={btwPercentage}
-              bedrijfsnaam={bedrijfsnaam}
-              email={email}
-              subscriptionTier={subscriptionTier}
-              branding={branding}
-              onderdeelBibliotheek={onderdeelBibliotheek}
-              onOnderdeelBibliotheekChange={setOnderdeelBibliotheek}
-            />
-          )}
-          {tab === "resultaat" && (
-            <ResultaatTab
-              instellingen={config.resultaatInstellingen}
-              onChange={(resultaatInstellingen) => setConfig((c) => ({ ...c, resultaatInstellingen }))}
-            />
-          )}
-        </div>
-
-        <div className="lg:sticky lg:top-6 lg:self-start">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-medium text-muted-foreground">Live voorbeeld — Testmodus</p>
+            {tab === "onderdelen" && (
+              <OnderdelenTab
+                toolId={toolId}
+                onderdelen={config.onderdelen}
+                onChange={(onderdelen) => setConfig((c) => ({ ...c, onderdelen }))}
+                meldingen={meldingen}
+                materiaalOpties={materiaalOpties}
+                onMateriaalOptiesChange={setMateriaalOpties}
+                resultaatInstellingen={config.resultaatInstellingen}
+                btwPercentage={btwPercentage}
+                bedrijfsnaam={bedrijfsnaam}
+                email={email}
+                subscriptionTier={subscriptionTier}
+                branding={branding}
+                onderdeelBibliotheek={onderdeelBibliotheek}
+                onOnderdeelBibliotheekChange={setOnderdeelBibliotheek}
+              />
+            )}
+            {tab === "resultaat" && (
+              <ResultaatTab
+                instellingen={config.resultaatInstellingen}
+                onChange={(resultaatInstellingen) => setConfig((c) => ({ ...c, resultaatInstellingen }))}
+              />
+            )}
           </div>
-          <div className="h-[70vh] overflow-y-auto rounded-xl border border-border">
-            <EngineCalculator
-              toolId={toolId}
-              bedrijfsnaam={bedrijfsnaam}
-              email={email}
-              subscriptionTier={subscriptionTier}
-              branding={branding}
-              config={config}
-              btwPercentage={btwPercentage}
-              materiaalOpties={materiaalOpties}
-              previewModus
-            />
-          </div>
-        </div>
-      </div>
+        }
+        preview={
+          <EngineCalculator
+            toolId={toolId}
+            bedrijfsnaam={bedrijfsnaam}
+            email={email}
+            subscriptionTier={subscriptionTier}
+            branding={branding}
+            config={config}
+            btwPercentage={btwPercentage}
+            materiaalOpties={materiaalOpties}
+            previewModus
+          />
+        }
+      />
 
       {gepubliceerd && (
         <div className="mt-2 border-t border-border pt-4">

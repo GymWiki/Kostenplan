@@ -12,10 +12,12 @@ import {
   evalueerOnderdeel,
   combineerOnderdelen,
   type AnyCalculatorConfigData,
+  type CalculatorField,
   type CalculatorStep,
   type ExpressionScope,
   type OnderdeelLineItem,
 } from "@/app/lib/calculator-engine";
+import { DebugPaneel } from "./debug-paneel";
 import { CTA_LABELS } from "@/app/lib/tools";
 import { formatCurrency } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -34,6 +36,45 @@ import type { Branding, SubscriptionTier } from "@/app/generated/prisma/client";
 
 const STANDAARD_PRIMAIRE_KLEUR = "#15803d";
 const STANDAARD_ACHTERGRONDKLEUR = "#f7faf8";
+
+// Puur presentationele vertaling van een ruwe veldwaarde naar leesbare tekst
+// voor het eigenaar-only debug-paneel (Deel 10) — beïnvloedt nooit de
+// daadwerkelijke berekening, die blijft volledig los via bouwScope/
+// evalueerOnderdeel lopen.
+function formatDebugWaarde(veld: CalculatorField, waarde: unknown, materiaalOpties: Record<string, MateriaalOptie[]>): string {
+  if (waarde == null || waarde === "") return "—";
+  switch (veld.soort) {
+    case "JA_NEE":
+    case "CHECKBOX":
+      return waarde ? "Ja" : "Nee";
+    case "DROPDOWN":
+    case "RADIO":
+      return veld.opties.find((o) => o.waarde === waarde)?.label ?? String(waarde);
+    case "MEERKEUZE": {
+      const geselecteerd = Array.isArray(waarde) ? waarde : [];
+      const labels = veld.opties.filter((o) => geselecteerd.includes(o.waarde)).map((o) => o.label);
+      return labels.length > 0 ? labels.join(", ") : "—";
+    }
+    case "AFMETINGEN": {
+      const afmeting = waarde as { lengte?: number; breedte?: number; hoogte?: number };
+      const delen = [afmeting.lengte, afmeting.breedte, afmeting.hoogte].filter(
+        (n): n is number => typeof n === "number"
+      );
+      return delen.length > 0 ? `${delen.join(" × ")}${veld.eenheid ? ` ${veld.eenheid}` : ""}` : "—";
+    }
+    case "PRODUCT_KEUZE": {
+      const optie = (materiaalOpties[veld.materialCategoryId] ?? []).find((o) => o.id === waarde);
+      return optie?.naam ?? String(waarde);
+    }
+    case "NUMMER":
+    case "AANTAL":
+    case "OPPERVLAKTE":
+    case "SLIDER":
+      return `${waarde}${veld.eenheid ? ` ${veld.eenheid}` : ""}`;
+    default:
+      return String(waarde);
+  }
+}
 
 type Props = {
   toolId: string;
@@ -255,6 +296,22 @@ export function EngineCalculator({
     };
   }, [evaluatie.lineItems, resultaat, isModulair]);
 
+  // Alleen ooit gebruikt door het eigenaar-only debug-paneel (previewModus)
+  // hieronder — puur presentationeel, geen invloed op de berekening zelf.
+  const gekozenWaarden = !previewModus
+    ? []
+    : stappen.flatMap((stap) => {
+        const veldenVanStap =
+          config.versie === 2 ? (config.onderdelen.find((o) => o.id === stap.id)?.velden ?? []) : config.velden;
+        return stap.veldIds.flatMap((veldId) => {
+          const veld = veldenVanStap.find((v) => v.id === veldId);
+          if (!veld) return [];
+          const waarde = waarden[waardeKey(stap.id, veldId)];
+          if (waarde == null || waarde === "") return [];
+          return [{ label: veld.label, waarde: formatDebugWaarde(veld, waarde, materiaalOpties) }];
+        });
+      });
+
   const huidigeStap = stappen[Math.min(stapIndex, stappen.length - 1)];
   const isLaatsteStap = stapIndex >= stappen.length - 1;
   const huidigeStapVeldenIngevuld = (huidigeStap?.veldIds ?? []).every((id) => {
@@ -340,6 +397,7 @@ export function EngineCalculator({
             resultaat={resultaat}
             evaluatie={evaluatie}
             snapshot={snapshot}
+            gekozenWaarden={gekozenWaarden}
             ctaTekst={config.resultaatInstellingen.ctaTekst ?? CTA_LABELS[config.resultaatInstellingen.ctaType]}
             weergave={config.resultaatInstellingen.weergave}
             bedankTekst={bedankTekst}
@@ -428,6 +486,7 @@ function ResultaatKaart({
   resultaat,
   evaluatie,
   snapshot,
+  gekozenWaarden,
   ctaTekst,
   weergave,
   bedankTekst,
@@ -439,6 +498,7 @@ function ResultaatKaart({
   resultaat: ReturnType<typeof bouwResultaat>;
   evaluatie: ReturnType<typeof evaluatePriceRules>;
   snapshot: LeadSnapshot;
+  gekozenWaarden: { label: string; waarde: string }[];
   ctaTekst: string;
   weergave: AnyCalculatorConfigData["resultaatInstellingen"]["weergave"];
   bedankTekst: string;
@@ -531,6 +591,10 @@ function ResultaatKaart({
                   </span>
                   <span className="text-3xl font-bold leading-tight text-[var(--brand-primary-foreground)]">{prijsTekst}</span>
                 </div>
+              )}
+
+              {previewModus && (
+                <DebugPaneel gekozenWaarden={gekozenWaarden} evaluatie={evaluatie} totaal={resultaat.totaal} />
               )}
 
               {previewModus ? (
