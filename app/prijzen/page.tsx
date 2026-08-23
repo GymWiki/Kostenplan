@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/app/components/marketing/site-header";
 import { SiteFooter } from "@/app/components/marketing/site-footer";
+import { Breadcrumbs } from "@/app/components/marketing/breadcrumbs";
 import { MarketingPricingTable } from "@/app/components/pricing/marketing-pricing-table";
 
 export const metadata: Metadata = {
@@ -31,6 +32,7 @@ export default function PrijzenPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
+      <Breadcrumbs items={[{ label: "Prijzen", href: "/prijzen" }]} />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-20 sm:px-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/app/lib/prisma";
 import { DOELGROEPEN } from "@/app/lib/doelgroepen";
+import { KENNISBANK_ARTIKELEN } from "@/app/lib/kennisbank";
 
 // Hardcoded productie-domein — bewust niet NEXT_PUBLIC_APP_URL, want die
 // staat in .env/lokale ontwikkeling op localhost en een sitemap moet altijd
@@ -24,12 +25,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified, changeFrequency: "weekly", priority: 1 },
+    { url: `${BASE_URL}/rekentool`, lastModified, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE_URL}/prijzen`, lastModified, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE_URL}/rekentool-op-eigen-website`, lastModified, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/offerte-calculator`, lastModified, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/prijs-calculator`, lastModified, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/online-offerte-maken`, lastModified, changeFrequency: "monthly", priority: 0.7 },
     ...DOELGROEPEN.map((d) => ({
       url: `${BASE_URL}/voor/${d.slug}`,
       lastModified,
       changeFrequency: "monthly" as const,
       priority: 0.7,
+    })),
+    { url: `${BASE_URL}/kennisbank`, lastModified, changeFrequency: "monthly", priority: 0.6 },
+    ...KENNISBANK_ARTIKELEN.map((a) => ({
+      url: `${BASE_URL}/kennisbank/${a.slug}`,
+      lastModified: new Date(a.datum),
+      changeFrequency: "yearly" as const,
+      priority: 0.5,
     })),
     {
       url: `${BASE_URL}/algemene-voorwaarden`,

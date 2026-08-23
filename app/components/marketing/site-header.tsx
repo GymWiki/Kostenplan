@@ -13,6 +13,12 @@ export function SiteHeader() {
         </Link>
         <nav className="flex items-center gap-2">
           <Link
+            href="/rekentool"
+            className="hidden px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+          >
+            Rekentool
+          </Link>
+          <Link
             href="/prijzen"
             className="hidden px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
           >

@@ -7,7 +7,16 @@ const snelleLinks = [
   { href: "/", label: "Home" },
   { href: "/#voorbeeld", label: "Functionaliteiten" },
   { href: "/#prijzen", label: "Prijzen" },
+  { href: "/kennisbank", label: "Kennisbank" },
   { href: "/login", label: "Inloggen" },
+];
+
+const productLinks = [
+  { href: "/rekentool", label: "Wat is een rekentool?" },
+  { href: "/rekentool-op-eigen-website", label: "Op je eigen website" },
+  { href: "/offerte-calculator", label: "Offerte calculator" },
+  { href: "/prijs-calculator", label: "Prijs calculator" },
+  { href: "/online-offerte-maken", label: "Online offerte maken" },
 ];
 
 const doelgroepLinks = DOELGROEPEN.map((d) => ({
@@ -24,7 +33,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-secondary/30">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
           <div className="sm:col-span-2 lg:col-span-1">
             <Link
               href="/"
@@ -55,8 +64,9 @@ export function SiteFooter() {
             </a>
           </div>
 
-          <FooterColumn title="Snelle links" links={snelleLinks} />
+          <FooterColumn title="Product" links={productLinks} />
           <FooterColumn title="Voor wie" links={doelgroepLinks} />
+          <FooterColumn title="Snelle links" links={snelleLinks} />
           <FooterColumn title="Juridisch" links={juridischeLinks} />
         </div>
 

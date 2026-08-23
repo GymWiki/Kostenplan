@@ -4,7 +4,9 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/app/lib/cn";
 
-const FAQS = [
+export type Faq = { vraag: string; antwoord: string };
+
+const HOMEPAGE_FAQS: Faq[] = [
   {
     vraag: "Zit ik direct vast aan een contract als ik upgrade naar een betaald pakket?",
     antwoord:
@@ -32,13 +34,30 @@ const FAQS = [
   },
 ];
 
-export function FaqSection() {
+// Herbruikbare FAQ-sectie mét FAQPage-JSON-LD (Deel 5/6 van de SEO/GEO-
+// opdracht: elke belangrijke pagina krijgt zijn eigen, op die pagina
+// toegespitste vragen — self-contained te begrijpen los van context, zodat
+// zowel Google's FAQ-rich-results als AI-antwoordmachines ze rechtstreeks
+// kunnen citeren). Zonder `faqs`-prop valt dit terug op de oorspronkelijke
+// homepage-vragen, zodat bestaande aanroepen (<FaqSection />) ongewijzigd
+// blijven werken.
+export function FaqSection({
+  faqs = HOMEPAGE_FAQS,
+  id = "faq",
+  titel = "Veelgestelde vragen",
+  intro = "Staat je vraag er niet bij? Mail ons gerust via de footer hieronder.",
+}: {
+  faqs?: Faq[];
+  id?: string;
+  titel?: string;
+  intro?: string;
+}) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: FAQS.map((faq) => ({
+    mainEntity: faqs.map((faq) => ({
       "@type": "Question",
       name: faq.vraag,
       acceptedAnswer: { "@type": "Answer", text: faq.antwoord },
@@ -46,22 +65,18 @@ export function FaqSection() {
   };
 
   return (
-    <section id="faq" className="mx-auto max-w-3xl px-4 py-20 sm:px-6 sm:py-28">
+    <section id={id} className="mx-auto max-w-3xl px-4 py-20 sm:px-6 sm:py-28">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <div className="text-center">
-        <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
-          Veelgestelde vragen
-        </h2>
-        <p className="mt-3 text-muted-foreground">
-          Staat je vraag er niet bij? Mail ons gerust via de footer hieronder.
-        </p>
+        <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">{titel}</h2>
+        <p className="mt-3 text-muted-foreground">{intro}</p>
       </div>
 
       <div className="mt-10 flex flex-col divide-y divide-border rounded-xl border border-border bg-card">
-        {FAQS.map((faq, index) => {
+        {faqs.map((faq, index) => {
           const open = openIndex === index;
           return (
             <div key={faq.vraag}>

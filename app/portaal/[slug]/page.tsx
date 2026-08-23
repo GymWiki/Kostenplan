@@ -26,15 +26,21 @@ export async function generateMetadata({
 
   const title = `Kostencalculator ${tool.company.naam}`;
   const description = `Bereken direct een schatting van de kosten voor jouw project bij ${tool.company.naam}.`;
+  // Deze legacy-route toont exact dezelfde tool als /t/[bedrijfsslug]/[toolslug]
+  // (zie de comment bij getLegacyToolForCompanySlug in dal.ts). Zonder een
+  // canonical naar die URL zouden er twee indexeerbare adressen voor dezelfde
+  // content bestaan — de canonical wijst zoekmachines naar het echte adres,
+  // zonder bestaande /portaal-iframes/links te breken (geen redirect).
+  const canonical = `/t/${tool.company.slug}/${tool.slug}`;
 
   return {
     title,
     description,
-    alternates: { canonical: `/portaal/${slug}` },
+    alternates: { canonical },
     openGraph: {
       title,
       description,
-      url: `/portaal/${slug}`,
+      url: canonical,
       siteName: "Kostenplan",
       locale: "nl_NL",
       type: "website",

@@ -5,6 +5,9 @@ import { Card, CardContent } from "@/app/components/ui/card";
 import { Reveal } from "@/app/components/ui/reveal";
 import { SiteHeader } from "@/app/components/marketing/site-header";
 import { SiteFooter } from "@/app/components/marketing/site-footer";
+import { Breadcrumbs } from "@/app/components/marketing/breadcrumbs";
+import { GeoAnswer } from "@/app/components/marketing/geo-answer";
+import { FaqSection } from "@/app/components/marketing/faq-section";
 import { DOELGROEPEN, type Doelgroep } from "@/app/lib/doelgroepen";
 
 // Gedeelde template voor de doelgroep-landingspagina's onder /voor/[slug].
@@ -17,6 +20,12 @@ export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
+      <Breadcrumbs
+        items={[
+          { label: "Rekentool", href: "/rekentool" },
+          { label: `Voor ${doelgroep.naamMeervoud}`, href: `/voor/${doelgroep.slug}` },
+        ]}
+      />
 
       <main className="flex-1">
         {/* HERO */}
@@ -34,6 +43,14 @@ export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
                 {doelgroep.h1}
               </h1>
               <p className="mt-6 text-lg text-muted-foreground">{doelgroep.intro}</p>
+              <div className="mt-6 text-left">
+                <GeoAnswer>
+                  Kostenplan is een online tool waarmee {doelgroep.naamMeervoud} zelf, zonder
+                  programmeerkennis, een rekentool bouwen voor {doelgroep.projectVoorbeeld}.
+                  Klanten vullen hun wensen in en zien direct een prijsindicatie op basis van de
+                  tarieven van de vakman zelf.
+                </GeoAnswer>
+              </div>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <LinkButton href="/registreren" size="lg">
                   Start nu gratis
@@ -76,6 +93,13 @@ export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
             </div>
           </div>
         </section>
+
+        <FaqSection
+          faqs={doelgroep.faqs}
+          id="doelgroep-faq"
+          titel={`Veelgestelde vragen van ${doelgroep.naamMeervoud}`}
+          intro={`Concrete antwoorden voor ${doelgroep.naamMeervoud} die overwegen een rekentool te bouwen.`}
+        />
 
         {/* ANDERE DOELGROEPEN */}
         <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
