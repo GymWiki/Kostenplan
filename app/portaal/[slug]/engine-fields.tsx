@@ -168,6 +168,36 @@ export function EngineVeld({
         </VeldWrapper>
       );
 
+    case "MEERKEUZE": {
+      const gekozen = Array.isArray(waarde) ? (waarde as string[]) : [];
+      function toggle(w: string) {
+        onChange(gekozen.includes(w) ? gekozen.filter((x) => x !== w) : [...gekozen, w]);
+      }
+      return (
+        <VeldWrapper label={veld.label} helpTekst={veld.helpTekst} verplicht={veld.verplicht}>
+          <div className="flex flex-col gap-2">
+            {veld.opties.map((optie) => (
+              <label
+                key={optie.waarde}
+                className={cn(
+                  "flex cursor-pointer items-center gap-2.5 rounded-lg border px-4 py-3 transition-colors",
+                  gekozen.includes(optie.waarde) ? "border-primary bg-primary/5" : "border-border hover:bg-secondary/50"
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={gekozen.includes(optie.waarde)}
+                  onChange={() => toggle(optie.waarde)}
+                  className="h-4 w-4 shrink-0 rounded border-input accent-primary"
+                />
+                <span className="text-sm font-medium text-foreground">{optie.label}</span>
+              </label>
+            ))}
+          </div>
+        </VeldWrapper>
+      );
+    }
+
     case "AFMETINGEN": {
       const invoer = (typeof waarde === "object" && waarde !== null ? waarde : {}) as Record<string, unknown>;
       const zetInvoer = (key: string, v: unknown) => onChange({ ...invoer, [key]: v });

@@ -13,6 +13,7 @@ import {
   Rocket,
   Code2,
   Settings,
+  Wand2,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/app/lib/cn";
@@ -22,13 +23,14 @@ import { cn } from "@/app/lib/cn";
 // met meerdere rekentools altijd exact weet: "ik pas nu déze tool aan". Zie
 // app/dashboard/tools/[toolId]/layout.tsx voor waar de toolnaam zelf
 // (prominent, in de header) vandaan komt.
-//
-// De "Bouwer"-tab (Levering B, generieke calculator-bouwer) is hier bewust
-// uitgeschakeld — komt later terug. De onderliggende route/code
-// (app/dashboard/tools/[toolId]/bouwer) blijft gewoon bestaan.
 const TOOL_NAV_ITEMS: { segment: string; label: string; icon: LucideIcon }[] = [
   { segment: "", label: "Overzicht", icon: LayoutDashboard },
   { segment: "calculator", label: "Calculator", icon: Eye },
+  // Levering B v2: de modulaire Onderdelen-bouwer (nieuwe tools) resp. de
+  // bestaande generieke calculator-bouwer (oudere versie-1-tools) — zie
+  // app/dashboard/tools/[toolId]/bouwer/page.tsx voor de branch. Altijd
+  // zichtbaar, ook vóórdat een tool de engine gebruikt.
+  { segment: "bouwer", label: "Bouwer", icon: Wand2 },
   { segment: "producten", label: "Producten", icon: Package },
   { segment: "prijzen", label: "Prijzen", icon: Euro },
   { segment: "uiterlijk", label: "Uiterlijk", icon: Palette },

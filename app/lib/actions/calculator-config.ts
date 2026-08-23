@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { requireDraftCalculatorConfig, requireActiveTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { legeCalculatorConfig, valideerCalculatorConfig, type CalculatorConfigData, type ValidatieMelding } from "@/app/lib/calculator-engine";
+import {
+  legeModulaireCalculatorConfig,
+  valideerCalculatorConfig,
+  type AnyCalculatorConfigData,
+  type ValidatieMelding,
+} from "@/app/lib/calculator-engine";
 import type { Prisma } from "@/app/generated/prisma/client";
 
 // ---------------------------------------------------------------------------
@@ -27,7 +32,7 @@ export type SaveCalculatorConfigResult = { meldingen: ValidatieMelding[] };
 // fouten, zie publishCalculatorConfigAction hieronder).
 export async function saveCalculatorConfigDraftAction(
   toolId: string,
-  config: CalculatorConfigData
+  config: AnyCalculatorConfigData
 ): Promise<SaveCalculatorConfigResult> {
   const { draft } = await requireDraftCalculatorConfig(toolId);
 
@@ -51,7 +56,7 @@ export type PublishCalculatorConfigResult =
 // aangemaakt zodat de vakman direct verder kan bouwen.
 export async function publishCalculatorConfigAction(toolId: string): Promise<PublishCalculatorConfigResult> {
   const { company, tool, draft } = await requireDraftCalculatorConfig(toolId);
-  const config = draft.config as unknown as CalculatorConfigData;
+  const config = draft.config as unknown as AnyCalculatorConfigData;
 
   const meldingen = valideerCalculatorConfig(config);
   if (meldingen.some((m) => m.ernst === "FOUT")) {
@@ -97,13 +102,13 @@ export async function publishCalculatorConfigAction(toolId: string): Promise<Pub
 // Verwerpt onopgeslagen wijzigingen in de DRAFT: zet 'm terug naar een kopie
 // van de huidige live (PUBLISHED) configuratie, of naar leeg als de tool nog
 // nooit iets heeft gepubliceerd.
-export async function discardCalculatorConfigDraftAction(toolId: string): Promise<CalculatorConfigData> {
+export async function discardCalculatorConfigDraftAction(toolId: string): Promise<AnyCalculatorConfigData> {
   const { tool, draft } = await requireDraftCalculatorConfig(toolId);
 
   const gepubliceerd = tool.activeCalculatorConfigId
     ? await prisma.calculatorConfig.findUnique({ where: { id: tool.activeCalculatorConfigId } })
     : null;
-  const teruggezetteConfig = (gepubliceerd ? gepubliceerd.config : legeCalculatorConfig()) as unknown as CalculatorConfigData;
+  const teruggezetteConfig = (gepubliceerd ? gepubliceerd.config : legeModulaireCalculatorConfig()) as unknown as AnyCalculatorConfigData;
 
   await prisma.calculatorConfig.update({
     where: { id: draft.id },

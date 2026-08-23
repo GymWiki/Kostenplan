@@ -8,7 +8,7 @@ import { prisma } from "@/app/lib/prisma";
 import { resolveActiveMembership } from "@/app/lib/active-company";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
 import { resolveCostSettings, type AccountDefaults } from "@/app/lib/tools";
-import { legeCalculatorConfig } from "@/app/lib/calculator-engine";
+import { legeModulaireCalculatorConfig } from "@/app/lib/calculator-engine";
 import type { Prisma } from "@/app/generated/prisma/client";
 
 // Onthoudt welk bedrijf de gebruiker laatst actief had gekozen (zie de
@@ -118,6 +118,23 @@ export const requireActiveTool = cache(async (toolId: string) => {
   return { user, company, tool };
 });
 
+// Levering B v2 — Onderdelenbibliotheek ("Mijn onderdelen", Deel 12 van de
+// opdracht): spiegelt exact hetzelfde IDOR-veilige patroon als
+// requireActiveTool hierboven — `findFirst` met `companyId` uit de
+// server-afgeleide sessie (nooit een client-supplied companyId) in
+// dezelfde `where`, dus een bibliotheekrij van een ander bedrijf matcht
+// simpelweg niet en levert nooit een leak of onderscheidbare 403 op.
+export const requireOwnedOnderdeelBibliotheek = cache(async (id: string) => {
+  const { user, company } = await requireActiveCompany();
+  const item = await prisma.onderdeelBibliotheek.findFirst({ where: { id, companyId: company.id } });
+  if (!item) redirect("/dashboard/tools");
+  return { user, company, item };
+});
+
+export const getOnderdeelBibliotheekVoorCompany = cache(async (companyId: string) => {
+  return prisma.onderdeelBibliotheek.findMany({ where: { companyId }, orderBy: { createdAt: "desc" } });
+});
+
 // Levering B: het DRAFT-exemplaar van de CalculatorConfig van een tool —
 // waar de builder altijd op bewerkt (nooit rechtstreeks op een PUBLISHED-
 // of ARCHIVED-rij, zie CalculatorConfig in schema.prisma). Bestaat er nog
@@ -151,7 +168,12 @@ export const requireDraftCalculatorConfig = cache(async (toolId: string) => {
       toolId,
       version: volgendeVersie,
       status: "DRAFT",
-      config: (gepubliceerd ? gepubliceerd.config : legeCalculatorConfig()) as Prisma.InputJsonValue,
+      // Deel 5 (Levering B v2): een gloednieuwe tool zonder gepubliceerde
+      // versie start voortaan in de modulaire Onderdelen-ervaring — een
+      // tool die al een gepubliceerde (mogelijk versie-1) configuratie
+      // heeft, blijft gewoon op die versie verder bouwen (byte-voor-byte
+      // ongewijzigd gedrag voor bestaande tools).
+      config: (gepubliceerd ? gepubliceerd.config : legeModulaireCalculatorConfig()) as Prisma.InputJsonValue,
     },
   });
   return { user, company, tool, draft };

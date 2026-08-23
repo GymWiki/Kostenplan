@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { heeftBlokkerendeFouten, valideerCalculatorConfig } from "./validate";
-import { legeCalculatorConfig } from "./config";
+import { legeCalculatorConfig, legeModulaireCalculatorConfig } from "./config";
 import type { CalculatorField, CalculatorConfigData, Expression, PriceRule } from "./types";
+import type { ModulaireCalculatorConfigData, OnderdeelConfig } from "./modulair-types";
 
 const getal = (waarde: number): Expression => ({ kind: "GETAL", waarde });
 const variabele = (naam: string): Expression => ({ kind: "VARIABELE", naam });
@@ -97,5 +98,72 @@ describe("valideerCalculatorConfig", () => {
     };
     const meldingen = valideerCalculatorConfig(config({ regels: [regel] }));
     expect(heeftBlokkerendeFouten(meldingen)).toBe(true);
+  });
+});
+
+describe("valideerCalculatorConfig — versie 2 (modulair Onderdelensysteem)", () => {
+  function onderdeel(overrides: Partial<OnderdeelConfig>): OnderdeelConfig {
+    return { id: "o1", naam: "Onderdeel", actief: true, order: 0, velden: [], afgeleideVariabelen: [], regels: [], ...overrides };
+  }
+  function modulaireConfig(onderdelen: OnderdeelConfig[]): ModulaireCalculatorConfigData {
+    return { ...legeModulaireCalculatorConfig(), onderdelen };
+  }
+
+  it("een lege modulaire config (geen onderdelen) levert een fout op", () => {
+    const meldingen = valideerCalculatorConfig(legeModulaireCalculatorConfig());
+    expect(heeftBlokkerendeFouten(meldingen)).toBe(true);
+    expect(meldingen.some((m) => m.boodschap.includes("actief onderdeel"))).toBe(true);
+  });
+
+  it("een actief onderdeel zonder vragen levert een fout op, genoemd naar het onderdeel", () => {
+    const meldingen = valideerCalculatorConfig(modulaireConfig([onderdeel({ naam: "Schutting" })]));
+    expect(heeftBlokkerendeFouten(meldingen)).toBe(true);
+    expect(meldingen.some((m) => m.boodschap.startsWith("Onderdeel \"Schutting\""))).toBe(true);
+  });
+
+  it("een inactief onderdeel telt niet mee, ook al is het zelf ongeldig", () => {
+    const geldig = onderdeel({
+      id: "geldig",
+      naam: "Geldig",
+      velden: [{ id: "n", label: "N", soort: "NUMMER", verplicht: true }],
+      regels: [{ id: "r", label: "Vast", categorie: "OVERIG", type: "VAST", bedrag: { kind: "GETAL", waarde: 10 }, actief: true, toonInUitsplitsing: true, intern: false }],
+    });
+    const inactiefLeeg = onderdeel({ id: "inactief", naam: "Leeg maar uit", actief: false });
+    const meldingen = valideerCalculatorConfig(modulaireConfig([geldig, inactiefLeeg]));
+    expect(heeftBlokkerendeFouten(meldingen)).toBe(false);
+  });
+
+  it("een geldig onderdeel (vraag + prijsregel) levert geen FOUT-meldingen op", () => {
+    const geldig = onderdeel({
+      velden: [{ id: "lengte", label: "Lengte", soort: "NUMMER", verplicht: true }],
+      regels: [
+        {
+          id: "materiaal",
+          label: "Materiaal",
+          categorie: "MATERIAAL",
+          type: "PER_EENHEID",
+          hoeveelheid: { kind: "VARIABELE", naam: "lengte" },
+          prijsPerEenheid: { kind: "GETAL", waarde: 45 },
+          eenheid: "meter",
+          actief: true,
+          toonInUitsplitsing: true,
+          intern: false,
+        },
+      ],
+    });
+    const meldingen = valideerCalculatorConfig(modulaireConfig([geldig]));
+    expect(heeftBlokkerendeFouten(meldingen)).toBe(false);
+  });
+
+  it("zichtbaarAls/verplichtAls die naar een niet-bestaande variabele verwijzen leveren een fout op", () => {
+    const veld: CalculatorField = {
+      id: "extra",
+      label: "Extra",
+      soort: "NUMMER",
+      verplicht: false,
+      zichtbaarAls: { kind: "GELIJK_AAN", links: variabele("onbekend"), rechts: { kind: "BOOLEAN", waarde: true } },
+    };
+    const meldingen = valideerCalculatorConfig(modulaireConfig([onderdeel({ velden: [veld] })]));
+    expect(meldingen.some((m) => m.boodschap.includes("onbekend"))).toBe(true);
   });
 });

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Pencil, Trash2, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
-import type { CalculatorField, KeuzeOptie } from "@/app/lib/calculator-engine";
+import type { CalculatorField, DerivedVariable, Expression, KeuzeOptie } from "@/app/lib/calculator-engine";
 import { upsertProductKeuzeOptiesAction, type ProductKeuzeOptieInvoer } from "@/app/lib/actions/calculator-config";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -11,6 +11,8 @@ import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import { DecimalInput, Input, Label, Select } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { genereerId } from "./id-utils";
+import { beschikbareVariabelen } from "./variabelen-utils";
+import { VoorwaardeEditor, ontleedVoorwaarde, bouwVoorwaarde, legeConditie, type VoorwaardeGroep } from "./voorwaarde-editor";
 import type { MateriaalOptie } from "@/app/portaal/[slug]/engine-fields";
 
 const SOORT_LABELS: Record<CalculatorField["soort"], string> = {
@@ -23,6 +25,7 @@ const SOORT_LABELS: Record<CalculatorField["soort"], string> = {
   CHECKBOX: "Aanvinkvakje",
   DROPDOWN: "Keuzelijst",
   RADIO: "Keuzerondjes",
+  MEERKEUZE: "Meerdere keuzes",
   AFMETINGEN: "Afmetingen (lengte × breedte)",
   PRODUCT_KEUZE: "Materiaal-/productkeuze",
 };
@@ -37,6 +40,7 @@ const SOORT_UITLEG: Record<CalculatorField["soort"], string> = {
   CHECKBOX: "Een vinkje, bijv. voor een optionele extra.",
   DROPDOWN: "De klant kiest één optie uit een lijst.",
   RADIO: "De klant kiest één optie uit zichtbare rondjes.",
+  MEERKEUZE: "De klant kan meerdere opties tegelijk aanvinken.",
   AFMETINGEN: "Lengte × breedte (en optioneel hoogte) — oppervlakte wordt automatisch berekend.",
   PRODUCT_KEUZE: "De klant kiest een materiaal of product, elk met een eigen prijs.",
 };
@@ -47,12 +51,14 @@ export function VeldenTab({
   onChange,
   materiaalOpties,
   onMateriaalOptiesChange,
+  afgeleideVariabelen = [],
 }: {
   toolId: string;
   velden: CalculatorField[];
   onChange: (velden: CalculatorField[]) => void;
   materiaalOpties: Record<string, MateriaalOptie[]>;
   onMateriaalOptiesChange: (materiaalOpties: Record<string, MateriaalOptie[]>) => void;
+  afgeleideVariabelen?: DerivedVariable[];
 }) {
   const [bewerkVeld, setBewerkVeld] = useState<CalculatorField | "nieuw" | null>(null);
   const [verwijderVeld, setVerwijderVeld] = useState<CalculatorField | null>(null);
@@ -130,6 +136,8 @@ export function VeldenTab({
           toolId={toolId}
           veld={bewerkVeld === "nieuw" ? null : bewerkVeld}
           bestaandeIds={new Set(velden.map((v) => v.id).filter((id) => bewerkVeld === "nieuw" || id !== (bewerkVeld as CalculatorField).id))}
+          overigeVelden={velden.filter((v) => bewerkVeld === "nieuw" || v.id !== (bewerkVeld as CalculatorField).id)}
+          afgeleideVariabelen={afgeleideVariabelen}
           materiaalOpties={materiaalOpties}
           onMateriaalOptiesChange={onMateriaalOptiesChange}
           onClose={() => setBewerkVeld(null)}
@@ -152,6 +160,8 @@ function VeldFormModal({
   toolId,
   veld,
   bestaandeIds,
+  overigeVelden,
+  afgeleideVariabelen,
   materiaalOpties,
   onMateriaalOptiesChange,
   onClose,
@@ -160,6 +170,8 @@ function VeldFormModal({
   toolId: string;
   veld: CalculatorField | null;
   bestaandeIds: Set<string>;
+  overigeVelden: CalculatorField[];
+  afgeleideVariabelen: DerivedVariable[];
   materiaalOpties: Record<string, MateriaalOptie[]>;
   onMateriaalOptiesChange: (materiaalOpties: Record<string, MateriaalOptie[]>) => void;
   onClose: () => void;
@@ -169,6 +181,17 @@ function VeldFormModal({
   const [label, setLabel] = useState(veld?.label ?? "");
   const [helpTekst, setHelpTekst] = useState(veld?.helpTekst ?? "");
   const [verplicht, setVerplicht] = useState(veld?.verplicht ?? true);
+  const conditieVariabelen = beschikbareVariabelen(overigeVelden, afgeleideVariabelen);
+  const bestaandeZichtbaarAls = ontleedVoorwaarde(veld?.zichtbaarAls);
+  const [heeftZichtbaarAls, setHeeftZichtbaarAls] = useState(bestaandeZichtbaarAls != null);
+  const [zichtbaarAlsGroep, setZichtbaarAlsGroep] = useState<VoorwaardeGroep>(
+    bestaandeZichtbaarAls ?? { combinator: "EN", condities: [legeConditie(conditieVariabelen)] }
+  );
+  const bestaandeVerplichtAls = ontleedVoorwaarde(veld?.verplichtAls);
+  const [heeftVerplichtAls, setHeeftVerplichtAls] = useState(bestaandeVerplichtAls != null);
+  const [verplichtAlsGroep, setVerplichtAlsGroep] = useState<VoorwaardeGroep>(
+    bestaandeVerplichtAls ?? { combinator: "EN", condities: [legeConditie(conditieVariabelen)] }
+  );
   const [eenheid, setEenheid] = useState("eenheid" in (veld ?? {}) ? ((veld as { eenheid?: string })?.eenheid ?? "") : "");
   const [min, setMin] = useState<string>("min" in (veld ?? {}) ? String((veld as { min?: number })?.min ?? "") : "");
   const [max, setMax] = useState<string>("max" in (veld ?? {}) ? String((veld as { max?: number })?.max ?? "") : "");
@@ -191,7 +214,9 @@ function VeldFormModal({
     setOpslaanFout(null);
 
     const id = veld?.id ?? genereerId(label, bestaandeIds);
-    const basis = { id, label: label.trim(), helpTekst: helpTekst.trim() || undefined, verplicht };
+    const zichtbaarAls: Expression | undefined = heeftZichtbaarAls ? bouwVoorwaarde(zichtbaarAlsGroep, conditieVariabelen) : undefined;
+    const verplichtAls: Expression | undefined = heeftVerplichtAls ? bouwVoorwaarde(verplichtAlsGroep, conditieVariabelen) : undefined;
+    const basis = { id, label: label.trim(), helpTekst: helpTekst.trim() || undefined, verplicht, zichtbaarAls, verplichtAls };
 
     if (soort === "PRODUCT_KEUZE") {
       const geldigeOpties = productOpties.filter((o) => o.naam.trim().length > 0);
@@ -257,13 +282,21 @@ function VeldFormModal({
         }
         onSave({ ...basis, soort, opties });
         return;
+      case "MEERKEUZE":
+        if (opties.length === 0) {
+          setOpslaanFout("Voeg minimaal één keuze-optie toe.");
+          setBezig(false);
+          return;
+        }
+        onSave({ ...basis, soort: "MEERKEUZE", opties });
+        return;
       case "AFMETINGEN":
         onSave({ ...basis, soort: "AFMETINGEN", eenheid: eenheid.trim() || "meter", metHoogte });
         return;
     }
   }
 
-  const isKeuzeSoort = soort === "DROPDOWN" || soort === "RADIO";
+  const isKeuzeSoort = soort === "DROPDOWN" || soort === "RADIO" || soort === "MEERKEUZE";
 
   return (
     <Overlay open onClose={onClose} ariaLabel="Vraag bewerken" className="flex items-center justify-center p-4">
@@ -339,6 +372,26 @@ function VeldFormModal({
           <span className="text-sm font-medium text-foreground">Verplicht</span>
           <Switch checked={verplicht} onChange={(e) => setVerplicht(e.target.checked)} />
         </label>
+
+        {conditieVariabelen.length > 0 && (
+          <>
+            <div className="flex flex-col gap-2 border-t border-border pt-4">
+              <label className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-foreground">Alleen tonen onder een voorwaarde</span>
+                <Switch checked={heeftZichtbaarAls} onChange={(e) => setHeeftZichtbaarAls(e.target.checked)} />
+              </label>
+              {heeftZichtbaarAls && <VoorwaardeEditor groep={zichtbaarAlsGroep} onChange={setZichtbaarAlsGroep} variabelen={conditieVariabelen} />}
+            </div>
+
+            <div className="flex flex-col gap-2 border-t border-border pt-4">
+              <label className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-foreground">Ook verplicht onder een voorwaarde</span>
+                <Switch checked={heeftVerplichtAls} onChange={(e) => setHeeftVerplichtAls(e.target.checked)} />
+              </label>
+              {heeftVerplichtAls && <VoorwaardeEditor groep={verplichtAlsGroep} onChange={setVerplichtAlsGroep} variabelen={conditieVariabelen} />}
+            </div>
+          </>
+        )}
 
         <div className="flex justify-end gap-2 border-t border-border pt-4">
           <Button type="button" variant="outline" onClick={onClose}>

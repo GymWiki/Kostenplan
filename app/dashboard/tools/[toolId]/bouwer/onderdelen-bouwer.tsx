@@ -1,12 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { AlertCircle, AlertTriangle, CheckCircle2, Rocket } from "lucide-react";
-import {
-  publicCalculatorConfig,
-  valideerCalculatorConfig,
-  type CalculatorConfigData,
-} from "@/app/lib/calculator-engine";
+import { valideerCalculatorConfig, type ModulaireCalculatorConfigData } from "@/app/lib/calculator-engine";
 import {
   saveCalculatorConfigDraftAction,
   publishCalculatorConfigAction,
@@ -18,22 +14,23 @@ import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import { cn } from "@/app/lib/cn";
-import { VeldenTab } from "./velden-tab";
-import { RegelsTab } from "./regels-tab";
+import { OnderdelenTab } from "./onderdelen-tab";
 import { ResultaatTab } from "./resultaat-tab";
-import { StappenTab } from "./stappen-tab";
-import type { Branding, SubscriptionTier } from "@/app/generated/prisma/client";
+import type { Branding, SubscriptionTier, OnderdeelBibliotheek } from "@/app/generated/prisma/client";
 
-type Tab = "vragen" | "berekening" | "resultaat" | "stappen";
+type Tab = "onderdelen" | "resultaat";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "vragen", label: "Vragen" },
-  { id: "berekening", label: "Berekening" },
+  { id: "onderdelen", label: "Onderdelen" },
   { id: "resultaat", label: "Resultaat" },
-  { id: "stappen", label: "Stappen" },
 ];
 
-export function CalculatorBouwer({
+// Levering B v2 — de modulaire tegenhanger van CalculatorBouwer (blijft
+// zelf volledig ongewijzigd voor bestaande versie-1-tools). Zelfde
+// chrome/patroon: autosave (debounce, geen aparte "Opslaan"-knop),
+// live-validatie, publiceren blokkeert op FOUT-meldingen — alleen de
+// hoofdinhoud is de Onderdelen-lijst i.p.v. Vragen/Berekening/Stappen.
+export function OnderdelenBouwer({
   toolId,
   toolNaam,
   heeftLiveVersie,
@@ -44,21 +41,24 @@ export function CalculatorBouwer({
   branding,
   btwPercentage,
   materiaalOpties: initieleMateriaalOpties,
+  initieleOnderdeelBibliotheek,
 }: {
   toolId: string;
   toolNaam: string;
   heeftLiveVersie: boolean;
-  initieleConfig: CalculatorConfigData;
+  initieleConfig: ModulaireCalculatorConfigData;
   bedrijfsnaam: string;
   email: string;
   subscriptionTier: SubscriptionTier;
   branding: Branding | null;
   btwPercentage: number;
   materiaalOpties: Record<string, MateriaalOptie[]>;
+  initieleOnderdeelBibliotheek: OnderdeelBibliotheek[];
 }) {
   const [config, setConfig] = useState(initieleConfig);
   const [materiaalOpties, setMateriaalOpties] = useState(initieleMateriaalOpties);
-  const [tab, setTab] = useState<Tab>("vragen");
+  const [onderdeelBibliotheek, setOnderdeelBibliotheek] = useState(initieleOnderdeelBibliotheek);
+  const [tab, setTab] = useState<Tab>("onderdelen");
   const [opslaanStatus, setOpslaanStatus] = useState<"idle" | "bezig" | "opgeslagen">("opgeslagen");
   const [gepubliceerd, setGepubliceerd] = useState(heeftLiveVersie);
   const [publiceerFout, setPubliceerFout] = useState<string | null>(null);
@@ -66,13 +66,10 @@ export function CalculatorBouwer({
   const [uitschakelenOpen, setUitschakelenOpen] = useState(false);
   const [uitschakelen, startUitschakelenTransition] = useTransition();
 
-  const meldingen = useMemo(() => valideerCalculatorConfig(config), [config]);
+  const meldingen = valideerCalculatorConfig(config);
   const fouten = meldingen.filter((m) => m.ernst === "FOUT");
   const waarschuwingen = meldingen.filter((m) => m.ernst === "WAARSCHUWING");
 
-  // Autosave (zelfde aanpak als het productbewerkscherm: bij elke wijziging,
-  // licht gedebounced) — de builder heeft bewust geen aparte "Opslaan"-knop,
-  // alleen "Publiceren" is een expliciete actie (Deel 20).
   const eersteRender = useRef(true);
   useEffect(() => {
     if (eersteRender.current) {
@@ -107,8 +104,6 @@ export function CalculatorBouwer({
       setUitschakelenOpen(false);
     });
   }
-
-  const previewConfig = useMemo(() => publicCalculatorConfig(config), [config]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -148,7 +143,7 @@ export function CalculatorBouwer({
           ))}
         </div>
       )}
-      {fouten.length === 0 && waarschuwingen.length === 0 && config.velden.length > 0 && config.regels.length > 0 && (
+      {fouten.length === 0 && waarschuwingen.length === 0 && config.onderdelen.length > 0 && (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
           Geen problemen gevonden.
@@ -173,22 +168,21 @@ export function CalculatorBouwer({
             ))}
           </nav>
 
-          {tab === "vragen" && (
-            <VeldenTab
+          {tab === "onderdelen" && (
+            <OnderdelenTab
               toolId={toolId}
-              velden={config.velden}
-              onChange={(velden) => setConfig((c) => ({ ...c, velden }))}
+              onderdelen={config.onderdelen}
+              onChange={(onderdelen) => setConfig((c) => ({ ...c, onderdelen }))}
               materiaalOpties={materiaalOpties}
               onMateriaalOptiesChange={setMateriaalOpties}
-              afgeleideVariabelen={config.afgeleideVariabelen}
-            />
-          )}
-          {tab === "berekening" && (
-            <RegelsTab
-              velden={config.velden}
-              afgeleideVariabelen={config.afgeleideVariabelen}
-              regels={config.regels}
-              onChange={(regels) => setConfig((c) => ({ ...c, regels }))}
+              resultaatInstellingen={config.resultaatInstellingen}
+              btwPercentage={btwPercentage}
+              bedrijfsnaam={bedrijfsnaam}
+              email={email}
+              subscriptionTier={subscriptionTier}
+              branding={branding}
+              onderdeelBibliotheek={onderdeelBibliotheek}
+              onOnderdeelBibliotheekChange={setOnderdeelBibliotheek}
             />
           )}
           {tab === "resultaat" && (
@@ -197,14 +191,11 @@ export function CalculatorBouwer({
               onChange={(resultaatInstellingen) => setConfig((c) => ({ ...c, resultaatInstellingen }))}
             />
           )}
-          {tab === "stappen" && (
-            <StappenTab velden={config.velden} stappen={config.stappen} onChange={(stappen) => setConfig((c) => ({ ...c, stappen }))} />
-          )}
         </div>
 
         <div className="lg:sticky lg:top-6 lg:self-start">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-medium text-muted-foreground">Live voorbeeld</p>
+            <p className="text-sm font-medium text-muted-foreground">Live voorbeeld — Testmodus</p>
           </div>
           <div className="h-[70vh] overflow-y-auto rounded-xl border border-border">
             <EngineCalculator
@@ -213,7 +204,7 @@ export function CalculatorBouwer({
               email={email}
               subscriptionTier={subscriptionTier}
               branding={branding}
-              config={previewConfig}
+              config={config}
               btwPercentage={btwPercentage}
               materiaalOpties={materiaalOpties}
               previewModus
@@ -227,7 +218,7 @@ export function CalculatorBouwer({
           <p className="text-sm font-medium text-foreground">Terug naar de oude rekentool-editor</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Schakelt de publieke rekentool terug naar de vorige, sjabloon-gedreven editor (Producten/Prijzen/enz.). Je
-            bouwer-configuratie blijft bewaard en kan je later gewoon weer publiceren.
+            Onderdelen-configuratie blijft bewaard en kan je later gewoon weer publiceren.
           </p>
           <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => setUitschakelenOpen(true)}>
             Terugschakelen
@@ -241,7 +232,7 @@ export function CalculatorBouwer({
         onConfirm={handleSchakelUit}
         pending={uitschakelen}
         title="Terugschakelen naar de oude editor?"
-        description="De publieke rekentool toont hierna weer de sjabloon-gedreven calculator (Producten/Prijzen). Je bouwer-configuratie blijft bewaard."
+        description="De publieke rekentool toont hierna weer de sjabloon-gedreven calculator (Producten/Prijzen). Je Onderdelen-configuratie blijft bewaard."
         confirmLabel="Terugschakelen"
         variant="primary"
       />

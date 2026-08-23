@@ -1,5 +1,6 @@
-import type { CalculatorConfigData, CalculatorField, PriceRule } from "./types";
+import type { CalculatorField, DerivedVariable, PriceRule } from "./types";
 import { RUNNING_SUBTOTAL_VARIABLE } from "./types";
+import type { AnyCalculatorConfigData } from "./modulair-types";
 import { variabelenInExpressie } from "./expression";
 import { afmetingenSubvariabelen, productKeuzePrijsVariabele } from "./fields";
 
@@ -72,18 +73,23 @@ function expressiesVanRegel(regel: PriceRule): { expr: import("./types").Express
   return lijst;
 }
 
-export function valideerCalculatorConfig(config: CalculatorConfigData): ValidatieMelding[] {
+// De kernvalidatie voor één "slice" ({velden, afgeleideVariabelen, regels})
+// — dezelfde logica die vóór Levering B v2 rechtstreeks op een hele
+// CalculatorConfigData draaide, nu geëxtraheerd zodat 'm zowel voor de
+// bestaande platte calculator (versie 1, één slice) als per Onderdeel
+// (versie 2, één slice per Onderdeel) hergebruikt kan worden.
+function valideerOnderdeelSlice(velden: CalculatorField[], afgeleideVariabelen: DerivedVariable[], regels: PriceRule[]): ValidatieMelding[] {
   const meldingen: ValidatieMelding[] = [];
 
-  const veldVariabelen = new Set(config.velden.flatMap(variabelenVoorVeld));
-  const afgeleideNamen = new Set(config.afgeleideVariabelen.map((v) => v.id));
+  const veldVariabelen = new Set(velden.flatMap(variabelenVoorVeld));
+  const afgeleideNamen = new Set(afgeleideVariabelen.map((v) => v.id));
   const alleVariabelen = new Set([...veldVariabelen, ...afgeleideNamen, RUNNING_SUBTOTAL_VARIABLE]);
   const gebruikteVariabelen = new Set<string>();
 
   // Afgeleide variabelen mogen alleen naar veldvariabelen verwijzen (nooit
   // naar $subtotaal, dat bestaat pas tijdens het doorrekenen van de
   // prijsregels — ver ná het invullen van de velden).
-  for (const variabele of config.afgeleideVariabelen) {
+  for (const variabele of afgeleideVariabelen) {
     const gebruikt = variabelenInExpressie(variabele.expression);
     for (const naam of gebruikt) {
       gebruikteVariabelen.add(naam);
@@ -96,14 +102,37 @@ export function valideerCalculatorConfig(config: CalculatorConfigData): Validati
     }
   }
 
-  for (const regel of config.regels) {
+  // Conditionele velduitdrukkingen (zichtbaarAls/verplichtAls) mogen alleen
+  // naar reeds bestaande veld-/afgeleide variabelen verwijzen — zelfde check
+  // als voor prijsregels hieronder, nu ook voor velden zelf (was voorheen
+  // een gat: deze expressies werden runtime wél geëvalueerd maar nooit
+  // gevalideerd).
+  for (const veld of velden) {
+    for (const expr of [veld.zichtbaarAls, veld.verplichtAls]) {
+      if (!expr) continue;
+      const gebruikt = variabelenInExpressie(expr);
+      for (const naam of gebruikt) {
+        gebruikteVariabelen.add(naam);
+        if (!alleVariabelen.has(naam)) {
+          const label = veldLabelVoorVariabele(velden, naam) ?? naam;
+          meldingen.push({
+            ernst: "FOUT",
+            veldId: veld.id,
+            boodschap: `De voorwaarde bij "${veld.label}" gebruikt "${label}", maar die vraag bestaat niet (meer).`,
+          });
+        }
+      }
+    }
+  }
+
+  for (const regel of regels) {
     for (const { expr } of expressiesVanRegel(regel)) {
       if (!expr) continue;
       const gebruikt = variabelenInExpressie(expr);
       for (const naam of gebruikt) {
         gebruikteVariabelen.add(naam);
         if (!alleVariabelen.has(naam)) {
-          const label = veldLabelVoorVariabele(config.velden, naam) ?? naam;
+          const label = veldLabelVoorVariabele(velden, naam) ?? naam;
           meldingen.push({
             ernst: "FOUT",
             regelId: regel.id,
@@ -139,7 +168,7 @@ export function valideerCalculatorConfig(config: CalculatorConfigData): Validati
   // "Deze vraag heeft geen invloed op de berekening" — een veld waarvan
   // geen enkele variabele ergens in een afgeleide variabele of prijsregel
   // voorkomt.
-  for (const veld of config.velden) {
+  for (const veld of velden) {
     const heeftInvloed = variabelenVoorVeld(veld).some((naam) => gebruikteVariabelen.has(naam));
     if (!heeftInvloed) {
       meldingen.push({
@@ -150,11 +179,41 @@ export function valideerCalculatorConfig(config: CalculatorConfigData): Validati
     }
   }
 
-  if (config.regels.filter((r) => r.actief).length === 0) {
+  if (regels.filter((r) => r.actief).length === 0) {
     meldingen.push({ ernst: "FOUT", boodschap: "Er is nog geen enkele prijsregel ingesteld." });
   }
 
   return meldingen;
+}
+
+export function valideerCalculatorConfig(config: AnyCalculatorConfigData): ValidatieMelding[] {
+  if (config.versie === 2) {
+    const meldingen: ValidatieMelding[] = [];
+    const actieveOnderdelen = config.onderdelen.filter((o) => o.actief);
+
+    if (actieveOnderdelen.length === 0) {
+      meldingen.push({ ernst: "FOUT", boodschap: "Deze tool heeft nog geen enkel actief onderdeel." });
+    }
+
+    for (const onderdeel of config.onderdelen) {
+      if (!onderdeel.actief) continue;
+      if (onderdeel.velden.length === 0) {
+        meldingen.push({
+          ernst: "FOUT",
+          boodschap: `Onderdeel "${onderdeel.naam}" heeft nog geen enkele vraag.`,
+        });
+        continue;
+      }
+      const sliceMeldingen = valideerOnderdeelSlice(onderdeel.velden, onderdeel.afgeleideVariabelen, onderdeel.regels);
+      for (const melding of sliceMeldingen) {
+        meldingen.push({ ...melding, boodschap: `${onderdeel.naam}: ${melding.boodschap}` });
+      }
+    }
+
+    return meldingen;
+  }
+
+  return valideerOnderdeelSlice(config.velden, config.afgeleideVariabelen, config.regels);
 }
 
 export function heeftBlokkerendeFouten(meldingen: ValidatieMelding[]): boolean {

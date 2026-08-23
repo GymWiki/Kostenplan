@@ -13,6 +13,10 @@ import {
 import { generateUniqueToolSlug } from "@/app/lib/slug";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
 import { calculatorTemplateById } from "@/app/lib/calculator-engine/templates";
+import { modulaireCalculatorTemplateById } from "@/app/lib/calculator-engine/templates-modulair";
+import { onderdeelTemplateById } from "@/app/lib/calculator-engine/templates-onderdeel";
+import { legeModulaireCalculatorConfig, type ModulaireCalculatorConfigData, type OnderdeelConfig } from "@/app/lib/calculator-engine";
+import { genereerId } from "@/app/dashboard/tools/[toolId]/bouwer/id-utils";
 import type { Prisma, ToolStatus } from "@/app/generated/prisma/client";
 
 export type ToolFormState = { error?: string; fieldErrors?: Record<string, string> } | null;
@@ -137,6 +141,104 @@ export async function createToolFromTemplateAction(
   config.velden = config.velden.map((veld) =>
     veld.soort === "PRODUCT_KEUZE" ? { ...veld, materialCategoryId: materialCategoryIdPerVeld.get(veld.id) ?? veld.materialCategoryId } : veld
   );
+
+  await prisma.calculatorConfig.create({
+    data: { toolId: tool.id, version: 1, status: "DRAFT", config: config as unknown as Prisma.InputJsonValue },
+  });
+
+  revalidatePath("/dashboard/tools");
+  redirect(`/dashboard/tools/${tool.id}/bouwer`);
+}
+
+// Levering B v2 (Deel 7 van de opdracht) — de modulaire tegenhanger van
+// createToolFromTemplateAction hierboven: bouwt een Tool met meerdere
+// Onderdelen tegelijk uit een ModulaireCalculatorTemplate (bijv. "Complete
+// tuin"). Zelfde copy-on-use-garantie: elk Onderdeel krijgt zijn eigen
+// verborgen carrier-Product(en) per PRODUCT_KEUZE-veld, nooit gedeeld
+// tussen Onderdelen of tussen Tools (zie templates-onderdeel/templates-
+// onderdeel.test.ts + templates-modulair.test.ts voor de mechanische
+// garantie dat elk sjabloon geldig is vóór het ooit hier wordt gebruikt).
+export async function createModulaireToolFromTemplateAction(
+  templateId: string,
+  _prevState: TemplateToolFormState,
+  formData: FormData
+): Promise<TemplateToolFormState> {
+  const { company } = await requireActiveCompany();
+
+  const template = modulaireCalculatorTemplateById(templateId);
+  if (!template) {
+    return { error: "Onbekende template." };
+  }
+
+  const parsed = parseToolForm(formData);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Vul een naam in." };
+  }
+
+  if (!(await canCreateTool(company.id, effectiveTier(company)))) {
+    return { error: limietBereiktMelding(effectiveTier(company)) };
+  }
+
+  const slug = await generateUniqueToolSlug(company.id, parsed.data.naam);
+  const count = await prisma.tool.count({ where: { companyId: company.id } });
+
+  const tool = await prisma.tool.create({
+    data: {
+      companyId: company.id,
+      naam: parsed.data.naam,
+      icoon: template.icoon,
+      slug,
+      order: count,
+      costSettings: { create: {} },
+    },
+  });
+
+  const onderdelen: OnderdeelConfig[] = [];
+  const bestaandeOnderdeelIds = new Set<string>();
+  let orderIndex = 0;
+
+  for (const onderdeelTemplateId of template.onderdeelTemplateIds) {
+    const onderdeelTemplate = onderdeelTemplateById(onderdeelTemplateId);
+    if (!onderdeelTemplate) continue;
+
+    const materialCategoryIdPerVeld = new Map<string, string>();
+    for (const keuze of onderdeelTemplate.materiaalKeuzes) {
+      const product = await prisma.product.create({
+        data: { toolId: tool.id, naam: `${onderdeelTemplate.naam} — ${keuze.veldId} (calculator-bouwer)`, actief: false, order: -1 },
+      });
+      const category = await prisma.materialCategory.create({
+        data: { productId: product.id, naam: keuze.veldId, order: 0 },
+      });
+      await prisma.materialOption.createMany({
+        data: keuze.opties.map((optie, i) => ({ materialCategoryId: category.id, naam: optie.naam, prijs: optie.prijs, order: i })),
+      });
+      materialCategoryIdPerVeld.set(keuze.veldId, category.id);
+    }
+
+    const slice = onderdeelTemplate.bouwSlice();
+    const velden = slice.velden.map((veld) =>
+      veld.soort === "PRODUCT_KEUZE" ? { ...veld, materialCategoryId: materialCategoryIdPerVeld.get(veld.id) ?? veld.materialCategoryId } : veld
+    );
+
+    const onderdeelId = genereerId(onderdeelTemplate.naam, bestaandeOnderdeelIds);
+    bestaandeOnderdeelIds.add(onderdeelId);
+    onderdelen.push({
+      id: onderdeelId,
+      naam: onderdeelTemplate.naam,
+      actief: true,
+      order: orderIndex++,
+      velden,
+      afgeleideVariabelen: slice.afgeleideVariabelen,
+      regels: slice.regels,
+    });
+  }
+
+  const config: ModulaireCalculatorConfigData = {
+    versie: 2,
+    calculatorType: "CONFIGURATOR",
+    onderdelen,
+    resultaatInstellingen: legeModulaireCalculatorConfig().resultaatInstellingen,
+  };
 
   await prisma.calculatorConfig.create({
     data: { toolId: tool.id, version: 1, status: "DRAFT", config: config as unknown as Prisma.InputJsonValue },

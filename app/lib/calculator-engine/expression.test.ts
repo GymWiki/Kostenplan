@@ -82,6 +82,31 @@ describe("evaluateExpression — vergelijkingen en logica", () => {
   });
 });
 
+describe("evaluateExpression — BEVAT (Levering B v2, MEERKEUZE-velden)", () => {
+  it("BEVAT is waar als de waarde in de lijst-variabele zit", () => {
+    const expr: Expression = {
+      kind: "BEVAT",
+      lijst: variabele("extras"),
+      waarde: { kind: "TEKST", waarde: "hor" },
+    };
+    expect(evaluateAsBoolean(expr, { extras: ["hor", "verlichting"] })).toBe(true);
+    expect(evaluateAsBoolean(expr, { extras: ["verlichting"] })).toBe(false);
+    expect(evaluateAsBoolean(expr, { extras: [] })).toBe(false);
+    expect(evaluateAsBoolean(expr, {})).toBe(false);
+  });
+
+  it("een scalaire string-variabele telt als lijst met één element", () => {
+    const expr: Expression = { kind: "BEVAT", lijst: variabele("optie"), waarde: { kind: "TEKST", waarde: "hor" } };
+    expect(evaluateAsBoolean(expr, { optie: "hor" })).toBe(true);
+    expect(evaluateAsBoolean(expr, { optie: "verlichting" })).toBe(false);
+  });
+
+  it("variabelenInExpressie vindt beide operanden van BEVAT", () => {
+    const expr: Expression = { kind: "BEVAT", lijst: variabele("extras"), waarde: variabele("gezocht") };
+    expect([...variabelenInExpressie(expr)].sort()).toEqual(["extras", "gezocht"]);
+  });
+});
+
 describe("variabelenInExpressie", () => {
   it("vindt alle variabelenamen in een geneste expressie", () => {
     const expr: Expression = {

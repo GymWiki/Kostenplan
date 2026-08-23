@@ -1,5 +1,5 @@
 import type { CalculatorField, DerivedVariable, VariableType } from "./types";
-import { evaluateExpression, type ExpressionScope } from "./expression";
+import { evaluateAsBoolean, evaluateExpression, type ExpressionScope } from "./expression";
 
 // ---------------------------------------------------------------------------
 // De generieke input-engine (Deel 10-13 van de opdracht). Twee dingen staan
@@ -24,6 +24,8 @@ export function veldVariabeleType(veld: CalculatorField): VariableType {
     case "RADIO":
     case "PRODUCT_KEUZE":
       return "OPTION";
+    case "MEERKEUZE":
+      return "OPTIONS";
     case "TEKST":
       return "TEXT";
     case "AFMETINGEN":
@@ -109,6 +111,13 @@ export function bouwScope(
         scope[productKeuzePrijsVariabele(veld.id)] = materiaalPrijzen[optieId] ?? 0;
         break;
       }
+      case "MEERKEUZE": {
+        const geldigeWaarden = new Set(veld.opties.map((optie) => optie.waarde));
+        scope[veld.id] = Array.isArray(ruw)
+          ? ruw.filter((w): w is string => typeof w === "string" && geldigeWaarden.has(w))
+          : (veld.standaardWaarden ?? []);
+        break;
+      }
     }
   }
 
@@ -143,4 +152,48 @@ export function parseGetal(ruw: unknown, standaard = 0): number {
   if (genormaliseerd === "") return standaard;
   const getal = Number(genormaliseerd);
   return Number.isFinite(getal) ? getal : standaard;
+}
+
+// Is dit veld ingevuld genoeg om verder te mogen (Deel 8 modulair:
+// verplaatst hierheen — was voorheen een private helper in
+// engine-calculator.tsx — zodat zowel de publieke renderer als de
+// server-veilige modulair.ts 'm kunnen gebruiken). `verplicht` is de
+// statische vlag; `verplichtAls` (indien aanwezig) maakt het veld ook
+// verplicht wanneer die expressie in de huidige `scope` waar is — zie
+// FieldBasis.verplichtAls in types.ts.
+export function veldIsIngevuld(veld: CalculatorField, waarde: unknown, scope: ExpressionScope): boolean {
+  const isVerplicht = veld.verplicht || (veld.verplichtAls ? evaluateAsBoolean(veld.verplichtAls, scope) : false);
+  if (!isVerplicht) return true;
+  switch (veld.soort) {
+    case "NUMMER":
+    case "AANTAL":
+    case "OPPERVLAKTE":
+    case "SLIDER":
+      return waarde !== undefined && waarde !== "" && waarde !== null;
+    case "TEKST":
+      return typeof waarde === "string" && waarde.trim().length > 0;
+    case "JA_NEE":
+    case "CHECKBOX":
+      return true; // een boolean heeft altijd een geldige waarde (default false)
+    case "DROPDOWN":
+    case "RADIO":
+    case "PRODUCT_KEUZE":
+      return typeof waarde === "string" && waarde.length > 0;
+    case "MEERKEUZE":
+      return Array.isArray(waarde) && waarde.length > 0;
+    case "AFMETINGEN": {
+      const invoer = (typeof waarde === "object" && waarde !== null ? waarde : {}) as Record<string, unknown>;
+      const heeftLengte = invoer.lengte !== undefined && invoer.lengte !== "";
+      const heeftBreedte = invoer.breedte !== undefined && invoer.breedte !== "";
+      return heeftLengte && heeftBreedte;
+    }
+  }
+}
+
+// Is dit veld zichtbaar in de huidige scope? (Deel 6: verplaatst hierheen
+// om dezelfde reden als veldIsIngevuld hierboven — was een private helper
+// in engine-calculator.tsx.) Ontbreekt `zichtbaarAls` = altijd zichtbaar.
+export function veldIsZichtbaar(veld: CalculatorField, scope: ExpressionScope): boolean {
+  if (!veld.zichtbaarAls) return true;
+  return evaluateAsBoolean(veld.zichtbaarAls, scope);
 }

@@ -58,6 +58,7 @@ export async function createLeadAction(
       id: true,
       naam: true,
       companyId: true,
+      activeCalculatorConfigId: true,
       company: { select: { subscriptionTier: true, overrideTier: true } },
     },
   });
@@ -77,6 +78,14 @@ export async function createLeadAction(
       companyId: tool.companyId,
       toolId: tool.id,
       toolNaamSnapshot: tool.naam,
+      // Pint vast welke CalculatorConfig-versie (Levering B, v1 óf v2) live
+      // stond toen deze aanvraag binnenkwam — server-side afgeleid van de
+      // net opgehaalde `tool`-rij, nooit van client-invoer. Samen met het
+      // bevroren `snapshot` hieronder is dit wat garandeert dat een offerte
+      // nooit verandert als de vakman zijn rekentool later aanpast (Deel 12
+      // van de opdracht) — zie CalculatorConfig.leads in schema.prisma
+      // (ON DELETE SET NULL, nooit Cascade: een Lead mag nooit verdwijnen).
+      calculatorConfigId: tool.activeCalculatorConfigId,
       naam: parsed.data.naam,
       email: parsed.data.email,
       telefoonnummer: parsed.data.telefoonnummer || null,

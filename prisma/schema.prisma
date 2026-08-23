@@ -319,6 +319,7 @@ model Company {
   leads                Lead[]
   analyticsEvents      AnalyticsEvent[]
   cancellationFeedback CancellationFeedback[]
+  onderdeelBibliotheek OnderdeelBibliotheek[]
 }
 
 // Eén rekentool — de centrale calculator-eenheid (zie Levering A). Een
@@ -429,6 +430,30 @@ model CalculatorConfig {
 
   @@unique([toolId, version])
   @@index([toolId, status])
+}
+
+// "Mijn onderdelen" (Levering B v2, Deel 8/12 van de opdracht) — een
+// company-brede bibliotheek van zelfgemaakte Onderdelen, herbruikbaar in
+// andere Tools van hetzelfde bedrijf. `config` bevat één OnderdeelConfig
+// (zie app/lib/calculator-engine/modulair-types.ts) inclusief `id`, die bij
+// hergebruik wordt overschreven met een verse id — deze rij wordt zelf
+// nooit door de prijsengine geëvalueerd, alleen gelezen als brondata bij
+// copy-on-use (zie app/lib/actions/onderdelen.ts). Nooit gedeeld tussen
+// companies, altijd company-scoped net als Product/Tool.
+model OnderdeelBibliotheek {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  naam         String
+  beschrijving String?
+  icoon        String?
+  config       Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
 }
 
 // Eén rij per meetbare gebeurtenis op een publieke tool (bezoek, calculator

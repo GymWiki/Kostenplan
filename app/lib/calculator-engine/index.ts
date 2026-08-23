@@ -9,5 +9,7 @@ export * from "./fields";
 export * from "./pricing";
 export * from "./result";
 export * from "./calculator-types";
+export * from "./modulair-types";
+export * from "./modulair";
 export * from "./config";
 export * from "./validate";

@@ -6,10 +6,15 @@ import {
   bouwScope,
   pasAfgeleideVariabelenToe,
   evaluatePriceRules,
-  evaluateAsBoolean,
   bouwResultaat,
-  type CalculatorConfigData,
-  type CalculatorField,
+  veldIsIngevuld,
+  veldIsZichtbaar,
+  evalueerOnderdeel,
+  combineerOnderdelen,
+  type AnyCalculatorConfigData,
+  type CalculatorStep,
+  type ExpressionScope,
+  type OnderdeelLineItem,
 } from "@/app/lib/calculator-engine";
 import { CTA_LABELS } from "@/app/lib/tools";
 import { formatCurrency } from "@/app/lib/format";
@@ -36,7 +41,7 @@ type Props = {
   email: string;
   subscriptionTier: SubscriptionTier;
   branding: Branding | null;
-  config: CalculatorConfigData;
+  config: AnyCalculatorConfigData;
   btwPercentage: number;
   materiaalOpties: Record<string, MateriaalOptie[]>;
   // Live voorbeeld in de calculator-bouwer (Deel 19: "dezelfde engine, geen
@@ -47,32 +52,6 @@ type Props = {
   // leads-CRM vervuilen door in zijn eigen bouwer te testen).
   previewModus?: boolean;
 };
-
-function veldIsIngevuld(veld: CalculatorField, waarde: unknown): boolean {
-  if (!veld.verplicht) return true;
-  switch (veld.soort) {
-    case "NUMMER":
-    case "AANTAL":
-    case "OPPERVLAKTE":
-    case "SLIDER":
-      return waarde !== undefined && waarde !== "" && waarde !== null;
-    case "TEKST":
-      return typeof waarde === "string" && waarde.trim().length > 0;
-    case "JA_NEE":
-    case "CHECKBOX":
-      return true; // een boolean heeft altijd een geldige waarde (default false)
-    case "DROPDOWN":
-    case "RADIO":
-    case "PRODUCT_KEUZE":
-      return typeof waarde === "string" && waarde.length > 0;
-    case "AFMETINGEN": {
-      const invoer = (typeof waarde === "object" && waarde !== null ? waarde : {}) as Record<string, unknown>;
-      const heeftLengte = invoer.lengte !== undefined && invoer.lengte !== "";
-      const heeftBreedte = invoer.breedte !== undefined && invoer.breedte !== "";
-      return heeftLengte && heeftBreedte;
-    }
-  }
-}
 
 // Dezelfde <Calculator>-renderer als de publieke pagina's, embed en het
 // live voorbeeld in de builder (Deel 19/38: "geen aparte calculatorlogica
@@ -89,18 +68,42 @@ export function EngineCalculator({
   materiaalOpties,
   previewModus = false,
 }: Props) {
-  const stappen = useMemo(
-    () =>
-      config.stappen.length > 0
-        ? config.stappen
-        : [{ id: "__alles__", titel: "Jouw project", veldIds: config.velden.map((v) => v.id) }],
-    [config.stappen, config.velden]
-  );
+  const isModulair = config.versie === 2;
+
+  // v1: bestaande stappen (of één impliciete stap met alle velden). v2
+  // (Levering B v2, Deel 6): elk actief Onderdeel is precies één stap, in
+  // Onderdeel-volgorde — bewust geen aparte sub-stappen binnen één
+  // Onderdeel (zie modulair-types.ts).
+  const stappen: CalculatorStep[] = useMemo(() => {
+    if (config.versie === 2) {
+      return config.onderdelen
+        .filter((o) => o.actief)
+        .slice()
+        .sort((a, b) => a.order - b.order)
+        .map((o) => ({ id: o.id, titel: o.naam, beschrijving: o.beschrijving, veldIds: o.velden.map((v) => v.id) }));
+    }
+    return config.stappen.length > 0
+      ? config.stappen
+      : [{ id: "__alles__", titel: "Jouw project", veldIds: config.velden.map((v) => v.id) }];
+  }, [config]);
+
   const [stapIndex, setStapIndex] = useState(0);
   const [waarden, setWaarden] = useState<Record<string, unknown>>({});
   const [toonResultaat, setToonResultaat] = useState(false);
 
-  const veldenPerId = useMemo(() => new Map(config.velden.map((v) => [v.id, v])), [config.velden]);
+  // Namespacing (Deel 1 modulair): Onderdelen zijn zelfstandig — twee
+  // Onderdelen mogen gerust allebei een veld met dezelfde id hebben. De
+  // klantinvoer wordt daarom in v2 per Onderdeel genamespaced opgeslagen
+  // (stapId === onderdeelId hier per constructie hierboven); in v1 blijft
+  // de sleutel gewoon de kale veld-id (ongewijzigd gedrag).
+  function waardeKey(stapId: string, veldId: string) {
+    return isModulair ? `${stapId}::${veldId}` : veldId;
+  }
+
+  const veldenPerId = useMemo(() => {
+    if (config.versie === 2) return new Map<string, (typeof config.onderdelen)[number]["velden"][number]>();
+    return new Map(config.velden.map((v) => [v.id, v]));
+  }, [config]);
 
   const materiaalPrijzen = useMemo(() => {
     const prijzen: Record<string, number> = {};
@@ -110,25 +113,53 @@ export function EngineCalculator({
     return prijzen;
   }, [materiaalOpties]);
 
-  const scope = useMemo(() => {
+  // v1: één globale scope over alle velden (ongewijzigd gedrag). v2: per
+  // Onderdeel een geïsoleerde evaluatie (evalueerOnderdeel, modulair.ts),
+  // daarna samengevoegd (combineerOnderdelen) tot hetzelfde
+  // PriceRuleEvaluationResult-formaat dat bouwResultaat() al verwachtte —
+  // nul wijzigingen aan de kernprijsengine.
+  const scope: ExpressionScope = useMemo(() => {
+    if (config.versie === 2) return {};
     const basisScope = bouwScope(config.velden, waarden, materiaalPrijzen);
     return pasAfgeleideVariabelenToe(basisScope, config.afgeleideVariabelen);
-  }, [config.velden, config.afgeleideVariabelen, waarden, materiaalPrijzen]);
+  }, [config, waarden, materiaalPrijzen]);
+
+  const onderdeelEvaluaties = useMemo(() => {
+    if (config.versie !== 2) return [];
+    return config.onderdelen
+      .filter((o) => o.actief)
+      .map((o) => {
+        const onderdeelWaarden: Record<string, unknown> = {};
+        for (const veld of o.velden) onderdeelWaarden[veld.id] = waarden[waardeKey(o.id, veld.id)];
+        return evalueerOnderdeel(o, onderdeelWaarden, materiaalPrijzen, { alleenPubliek: true });
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config, waarden, materiaalPrijzen]);
+
+  const onderdeelScopePerId = useMemo(() => {
+    const map = new Map<string, ExpressionScope>();
+    for (const e of onderdeelEvaluaties) map.set(e.onderdeelId, e.scope);
+    return map;
+  }, [onderdeelEvaluaties]);
+
+  const huidigeOnderdeel = config.versie === 2 ? config.onderdelen.find((o) => o.id === stappen[stapIndex]?.id) : null;
+  const huidigeScope: ExpressionScope = isModulair ? (onderdeelScopePerId.get(stappen[stapIndex]?.id ?? "") ?? {}) : scope;
 
   // heeftInvoer: is er ergens al iets ingevuld? (voor de START-analytics-
   // gebeurtenis hieronder — vóór de eerste invoer is er nog niets te
   // registreren, ongeacht of er al dan niet verplichte velden zijn).
   const heeftInvoer = Object.keys(waarden).length > 0;
 
-  const heeftAlleVerplichteVelden = useMemo(
-    () => config.velden.every((veld) => veldIsIngevuld(veld, waarden[veld.id])),
-    [config.velden, waarden]
-  );
+  const heeftAlleVerplichteVelden = useMemo(() => {
+    if (config.versie === 2) return onderdeelEvaluaties.every((e) => e.heeftGeldigeInvoer);
+    return config.velden.every((veld) => veldIsIngevuld(veld, waarden[veld.id], scope));
+  }, [config, waarden, scope, onderdeelEvaluaties]);
 
-  const evaluatie = useMemo(
-    () => evaluatePriceRules(config.regels, scope, { alleenPubliek: true }),
-    [config.regels, scope]
-  );
+  const evaluatie = useMemo(() => {
+    if (config.versie === 2) return combineerOnderdelen(onderdeelEvaluaties);
+    return evaluatePriceRules(config.regels, scope, { alleenPubliek: true });
+  }, [config, scope, onderdeelEvaluaties]);
+
   const resultaat = useMemo(
     () =>
       bouwResultaat(evaluatie, {
@@ -205,7 +236,12 @@ export function EngineCalculator({
   const snapshot: LeadSnapshot = useMemo(() => {
     const zichtbareRegels = evaluatie.lineItems.filter((item) => item.toonInUitsplitsing && !item.intern);
     const regels: LeadSnapshotLine[] = (zichtbareRegels.length > 0 ? zichtbareRegels : evaluatie.lineItems).map(
-      (item) => ({ naam: item.label, type: "dienst", prijs: item.bedrag })
+      (item) => ({
+        naam: item.label,
+        type: "dienst",
+        prijs: item.bedrag,
+        onderdeel: isModulair ? (item as OnderdeelLineItem).onderdeelNaam : undefined,
+      })
     );
     return {
       regels,
@@ -217,16 +253,18 @@ export function EngineCalculator({
       btw: resultaat.btw,
       totaal: resultaat.totaal,
     };
-  }, [evaluatie.lineItems, resultaat]);
+  }, [evaluatie.lineItems, resultaat, isModulair]);
 
   const huidigeStap = stappen[Math.min(stapIndex, stappen.length - 1)];
   const isLaatsteStap = stapIndex >= stappen.length - 1;
-  const huidigeStapVeldenIngevuld = huidigeStap.veldIds.every((id) => {
-    const veld = veldenPerId.get(id);
-    return !veld || veldIsIngevuld(veld, waarden[id]);
+  const huidigeStapVeldenIngevuld = (huidigeStap?.veldIds ?? []).every((id) => {
+    const veld = config.versie === 2 ? huidigeOnderdeel?.velden.find((v) => v.id === id) : veldenPerId.get(id);
+    return !veld || veldIsIngevuld(veld, waarden[waardeKey(huidigeStap.id, id)], huidigeScope);
   });
 
-  if (config.velden.length === 0 || config.regels.length === 0) {
+  const isLeeg = config.versie === 2 ? config.onderdelen.filter((o) => o.actief).length === 0 : config.velden.length === 0 || config.regels.length === 0;
+
+  if (isLeeg) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4 py-12 text-center">
         <Logo className="h-11 w-11 rounded-xl p-1.5" />
@@ -279,6 +317,12 @@ export function EngineCalculator({
       )}
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
+        {previewModus && (
+          <div className="mb-4 flex items-center gap-2 rounded-md border border-dashed border-border bg-secondary/40 px-3 py-2 text-xs font-medium text-muted-foreground print:hidden">
+            <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand-primary)]" />
+            Testmodus — vul waarden in zoals een klant, zie de berekening en prijscomponenten live.
+          </div>
+        )}
         {!toonResultaat && stappen.length > 1 && (
           <div className="mb-6 flex gap-1.5">
             {stappen.map((stap, i) => (
@@ -312,15 +356,16 @@ export function EngineCalculator({
 
             <div className="flex flex-col gap-5">
               {huidigeStap.veldIds.map((veldId) => {
-                const veld = veldenPerId.get(veldId);
+                const veld = config.versie === 2 ? huidigeOnderdeel?.velden.find((v) => v.id === veldId) : veldenPerId.get(veldId);
                 if (!veld) return null;
-                if (!veldIsZichtbaar(veld, scope)) return null;
+                if (!veldIsZichtbaar(veld, huidigeScope)) return null;
+                const key = waardeKey(huidigeStap.id, veld.id);
                 return (
                   <EngineVeld
                     key={veld.id}
                     veld={veld}
-                    waarde={waarden[veld.id]}
-                    onChange={(waarde) => setWaarden((prev) => ({ ...prev, [veld.id]: waarde }))}
+                    waarde={waarden[key]}
+                    onChange={(waarde) => setWaarden((prev) => ({ ...prev, [key]: waarde }))}
                     materiaalOpties={materiaalOpties}
                   />
                 );
@@ -378,13 +423,6 @@ function ContactBalk({ telefoonnummer, email }: { telefoonnummer: string | null;
   );
 }
 
-// Conditionele veldzichtbaarheid (Deel 6 geldt niet alleen voor
-// prijsregels): een veld zonder `zichtbaarAls` is altijd zichtbaar.
-function veldIsZichtbaar(veld: CalculatorField, scope: Record<string, number | boolean | string | undefined>) {
-  if (!veld.zichtbaarAls) return true;
-  return evaluateAsBoolean(veld.zichtbaarAls, scope);
-}
-
 function ResultaatKaart({
   toolId,
   resultaat,
@@ -402,7 +440,7 @@ function ResultaatKaart({
   evaluatie: ReturnType<typeof evaluatePriceRules>;
   snapshot: LeadSnapshot;
   ctaTekst: string;
-  weergave: CalculatorConfigData["resultaatInstellingen"]["weergave"];
+  weergave: AnyCalculatorConfigData["resultaatInstellingen"]["weergave"];
   bedankTekst: string;
   magOfferteAanvragen: boolean;
   previewModus: boolean;
@@ -426,6 +464,24 @@ function ResultaatKaart({
 
   const zichtbareRegels = evaluatie.lineItems.filter((item) => item.toonInUitsplitsing && !item.intern);
 
+  // Levering B v2 (Deel 11 "Tool-Totaal"): als de regels van een Onderdeel
+  // afkomstig zijn (evaluatie kwam uit combineerOnderdelen), toon dan per
+  // Onderdeel één subtotaalregel — precies het voorbeeld uit de opdracht
+  // ("Bestrating €4.500 + Schutting €2.850 + ... = Totaal"). v1-tools hebben
+  // nooit een onderdeelNaam op hun regels, dus die tonen gewoon de
+  // bestaande, ongewijzigde platte lijst.
+  const onderdeelGroepen = (() => {
+    const groepen = new Map<string, number>();
+    const volgorde: string[] = [];
+    for (const item of zichtbareRegels) {
+      const naam = (item as OnderdeelLineItem).onderdeelNaam;
+      if (!naam) return null;
+      if (!groepen.has(naam)) volgorde.push(naam);
+      groepen.set(naam, (groepen.get(naam) ?? 0) + item.bedrag);
+    }
+    return volgorde.map((naam) => ({ naam, bedrag: groepen.get(naam)! }));
+  })();
+
   return (
     <div className="flex flex-col gap-4">
       <Button type="button" variant="ghost" size="sm" onClick={onTerug} className="w-fit print:hidden">
@@ -443,12 +499,19 @@ function ResultaatKaart({
             <>
               {weergave === "UITGEBREID" && zichtbareRegels.length > 0 && (
                 <div className="flex flex-col gap-2 text-sm">
-                  {zichtbareRegels.map((item) => (
-                    <div key={item.ruleId} className="flex items-center justify-between">
-                      <span className="text-muted-foreground">{item.label}</span>
-                      <span className="font-medium text-foreground">{formatCurrency(item.bedrag)}</span>
-                    </div>
-                  ))}
+                  {onderdeelGroepen
+                    ? onderdeelGroepen.map((groep) => (
+                        <div key={groep.naam} className="flex items-center justify-between">
+                          <span className="text-muted-foreground">{groep.naam}</span>
+                          <span className="font-medium text-foreground">{formatCurrency(groep.bedrag)}</span>
+                        </div>
+                      ))
+                    : zichtbareRegels.map((item) => (
+                        <div key={item.ruleId} className="flex items-center justify-between">
+                          <span className="text-muted-foreground">{item.label}</span>
+                          <span className="font-medium text-foreground">{formatCurrency(item.bedrag)}</span>
+                        </div>
+                      ))}
                   <div className="my-1 border-t border-border" />
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Subtotaal</span>

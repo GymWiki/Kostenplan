@@ -43,6 +43,9 @@ export function beschikbareVariabelen(velden: CalculatorField[], afgeleideVariab
       case "RADIO":
         resultaat.push({ naam: veld.id, label: veld.label, type: "OPTION", opties: veld.opties });
         break;
+      case "MEERKEUZE":
+        resultaat.push({ naam: veld.id, label: veld.label, type: "OPTIONS", opties: veld.opties });
+        break;
       case "PRODUCT_KEUZE":
         resultaat.push({
           naam: productKeuzePrijsVariabele(veld.id),

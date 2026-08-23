@@ -6,7 +6,7 @@ import { PauseCircle } from "lucide-react";
 import { getToolForPublicRoute, getMateriaalOptiesVoorEngineVelden } from "@/app/lib/dal";
 import { resolveCostSettings } from "@/app/lib/tools";
 import { effectiveTier } from "@/app/lib/subscription";
-import { parseCalculatorConfig, publicCalculatorConfig } from "@/app/lib/calculator-engine";
+import { parseCalculatorConfig, publicCalculatorConfig, alleVeldenVanConfig } from "@/app/lib/calculator-engine";
 import { Logo } from "@/app/components/ui/logo";
 import { Calculator } from "@/app/portaal/[slug]/calculator";
 import { EngineCalculator } from "@/app/portaal/[slug]/engine-calculator";
@@ -82,7 +82,7 @@ export default async function ToolPage({
   // vraagt ("geen aparte calculatorlogica").
   if (tool.activeCalculatorConfig) {
     const config = publicCalculatorConfig(parseCalculatorConfig(tool.activeCalculatorConfig.config));
-    const materialCategoryIds = config.velden
+    const materialCategoryIds = alleVeldenVanConfig(config)
       .filter((veld) => veld.soort === "PRODUCT_KEUZE")
       .map((veld) => veld.materialCategoryId);
     const materiaalOpties = await getMateriaalOptiesVoorEngineVelden(tool.id, materialCategoryIds);

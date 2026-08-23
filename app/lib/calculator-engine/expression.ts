@@ -9,14 +9,21 @@ import type { Expression } from "./types";
 // configuratie-data naar JavaScript-executie.
 // ---------------------------------------------------------------------------
 
-export type ExpressionScope = Record<string, number | boolean | string | undefined>;
+// MEERKEUZE-velden (Deel 3 modulair) leveren een string[] op (welke opties
+// zijn aangevinkt) — de enige niet-scalaire variabelewaarde die de engine
+// kent. Alle scalaire coercies (asNumber/asBoolean/asString) behandelen een
+// array als "leeg = 0/false/''" resp. "niet-leeg = waar"; het BEVAT-kind
+// hieronder is de enige plek die de array-inhoud zelf inspecteert.
+export type VariableValue = number | boolean | string | string[] | undefined;
+
+export type ExpressionScope = Record<string, VariableValue>;
 
 // Voorkomt dat een (per ongeluk of moedwillig) extreem diep geneste
 // expressie de interpreter laat vastlopen — een normale, door de builder-UI
 // gebouwde regel komt hier nooit ook maar in de buurt van.
 const MAX_DIEPTE = 64;
 
-export function asNumber(waarde: number | boolean | string | undefined): number {
+export function asNumber(waarde: VariableValue): number {
   if (typeof waarde === "number") return Number.isFinite(waarde) ? waarde : 0;
   if (typeof waarde === "boolean") return waarde ? 1 : 0;
   if (typeof waarde === "string") {
@@ -24,19 +31,28 @@ export function asNumber(waarde: number | boolean | string | undefined): number 
     const getal = Number(genormaliseerd);
     return Number.isFinite(getal) ? getal : 0;
   }
+  if (Array.isArray(waarde)) return 0;
   return 0;
 }
 
-function asBoolean(waarde: number | boolean | string | undefined): boolean {
+function asBoolean(waarde: VariableValue): boolean {
   if (typeof waarde === "boolean") return waarde;
   if (typeof waarde === "number") return waarde !== 0;
   if (typeof waarde === "string") return waarde !== "" && waarde !== "false" && waarde !== "0";
+  if (Array.isArray(waarde)) return waarde.length > 0;
   return false;
 }
 
-function asString(waarde: number | boolean | string | undefined): string {
+function asString(waarde: VariableValue): string {
   if (waarde == null) return "";
+  if (Array.isArray(waarde)) return waarde.join(", ");
   return String(waarde);
+}
+
+export function asStringArray(waarde: VariableValue): string[] {
+  if (Array.isArray(waarde)) return waarde;
+  if (typeof waarde === "string" && waarde !== "") return [waarde];
+  return [];
 }
 
 // Vergelijkt twee waarden op gelijkheid, type-bewust: twee getallen
@@ -44,7 +60,7 @@ function asString(waarde: number | boolean | string | undefined): string {
 // OPTION-variabele — altijd een string — gewoon met "==" op tekst vergeleken
 // kan worden, precies wat een ALS-voorwaarde als "bereikbaarheid = slecht"
 // nodig heeft).
-function gelijk(a: number | boolean | string | undefined, b: number | boolean | string | undefined): boolean {
+function gelijk(a: VariableValue, b: VariableValue): boolean {
   if (typeof a === "number" || typeof b === "number") return asNumber(a) === asNumber(b);
   if (typeof a === "boolean" || typeof b === "boolean") return asBoolean(a) === asBoolean(b);
   return asString(a) === asString(b);
@@ -54,7 +70,7 @@ export function evaluateExpression(
   expr: Expression,
   scope: ExpressionScope,
   diepte = 0
-): number | boolean | string {
+): number | boolean | string | string[] {
   if (diepte > MAX_DIEPTE) {
     throw new Error("Expressie is te diep genest");
   }
@@ -111,6 +127,9 @@ export function evaluateExpression(
 
     case "ALS_DAN":
       return asBoolean(gaVerder(expr.voorwaarde)) ? gaVerder(expr.dan) : gaVerder(expr.anders);
+
+    case "BEVAT":
+      return asStringArray(gaVerder(expr.lijst)).includes(asString(gaVerder(expr.waarde)));
   }
 }
 
@@ -174,6 +193,10 @@ export function variabelenInExpressie(expr: Expression, gevonden: Set<string> = 
       variabelenInExpressie(expr.voorwaarde, gevonden);
       variabelenInExpressie(expr.dan, gevonden);
       variabelenInExpressie(expr.anders, gevonden);
+      return gevonden;
+    case "BEVAT":
+      variabelenInExpressie(expr.lijst, gevonden);
+      variabelenInExpressie(expr.waarde, gevonden);
       return gevonden;
   }
 }

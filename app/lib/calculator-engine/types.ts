@@ -34,7 +34,7 @@ export type Unit = string;
 // Variabelen (Deel 9) — getypeerd, nooit als kale string opgeslagen.
 // =============================================================================
 
-export type VariableType = "NUMBER" | "BOOLEAN" | "OPTION" | "TEXT" | "DATE";
+export type VariableType = "NUMBER" | "BOOLEAN" | "OPTION" | "OPTIONS" | "TEXT" | "DATE";
 
 // Elk CalculatorField (zie hieronder) levert automatisch een variabele met
 // dezelfde id — dat hoeft dus niet apart in `variables` te staan. Alleen
@@ -80,7 +80,12 @@ export type Expression =
   | { kind: "NIET"; voorwaarde: Expression }
   | { kind: "MINIMUM"; waarden: Expression[] }
   | { kind: "MAXIMUM"; waarden: Expression[] }
-  | { kind: "ALS_DAN"; voorwaarde: Expression; dan: Expression; anders: Expression };
+  | { kind: "ALS_DAN"; voorwaarde: Expression; dan: Expression; anders: Expression }
+  // "bevat" (Deel 6 modulair) — voor MEERKEUZE-velden: is `waarde` aanwezig
+  // in de lijst die `lijst` oplevert? Bewust een eigen kind i.p.v. GELIJK_AAN
+  // te laten dubbelen als "bevat" — dat zou een non-technische vakman
+  // verwarren ("is gelijk aan" leest als scalaire vergelijking).
+  | { kind: "BEVAT"; lijst: Expression; waarde: Expression };
 
 // =============================================================================
 // Velden / inputs (Deel 10-13) — wat de klant invult of kiest. Elk veld
@@ -96,6 +101,11 @@ type FieldBasis = {
   // Conditionele zichtbaarheid (Deel 6 geldt ook voor velden, niet alleen
   // prijsregels) — ontbreekt = altijd zichtbaar.
   zichtbaarAls?: Expression;
+  // Conditioneel verplicht (Deel 8 modulair) — bovenop de statische
+  // `verplicht` hierboven: wordt dit veld ALS deze expressie waar is óók
+  // verplicht, ook wanneer `verplicht` zelf false is. Ontbreekt = alleen de
+  // statische vlag telt. Zie veldIsIngevuld() in fields.ts.
+  verplichtAls?: Expression;
 };
 
 export type NummerVeld = FieldBasis & {
@@ -135,6 +145,17 @@ export type KeuzeVeld = FieldBasis & {
   standaardWaarde?: string;
 };
 
+// Meerdere keuzes (Deel 3 modulair) — zelfde optiestructuur als KeuzeVeld,
+// maar de klant kan meerdere opties tegelijk aanvinken. Levert een OPTIONS-
+// variabele (string[]) op i.p.v. OPTION; conditionele regels gebruiken de
+// nieuwe BEVAT-expressie hierboven om te testen of één specifieke optie is
+// aangevinkt (i.p.v. GELIJK_AAN, dat scalair blijft).
+export type MeerkeuzeVeld = FieldBasis & {
+  soort: "MEERKEUZE";
+  opties: KeuzeOptie[];
+  standaardWaarden?: string[];
+};
+
 // Afmetingen (Deel 12) — bundelt lengte/breedte/(hoogte) in één klantvraag;
 // levert zelf geen variabele op maar wél automatisch afgeleide variabelen
 // (lengte/breedte/hoogte + oppervlakte/volume, zie afgeleideVariabelenVoorVeld
@@ -164,6 +185,7 @@ export type CalculatorField =
   | TekstVeld
   | BooleanVeld
   | KeuzeVeld
+  | MeerkeuzeVeld
   | AfmetingenVeld
   | ProductKeuzeVeld;
 

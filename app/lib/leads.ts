@@ -16,6 +16,10 @@ export type LeadSnapshotLine = {
   // gebruikt door prefillOfferteRegels() (offertes.ts) om elke offerteregel
   // zijn eigen, eerlijke prijs per eenheid te geven.
   prijs?: number;
+  // Levering B v2 (Deel 12): welk Onderdeel deze regel opleverde — alleen
+  // gevuld voor tools die het modulaire Onderdelensysteem gebruiken.
+  // Ontbreekt voor v1/System-A-tools (ongewijzigd gedrag).
+  onderdeel?: string;
 };
 
 // Vorm van Lead.snapshot (Json). Gebouwd client-side in de publieke

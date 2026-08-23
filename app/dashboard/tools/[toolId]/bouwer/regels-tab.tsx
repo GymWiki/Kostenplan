@@ -12,6 +12,7 @@ import { DecimalInput, Input, Label, Select } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { HelpTip } from "@/app/components/ui/help-tip";
 import { beschikbareVariabelen, numeriekeVariabelen } from "./variabelen-utils";
+import { VoorwaardeEditor, ontleedVoorwaarde, bouwVoorwaarde, legeConditie, type VoorwaardeGroep } from "./voorwaarde-editor";
 
 type BouwbaarType = "VAST" | "PER_EENHEID" | "PERCENTAGE" | "TOESLAG" | "KORTING" | "STAFFEL";
 
@@ -31,15 +32,6 @@ const CATEGORIE_LABELS: Record<PriceRuleCategory, string> = {
   TOESLAG: "Toeslag",
   KORTING: "Korting",
   OVERIG: "Overig",
-};
-
-const COMPARATOR_LABELS: Record<string, string> = {
-  GELIJK_AAN: "is gelijk aan",
-  NIET_GELIJK_AAN: "is niet gelijk aan",
-  GROTER_DAN: "is meer dan",
-  KLEINER_DAN: "is minder dan",
-  GROTER_OF_GELIJK: "is meer dan of gelijk aan",
-  KLEINER_OF_GELIJK: "is minder dan of gelijk aan",
 };
 
 export function RegelsTab({
@@ -164,28 +156,6 @@ function nieuwRegelId(bestaandeIds: Set<string>): string {
   return `regel${i}`;
 }
 
-type EenvoudigeVoorwaarde = { variabele: string; operator: keyof typeof COMPARATOR_LABELS; waarde: string };
-
-function ontleedVoorwaarde(expr: Expression | undefined): EenvoudigeVoorwaarde | null {
-  if (!expr) return null;
-  if (!(expr.kind in COMPARATOR_LABELS)) return null;
-  const e = expr as Extract<Expression, { links: Expression; rechts: Expression }>;
-  if (e.links.kind !== "VARIABELE") return null;
-  const rechts = e.rechts;
-  const waarde = rechts.kind === "GETAL" ? String(rechts.waarde) : rechts.kind === "TEKST" ? rechts.waarde : rechts.kind === "BOOLEAN" ? String(rechts.waarde) : "";
-  return { variabele: e.links.naam, operator: expr.kind as EenvoudigeVoorwaarde["operator"], waarde };
-}
-
-function bouwVoorwaarde(v: EenvoudigeVoorwaarde, type: "NUMBER" | "OPTION" | "BOOLEAN"): Expression {
-  const rechts: Expression =
-    type === "NUMBER"
-      ? { kind: "GETAL", waarde: Number(v.waarde) || 0 }
-      : type === "BOOLEAN"
-        ? { kind: "BOOLEAN", waarde: v.waarde === "waar" }
-        : { kind: "TEKST", waarde: v.waarde };
-  return { kind: v.operator, links: { kind: "VARIABELE", naam: v.variabele }, rechts } as Expression;
-}
-
 function RegelFormModal({
   regel,
   variabelen,
@@ -240,13 +210,10 @@ function RegelFormModal({
 
   const bestaandeVoorwaarde = ontleedVoorwaarde(regel?.voorwaarde);
   const [heeftVoorwaarde, setHeeftVoorwaarde] = useState(bestaandeVoorwaarde != null);
-  const [voorwaardeVariabele, setVoorwaardeVariabele] = useState(bestaandeVoorwaarde?.variabele ?? variabelen[0]?.naam ?? "");
-  const [voorwaardeOperator, setVoorwaardeOperator] = useState<EenvoudigeVoorwaarde["operator"]>(bestaandeVoorwaarde?.operator ?? "GELIJK_AAN");
-  const [voorwaardeWaarde, setVoorwaardeWaarde] = useState(bestaandeVoorwaarde?.waarde ?? "");
+  const [voorwaardeGroep, setVoorwaardeGroep] = useState<VoorwaardeGroep>(bestaandeVoorwaarde ?? { combinator: "EN", condities: [legeConditie(variabelen)] });
 
   const [fout, setFout] = useState<string | null>(null);
 
-  const voorwaardeVeld = variabelen.find((v) => v.naam === voorwaardeVariabele);
   const numerieke = numeriekeVariabelen(variabelen);
 
   function handleOpslaan() {
@@ -255,13 +222,7 @@ function RegelFormModal({
       return;
     }
 
-    let voorwaarde: Expression | undefined;
-    if (heeftVoorwaarde && voorwaardeVeld) {
-      voorwaarde = bouwVoorwaarde(
-        { variabele: voorwaardeVariabele, operator: voorwaardeOperator, waarde: voorwaardeWaarde },
-        voorwaardeVeld.type === "NUMBER" ? "NUMBER" : voorwaardeVeld.type === "BOOLEAN" ? "BOOLEAN" : "OPTION"
-      );
-    }
+    const voorwaarde: Expression | undefined = heeftVoorwaarde ? bouwVoorwaarde(voorwaardeGroep, variabelen) : undefined;
 
     const id = regel?.id ?? nieuwRegelId(bestaandeIds);
     const basis = { id, label: label.trim(), categorie, actief, intern, toonInUitsplitsing, voorwaarde };
@@ -516,57 +477,7 @@ function RegelFormModal({
             <span className="text-sm font-medium text-foreground">Alleen toepassen onder een voorwaarde</span>
             <Switch checked={heeftVoorwaarde} onChange={(e) => setHeeftVoorwaarde(e.target.checked)} />
           </label>
-          {heeftVoorwaarde && (
-            <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="shrink-0 text-muted-foreground">Als</span>
-                <Select value={voorwaardeVariabele} onChange={(e) => setVoorwaardeVariabele(e.target.value)} className="flex-1">
-                  {variabelen.map((v) => (
-                    <option key={v.naam} value={v.naam}>
-                      {v.label}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              {voorwaardeVeld?.type === "BOOLEAN" ? (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="shrink-0 text-muted-foreground">is</span>
-                  <Select value={voorwaardeWaarde || "waar"} onChange={(e) => setVoorwaardeWaarde(e.target.value)} className="flex-1">
-                    <option value="waar">aan</option>
-                    <option value="onwaar">uit</option>
-                  </Select>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Select value={voorwaardeOperator} onChange={(e) => setVoorwaardeOperator(e.target.value as EenvoudigeVoorwaarde["operator"])} className="flex-1">
-                      {Object.entries(COMPARATOR_LABELS)
-                        .filter(([k]) => voorwaardeVeld?.type === "NUMBER" || k === "GELIJK_AAN" || k === "NIET_GELIJK_AAN")
-                        .map(([waarde, tekst]) => (
-                          <option key={waarde} value={waarde}>
-                            {tekst}
-                          </option>
-                        ))}
-                    </Select>
-                  </div>
-                  {voorwaardeVeld?.type === "OPTION" && voorwaardeVeld.opties ? (
-                    <Select value={voorwaardeWaarde} onChange={(e) => setVoorwaardeWaarde(e.target.value)}>
-                      <option value="" disabled>
-                        Kies een optie
-                      </option>
-                      {voorwaardeVeld.opties.map((optie) => (
-                        <option key={optie.waarde} value={optie.waarde}>
-                          {optie.label}
-                        </option>
-                      ))}
-                    </Select>
-                  ) : (
-                    <DecimalInput value={voorwaardeWaarde} onChange={(e) => setVoorwaardeWaarde(e.target.value)} />
-                  )}
-                </>
-              )}
-            </div>
-          )}
+          {heeftVoorwaarde && <VoorwaardeEditor groep={voorwaardeGroep} onChange={setVoorwaardeGroep} variabelen={variabelen} />}
         </div>
 
         <div className="flex flex-col gap-2 border-t border-border pt-4">

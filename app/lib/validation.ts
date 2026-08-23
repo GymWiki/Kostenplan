@@ -309,6 +309,7 @@ const leadSnapshotLineSchema = z.object({
   materiaal: z.string().optional(),
   extras: z.array(z.string()).optional(),
   prijs: z.number().optional(),
+  onderdeel: z.string().optional(),
 });
 
 // Vertrouwt de client-berekende bedragen (geen echte transactie, slechts een
