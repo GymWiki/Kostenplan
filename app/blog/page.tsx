@@ -43,7 +43,7 @@ export default function BlogPage() {
       <SiteHeader />
       <Breadcrumbs items={[{ label: "Blog", href: "/blog" }]} />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
           <Reveal className="text-center">
             <h1 className="text-4xl font-bold tracking-tight text-balance text-foreground sm:text-5xl">

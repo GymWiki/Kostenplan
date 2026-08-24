@@ -55,7 +55,7 @@ export function EmbedTutorialTabs({ embedCode }: { embedCode: string }) {
             type="button"
             onClick={() => setPlatform(p)}
             className={cn(
-              "rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
+              "rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               platform.id === p.id
                 ? "bg-card text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"

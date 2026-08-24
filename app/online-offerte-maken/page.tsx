@@ -74,7 +74,7 @@ export default function OnlineOfferteMakenPage() {
         ]}
       />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
           <Reveal className="text-center">
             <span className="inline-flex items-center rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">

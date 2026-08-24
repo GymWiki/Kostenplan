@@ -86,7 +86,7 @@ export function FaqSection({
                   onClick={() => setOpenIndex(open ? null : index)}
                   aria-expanded={open}
                   aria-controls={`faq-answer-${index}`}
-                  className="flex w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left"
+                  className="flex w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   <span className="font-medium text-foreground">{faq.vraag}</span>
                   <ChevronDown

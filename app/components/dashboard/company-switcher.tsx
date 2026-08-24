@@ -33,7 +33,7 @@ export function CompanySwitcher({
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Bedrijf wisselen"
-        className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-secondary cursor-pointer"
+        className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-secondary cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <span className="min-w-0 truncate text-sm font-medium text-foreground">{actief.naam}</span>
         <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -47,7 +47,7 @@ export function CompanySwitcher({
               <input type="hidden" name="companyId" value={company.id} />
               <button
                 type="submit"
-                className={`flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors cursor-pointer ${
+                className={`flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                   company.id === actief.id
                     ? "bg-primary/10 text-primary"
                     : "text-foreground hover:bg-secondary"
@@ -65,7 +65,7 @@ export function CompanySwitcher({
             <Link
               href="/dashboard/bedrijven/nieuw"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <Plus className="h-4 w-4" />
               Nieuw bedrijf toevoegen

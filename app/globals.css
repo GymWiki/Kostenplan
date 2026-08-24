@@ -28,7 +28,11 @@
   --destructive-foreground: #ffffff;
 
   --success: #15803d;
-  --warning: #d97706;
+  /* Audit-bevinding DS-03: #d97706 haalde als platte tekstkleur op wit
+     maar 3.19:1 contrast (onder de WCAG AA-norm van 4.5:1 voor gewone
+     tekst) — dit is een donkerdere amber die dat wél haalt, zonder de
+     getinte bg-warning/10-chips elders merkbaar te veranderen. */
+  --warning: #b45309;
 
   --radius: 0.75rem;
 }
@@ -63,6 +67,12 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
 
+  /* Audit-bevinding DS-04: --radius-xl was nooit overschreven en bleef op
+     Tailwind's default (toevallig identiek aan --radius-lg hieronder,
+     beide 0.75rem) — rounded-lg en rounded-xl renderden daardoor exact
+     hetzelfde. Eén stap groter dan --radius-lg geeft ze weer een
+     onderscheidbare, bedoelde waarde. */
+  --radius-xl: calc(var(--radius) + 0.25rem);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 0.25rem);
   --radius-sm: calc(var(--radius) - 0.375rem);

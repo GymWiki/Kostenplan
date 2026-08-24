@@ -137,6 +137,18 @@ function LeadCard({
       {...listeners}
       {...attributes}
       onClick={onClick}
+      onKeyDown={(event) => {
+        // Audit-bevinding A-01: dnd-kit's `attributes` zet role="button"/
+        // tabIndex=0 (voor de sleep-functionaliteit), maar zonder een
+        // geconfigureerde KeyboardSensor triggert Enter/Spatie geen enkele
+        // actie — de kaart was daardoor focusbaar maar niet daadwerkelijk
+        // met het toetsenbord te openen. Zelfde Enter/Spatie-afhandeling
+        // als builder-list-row.tsx.
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
       className={cn(
         "relative cursor-grab touch-none rounded-lg border border-border bg-card p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing",
         isDragging && "z-10 opacity-70 shadow-lg"

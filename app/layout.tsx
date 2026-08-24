@@ -37,6 +37,18 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
+        {/* Audit-bevinding D-04 (WCAG 2.4.1 bypass-blocks): nergens in de
+            app bestond een manier om met het toetsenbord de herhaalde
+            header/nav over te slaan. Onzichtbaar totdat het via Tab
+            focus krijgt; springt naar het eerste element met
+            id="main-content" op elke pagina (marketing, dashboard,
+            portaal). */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[300] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg"
+        >
+          Direct naar de inhoud
+        </a>
         <ThemeProvider>
           <ToastProvider>{children}</ToastProvider>
         </ThemeProvider>

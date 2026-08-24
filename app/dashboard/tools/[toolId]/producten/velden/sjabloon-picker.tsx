@@ -28,7 +28,7 @@ export function SjabloonPicker({
             onClick={() => onKiesSjabloon(optie.id)}
             aria-pressed={geselecteerd}
             className={cn(
-              "flex flex-col gap-1 rounded-md border p-3 text-left transition-colors cursor-pointer",
+              "flex flex-col gap-1 rounded-md border p-3 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               geselecteerd
                 ? "border-primary bg-primary/5"
                 : "border-border hover:bg-secondary"

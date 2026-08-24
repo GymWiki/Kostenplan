@@ -53,7 +53,7 @@ export function PricingTable({
           type="button"
           onClick={() => setInterval("MAANDELIJKS")}
           className={cn(
-            "cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors",
+            "cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             interval === "MAANDELIJKS"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
@@ -65,7 +65,7 @@ export function PricingTable({
           type="button"
           onClick={() => setInterval("JAARLIJKS")}
           className={cn(
-            "flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+            "flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             interval === "JAARLIJKS"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"

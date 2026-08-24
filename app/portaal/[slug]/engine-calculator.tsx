@@ -373,7 +373,7 @@ export function EngineCalculator({
         <ContactBalk telefoonnummer={contact.telefoonnummer} email={contact.email} />
       )}
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
+      <main id="main-content" className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
         {previewModus && (
           <div className="mb-4 flex items-center gap-2 rounded-md border border-dashed border-border bg-secondary/40 px-3 py-2 text-xs font-medium text-muted-foreground print:hidden">
             <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand-primary)]" />

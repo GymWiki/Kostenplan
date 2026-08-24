@@ -77,7 +77,7 @@ export default function RekentoolPage() {
       <SiteHeader />
       <Breadcrumbs items={[{ label: "Rekentool", href: "/rekentool" }]} />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         {/* HERO */}
         <section className="relative overflow-hidden">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">

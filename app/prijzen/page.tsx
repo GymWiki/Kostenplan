@@ -33,7 +33,7 @@ export default function PrijzenPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
       <Breadcrumbs items={[{ label: "Prijzen", href: "/prijzen" }]} />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-20 sm:px-6">
+      <main id="main-content" className="mx-auto w-full max-w-5xl flex-1 px-4 py-20 sm:px-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Simpele, eerlijke prijzen

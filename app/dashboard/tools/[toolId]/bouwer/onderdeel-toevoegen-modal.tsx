@@ -8,6 +8,13 @@ import type { OnderdeelBibliotheek } from "@/app/generated/prisma/client";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Overlay } from "@/app/components/ui/overlay";
 import { Button } from "@/app/components/ui/button";
+import { Tabs, type TabItem } from "@/app/components/ui/tabs";
+
+type TabWaarde = "bestaand" | "zelf";
+const TABS: TabItem<TabWaarde>[] = [
+  { value: "bestaand", label: "Bestaand onderdeel gebruiken" },
+  { value: "zelf", label: "Zelf een onderdeel maken" },
+];
 
 // "+ Onderdeel toevoegen" (Deel 2 van de opdracht): altijd de keuze tussen
 // een bestaand onderdeel gebruiken of zelf vanaf nul beginnen — "Zelf een
@@ -27,7 +34,7 @@ export function OnderdeelToevoegenModal({
   onderdeelBibliotheek: OnderdeelBibliotheek[];
   onKiesUitBibliotheek: (bibliotheekId: string) => void;
 }) {
-  const [tab, setTab] = useState<"bestaand" | "zelf">(onderdeelBibliotheek.length > 0 ? "bestaand" : "zelf");
+  const [tab, setTab] = useState<TabWaarde>(onderdeelBibliotheek.length > 0 ? "bestaand" : "zelf");
   const [bezigId, setBezigId] = useState<string | null>(null);
   const [items, setItems] = useState(onderdeelBibliotheek);
 
@@ -59,22 +66,7 @@ export function OnderdeelToevoegenModal({
       <div className="flex max-h-[85vh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-lg">
         <h3 className="text-lg font-semibold text-foreground">Onderdeel toevoegen</h3>
 
-        <div className="flex gap-1 border-b border-border">
-          <button
-            type="button"
-            onClick={() => setTab("bestaand")}
-            className={`shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${tab === "bestaand" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-          >
-            Bestaand onderdeel gebruiken
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("zelf")}
-            className={`shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${tab === "zelf" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-          >
-            Zelf een onderdeel maken
-          </button>
-        </div>
+        <Tabs tabs={TABS} value={tab} onChange={setTab} />
 
         {tab === "bestaand" ? (
           items.length === 0 ? (

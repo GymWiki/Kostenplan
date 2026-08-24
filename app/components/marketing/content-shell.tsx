@@ -90,7 +90,7 @@ export async function ContentShell({
       <SiteHeader />
       <Breadcrumbs items={kruimels} />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <article className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
           <h1 className="text-3xl font-bold tracking-tight text-balance text-foreground sm:text-4xl">
             {frontmatter.title}

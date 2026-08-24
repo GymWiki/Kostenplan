@@ -69,7 +69,7 @@ export function StartpuntKiezer({ templates }: { templates: TemplateSamenvatting
               key={template.id}
               type="button"
               onClick={() => setStartpunt({ soort: "template", template })}
-              className="text-left"
+              className="rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <Card className="h-full cursor-pointer transition-colors hover:border-primary/40">
                 <CardContent className="flex flex-col gap-3">
@@ -111,7 +111,7 @@ export function StartpuntKiezer({ templates }: { templates: TemplateSamenvatting
         })}
       </div>
 
-      <button type="button" onClick={() => setStartpunt({ soort: "leeg" })} className="text-left">
+      <button type="button" onClick={() => setStartpunt({ soort: "leeg" })} className="rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
         <Card className="cursor-pointer transition-colors hover:border-primary/40">
           <CardContent className="flex items-center gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
