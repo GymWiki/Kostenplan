@@ -15,47 +15,10 @@ import { genereerId } from "./id-utils";
 import { beschikbareVariabelen } from "./variabelen-utils";
 import { VoorwaardeEditor, ontleedVoorwaarde, bouwVoorwaarde, legeConditie, type VoorwaardeGroep } from "./voorwaarde-editor";
 import { BuilderListRow } from "./builder-list-row";
+import { KeuzeOptiesEditor } from "./keuze-opties-editor";
+import { ProductOptiesEditor } from "./product-opties-editor";
+import { SOORT_LABELS, SOORT_UITLEG, veldMeta } from "./veld-soort-labels";
 import type { MateriaalOptie } from "@/app/portaal/[slug]/engine-fields";
-
-const SOORT_LABELS: Record<CalculatorField["soort"], string> = {
-  NUMMER: "Getal",
-  AANTAL: "Aantal",
-  OPPERVLAKTE: "Oppervlakte (handmatig)",
-  SLIDER: "Schuifbalk",
-  TEKST: "Tekst",
-  JA_NEE: "Ja / nee",
-  CHECKBOX: "Aanvinkvakje",
-  DROPDOWN: "Keuzelijst",
-  RADIO: "Keuzerondjes",
-  MEERKEUZE: "Meerdere keuzes",
-  AFMETINGEN: "Afmetingen (lengte × breedte)",
-  PRODUCT_KEUZE: "Materiaal-/productkeuze",
-};
-
-const SOORT_UITLEG: Record<CalculatorField["soort"], string> = {
-  NUMMER: "De klant vult een getal in, bijv. het aantal meters.",
-  AANTAL: "Hetzelfde als een getal, maar met 'aantal' als standaardlabel.",
-  OPPERVLAKTE: "De klant vult direct een oppervlakte in (m²).",
-  SLIDER: "De klant sleept een schuifbalk naar de gewenste waarde.",
-  TEKST: "Vrije tekst, bijv. een opmerking of adres.",
-  JA_NEE: "Een aan/uit-schakelaar, bijv. 'oude schutting verwijderen?'.",
-  CHECKBOX: "Een vinkje, bijv. voor een optionele extra.",
-  DROPDOWN: "De klant kiest één optie uit een lijst.",
-  RADIO: "De klant kiest één optie uit zichtbare rondjes.",
-  MEERKEUZE: "De klant kan meerdere opties tegelijk aanvinken.",
-  AFMETINGEN: "Lengte × breedte (en optioneel hoogte) — oppervlakte wordt automatisch berekend.",
-  PRODUCT_KEUZE: "De klant kiest een materiaal of product, elk met een eigen prijs.",
-};
-
-// Compacte meta-regel per vraag (Deel 7: "Getal · m² · Verplicht") i.p.v.
-// alleen het type — toont in één oogopslag ook eenheid en verplicht-status.
-function veldMeta(veld: CalculatorField): string {
-  const delen = [SOORT_LABELS[veld.soort]];
-  if ("eenheid" in veld && veld.eenheid) delen.push(veld.eenheid);
-  if ("opties" in veld) delen.push(`${veld.opties.length} ${veld.opties.length === 1 ? "optie" : "opties"}`);
-  if (veld.verplicht) delen.push("Verplicht");
-  return delen.join(" · ");
-}
 
 export function VeldenTab({
   toolId,
@@ -422,78 +385,3 @@ function VeldFormModal({
   );
 }
 
-function KeuzeOptiesEditor({ opties, onChange }: { opties: KeuzeOptie[]; onChange: (opties: KeuzeOptie[]) => void }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <Label>Keuze-opties</Label>
-      {opties.map((optie, i) => (
-        <div key={i} className="flex gap-2">
-          <Input
-            value={optie.label}
-            onChange={(e) => {
-              const label = e.target.value;
-              const nieuw = [...opties];
-              nieuw[i] = { waarde: label.toLowerCase().replace(/\s+/g, "-"), label };
-              onChange(nieuw);
-            }}
-            placeholder={`Optie ${i + 1}`}
-          />
-          <Button type="button" variant="ghost" size="icon" onClick={() => onChange(opties.filter((_, j) => j !== i))} aria-label="Verwijderen">
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        </div>
-      ))}
-      <Button type="button" variant="secondary" size="sm" className="w-fit" onClick={() => onChange([...opties, { waarde: "", label: "" }])}>
-        <Plus className="h-3.5 w-3.5" />
-        Optie toevoegen
-      </Button>
-    </div>
-  );
-}
-
-function ProductOptiesEditor({
-  opties,
-  onChange,
-}: {
-  opties: ProductKeuzeOptieInvoer[];
-  onChange: (opties: ProductKeuzeOptieInvoer[]) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <Label>Materiaal-/productopties, elk met een eigen prijs</Label>
-      {opties.map((optie, i) => (
-        <div key={optie.id ?? i} className="flex gap-2">
-          <Input
-            value={optie.naam}
-            onChange={(e) => {
-              const nieuw = [...opties];
-              nieuw[i] = { ...optie, naam: e.target.value };
-              onChange(nieuw);
-            }}
-            placeholder="Bijv. Douglas"
-            className="flex-1"
-          />
-          <div className="relative w-32 shrink-0">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
-            <DecimalInput
-              value={optie.prijs === 0 ? "" : String(optie.prijs)}
-              onChange={(e) => {
-                const nieuw = [...opties];
-                nieuw[i] = { ...optie, prijs: Number(e.target.value.replace(",", ".")) || 0 };
-                onChange(nieuw);
-              }}
-              className="pl-7"
-            />
-          </div>
-          <Button type="button" variant="ghost" size="icon" onClick={() => onChange(opties.filter((_, j) => j !== i))} aria-label="Verwijderen">
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        </div>
-      ))}
-      <Button type="button" variant="secondary" size="sm" className="w-fit" onClick={() => onChange([...opties, { naam: "", prijs: 0 }])}>
-        <Plus className="h-3.5 w-3.5" />
-        Optie toevoegen
-      </Button>
-    </div>
-  );
-}

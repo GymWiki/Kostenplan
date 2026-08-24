@@ -125,7 +125,25 @@ function valideerOnderdeelSlice(velden: CalculatorField[], afgeleideVariabelen: 
     }
   }
 
+  // Deze twee checks dekten voorheen de inline "Vul een label in"/"Voeg
+  // minimaal één optie toe"-meldingen die vóór het opslaan in
+  // VeldFormModal/RegelFormModal blokkeerden (velden-tab.tsx/regels-tab.tsx).
+  // Het inline drie-koloms bouwer-paneel (v2) commit elke wijziging direct
+  // zonder eigen "Opslaan"-blokkade, dus die controle moet hier zitten —
+  // zichtbaar via dezelfde meldingen-banner die de bouwer al toont.
+  for (const veld of velden) {
+    if (!veld.label.trim()) {
+      meldingen.push({ ernst: "FOUT", veldId: veld.id, boodschap: "Een vraag heeft nog geen tekst." });
+    }
+    if ((veld.soort === "DROPDOWN" || veld.soort === "RADIO" || veld.soort === "MEERKEUZE") && veld.opties.length === 0) {
+      meldingen.push({ ernst: "FOUT", veldId: veld.id, boodschap: `De vraag "${veld.label}" heeft nog geen keuze-opties.` });
+    }
+  }
+
   for (const regel of regels) {
+    if (!regel.label.trim()) {
+      meldingen.push({ ernst: "FOUT", regelId: regel.id, boodschap: "Een prijsregel heeft nog geen naam." });
+    }
     for (const { expr } of expressiesVanRegel(regel)) {
       if (!expr) continue;
       const gebruikt = variabelenInExpressie(expr);

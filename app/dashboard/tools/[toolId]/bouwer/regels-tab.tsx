@@ -16,6 +16,8 @@ import { beschikbareVariabelen, numeriekeVariabelen } from "./variabelen-utils";
 import { VoorwaardeEditor, ontleedVoorwaarde, bouwVoorwaarde, legeConditie, type VoorwaardeGroep } from "./voorwaarde-editor";
 import { BuilderListRow } from "./builder-list-row";
 import { regelSamenvatting } from "./regel-samenvatting";
+import { Bedragveld } from "./bedragveld";
+import { nieuwRegelId } from "./regel-id-utils";
 
 type BouwbaarType = "VAST" | "PER_EENHEID" | "PERCENTAGE" | "TOESLAG" | "KORTING" | "STAFFEL";
 
@@ -160,12 +162,6 @@ export function RegelsTab({
       />
     </div>
   );
-}
-
-function nieuwRegelId(bestaandeIds: Set<string>): string {
-  let i = 1;
-  while (bestaandeIds.has(`regel${i}`)) i += 1;
-  return `regel${i}`;
 }
 
 function RegelFormModal({
@@ -523,14 +519,3 @@ function RegelFormModal({
   );
 }
 
-function Bedragveld({ label, waarde, onChange }: { label: string; waarde: string; onChange: (waarde: string) => void }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      {label && <Label>{label}</Label>}
-      <div className="relative">
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
-        <DecimalInput value={waarde} onChange={(e) => onChange(e.target.value)} className="pl-7" />
-      </div>
-    </div>
-  );
-}

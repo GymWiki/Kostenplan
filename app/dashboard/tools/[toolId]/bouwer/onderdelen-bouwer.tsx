@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { AlertCircle, AlertTriangle, CheckCircle2, Rocket } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, Puzzle, Redo2, Rocket, Undo2 } from "lucide-react";
 import { valideerCalculatorConfig, type ModulaireCalculatorConfigData } from "@/app/lib/calculator-engine";
 import {
   saveCalculatorConfigDraftAction,
@@ -15,8 +15,14 @@ import { Button } from "@/app/components/ui/button";
 import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import { Tabs, type TabItem } from "@/app/components/ui/tabs";
 import { BouwerPreviewLayout } from "./bouwer-preview-layout";
-import { OnderdelenTab } from "./onderdelen-tab";
+import { BuilderThreeColumnLayout } from "./builder-three-column-layout";
+import { BuilderTree, type Selectie } from "./builder-tree";
+import { VeldSettingsForm } from "./veld-settings-form";
+import { RegelSettingsForm } from "./regel-settings-form";
+import { OnderdeelSettingsForm } from "./onderdeel-settings-form";
 import { ResultaatTab } from "./resultaat-tab";
+import { beschikbareVariabelen } from "./variabelen-utils";
+import { useConfigHistory } from "./use-config-history";
 import type { Branding, SubscriptionTier, OnderdeelBibliotheek } from "@/app/generated/prisma/client";
 
 type Tab = "onderdelen" | "resultaat";
@@ -29,8 +35,13 @@ const TABS: TabItem<Tab>[] = [
 // Levering B v2 — de modulaire tegenhanger van CalculatorBouwer (blijft
 // zelf volledig ongewijzigd voor bestaande versie-1-tools). Zelfde
 // chrome/patroon: autosave (debounce, geen aparte "Opslaan"-knop),
-// live-validatie, publiceren blokkeert op FOUT-meldingen — alleen de
-// hoofdinhoud is de Onderdelen-lijst i.p.v. Vragen/Berekening/Stappen.
+// live-validatie, publiceren blokkeert op FOUT-meldingen.
+//
+// UX-audit-herontwerp: geen modals meer voor het bewerken van Onderdelen/
+// Vragen/Prijsregels — een drie-koloms layout (Componenten | Instellingen |
+// Live preview), inline bewerken, undo/redo (Ctrl+Z / Ctrl+Shift+Z). Zie
+// builder-tree.tsx (kolom 1), veld-settings-form.tsx/regel-settings-form.tsx/
+// onderdeel-settings-form.tsx (kolom 2, per selectietype).
 export function OnderdelenBouwer({
   toolId,
   toolNaam,
@@ -56,10 +67,13 @@ export function OnderdelenBouwer({
   materiaalOpties: Record<string, MateriaalOptie[]>;
   initieleOnderdeelBibliotheek: OnderdeelBibliotheek[];
 }) {
-  const [config, setConfig] = useState(initieleConfig);
+  const { config, setConfig, undo, redo, canUndo, canRedo, resetGroepering } = useConfigHistory(initieleConfig);
   const [materiaalOpties, setMateriaalOpties] = useState(initieleMateriaalOpties);
   const [onderdeelBibliotheek, setOnderdeelBibliotheek] = useState(initieleOnderdeelBibliotheek);
   const [tab, setTab] = useState<Tab>("onderdelen");
+  const [selectie, setSelectie] = useState<Selectie | null>(null);
+  const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
+  const [mobielPaneel, setMobielPaneel] = useState<"lijst" | "instellingen" | "preview">("lijst");
   const [opslaanStatus, setOpslaanStatus] = useState<"idle" | "bezig" | "opgeslagen">("opgeslagen");
   const [gepubliceerd, setGepubliceerd] = useState(heeftLiveVersie);
   const [publiceerFout, setPubliceerFout] = useState<string | null>(null);
@@ -84,6 +98,12 @@ export function OnderdelenBouwer({
     return () => clearTimeout(timer);
   }, [config, toolId]);
 
+  function selecteer(nieuw: Selectie) {
+    resetGroepering();
+    setSelectie(nieuw);
+    setMobielPaneel("instellingen");
+  }
+
   function handlePublish() {
     setPubliceerFout(null);
     startPublicerenTransition(async () => {
@@ -106,6 +126,91 @@ export function OnderdelenBouwer({
     });
   }
 
+  const geselecteerdOnderdeel = selectie ? config.onderdelen.find((o) => o.id === selectie.onderdeelId) : undefined;
+  const geselecteerdVeld = selectie?.soort === "veld" && geselecteerdOnderdeel ? geselecteerdOnderdeel.velden.find((v) => v.id === selectie.veldId) : undefined;
+  const geselecteerdRegel = selectie?.soort === "regel" && geselecteerdOnderdeel ? geselecteerdOnderdeel.regels.find((r) => r.id === selectie.regelId) : undefined;
+
+  function instellingenPaneel() {
+    if (!selectie || !geselecteerdOnderdeel) {
+      return (
+        <div className="flex h-full flex-col items-center justify-center gap-2 py-10 text-center">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+            <Puzzle className="h-5 w-5" />
+          </span>
+          <p className="text-sm text-muted-foreground">
+            {config.onderdelen.length === 0 ? "Voeg links je eerste onderdeel toe." : "Selecteer links een onderdeel, vraag of prijsregel om te bewerken."}
+          </p>
+        </div>
+      );
+    }
+
+    if (selectie.soort === "onderdeel") {
+      return (
+        <div className="flex flex-col gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Onderdeel</p>
+          <OnderdeelSettingsForm
+            key={geselecteerdOnderdeel.id}
+            toolId={toolId}
+            onderdeel={geselecteerdOnderdeel}
+            onChange={(nieuw) => setConfig({ ...config, onderdelen: config.onderdelen.map((o) => (o.id === nieuw.id ? nieuw : o)) })}
+            onOpgeslagenInBibliotheek={(item) => setOnderdeelBibliotheek([item, ...onderdeelBibliotheek])}
+          />
+        </div>
+      );
+    }
+
+    if (selectie.soort === "veld" && geselecteerdVeld) {
+      return (
+        <div className="flex flex-col gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Vraag · {geselecteerdOnderdeel.naam}</p>
+          <VeldSettingsForm
+            key={geselecteerdVeld.id}
+            toolId={toolId}
+            veld={geselecteerdVeld}
+            canChangeType={justCreatedId === geselecteerdVeld.id}
+            overigeVelden={geselecteerdOnderdeel.velden.filter((v) => v.id !== geselecteerdVeld.id)}
+            afgeleideVariabelen={geselecteerdOnderdeel.afgeleideVariabelen}
+            materiaalOpties={materiaalOpties}
+            onMateriaalOptiesChange={setMateriaalOpties}
+            onChange={(nieuw) =>
+              setConfig({
+                ...config,
+                onderdelen: config.onderdelen.map((o) =>
+                  o.id === geselecteerdOnderdeel.id ? { ...o, velden: o.velden.map((v) => (v.id === nieuw.id ? nieuw : v)) } : o
+                ),
+              })
+            }
+          />
+        </div>
+      );
+    }
+
+    if (selectie.soort === "regel" && geselecteerdRegel) {
+      const variabelen = beschikbareVariabelen(geselecteerdOnderdeel.velden, geselecteerdOnderdeel.afgeleideVariabelen);
+      return (
+        <div className="flex flex-col gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Prijsregel · {geselecteerdOnderdeel.naam}</p>
+          <RegelSettingsForm
+            key={geselecteerdRegel.id}
+            regel={geselecteerdRegel}
+            canChangeType={justCreatedId === geselecteerdRegel.id}
+            variabelen={variabelen}
+            onChange={(nieuw) =>
+              setConfig({
+                ...config,
+                onderdelen: config.onderdelen.map((o) =>
+                  o.id === geselecteerdOnderdeel.id ? { ...o, regels: o.regels.map((r) => (r.id === nieuw.id ? nieuw : r)) } : o
+                ),
+              })
+            }
+          />
+        </div>
+      );
+    }
+
+    return null;
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -117,6 +222,14 @@ export function OnderdelenBouwer({
           <p className="text-sm text-muted-foreground">Voor &ldquo;{toolNaam}&rdquo;</p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
+            <Button type="button" variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Ongedaan maken (Ctrl+Z)" title="Ongedaan maken (Ctrl+Z)">
+              <Undo2 className="h-4 w-4" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Opnieuw doen (Ctrl+Shift+Z)" title="Opnieuw doen (Ctrl+Shift+Z)">
+              <Redo2 className="h-4 w-4" />
+            </Button>
+          </div>
           {opslaanStatus === "bezig" && <span className="text-xs text-muted-foreground">Opslaan…</span>}
           {opslaanStatus === "opgeslagen" && <span className="text-xs text-muted-foreground">Concept opgeslagen</span>}
         </div>
@@ -151,51 +264,64 @@ export function OnderdelenBouwer({
         </p>
       )}
 
-      <BouwerPreviewLayout
-        bewerken={
-          <div className="flex flex-col gap-4">
-            <Tabs tabs={TABS} value={tab} onChange={setTab} />
+      <Tabs tabs={TABS} value={tab} onChange={setTab} />
 
-            {tab === "onderdelen" && (
-              <OnderdelenTab
-                toolId={toolId}
-                onderdelen={config.onderdelen}
-                onChange={(onderdelen) => setConfig((c) => ({ ...c, onderdelen }))}
-                meldingen={meldingen}
-                materiaalOpties={materiaalOpties}
-                onMateriaalOptiesChange={setMateriaalOpties}
-                resultaatInstellingen={config.resultaatInstellingen}
-                btwPercentage={btwPercentage}
-                bedrijfsnaam={bedrijfsnaam}
-                email={email}
-                subscriptionTier={subscriptionTier}
-                branding={branding}
-                onderdeelBibliotheek={onderdeelBibliotheek}
-                onOnderdeelBibliotheekChange={setOnderdeelBibliotheek}
-              />
-            )}
-            {tab === "resultaat" && (
-              <ResultaatTab
-                instellingen={config.resultaatInstellingen}
-                onChange={(resultaatInstellingen) => setConfig((c) => ({ ...c, resultaatInstellingen }))}
-              />
-            )}
-          </div>
-        }
-        preview={
-          <EngineCalculator
-            toolId={toolId}
-            bedrijfsnaam={bedrijfsnaam}
-            email={email}
-            subscriptionTier={subscriptionTier}
-            branding={branding}
-            config={config}
-            btwPercentage={btwPercentage}
-            materiaalOpties={materiaalOpties}
-            previewModus
-          />
-        }
-      />
+      {tab === "onderdelen" && (
+        <BuilderThreeColumnLayout
+          mobielPaneel={mobielPaneel}
+          onMobielPaneelChange={setMobielPaneel}
+          lijst={
+            <BuilderTree
+              toolId={toolId}
+              onderdelen={config.onderdelen}
+              onChange={(onderdelen) => setConfig({ ...config, onderdelen })}
+              meldingen={meldingen}
+              selectie={selectie}
+              onSelect={selecteer}
+              onderdeelBibliotheek={onderdeelBibliotheek}
+              onJustCreated={setJustCreatedId}
+            />
+          }
+          instellingen={instellingenPaneel()}
+          preview={
+            <EngineCalculator
+              toolId={toolId}
+              bedrijfsnaam={bedrijfsnaam}
+              email={email}
+              subscriptionTier={subscriptionTier}
+              branding={branding}
+              config={config}
+              btwPercentage={btwPercentage}
+              materiaalOpties={materiaalOpties}
+              previewModus
+            />
+          }
+        />
+      )}
+
+      {tab === "resultaat" && (
+        <BouwerPreviewLayout
+          bewerken={
+            <ResultaatTab
+              instellingen={config.resultaatInstellingen}
+              onChange={(resultaatInstellingen) => setConfig({ ...config, resultaatInstellingen })}
+            />
+          }
+          preview={
+            <EngineCalculator
+              toolId={toolId}
+              bedrijfsnaam={bedrijfsnaam}
+              email={email}
+              subscriptionTier={subscriptionTier}
+              branding={branding}
+              config={config}
+              btwPercentage={btwPercentage}
+              materiaalOpties={materiaalOpties}
+              previewModus
+            />
+          }
+        />
+      )}
 
       {gepubliceerd && (
         <div className="mt-2 border-t border-border pt-4">
