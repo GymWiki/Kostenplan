@@ -20,7 +20,15 @@ export default async function DashboardLayout({
           activeCompanyId={company.id}
           alleBedrijven={alleBedrijven}
         />
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>
+        {/* Audit-bevinding D-03: lijst/overzichtpagina's (Tools, Leads, enz.)
+            hadden geen enkele max-width en rekten op grote/ultrawide
+            schermen uit tot de volledige main-breedte. Eén grens hier,
+            i.p.v. per pagina, dekt elke bestaande en toekomstige pagina
+            automatisch; instellingenpagina's die zelf al een nauwere
+            max-w-2xl gebruiken nestelen daar gewoon binnen. */}
+        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
+          <div className="mx-auto max-w-[1800px]">{children}</div>
+        </main>
       </div>
     </div>
   );

@@ -72,7 +72,7 @@ export default async function ToolOverzichtPage({
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
         <StatCard label="Producten" value={productenCount} />
         <StatCard label="Aanvragen" value={leadsCount} />
         <StatCard label="Bezoeken" value={analytics.bezoeken} />
@@ -84,10 +84,10 @@ export default async function ToolOverzichtPage({
 
       <div>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Snel naar</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
           {KWARTIER_LINKS.map((item) => (
             <Link key={item.segment} href={`/dashboard/tools/${toolId}/${item.segment}`}>
-              <Card className="transition-colors hover:border-primary/40">
+              <Card className="h-full transition-colors hover:border-primary/40">
                 <CardContent className="flex items-center gap-3">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <item.icon className="h-4.5 w-4.5" />

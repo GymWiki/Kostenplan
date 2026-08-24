@@ -192,7 +192,7 @@ export function LeadsView({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
         <KpiCard
           icon={TrendingUp}
           label="Pipeline waarde"

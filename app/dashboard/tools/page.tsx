@@ -71,13 +71,14 @@ export default async function ToolsOverzichtPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]">
           {tools.map((tool, i) => {
             const ToolIcon = getProductIcon(tool.icoon);
             const toolUrl = toolUrls[i];
             return (
-              <Card key={tool.id} className="flex flex-col overflow-hidden">
-                <CardContent className="flex flex-1 flex-col gap-4">
+              <Card key={tool.id} className="relative flex h-full flex-col overflow-hidden transition-colors hover:border-primary/40">
+                <Link href={`/dashboard/tools/${tool.id}`} className="absolute inset-0" aria-label={`${tool.naam} bewerken`} />
+                <CardContent className="relative flex flex-1 flex-col gap-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5">
                       {ToolIcon && (
@@ -85,9 +86,7 @@ export default async function ToolsOverzichtPage() {
                           <ToolIcon className="h-4.5 w-4.5" />
                         </span>
                       )}
-                      <Link href={`/dashboard/tools/${tool.id}`} className="font-medium text-foreground hover:underline">
-                        {tool.naam}
-                      </Link>
+                      <span className="font-medium text-foreground">{tool.naam}</span>
                     </div>
                     <Badge variant={STATUS_BADGE_VARIANT[tool.status]}>{TOOL_STATUS_LABELS[tool.status]}</Badge>
                   </div>

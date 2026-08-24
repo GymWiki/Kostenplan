@@ -60,7 +60,7 @@ export default async function DashboardPage() {
         <OnboardingChecklist stappen={onboardingStappen} justCompleted={justCompletedOnboarding} />
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
         <StatCard icon={Wrench} label="Rekentools" value={toolsCount} href="/dashboard/tools" />
         <StatCard icon={Package} label="Producten (alle tools)" value={productsCount} href="/dashboard/tools" />
         <StatCard
