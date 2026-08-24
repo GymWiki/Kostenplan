@@ -19,10 +19,19 @@ export default async function LeadsPage() {
   }
 
   const [rawLeads, tools] = await Promise.all([
+    // Audit-bevinding T-04 (kritiek): deze query had geen enkele grens en
+    // laadt bij groei naar duizenden aanvragen steeds meer data op elk
+    // bezoek. `take: 500` is een veilige, direct werkzame ondergrens (ruim
+    // boven wat één company vandaag heeft) zonder de client-architectuur
+    // (optimistische statuswijziging, Kanban-bord, KPI-afleiding — die
+    // allemaal op de volledige, al-geladen lijst leunen) te moeten
+    // herbouwen. Echte cursor-paginering met server-side KPI-aggregatie is
+    // vervolgwerk zodra een company dit plafond daadwerkelijk nadert.
     prisma.lead.findMany({
       where: { companyId: company.id },
       include: { notities: { orderBy: { createdAt: "asc" } }, offerte: true },
       orderBy: { createdAt: "desc" },
+      take: 500,
     }),
     // Voor het toolfilter hierboven de <LeadsView> — alleen niet-verwijderde
     // tools zijn te kiezen, een lead van een inmiddels verwijderde tool blijft

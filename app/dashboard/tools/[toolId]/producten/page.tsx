@@ -1,21 +1,11 @@
 import type { Metadata } from "next";
-import { Pencil, Copy, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import { requireActiveTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { Button, LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import { getProductIcon } from "@/app/lib/icons";
-import { unitLabel } from "@/app/lib/units";
-import { ActiveToggle } from "@/app/components/dashboard/active-toggle";
-import { DeleteButton } from "@/app/components/dashboard/delete-button";
 import { NieuwItemButton } from "@/app/components/dashboard/nieuw-item-button";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
-import {
-  copyProductAction,
-  deleteProductAction,
-  toggleProductActiveAction,
-} from "@/app/lib/actions/products";
+import { ProductenTable } from "./producten-table";
 
 export const metadata: Metadata = { title: "Producten" };
 
@@ -74,85 +64,7 @@ export default async function ProductenPage({
           </CardContent>
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/50 text-left text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">Product</th>
-                  <th className="px-4 py-3 font-medium">Materiaalcategorieën</th>
-                  <th className="px-4 py-3 font-medium">Extra opties</th>
-                  <th className="px-4 py-3 font-medium">Actief</th>
-                  <th className="px-4 py-3 font-medium text-right">Acties</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {products.map((product) => {
-                  const ProductIcon = getProductIcon(product.icoon);
-                  return (
-                  <tr key={product.id}>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        {ProductIcon && (
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            <ProductIcon className="h-4 w-4" />
-                          </span>
-                        )}
-                        <div>
-                          <p className="font-medium text-foreground">{product.naam}</p>
-                          <p className="text-xs text-muted-foreground">
-                            / {unitLabel(product.eenheid)}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      <Badge variant="muted">
-                        {product._count.materiaalCategorieen}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      <Badge variant="muted">{product._count.extraOpties}</Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <ActiveToggle
-                        action={toggleProductActiveAction}
-                        id={product.id}
-                        idField="productId"
-                        actief={product.actief}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-1">
-                        <LinkButton
-                          href={`/dashboard/tools/${toolId}/producten/${product.id}/bewerken`}
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Bewerken"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </LinkButton>
-                        <form action={copyProductAction}>
-                          <input type="hidden" name="productId" value={product.id} />
-                          <Button variant="ghost" size="icon" type="submit" aria-label="Kopiëren" disabled={atLimit}>
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </form>
-                        <DeleteButton
-                          action={deleteProductAction}
-                          id={product.id}
-                          idField="productId"
-                          confirmMessage="Weet je zeker dat je dit product wilt verwijderen?"
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        <ProductenTable toolId={toolId} products={products} atLimit={atLimit} />
       )}
     </div>
   );
