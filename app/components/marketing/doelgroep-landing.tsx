@@ -8,7 +8,9 @@ import { SiteFooter } from "@/app/components/marketing/site-footer";
 import { Breadcrumbs } from "@/app/components/marketing/breadcrumbs";
 import { GeoAnswer } from "@/app/components/marketing/geo-answer";
 import { FaqSection } from "@/app/components/marketing/faq-section";
+import { RelatedContent } from "@/app/components/marketing/related-content";
 import { DOELGROEPEN, type Doelgroep } from "@/app/lib/doelgroepen";
+import { alleContent } from "@/app/lib/content";
 
 // Gedeelde template voor de doelgroep-landingspagina's onder /voor/[slug].
 // Elke pagina levert alleen zijn eigen Doelgroep-config aan (zie
@@ -16,13 +18,15 @@ import { DOELGROEPEN, type Doelgroep } from "@/app/lib/doelgroepen";
 // terwijl de opmaak en de onderlinge cross-links hier centraal blijven.
 export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
   const andereDoelgroepen = DOELGROEPEN.filter((d) => d.slug !== doelgroep.slug);
+  const features = alleContent("features");
+  const kennisbank = alleContent("kennisbank").slice(0, 2);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
       <Breadcrumbs
         items={[
-          { label: "Rekentool", href: "/rekentool" },
+          { label: "Voor vakmensen", href: "/voor" },
           { label: `Voor ${doelgroep.naamMeervoud}`, href: `/voor/${doelgroep.slug}` },
         ]}
       />
@@ -100,6 +104,28 @@ export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
           titel={`Veelgestelde vragen van ${doelgroep.naamMeervoud}`}
           intro={`Concrete antwoorden voor ${doelgroep.naamMeervoud} die overwegen een rekentool te bouwen.`}
         />
+
+        {/* GERELATEERDE CONTENT */}
+        <section className="mx-auto max-w-6xl px-4 pt-4 pb-16 sm:px-6">
+          <RelatedContent
+            titel="Meer over de functionaliteiten"
+            links={features.map((f) => ({
+              title: f.frontmatter.title,
+              href: `/features/${f.slug}`,
+              description: f.frontmatter.description,
+            }))}
+          />
+          <div className="mt-10">
+            <RelatedContent
+              titel="Verder lezen in de kennisbank"
+              links={kennisbank.map((k) => ({
+                title: k.frontmatter.title,
+                href: `/kennisbank/${k.slug}`,
+                description: k.frontmatter.description,
+              }))}
+            />
+          </div>
+        </section>
 
         {/* ANDERE DOELGROEPEN */}
         <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">

@@ -2,12 +2,13 @@ import Link from "next/link";
 import { Mail } from "lucide-react";
 import { Logo } from "@/app/components/ui/logo";
 import { DOELGROEPEN } from "@/app/lib/doelgroepen";
+import { alleContent } from "@/app/lib/content";
 
 const snelleLinks = [
   { href: "/", label: "Home" },
-  { href: "/#voorbeeld", label: "Functionaliteiten" },
-  { href: "/#prijzen", label: "Prijzen" },
   { href: "/kennisbank", label: "Kennisbank" },
+  { href: "/blog", label: "Blog" },
+  { href: "/#prijzen", label: "Prijzen" },
   { href: "/login", label: "Inloggen" },
 ];
 
@@ -19,21 +20,25 @@ const productLinks = [
   { href: "/online-offerte-maken", label: "Online offerte maken" },
 ];
 
-const doelgroepLinks = DOELGROEPEN.map((d) => ({
-  href: `/voor/${d.slug}`,
-  label: `Voor ${d.naamMeervoud}`,
-}));
-
 const juridischeLinks = [
   { href: "/algemene-voorwaarden", label: "Algemene Voorwaarden" },
   { href: "/privacybeleid", label: "Privacybeleid" },
 ];
 
 export function SiteFooter() {
+  const featureLinks = [
+    ...alleContent("features").map((f) => ({ href: `/features/${f.slug}`, label: f.frontmatter.title })),
+    { href: "/features", label: "Alle functionaliteiten" },
+  ];
+  const doelgroepLinks = [
+    ...DOELGROEPEN.map((d) => ({ href: `/voor/${d.slug}`, label: `Voor ${d.naamMeervoud}` })),
+    { href: "/voor", label: "Alle vakgebieden" },
+  ];
+
   return (
     <footer className="border-t border-border bg-secondary/30">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-6">
           <div className="sm:col-span-2 lg:col-span-1">
             <Link
               href="/"
@@ -65,6 +70,7 @@ export function SiteFooter() {
           </div>
 
           <FooterColumn title="Product" links={productLinks} />
+          <FooterColumn title="Functionaliteiten" links={featureLinks} />
           <FooterColumn title="Voor wie" links={doelgroepLinks} />
           <FooterColumn title="Snelle links" links={snelleLinks} />
           <FooterColumn title="Juridisch" links={juridischeLinks} />

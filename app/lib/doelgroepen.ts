@@ -391,6 +391,98 @@ export const DOELGROEPEN: Doelgroep[] = [
       },
     ],
   },
+  {
+    slug: "loodgieters",
+    naam: "loodgieter",
+    naamMeervoud: "loodgieters",
+    projectVoorbeeld: "installatiewerk",
+    title: "Offertecalculator voor Loodgieters",
+    description:
+      "Laat klanten zelf een prijsindicatie voor installatiewerk berekenen — van een cv-ketel tot sanitair. Ontvang alleen serieuze aanvragen. Start gratis.",
+    h1: "Prijsberekening voor loodgieters, zonder losse offertes te typen",
+    intro:
+      "Als loodgieter krijg je veel uiteenlopende aanvragen — van een lekkage tot een complete badkamerinstallatie — waarvan een deel alleen wil weten \"wat kost dit ongeveer.\" Met Kostenplan berekenen bezoekers zelf een prijsindicatie voor hun installatiewerk — jij ontvangt alleen aanvragen van mensen die al weten wat het ongeveer gaat kosten.",
+    voordelen: [
+      {
+        titel: "Prijs per meter leidingwerk of per aansluiting",
+        tekst:
+          "Reken leidingwerk per strekkende meter en vaste onderdelen (zoals een nieuwe cv-ketel of een sanitair-aansluiting) als apart bedrag, zodat de opbouw voor de klant herkenbaar blijft.",
+      },
+      {
+        titel: "Spoedwerk apart geprijsd",
+        tekst:
+          "Voeg een toeslag toe voor spoedaanvragen of werk buiten reguliere uren, die alleen meetelt wanneer de klant aangeeft dat het dringend is.",
+      },
+      {
+        titel: "Van vervangen ketel tot volledige installatie",
+        tekst:
+          "Bouw losse rekentools voor uiteenlopend werk — bijvoorbeeld één voor het vervangen van een cv-ketel en één voor het aansluiten van sanitair — elk met de vragen die daar logisch bij horen.",
+      },
+    ],
+    faqs: [
+      {
+        vraag: "Kan ik een prijsindicatie geven voor het vervangen van een cv-ketel?",
+        antwoord:
+          "Ja. Je stelt een vaste prijs of prijs per model in, eventueel met keuzeopties voor verschillende ketelmerken of -capaciteiten, gecombineerd met een vast bedrag voor installatie.",
+      },
+      {
+        vraag: "Kan ik leidingwerk per meter laten doorrekenen?",
+        antwoord:
+          "Ja. Je stelt een prijs per strekkende meter in voor leidingwerk, die automatisch meeschaalt met de lengte die de klant invult.",
+      },
+      {
+        vraag: "Kan ik een toeslag instellen voor spoedwerk?",
+        antwoord:
+          "Ja, met een voorwaardelijke prijsregel gekoppeld aan een vraag als \"is dit spoedeisend?\" — de toeslag telt dan alleen mee wanneer de klant dat aangeeft.",
+      },
+    ],
+  },
+  {
+    slug: "elektriciens",
+    naam: "elektricien",
+    naamMeervoud: "elektriciens",
+    projectVoorbeeld: "elektrawerk",
+    title: "Offertecalculator voor Elektriciens",
+    description:
+      "Laat klanten zelf een prijsindicatie voor elektrawerk berekenen — van een groepenkast tot een laadpaal. Ontvang alleen serieuze aanvragen. Start gratis.",
+    h1: "Prijsberekening voor elektriciens, zonder losse offertes te typen",
+    intro:
+      "Als elektricien krijg je aanvragen die sterk in omvang verschillen — van één extra wandcontactdoos tot een volledig vernieuwde groepenkast of een laadpaal. Met Kostenplan berekenen bezoekers zelf een prijsindicatie voor hun elektrawerk — jij ontvangt alleen aanvragen van mensen die al weten wat het ongeveer gaat kosten.",
+    voordelen: [
+      {
+        titel: "Prijs per aansluitpunt of onderdeel",
+        tekst:
+          "Reken een vast bedrag per extra wandcontactdoos, schakelaar of lichtpunt, en een apart bedrag voor grotere onderdelen zoals een nieuwe groepenkast of een laadpaal-aansluiting.",
+      },
+      {
+        titel: "Aantal groepen of punten laten meetellen",
+        tekst:
+          "Laat de klant het gewenste aantal aansluitpunten invullen; de rekentool telt automatisch de bijbehorende prijs op bij de rest van de berekening.",
+      },
+      {
+        titel: "Keuzeopties voor materiaalkwaliteit",
+        tekst:
+          "Bied bijvoorbeeld een standaard- en een merkschakelaar aan als keuzeopties, elk met een eigen prijs, zodat de klant zelf de gewenste kwaliteit selecteert.",
+      },
+    ],
+    faqs: [
+      {
+        vraag: "Kan ik een prijsindicatie geven voor een laadpaal-aansluiting?",
+        antwoord:
+          "Ja. Je stelt een vast bedrag of een prijs op basis van de afstand tot de meterkast in, eventueel gecombineerd met keuzeopties voor het gewenste type laadpaal.",
+      },
+      {
+        vraag: "Kan ik rekenen per aantal wandcontactdozen of lichtpunten?",
+        antwoord:
+          "Ja. Je stelt een prijs per stuk in en laat de klant het gewenste aantal invullen — de rekentool vermenigvuldigt dat automatisch tot de juiste deelprijs.",
+      },
+      {
+        vraag: "Kan ik onderscheid maken tussen kleine klussen en een volledige groepenkast-vervanging?",
+        antwoord:
+          "Ja, door losse rekentools te maken per type werk, of door binnen één rekentool een vraag toe te voegen die bepaalt welke vervolgvragen en prijsregels van toepassing zijn.",
+      },
+    ],
+  },
 ];
 
 export function getDoelgroep(slug: string): Doelgroep | undefined {

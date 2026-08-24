@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/app/lib/prisma";
 import { DOELGROEPEN } from "@/app/lib/doelgroepen";
-import { KENNISBANK_ARTIKELEN } from "@/app/lib/kennisbank";
+import { alleContent, type ContentCollectie } from "@/app/lib/content";
 
 // Hardcoded productie-domein — bewust niet NEXT_PUBLIC_APP_URL, want die
 // staat in .env/lokale ontwikkeling op localhost en een sitemap moet altijd
@@ -16,6 +16,18 @@ export const BASE_URL = "https://www.kostenplan.nl";
 // hem actueel zonder dat elke crawl-hit de database raakt.
 export const revalidate = 86400;
 
+// Fase 11 van de contentarchitectuur-opdracht: elk .mdx-bestand in
+// content/{collectie}/ komt automatisch in de sitemap terecht — een nieuw
+// artikel toevoegen vereist geen wijziging aan dit bestand.
+function contentPages(collectie: ContentCollectie, pad: string, priority: number): MetadataRoute.Sitemap {
+  return alleContent(collectie).map((item) => ({
+    url: `${BASE_URL}${pad}/${item.slug}`,
+    lastModified: new Date(item.frontmatter.updatedAt ?? item.frontmatter.publishedAt),
+    changeFrequency: "yearly" as const,
+    priority,
+  }));
+}
+
 // Bewust NIET opgenomen:
 // - /dashboard, /api, /auth: geen publieke content (zie ook robots.ts).
 // - /login, /registreren: publieke, crawlbare pagina's zonder unieke
@@ -26,11 +38,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified, changeFrequency: "weekly", priority: 1 },
     { url: `${BASE_URL}/rekentool`, lastModified, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE_URL}/features`, lastModified, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE_URL}/prijzen`, lastModified, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE_URL}/rekentool-op-eigen-website`, lastModified, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE_URL}/offerte-calculator`, lastModified, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE_URL}/prijs-calculator`, lastModified, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE_URL}/online-offerte-maken`, lastModified, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/voor`, lastModified, changeFrequency: "monthly", priority: 0.8 },
     ...DOELGROEPEN.map((d) => ({
       url: `${BASE_URL}/voor/${d.slug}`,
       lastModified,
@@ -38,12 +52,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     })),
     { url: `${BASE_URL}/kennisbank`, lastModified, changeFrequency: "monthly", priority: 0.6 },
-    ...KENNISBANK_ARTIKELEN.map((a) => ({
-      url: `${BASE_URL}/kennisbank/${a.slug}`,
-      lastModified: new Date(a.datum),
-      changeFrequency: "yearly" as const,
-      priority: 0.5,
-    })),
+    ...contentPages("kennisbank", "/kennisbank", 0.5),
+    ...contentPages("features", "/features", 0.7),
+    { url: `${BASE_URL}/blog`, lastModified, changeFrequency: "weekly", priority: 0.6 },
+    ...contentPages("blog", "/blog", 0.5),
     {
       url: `${BASE_URL}/algemene-voorwaarden`,
       lastModified,

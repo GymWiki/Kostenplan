@@ -5,20 +5,20 @@ import { Reveal } from "@/app/components/ui/reveal";
 import { SiteHeader } from "@/app/components/marketing/site-header";
 import { SiteFooter } from "@/app/components/marketing/site-footer";
 import { Breadcrumbs } from "@/app/components/marketing/breadcrumbs";
-import { alleContent } from "@/app/lib/content";
+import { DOELGROEPEN } from "@/app/lib/doelgroepen";
 
-const TITLE = "Kennisbank: rekentools, offertes en prijsberekening";
+const TITLE = "Voor vakmensen";
 const DESCRIPTION =
-  "Praktische artikelen over het bouwen van een rekentool, het automatiseren van offertes en het online laten berekenen van prijzen door klanten.";
+  "Kostenplan werkt voor elk vakgebied waarin klanten vooraf een prijsindicatie willen zien — bekijk hoe dat er per vakgebied uitziet.";
 
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
-  alternates: { canonical: "/kennisbank" },
+  alternates: { canonical: "/voor" },
   openGraph: {
     title: `${TITLE} · Kostenplan`,
     description: DESCRIPTION,
-    url: "/kennisbank",
+    url: "/voor",
     siteName: "Kostenplan",
     locale: "nl_NL",
     type: "website",
@@ -32,41 +32,36 @@ export const metadata: Metadata = {
   },
 };
 
-export default function KennisbankPage() {
-  const artikelen = alleContent("kennisbank");
-
+export default function VoorIndexPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
-      <Breadcrumbs items={[{ label: "Kennisbank", href: "/kennisbank" }]} />
+      <Breadcrumbs items={[{ label: "Voor vakmensen", href: "/voor" }]} />
 
       <main className="flex-1">
         <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
           <Reveal className="text-center">
             <h1 className="text-4xl font-bold tracking-tight text-balance text-foreground sm:text-5xl">
-              Kennisbank
+              Voor vakmensen
             </h1>
-            <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-              Praktische uitleg over rekentools, offertes automatiseren en klanten zelf een prijs
-              laten berekenen.
-            </p>
+            <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">{DESCRIPTION}</p>
           </Reveal>
 
-          <div className="mt-12 flex flex-col gap-4">
-            {artikelen.map((artikel, i) => (
-              <Reveal key={artikel.slug} delay={i * 60}>
+          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {DOELGROEPEN.map((d, i) => (
+              <Reveal key={d.slug} delay={i * 60}>
                 <Link
-                  href={`/kennisbank/${artikel.slug}`}
-                  className="group flex flex-col gap-2 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
+                  href={`/voor/${d.slug}`}
+                  className="group flex h-full flex-col justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
                 >
                   <div>
-                    <h2 className="font-semibold text-foreground">{artikel.frontmatter.title}</h2>
+                    <h2 className="font-semibold text-foreground">Voor {d.naamMeervoud}</h2>
                     <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                      {artikel.frontmatter.description}
+                      Prijsindicaties voor {d.projectVoorbeeld}, direct vanaf je website.
                     </p>
                   </div>
-                  <span className="flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary">
-                    Lezen
+                  <span className="flex items-center gap-1.5 text-sm font-medium text-primary">
+                    Bekijken
                     <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
                   </span>
                 </Link>
