@@ -3,14 +3,8 @@ import { LinkButton } from "@/app/components/ui/button";
 import { Logo } from "@/app/components/ui/logo";
 import { ThemeToggle } from "@/app/components/ui/theme-toggle";
 import { SearchDialog } from "@/app/components/marketing/search-dialog";
-
-const NAV_LINKS = [
-  { href: "/features", label: "Functionaliteiten", breakpoint: "sm:inline-flex" },
-  { href: "/voor", label: "Voor vakmensen", breakpoint: "md:inline-flex" },
-  { href: "/kennisbank", label: "Kennisbank", breakpoint: "md:inline-flex" },
-  { href: "/blog", label: "Blog", breakpoint: "lg:inline-flex" },
-  { href: "/prijzen", label: "Prijzen", breakpoint: "sm:inline-flex" },
-];
+import { MobileNav } from "@/app/components/marketing/mobile-nav";
+import { NAV_LINKS } from "@/app/components/marketing/nav-links";
 
 export function SiteHeader() {
   return (
@@ -38,6 +32,7 @@ export function SiteHeader() {
             Inloggen
           </LinkButton>
           <LinkButton href="/registreren">Start nu gratis</LinkButton>
+          <MobileNav />
         </div>
       </div>
     </header>
