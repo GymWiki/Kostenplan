@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
+import { useToast } from "@/app/components/ui/toast";
 
 export function DeleteButton({
   action,
@@ -11,15 +12,23 @@ export function DeleteButton({
   idField,
   confirmMessage,
   confirmTitle = "Weet je het zeker?",
+  toastMessage = "Verwijderd",
 }: {
   action: (formData: FormData) => Promise<void>;
   id: string;
   idField: string;
   confirmMessage: string;
   confirmTitle?: string;
+  // Sommige delete-acties navigeren na afloop weg (bijv. terug naar een
+  // lijstpagina) via een server-side redirect() — in dat geval bereikt de
+  // toast-aanroep hieronder nooit de client (de navigatie start eerder).
+  // Geen probleem: op de plekken zonder redirect (de meerderheid) verschijnt
+  // de toast gewoon.
+  toastMessage?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   function handleConfirm() {
     const formData = new FormData();
@@ -27,6 +36,7 @@ export function DeleteButton({
     startTransition(async () => {
       await action(formData);
       setOpen(false);
+      toast(toastMessage, "success");
     });
   }
 

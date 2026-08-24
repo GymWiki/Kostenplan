@@ -14,6 +14,7 @@ import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import { Tabs, type TabItem } from "@/app/components/ui/tabs";
+import { useToast } from "@/app/components/ui/toast";
 import { BouwerPreviewLayout } from "./bouwer-preview-layout";
 import { BuilderThreeColumnLayout } from "./builder-three-column-layout";
 import { BuilderTree, type Selectie } from "./builder-tree";
@@ -80,6 +81,7 @@ export function OnderdelenBouwer({
   const [publiceren, startPublicerenTransition] = useTransition();
   const [uitschakelenOpen, setUitschakelenOpen] = useState(false);
   const [uitschakelen, startUitschakelenTransition] = useTransition();
+  const { toast } = useToast();
 
   const meldingen = valideerCalculatorConfig(config);
   const fouten = meldingen.filter((m) => m.ernst === "FOUT");
@@ -93,10 +95,15 @@ export function OnderdelenBouwer({
     }
     setOpslaanStatus("bezig");
     const timer = setTimeout(() => {
-      void saveCalculatorConfigDraftAction(toolId, config).then(() => setOpslaanStatus("opgeslagen"));
+      void saveCalculatorConfigDraftAction(toolId, config)
+        .then(() => setOpslaanStatus("opgeslagen"))
+        .catch(() => {
+          setOpslaanStatus("opgeslagen");
+          toast("Opslaan is mislukt — controleer je verbinding en probeer de wijziging opnieuw.", "error");
+        });
     }, 700);
     return () => clearTimeout(timer);
-  }, [config, toolId]);
+  }, [config, toolId, toast]);
 
   function selecteer(nieuw: Selectie) {
     resetGroepering();
@@ -115,6 +122,7 @@ export function OnderdelenBouwer({
         return;
       }
       setGepubliceerd(true);
+      toast("Rekentool gepubliceerd — je klanten zien nu de nieuwe versie.", "success");
     });
   }
 
