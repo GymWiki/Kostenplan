@@ -376,7 +376,7 @@ function RekentoolPreview({
       >
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- eigen Supabase Storage-URL, geen lokaal asset
-          <img src={logoUrl} alt="" className="h-5 w-5 rounded bg-white object-contain p-0.5" />
+          <img src={logoUrl} alt="" width={20} height={20} className="h-5 w-5 rounded bg-white object-contain p-0.5" />
         ) : (
           <span className="h-5 w-5 rounded bg-white/20" />
         )}

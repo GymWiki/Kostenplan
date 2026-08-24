@@ -597,6 +597,8 @@ function ProductCard({
                                 <img
                                   src={material.foto}
                                   alt=""
+                                  width={64}
+                                  height={64}
                                   className="h-16 w-16 rounded-md object-cover"
                                 />
                               ) : (
@@ -659,6 +661,8 @@ function ProductCard({
                         <img
                           src={extra.foto}
                           alt=""
+                          width={40}
+                          height={40}
                           className="h-10 w-10 shrink-0 rounded-md object-cover"
                         />
                       )}
@@ -694,6 +698,8 @@ function ProductCard({
                         <img
                           src={extra.foto}
                           alt=""
+                          width={40}
+                          height={40}
                           className="h-10 w-10 shrink-0 rounded-md object-cover"
                         />
                       )}
