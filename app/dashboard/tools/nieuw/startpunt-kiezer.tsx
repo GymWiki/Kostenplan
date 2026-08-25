@@ -73,14 +73,25 @@ export function StartpuntKiezer({ templates }: { templates: TemplateSamenvatting
             >
               <Card className="h-full cursor-pointer transition-colors hover:border-primary/40">
                 <CardContent className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2.5">
+                  {/* flex-wrap: op smalle kaarten (3 kolommen op een 768px-
+                      brede pagina, zie tools/nieuw/page.tsx) is er te weinig
+                      ruimte om icoon + titel + badge altijd op één regel te
+                      houden. Met min-w-0/flex-1 alléén werd de titelkolom dan
+                      wel dichtgeknepen, maar zo hard dat break-words elk
+                      woord letter-voor-letter ging afbreken (onleesbaar) —
+                      met flex-wrap zakt het badge in plaats daarvan naar een
+                      eigen regel onder de titel, die dan gewoon op zijn
+                      basisbreedte (9rem) kan blijven staan. break-words blijft
+                      als vangnet voor het zeldzame geval van een enkel woord
+                      dat zelfs die 9rem niet past. */}
+                  <div className="flex flex-wrap items-start gap-2.5">
                     {Icon && (
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <Icon className="h-4.5 w-4.5" />
                       </span>
                     )}
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-foreground">{template.naam}</p>
+                    <div className="min-w-20 flex-[1_1_9rem]">
+                      <p className="break-words font-medium text-foreground">{template.naam}</p>
                       <p className="text-xs text-muted-foreground">{template.categorie}</p>
                     </div>
                     {template.soort === "modulair" && template.onderdelenAantal != null && (

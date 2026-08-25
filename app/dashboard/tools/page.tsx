@@ -79,16 +79,18 @@ export default async function ToolsOverzichtPage() {
               <Card key={tool.id} className="relative flex h-full flex-col overflow-hidden transition-colors hover:border-primary/40">
                 <Link href={`/dashboard/tools/${tool.id}`} className="absolute inset-0" aria-label={`${tool.naam} bewerken`} />
                 <CardContent className="relative flex flex-1 flex-col gap-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
+                  <div className="flex flex-wrap items-start gap-2">
+                    <div className="flex min-w-20 flex-[1_1_9rem] items-center gap-2.5">
                       {ToolIcon && (
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                           <ToolIcon className="h-4.5 w-4.5" />
                         </span>
                       )}
-                      <span className="font-medium text-foreground">{tool.naam}</span>
+                      <span className="break-words font-medium text-foreground">{tool.naam}</span>
                     </div>
-                    <Badge variant={STATUS_BADGE_VARIANT[tool.status]}>{TOOL_STATUS_LABELS[tool.status]}</Badge>
+                    <Badge variant={STATUS_BADGE_VARIANT[tool.status]} className="shrink-0">
+                      {TOOL_STATUS_LABELS[tool.status]}
+                    </Badge>
                   </div>
 
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
