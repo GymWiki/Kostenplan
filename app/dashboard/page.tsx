@@ -83,7 +83,7 @@ export default async function DashboardPage() {
           </div>
           <LinkButton href="/dashboard/tools" className="shrink-0">
             Naar mijn rekentools
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </LinkButton>
         </CardContent>
       </Card>
@@ -117,7 +117,7 @@ function StatCard({
       <Card className="transition-colors hover:border-primary/40">
         <CardContent className="flex items-center gap-4">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Icon className="h-5 w-5" />
+            <Icon className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
             <p className="text-xl font-semibold text-foreground">{value}</p>

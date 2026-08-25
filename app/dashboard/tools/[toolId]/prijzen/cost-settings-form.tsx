@@ -63,7 +63,7 @@ export function CostSettingsForm({
   return (
     <form action={formAction} className="flex flex-col gap-5">
       {state?.error && (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive" aria-live="polite">
           {state.error}
           {fieldErrors && Object.keys(fieldErrors).length > 0 && (
             <> Controleer de gemarkeerde velden hieronder.</>
@@ -71,7 +71,7 @@ export function CostSettingsForm({
         </p>
       )}
       {state?.success && (
-        <p className="rounded-md bg-accent px-3 py-2 text-sm text-accent-foreground">
+        <p className="rounded-md bg-accent px-3 py-2 text-sm text-accent-foreground" aria-live="polite">
           Prijsinstellingen opgeslagen.
         </p>
       )}

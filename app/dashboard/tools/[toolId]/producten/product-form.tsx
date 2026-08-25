@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import Link from "next/link";
 import { LinkButton } from "@/app/components/ui/button";
+import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import { DecimalInput, Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { IconPicker } from "@/app/components/ui/icon-picker";
@@ -100,6 +101,7 @@ export function ProductForm({
   );
 
   const [sjabloon, setSjabloon] = useState<ProductSjabloon>(product?.sjabloon ?? "ENKELE_HOEVEELHEID");
+  const [pendingSjabloon, setPendingSjabloon] = useState<ProductSjabloon | null>(null);
   const [sjabloonConfigRaw, setSjabloonConfigRaw] = useState<Record<string, unknown>>(
     () => (product?.sjabloonConfig as Record<string, unknown> | null) ?? standaardConfigVoorSjabloon(sjabloon)
   );
@@ -159,14 +161,14 @@ export function ProductForm({
 
   function handleKiesSjabloon(nieuw: ProductSjabloon) {
     if (nieuw === sjabloon) return;
-    if (
-      instelVeldenVoorSjabloon(sjabloon).length > 0 &&
-      !confirm(
-        "Wissel je van sjabloon? Je huidige instellingen voor de hoeveelheid-berekening (zoals ingevulde ruimtes of artikeltypes) gaan dan verloren. Dit kun je niet ongedaan maken."
-      )
-    ) {
+    if (instelVeldenVoorSjabloon(sjabloon).length > 0) {
+      setPendingSjabloon(nieuw);
       return;
     }
+    voerSjabloonwisselUit(nieuw);
+  }
+
+  function voerSjabloonwisselUit(nieuw: ProductSjabloon) {
     const nieuweConfig = standaardConfigVoorSjabloon(nieuw);
     setSjabloon(nieuw);
     setSjabloonConfigRaw(nieuweConfig);
@@ -189,7 +191,7 @@ export function ProductForm({
         className="flex flex-col gap-5"
       >
       {state?.error && (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive" aria-live="polite">
           {state.error}
         </p>
       )}
@@ -488,6 +490,17 @@ export function ProductForm({
           Terug naar producten
         </LinkButton>
       </div>
+
+      <ConfirmDialog
+        open={pendingSjabloon != null}
+        onClose={() => setPendingSjabloon(null)}
+        onConfirm={() => {
+          if (pendingSjabloon) voerSjabloonwisselUit(pendingSjabloon);
+          setPendingSjabloon(null);
+        }}
+        title="Wissel je van sjabloon?"
+        description="Je huidige instellingen voor de hoeveelheid-berekening (zoals ingevulde ruimtes of artikeltypes) gaan dan verloren. Dit kun je niet ongedaan maken."
+      />
     </div>
   );
 }

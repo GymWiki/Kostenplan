@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useMemo, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -145,6 +146,15 @@ export function OfferteEditor({
   function removeRegel(id: string) {
     setRegels((r) => r.filter((regel) => regel.id !== id));
   }
+  const [pendingVerwijderId, setPendingVerwijderId] = useState<string | null>(null);
+  function handleVerwijderKlik(regel: EditRegel) {
+    // Net als bij de regelgroepen in producten/velden/veld-form.tsx: een
+    // net toegevoegde, nog lege regel mag zonder omweg weg — pas met echte
+    // inhoud (en dus echt risico op dataverlies) volgt een bevestiging.
+    const heeftInhoud = regel.omschrijving.trim() !== "" || parseDecimal(regel.prijsPerEenheid) !== 0;
+    if (heeftInhoud) setPendingVerwijderId(regel.id);
+    else removeRegel(regel.id);
+  }
   function updateRegel(id: string, patch: Partial<EditRegel>) {
     setRegels((r) => r.map((regel) => (regel.id === id ? { ...regel, ...patch } : regel)));
   }
@@ -162,15 +172,59 @@ export function OfferteEditor({
   const deelUrl = offerte.deelToken ? `${siteUrl}/offerte/${offerte.deelToken}` : null;
   const pending = savePending || sharePending;
 
+  // Dit formulier autosaved niet (in tegenstelling tot product-form.tsx) —
+  // wegnavigeren of de tab sluiten met onopgeslagen regel-/tekstwijzigingen
+  // gooit ze anders stilzwijgend weg. `savedSnapshot` volgt de laatst
+  // opgeslagen staat (initieel = de offerte zoals meegegeven, daarna elke
+  // keer bijgewerkt zodra saveState?.success wisselt).
+  const [savedSnapshot, setSavedSnapshot] = useState(() => ({
+    regelsJson: JSON.stringify(offerte.regels.map(naarEditRegel).map(naarOfferteRegel)),
+    introTekst: offerte.introTekst ?? "",
+    voorwaardenTekst: offerte.voorwaardenTekst ?? "",
+    geldigTot: naarDateInputValue(offerte.geldigTot),
+  }));
+  // Bijwerken tijdens render i.p.v. in een effect ("afgeleide state van een
+  // vorige render" — het React-aanbevolen patroon hiervoor, zie
+  // react.dev/learn/you-might-not-need-an-effect): voorkomt een extra
+  // effect-cascade en werkt de snapshot al bij vóórdat deze render klaar is.
+  const [laatsteSaveState, setLaatsteSaveState] = useState(saveState);
+  if (saveState !== laatsteSaveState) {
+    setLaatsteSaveState(saveState);
+    if (saveState?.success) setSavedSnapshot({ regelsJson, introTekst, voorwaardenTekst, geldigTot });
+  }
+  const isDirty =
+    regelsJson !== savedSnapshot.regelsJson ||
+    introTekst !== savedSnapshot.introTekst ||
+    voorwaardenTekst !== savedSnapshot.voorwaardenTekst ||
+    geldigTot !== savedSnapshot.geldigTot;
+
+  useEffect(() => {
+    if (!isDirty) return;
+    function handler(e: BeforeUnloadEvent) {
+      e.preventDefault();
+    }
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  const router = useRouter();
+  const [verlaatBevestigenOpen, setVerlaatBevestigenOpen] = useState(false);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link
             href="/dashboard/leads"
+            onClick={(e) => {
+              if (isDirty) {
+                e.preventDefault();
+                setVerlaatBevestigenOpen(true);
+              }
+            }}
             className="mb-1 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
             Terug naar aanvragen
           </Link>
           <h1 className="flex items-center gap-2 text-2xl font-semibold text-foreground">
@@ -340,11 +394,11 @@ export function OfferteEditor({
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeRegel(regel.id)}
+                      onClick={() => handleVerwijderKlik(regel)}
                       aria-label="Regel verwijderen"
                       className="shrink-0 cursor-pointer rounded p-1.5 text-muted-foreground hover:text-destructive"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
                     </button>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
@@ -435,12 +489,12 @@ export function OfferteEditor({
           </Card>
 
           {(saveState?.error || shareState?.error) && (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive" aria-live="polite">
               {saveState?.error || shareState?.error}
             </p>
           )}
           {saveState?.success && (
-            <p className="rounded-md bg-accent px-3 py-2 text-sm text-accent-foreground">
+            <p className="rounded-md bg-accent px-3 py-2 text-sm text-accent-foreground" aria-live="polite">
               Concept opgeslagen.
             </p>
           )}
@@ -486,6 +540,24 @@ export function OfferteEditor({
         regels={parsedRegels}
         totaal={totalen.totaal}
         geldigTot={geldigTot ? new Date(geldigTot) : null}
+      />
+
+      <ConfirmDialog
+        open={pendingVerwijderId != null}
+        onClose={() => setPendingVerwijderId(null)}
+        onConfirm={() => {
+          if (pendingVerwijderId) removeRegel(pendingVerwijderId);
+          setPendingVerwijderId(null);
+        }}
+        title="Regel verwijderen?"
+        description="De ingevulde omschrijving en prijs voor deze regel gaan verloren."
+      />
+      <ConfirmDialog
+        open={verlaatBevestigenOpen}
+        onClose={() => setVerlaatBevestigenOpen(false)}
+        onConfirm={() => router.push("/dashboard/leads")}
+        title="Pagina verlaten?"
+        description="Niet-opgeslagen wijzigingen aan deze offerte gaan verloren."
       />
     </div>
   );

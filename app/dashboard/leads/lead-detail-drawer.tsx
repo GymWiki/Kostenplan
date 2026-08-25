@@ -61,7 +61,7 @@ export function LeadDetailDrawer({
 
   return (
     <Overlay open onClose={onClose} ariaLabel={`Aanvraag van ${lead.naam}`}>
-      <div className="absolute inset-y-0 right-0 flex h-full w-full max-w-md flex-col overflow-y-auto border-l border-border bg-card shadow-lg">
+      <div className="absolute inset-y-0 right-0 flex h-full w-full max-w-md flex-col overflow-y-auto overscroll-contain border-l border-border bg-card shadow-lg">
         <div className="flex items-start justify-between gap-4 border-b border-border p-5">
           <div className="min-w-0">
             <p className="truncate text-lg font-semibold text-foreground">{lead.naam}</p>

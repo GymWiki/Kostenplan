@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
+import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import { DecimalInput, Input, Label, Select } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import type { GetalVeld, KeuzeVeld, RegelgroepVeld, SjabloonVeld, TekstVeld } from "@/app/lib/sjablonen";
@@ -133,12 +135,24 @@ export function RegelgroepInput({
   onChange: (regels: Record<string, unknown>[]) => void;
   idPrefix: string;
 }) {
+  const [pendingVerwijderIndex, setPendingVerwijderIndex] = useState<number | null>(null);
+
   function updateRegel(index: number, kolomKey: string, waarde: unknown) {
     onChange(regels.map((regel, i) => (i === index ? { ...regel, [kolomKey]: waarde } : regel)));
   }
 
   function verwijderRegel(index: number) {
     onChange(regels.filter((_, i) => i !== index));
+  }
+
+  function handleVerwijderKlik(index: number) {
+    // Alleen om bevestiging vragen als er al iets is ingevuld — een net
+    // toegevoegde, nog lege rij mag zonder omweg weer weg (en autosave
+    // in het omringende formulier zou anders zonder waarschuwing echte
+    // ingevulde regels kunnen wegschrijven).
+    const heeftInhoud = Object.values(regels[index]).some((w) => w !== "" && w != null);
+    if (heeftInhoud) setPendingVerwijderIndex(index);
+    else verwijderRegel(index);
   }
 
   function voegRegelToe() {
@@ -172,7 +186,9 @@ export function RegelgroepInput({
             if (veld.zichtbaarAls && !veld.zichtbaarAls(kolom.key, regel)) return null;
             return (
               <div key={kolom.key} className="flex min-w-[7rem] flex-1 flex-col gap-1">
-                <span className="text-xs text-muted-foreground">{kolom.label}</span>
+                <label htmlFor={`${idPrefix}-${index}-${kolom.key}`} className="text-xs text-muted-foreground">
+                  {kolom.label}
+                </label>
                 <VeldInputEnkel
                   id={`${idPrefix}-${index}-${kolom.key}`}
                   veld={kolom}
@@ -186,7 +202,7 @@ export function RegelgroepInput({
             type="button"
             variant="ghost"
             size="icon"
-            onClick={() => verwijderRegel(index)}
+            onClick={() => handleVerwijderKlik(index)}
             aria-label="Regel verwijderen"
           >
             <Trash2 className="h-4 w-4 text-destructive" />
@@ -197,6 +213,17 @@ export function RegelgroepInput({
         <Plus className="h-4 w-4" />
         {veld.toevoegLabel}
       </Button>
+
+      <ConfirmDialog
+        open={pendingVerwijderIndex != null}
+        onClose={() => setPendingVerwijderIndex(null)}
+        onConfirm={() => {
+          if (pendingVerwijderIndex != null) verwijderRegel(pendingVerwijderIndex);
+          setPendingVerwijderIndex(null);
+        }}
+        title="Regel verwijderen?"
+        description="De ingevulde waarden voor deze regel gaan verloren."
+      />
     </div>
   );
 }

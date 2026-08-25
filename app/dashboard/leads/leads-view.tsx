@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useOptimistic, useState, useSyncExternalStore, useTransition } from "react";
+import { useCallback, useMemo, useOptimistic, useState, useSyncExternalStore, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LayoutGrid, List, TrendingUp, Users, Trophy, Target } from "lucide-react";
 import { cn } from "@/app/lib/cn";
 import { formatCurrency } from "@/app/lib/format";
@@ -52,11 +53,17 @@ export function LeadsView({
   isGratis: boolean;
   tools?: { id: string; naam: string }[];
 }) {
-  // null = nog geen expliciete keuze door de gebruiker gemaakt — dan geldt
-  // de viewport-afhankelijke standaard hieronder. Zodra iemand zelf op
-  // Bord/Lijst klikt, wint die keuze voorgoed van de standaard, ook als het
-  // venster daarna van grootte verandert.
-  const [gekozenView, setGekozenView] = useState<View | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Weergave en toolfilter leven in de URL (?weergave=&tool=) i.p.v. lokale
+  // state — zo overleven ze verversen, delen en terugnavigeren (Web
+  // Interface Guidelines: "URL reflects state"). Afwezig in de URL = nog
+  // geen expliciete keuze door de gebruiker gemaakt — dan geldt de
+  // viewport-afhankelijke standaard hieronder, precies zoals de vorige
+  // `gekozenView === null`-staat werkte.
+  const gekozenView = searchParams.get("weergave") as View | null;
   const isNarrow = useIsNarrowViewport();
   // Het bord stapelt op een smal scherm al zijn statuskolommen verticaal —
   // veel minder bruikbaar dan de Lijst-weergave daar.
@@ -65,7 +72,22 @@ export function LeadsView({
   // "alle" = company-brede weergave (standaard) — een gebruiker met precies
   // één rekentool ziet deze filter niet eens (zie de check bij het renderen
   // hieronder), voor hen is "alle" en "die ene tool" toch hetzelfde.
-  const [toolFilter, setToolFilter] = useState<string>("alle");
+  const toolFilter = searchParams.get("tool") ?? "alle";
+
+  const updateQuery = useCallback(
+    (patch: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams);
+      for (const [key, value] of Object.entries(patch)) {
+        if (value == null) params.delete(key);
+        else params.set(key, value);
+      }
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+  const setGekozenView = useCallback((next: View) => updateQuery({ weergave: next }), [updateQuery]);
+  const setToolFilter = useCallback((next: string) => updateQuery({ tool: next === "alle" ? null : next }), [updateQuery]);
 
   // Optimistische statuswijziging: een sleep op het Kanban-bord of een keuze
   // in de statusdropdown (tabelweergave/detailpaneel) verandert de UI meteen
@@ -164,6 +186,7 @@ export function LeadsView({
             <button
               type="button"
               onClick={() => setGekozenView("kanban")}
+              aria-pressed={view === "kanban"}
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
                 view === "kanban"
@@ -171,12 +194,13 @@ export function LeadsView({
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <LayoutGrid className="h-4 w-4" />
+              <LayoutGrid className="h-4 w-4" aria-hidden="true" />
               Bord
             </button>
             <button
               type="button"
               onClick={() => setGekozenView("lijst")}
+              aria-pressed={view === "lijst"}
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
                 view === "lijst"
@@ -184,7 +208,7 @@ export function LeadsView({
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <List className="h-4 w-4" />
+              <List className="h-4 w-4" aria-hidden="true" />
               Lijst
             </button>
           </div>
@@ -262,7 +286,7 @@ function KpiCard({
     <Card>
       <CardContent className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Icon className="h-4 w-4" />
+          <Icon className="h-4 w-4" aria-hidden="true" />
           <span className="text-sm">{label}</span>
           {help && <HelpTip contentKey={help} />}
         </div>

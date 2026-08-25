@@ -1,10 +1,9 @@
 "use client";
 
-import { Copy } from "lucide-react";
 import { duplicateToolAction, softDeleteToolAction } from "@/app/lib/actions/tools";
-import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
 import { DeleteButton } from "@/app/components/dashboard/delete-button";
+import { DuplicateButton } from "@/app/components/dashboard/duplicate-button";
 
 export function DangerZone({
   toolId,
@@ -26,18 +25,12 @@ export function DangerZone({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={duplicateToolAction}>
-            <input type="hidden" name="toolId" value={toolId} />
-            <Button type="submit" variant="secondary" disabled={!magNieuweTool}>
-              <Copy className="h-4 w-4" />
-              Dupliceren
-            </Button>
-            {!magNieuweTool && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                Je hebt de limiet van rekentools voor je huidige pakket bereikt.
-              </p>
-            )}
-          </form>
+          <DuplicateButton action={duplicateToolAction} toolId={toolId} disabled={!magNieuweTool} variant="secondary" size="md" />
+          {!magNieuweTool && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Je hebt de limiet van rekentools voor je huidige pakket bereikt.
+            </p>
+          )}
         </CardContent>
       </Card>
 

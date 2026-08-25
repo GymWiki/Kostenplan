@@ -61,7 +61,7 @@ export function LeadsTable({
           onChange={(e) => setZoek(e.target.value)}
           placeholder="Zoek op naam of e-mail…"
           aria-label="Zoek in aanvragen"
-          className="h-10 w-full rounded-md border border-input bg-card pl-9 pr-3 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-10 w-full rounded-md border border-input bg-card pl-9 pr-3 text-base text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring sm:text-sm"
         />
       </div>
 
@@ -81,7 +81,19 @@ export function LeadsTable({
             </thead>
             <tbody className="divide-y divide-border">
               {zichtbaar.map((lead) => (
-                <tr key={lead.id} onClick={() => onSelectLead(lead.id)} className="cursor-pointer transition-colors hover:bg-secondary/50">
+                <tr
+                  key={lead.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onSelectLead(lead.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelectLead(lead.id);
+                    }
+                  }}
+                  className="cursor-pointer transition-colors hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                >
                   <td className="px-4 py-3">
                     <p className="font-medium text-foreground">{lead.naam}</p>
                     <p className="text-xs text-muted-foreground">{lead.email}</p>
@@ -100,7 +112,7 @@ export function LeadsTable({
                       <span className="text-muted-foreground">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-medium text-foreground">{formatCurrency(lead.totaalIndicatie)}</td>
+                  <td className="px-4 py-3 font-medium text-foreground tabular-nums">{formatCurrency(lead.totaalIndicatie)}</td>
                   <td className="px-4 py-3 text-muted-foreground">{dateFormatter.format(lead.createdAt)}</td>
                 </tr>
               ))}
@@ -131,7 +143,7 @@ export function LeadsTable({
                   <p className="truncate text-xs text-muted-foreground">{lead.email}</p>
                   {showTool && <p className="mt-0.5 truncate text-xs text-muted-foreground">{lead.toolNaamSnapshot}</p>}
                 </div>
-                <p className="shrink-0 font-medium text-foreground">{formatCurrency(lead.totaalIndicatie)}</p>
+                <p className="shrink-0 font-medium text-foreground tabular-nums">{formatCurrency(lead.totaalIndicatie)}</p>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <div onClick={(e) => e.stopPropagation()}>

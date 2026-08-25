@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Button, LinkButton } from "@/app/components/ui/button";
+import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import { DecimalInput, Input, Label } from "@/app/components/ui/input";
 import { SjabloonPicker } from "../velden/sjabloon-picker";
 import { VeldenRenderer, VeldInputEnkel } from "../velden/veld-form";
@@ -66,6 +67,7 @@ export function ProductWizard({
   const [materiaalOptieId, setMateriaalOptieId] = useState<string | null>(null);
   const [naam, setNaam] = useState("");
   const [sjabloon, setSjabloon] = useState<ProductSjabloon>("ENKELE_HOEVEELHEID");
+  const [pendingSjabloon, setPendingSjabloon] = useState<ProductSjabloon | null>(null);
   const [sjabloonConfigRaw, setSjabloonConfigRaw] = useState<Record<string, unknown>>({});
   const [voorbeeldInvoer, setVoorbeeldInvoer] = useState<Record<string, unknown>>({});
 
@@ -182,13 +184,14 @@ export function ProductWizard({
 
   function handleKiesSjabloon(nieuw: ProductSjabloon) {
     if (nieuw === sjabloon) return;
-    if (
-      instelVeldenVoorSjabloon(sjabloon).length > 0 &&
-      Object.keys(sjabloonConfigRaw).length > 0 &&
-      !confirm("Wissel je van sjabloon? Je huidige instellingen hierboven gaan dan verloren.")
-    ) {
+    if (instelVeldenVoorSjabloon(sjabloon).length > 0 && Object.keys(sjabloonConfigRaw).length > 0) {
+      setPendingSjabloon(nieuw);
       return;
     }
+    voerSjabloonwisselUit(nieuw);
+  }
+
+  function voerSjabloonwisselUit(nieuw: ProductSjabloon) {
     const nieuweConfig = standaardConfigVoorSjabloon(nieuw);
     setSjabloon(nieuw);
     setSjabloonConfigRaw(nieuweConfig);
@@ -200,7 +203,9 @@ export function ProductWizard({
       <StapIndicator huidigeStap={stap} />
 
       {error && (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive" aria-live="polite">
+          {error}
+        </p>
       )}
 
       {stap === 1 && (
@@ -465,6 +470,17 @@ export function ProductWizard({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingSjabloon != null}
+        onClose={() => setPendingSjabloon(null)}
+        onConfirm={() => {
+          if (pendingSjabloon) voerSjabloonwisselUit(pendingSjabloon);
+          setPendingSjabloon(null);
+        }}
+        title="Wissel je van sjabloon?"
+        description="Je huidige instellingen hierboven gaan dan verloren."
+      />
     </div>
   );
 }
@@ -499,7 +515,7 @@ function StapIndicator({ huidigeStap }: { huidigeStap: number }) {
     <div className="flex items-center gap-2">
       {STAPPEN.map((s, i) => (
         <div key={s.nummer} className="flex flex-1 items-center gap-2">
-          <div className="flex flex-1 flex-col gap-1">
+          <div className="flex flex-1 flex-col gap-1" aria-current={s.nummer === huidigeStap ? "step" : undefined}>
             <div
               className={
                 s.nummer <= huidigeStap

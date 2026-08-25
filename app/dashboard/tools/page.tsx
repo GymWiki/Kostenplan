@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Wrench, Package, Users, Pencil, ExternalLink, Copy } from "lucide-react";
+import { Wrench, Package, Users, Pencil, ExternalLink } from "lucide-react";
 import { requireActiveCompany, canCreateTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { getToolUrl } from "@/app/lib/url";
@@ -11,6 +11,7 @@ import { Badge } from "@/app/components/ui/badge";
 import { Button, LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { DeleteButton } from "@/app/components/dashboard/delete-button";
+import { DuplicateButton } from "@/app/components/dashboard/duplicate-button";
 import { CopyButton } from "@/app/components/dashboard/copy-link";
 import { duplicateToolAction, softDeleteToolAction } from "@/app/lib/actions/tools";
 import { NieuweRekentoolKnop } from "./nieuwe-rekentool-knop";
@@ -127,13 +128,7 @@ export default async function ToolsOverzichtPage() {
                     {tool.status === "GEPUBLICEERD" && (
                       <CopyButton text={toolUrl} label="Delen" className="h-8 px-3 text-sm" />
                     )}
-                    <form action={duplicateToolAction}>
-                      <input type="hidden" name="toolId" value={tool.id} />
-                      <Button type="submit" variant="ghost" size="sm" disabled={!magNieuweTool}>
-                        <Copy className="h-3.5 w-3.5" />
-                        Dupliceren
-                      </Button>
-                    </form>
+                    <DuplicateButton action={duplicateToolAction} toolId={tool.id} disabled={!magNieuweTool} />
                     <LinkButton href={`/dashboard/tools/${tool.id}/instellingen`} variant="ghost" size="sm">
                       Instellingen
                     </LinkButton>

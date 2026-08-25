@@ -110,6 +110,8 @@ export function AutoBranding({
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
+            type="url"
+            autoComplete="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://jouwbedrijf.nl"
@@ -135,7 +137,9 @@ export function AutoBranding({
         </div>
 
         {error && (
-          <p className="rounded-md bg-secondary/60 px-3 py-2 text-sm text-muted-foreground">{error}</p>
+          <p className="rounded-md bg-secondary/60 px-3 py-2 text-sm text-muted-foreground" aria-live="polite">
+            {error}
+          </p>
         )}
 
         {result && (
@@ -240,6 +244,8 @@ function AutoBrandingPreview({
               <img
                 src={result.logoUrl}
                 alt="Gevonden logo"
+                width={160}
+                height={48}
                 className="h-12 w-auto max-w-[160px] rounded-md border border-border bg-white object-contain p-1"
               />
             </CheckField>

@@ -150,7 +150,7 @@ function LeadCard({
         }
       }}
       className={cn(
-        "relative cursor-grab touch-none rounded-lg border border-border bg-card p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing",
+        "relative cursor-grab touch-none select-none rounded-lg border border-border bg-card p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing",
         isDragging && "z-10 opacity-70 shadow-lg"
       )}
     >
@@ -164,7 +164,7 @@ function LeadCard({
       {showTool && (
         <p className="truncate text-xs text-muted-foreground">{lead.toolNaamSnapshot}</p>
       )}
-      <p className="mt-1 text-sm font-semibold text-primary">
+      <p className="mt-1 text-sm font-semibold text-primary tabular-nums">
         {formatCurrency(lead.totaalIndicatie)}
       </p>
       {lead.offerte && (

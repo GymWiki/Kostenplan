@@ -48,11 +48,15 @@ export function EmbedTutorialTabs({ embedCode }: { embedCode: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-secondary/40 p-1">
+      <div role="tablist" aria-label="Platform" className="flex flex-wrap gap-1 rounded-lg border border-border bg-secondary/40 p-1">
         {PLATFORMS.map((p) => (
           <button
             key={p.id}
             type="button"
+            role="tab"
+            id={`platform-tab-${p.id}`}
+            aria-selected={platform.id === p.id}
+            aria-controls={`platform-panel-${p.id}`}
             onClick={() => setPlatform(p)}
             className={cn(
               "rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
@@ -66,7 +70,9 @@ export function EmbedTutorialTabs({ embedCode }: { embedCode: string }) {
         ))}
       </div>
 
-      <p className="text-sm text-muted-foreground">{platform.uitleg}</p>
+      <p id={`platform-panel-${platform.id}`} role="tabpanel" aria-labelledby={`platform-tab-${platform.id}`} className="text-sm text-muted-foreground">
+        {platform.uitleg}
+      </p>
 
       <pre className="max-h-64 overflow-auto rounded-lg border border-border bg-card p-3 text-xs text-foreground">
         <code>{embedCode}</code>

@@ -6,6 +6,7 @@ import { updateToolStatusAction } from "@/app/lib/actions/tools";
 import { UpgradeModal } from "@/app/components/dashboard/upgrade-modal";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
+import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import type { ToolStatus } from "@/app/generated/prisma/client";
 
 const OPTIES: { status: ToolStatus; label: string; beschrijving: string; icon: typeof Rocket }[] = [
@@ -27,15 +28,27 @@ export function PublicerenActions({
 }) {
   const [pending, startTransition] = useTransition();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<ToolStatus | null>(null);
+
+  function pasStatusToe(status: ToolStatus) {
+    startTransition(() => {
+      updateToolStatusAction(toolId, status);
+    });
+  }
 
   function kiesStatus(status: ToolStatus) {
     if (status === "GEPUBLICEERD" && huidigeStatus !== "GEPUBLICEERD" && !magPubliceren) {
       setUpgradeOpen(true);
       return;
     }
-    startTransition(() => {
-      updateToolStatusAction(toolId, status);
-    });
+    // Een live tool direct offline halen raakt klanten die net de publieke
+    // link of embed open hebben staan — dat verdient een bevestiging, in
+    // tegenstelling tot elke andere statuswissel hier.
+    if (huidigeStatus === "GEPUBLICEERD" && status !== "GEPUBLICEERD") {
+      setPendingStatus(status);
+      return;
+    }
+    pasStatusToe(status);
   }
 
   return (
@@ -77,6 +90,16 @@ export function PublicerenActions({
             ? `Je huidige pakket biedt plek voor maximaal ${limiet} actieve rekentool${limiet === 1 ? "" : "s"}. Upgrade of pauzeer een andere tool om deze te kunnen publiceren.`
             : "Upgrade je pakket om deze rekentool te kunnen publiceren."
         }
+      />
+      <ConfirmDialog
+        open={pendingStatus != null}
+        onClose={() => setPendingStatus(null)}
+        onConfirm={() => {
+          if (pendingStatus) pasStatusToe(pendingStatus);
+          setPendingStatus(null);
+        }}
+        title="Rekentool offline halen?"
+        description="Klanten kunnen de publieke link en embed vanaf nu niet meer gebruiken. Al je data blijft bewaard en je kunt de tool op elk moment weer publiceren."
       />
     </>
   );

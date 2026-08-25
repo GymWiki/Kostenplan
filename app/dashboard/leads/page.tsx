@@ -1,12 +1,31 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { effectiveTier } from "@/app/lib/subscription";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import type { LeadSnapshot } from "@/app/lib/leads";
 import type { OfferteRegel } from "@/app/lib/offertes";
 import { LeadsView, type LeadWithNotes } from "./leads-view";
 
 export const metadata: Metadata = { title: "Leads" };
+
+// LeadsView leest weergave/toolfilter uit de URL via useSearchParams() (Web
+// Interface Guidelines: "URL reflects state") — die hook vereist een eigen
+// Suspense-grens los van de route-brede loading.tsx, anders faalt de build.
+function LeadsViewFallback() {
+  return (
+    <div className="flex flex-col gap-6">
+      <Skeleton className="h-7 w-48" />
+      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-24 rounded-xl border border-border bg-secondary/50" />
+        ))}
+      </div>
+      <Skeleton className="h-72 rounded-xl border border-border bg-secondary/50" />
+    </div>
+  );
+}
 
 export default async function LeadsPage() {
   const { company } = await requireActiveCompany();
@@ -15,7 +34,11 @@ export default async function LeadsPage() {
   // Leads ontvangen is een Plus/Pro-feature — op Gratis tonen we alleen de
   // upsell in LeadsView, dus de data zelf hoeft niet opgehaald te worden.
   if (isGratis) {
-    return <LeadsView leads={[]} isGratis />;
+    return (
+      <Suspense fallback={<LeadsViewFallback />}>
+        <LeadsView leads={[]} isGratis />
+      </Suspense>
+    );
   }
 
   const [rawLeads, tools] = await Promise.all([
@@ -54,5 +77,9 @@ export default async function LeadsPage() {
   // KPI's (pipelinewaarde, conversieratio, …) worden client-side in
   // LeadsView afgeleid van `leads` — zo bewegen ze meteen mee met een
   // optimistische statuswijziging in plaats van pas na de server-round-trip.
-  return <LeadsView leads={leads} isGratis={false} tools={tools} />;
+  return (
+    <Suspense fallback={<LeadsViewFallback />}>
+      <LeadsView leads={leads} isGratis={false} tools={tools} />
+    </Suspense>
+  );
 }
