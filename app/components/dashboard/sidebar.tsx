@@ -18,7 +18,7 @@ export function Sidebar({
       <Link
         href="/dashboard"
         onClick={onNavigate}
-        className="mb-6 flex items-center gap-2 px-2 text-lg font-semibold text-foreground"
+        className="mb-4 flex items-center gap-2.5 px-2 pb-4 text-lg font-semibold text-foreground border-b border-border"
       >
         <Logo />
         Kostenplan
@@ -36,13 +36,19 @@ export function Sidebar({
             href={link.href}
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
               active
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             )}
           >
-            <Icon className="h-4 w-4" />
+            {/* Zwevend accentbalkje i.p.v. een echte border-l: dat laatste
+                zou de rounded-md-hoeken van de actieve pil afplatten en de
+                inhoud 1-2px laten opschuiven t.o.v. de inactieve items. */}
+            {active && (
+              <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-primary" aria-hidden="true" />
+            )}
+            <Icon className="h-4 w-4" aria-hidden="true" />
             {link.label}
           </Link>
         );

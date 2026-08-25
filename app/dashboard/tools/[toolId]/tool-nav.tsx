@@ -56,13 +56,19 @@ export function ToolNav({ toolId }: { toolId: string }) {
             key={item.segment}
             href={href}
             className={cn(
-              "flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "relative flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors",
               active
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             )}
           >
-            <Icon className="h-4 w-4 shrink-0" />
+            {/* Alleen op de verticale (sm+) staat — op de horizontale
+                scrollbare mobiele tabstrip zou een links-accent onder de
+                vinger verdwijnen; de bg-tint blijft daar het enige signaal. */}
+            {active && (
+              <span className="absolute inset-y-1.5 left-0 hidden w-[3px] rounded-full bg-primary sm:block" aria-hidden="true" />
+            )}
+            <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
             {item.label}
           </Link>
         );

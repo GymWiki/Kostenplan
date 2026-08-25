@@ -114,13 +114,17 @@ function StatCard({
           {badge}
         </span>
       )}
-      <Card className="transition-colors hover:border-primary/40">
+      <Card className="transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_32px_-16px_rgba(15,23,42,0.22)]">
         <CardContent className="flex items-center gap-4">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
             <Icon className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
-            <p className="text-xl font-semibold text-foreground">{value}</p>
+            {/* Elk getal in Kostenplan is uiteindelijk een kostenindicatie —
+                daarom hier bewust groter, met tabular-nums/tracking-tight
+                (voorkomt "wiebelende" cijfers) i.p.v. dezelfde gewicht als de
+                label eronder. */}
+            <p className="text-2xl font-semibold tracking-tight text-foreground tabular-nums">{value}</p>
             <p className="text-sm text-muted-foreground">{label}</p>
           </div>
         </CardContent>

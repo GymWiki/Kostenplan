@@ -7,7 +7,13 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card text-card-foreground shadow-sm",
+        // Twee lagen i.p.v. Tailwinds platte shadow-sm: een scherpe 1px
+        // contactschaduw houdt de rand strak, een brede/zachte tweede laag
+        // geeft de kaart optisch gewicht zonder zwaar te ogen. In dark mode
+        // valt een zwarte shadow tegen een al donkere achtergrond nauwelijks
+        // op — daar draagt de border het contrast, hier puur een subtiele
+        // toevoeging.
+        "rounded-xl border border-border bg-card text-card-foreground shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.18)]",
         className
       )}
       {...props}
