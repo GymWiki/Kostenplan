@@ -278,16 +278,17 @@ function VeldFormModal({
   const isKeuzeSoort = soort === "DROPDOWN" || soort === "RADIO" || soort === "MEERKEUZE";
 
   return (
-    // Bugfix: was `items-center` — op mobiel duwt het native toetsenbord de
-    // zichtbare viewport in, en een verticaal gecentreerde `fixed`-overlay
-    // verschuift dan zo mee dat alleen een middenstrook (bijv. losstaand de
-    // "Verplicht"-schakelaar) nog in beeld blijft, met de rest van het
-    // formulier onzichtbaar boven/onder de zichtbare viewport. Bovenaan
-    // verankeren (met wat lucht erboven) is stabiel ongeacht toetsenbordhoogte;
-    // vanaf sm (waar geen mobiel toetsenbord het scherm verkleint) weer
-    // gecentreerd. Zie ook: autoFocus hieronder verwijderd, dat opende
-    // voorheen meteen bij mount het toetsenbord.
-    <Overlay open onClose={onClose} ariaLabel="Vraag bewerken" className="flex items-start justify-center overflow-y-auto p-4 pt-[10vh] sm:items-center sm:pt-4">
+    // Bugfix (mobiel): dit gebruikte tijdelijk `items-start` + `pt-[10vh]` om
+    // een keyboard-gerelateerd viewportprobleem te omzeilen, maar die
+    // ongeteste combinatie bleek het op een echt mobiel toestel juist erger
+    // te maken (overlay volledig onzichtbaar in plaats van gedeeltelijk).
+    // Teruggezet naar exact hetzelfde beproefde `items-center`-patroon dat
+    // de overige 10+ Overlay-gebruikers in de app al gebruiken (o.a.
+    // ConfirmDialog, UpgradeModal, CancelRetentionModal, onderdeel-
+    // toevoegen-modal.tsx) — de enige overgebleven wijziging is het
+    // verwijderen van autoFocus hieronder, dat voorheen meteen bij mount het
+    // toetsenbord opende.
+    <Overlay open onClose={onClose} ariaLabel="Vraag bewerken" className="flex items-center justify-center p-4">
       <div className="flex max-h-[85vh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-lg">
         <h3 className="text-lg font-semibold text-foreground">{veld ? "Vraag bewerken" : "Vraag toevoegen"}</h3>
 

@@ -302,13 +302,13 @@ function RegelFormModal({
   }
 
   return (
-    // Zelfde bugfix als velden-tab.tsx's VeldFormModal: verticaal centreren
-    // van een `fixed`-overlay is instabiel zodra het mobiele toetsenbord de
-    // zichtbare viewport verkleint (kaart schuift dan zo dat alleen een
-    // middenstrook in beeld blijft). Bovenaan verankeren op smalle schermen,
-    // gecentreerd vanaf sm; autoFocus verwijderd zodat het toetsenbord niet
-    // meteen bij openen opduikt.
-    <Overlay open onClose={onClose} ariaLabel="Prijsregel bewerken" className="flex items-start justify-center overflow-y-auto p-4 pt-[10vh] sm:items-center sm:pt-4">
+    // Zelfde revert als velden-tab.tsx's VeldFormModal: de eerdere
+    // `items-start`/`pt-[10vh]`-poging bleek op een echt mobiel toestel de
+    // overlay juist volledig onzichtbaar te maken. Teruggezet naar het
+    // beproefde `items-center`-patroon dat de overige Overlay-gebruikers al
+    // gebruiken; autoFocus blijft verwijderd (opende voorheen meteen bij
+    // mount het toetsenbord).
+    <Overlay open onClose={onClose} ariaLabel="Prijsregel bewerken" className="flex items-center justify-center p-4">
       <div className="flex max-h-[85vh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-lg">
         <h3 className="text-lg font-semibold text-foreground">{regel ? "Prijsregel bewerken" : "Prijsregel toevoegen"}</h3>
 
