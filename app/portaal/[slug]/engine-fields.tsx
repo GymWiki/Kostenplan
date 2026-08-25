@@ -16,11 +16,17 @@ import type { CalculatorField } from "@/app/lib/calculator-engine";
 export type MateriaalOptie = { id: string; naam: string; prijs: number };
 
 function VeldWrapper({
+  id,
   label,
   helpTekst,
   verplicht,
   children,
 }: {
+  // Alleen zetten wanneer er precies één control is om aan te koppelen
+  // (tekst/getal/slider/dropdown). Voor keuzegroepen (radio/meerkeuze/
+  // productkeuze) is dit een groepslabel zonder één-op-één control, dus
+  // blijft htmlFor weg (elke optie krijgt daar al zijn eigen <label>).
+  id?: string;
   label: string;
   helpTekst?: string;
   verplicht: boolean;
@@ -28,7 +34,7 @@ function VeldWrapper({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label>
+      <Label htmlFor={id}>
         {label}
         {verplicht && <span className="ml-0.5 text-destructive">*</span>}
       </Label>
@@ -54,9 +60,10 @@ export function EngineVeld({
     case "AANTAL":
     case "OPPERVLAKTE":
       return (
-        <VeldWrapper label={veld.label} helpTekst={veld.helpTekst} verplicht={veld.verplicht}>
+        <VeldWrapper id={veld.id} label={veld.label} helpTekst={veld.helpTekst} verplicht={veld.verplicht}>
           <div className="relative">
             <DecimalInput
+              id={veld.id}
               value={typeof waarde === "string" ? waarde : (waarde as number | undefined)?.toString()}
               onChange={(e) => onChange(e.target.value)}
               placeholder={veld.standaardWaarde?.toString()}
@@ -74,9 +81,10 @@ export function EngineVeld({
     case "SLIDER": {
       const numeriek = parseGetal(waarde, veld.standaardWaarde ?? veld.min);
       return (
-        <VeldWrapper label={veld.label} helpTekst={veld.helpTekst} verplicht={veld.verplicht}>
+        <VeldWrapper id={veld.id} label={veld.label} helpTekst={veld.helpTekst} verplicht={veld.verplicht}>
           <div className="flex items-center gap-3">
             <input
+              id={veld.id}
               type="range"
               min={veld.min}
               max={veld.max}
@@ -96,8 +104,9 @@ export function EngineVeld({
 
     case "TEKST":
       return (
-        <VeldWrapper label={veld.label} helpTekst={veld.helpTekst} verplicht={veld.verplicht}>
+        <VeldWrapper id={veld.id} label={veld.label} helpTekst={veld.helpTekst} verplicht={veld.verplicht}>
           <Input
+            id={veld.id}
             value={typeof waarde === "string" ? waarde : ""}
             onChange={(e) => onChange(e.target.value)}
             placeholder={veld.placeholder}
@@ -128,8 +137,8 @@ export function EngineVeld({
 
     case "DROPDOWN":
       return (
-        <VeldWrapper label={veld.label} helpTekst={veld.helpTekst} verplicht={veld.verplicht}>
-          <Select value={typeof waarde === "string" ? waarde : ""} onChange={(e) => onChange(e.target.value)}>
+        <VeldWrapper id={veld.id} label={veld.label} helpTekst={veld.helpTekst} verplicht={veld.verplicht}>
+          <Select id={veld.id} value={typeof waarde === "string" ? waarde : ""} onChange={(e) => onChange(e.target.value)}>
             <option value="" disabled>
               Kies een optie
             </option>
@@ -204,10 +213,10 @@ export function EngineVeld({
       return (
         <VeldWrapper label={veld.label} helpTekst={veld.helpTekst} verplicht={veld.verplicht}>
           <div className={cn("grid gap-3", veld.metHoogte ? "grid-cols-3" : "grid-cols-2")}>
-            <AfmetingDeelveld label="Lengte" eenheid={veld.eenheid} waarde={invoer.lengte} onChange={(v) => zetInvoer("lengte", v)} />
-            <AfmetingDeelveld label="Breedte" eenheid={veld.eenheid} waarde={invoer.breedte} onChange={(v) => zetInvoer("breedte", v)} />
+            <AfmetingDeelveld id={`${veld.id}-lengte`} label="Lengte" eenheid={veld.eenheid} waarde={invoer.lengte} onChange={(v) => zetInvoer("lengte", v)} />
+            <AfmetingDeelveld id={`${veld.id}-breedte`} label="Breedte" eenheid={veld.eenheid} waarde={invoer.breedte} onChange={(v) => zetInvoer("breedte", v)} />
             {veld.metHoogte && (
-              <AfmetingDeelveld label="Hoogte" eenheid={veld.eenheid} waarde={invoer.hoogte} onChange={(v) => zetInvoer("hoogte", v)} />
+              <AfmetingDeelveld id={`${veld.id}-hoogte`} label="Hoogte" eenheid={veld.eenheid} waarde={invoer.hoogte} onChange={(v) => zetInvoer("hoogte", v)} />
             )}
           </div>
         </VeldWrapper>
@@ -250,11 +259,13 @@ export function EngineVeld({
 }
 
 function AfmetingDeelveld({
+  id,
   label,
   eenheid,
   waarde,
   onChange,
 }: {
+  id: string;
   label: string;
   eenheid: string;
   waarde: unknown;
@@ -262,10 +273,11 @@ function AfmetingDeelveld({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-xs text-muted-foreground">
+      <label htmlFor={id} className="text-xs text-muted-foreground">
         {label} ({eenheid})
-      </span>
+      </label>
       <DecimalInput
+        id={id}
         value={typeof waarde === "string" ? waarde : (waarde as number | undefined)?.toString()}
         onChange={(e) => onChange(e.target.value)}
       />

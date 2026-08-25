@@ -15,6 +15,7 @@ export function KeuzeOptiesEditor({ opties, onChange }: { opties: KeuzeOptie[]; 
       {opties.map((optie, i) => (
         <div key={i} className="flex gap-2">
           <Input
+            aria-label={`Optie ${i + 1}`}
             value={optie.label}
             onChange={(e) => {
               const label = e.target.value;

@@ -23,10 +23,12 @@ export function LeadFormConfigForm({ toolId, config }: { toolId: string; config:
   return (
     <form action={formAction} className="flex flex-col gap-5">
       {state?.error && (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{state.error}</p>
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive" aria-live="polite">
+          {state.error}
+        </p>
       )}
       {state?.success && (
-        <p className="rounded-md bg-accent px-3 py-2 text-sm text-accent-foreground">
+        <p className="rounded-md bg-accent px-3 py-2 text-sm text-accent-foreground" aria-live="polite">
           Aanvraagformulier opgeslagen.
         </p>
       )}

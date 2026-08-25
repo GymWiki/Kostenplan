@@ -381,7 +381,7 @@ export function EngineCalculator({
           </div>
         )}
         {!toonResultaat && stappen.length > 1 && (
-          <div className="mb-6 flex gap-1.5">
+          <div className="mb-6 flex gap-1.5" aria-hidden="true">
             {stappen.map((stap, i) => (
               <span
                 key={stap.id}
@@ -433,7 +433,7 @@ export function EngineCalculator({
             <div className="flex gap-2">
               {stapIndex > 0 && (
                 <Button type="button" variant="ghost" size="lg" onClick={() => setStapIndex((i) => i - 1)}>
-                  <ArrowLeft className="h-4 w-4" />
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   Vorige
                 </Button>
               )}
@@ -446,7 +446,7 @@ export function EngineCalculator({
                 onClick={() => (isLaatsteStap ? setToonResultaat(true) : setStapIndex((i) => i + 1))}
               >
                 {isLaatsteStap ? "Bekijk resultaat" : "Volgende"}
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
           </div>
@@ -544,8 +544,8 @@ function ResultaatKaart({
 
   return (
     <div className="flex flex-col gap-4">
-      <Button type="button" variant="ghost" size="sm" onClick={onTerug} className="w-fit print:hidden">
-        <ArrowLeft className="h-3.5 w-3.5" />
+      <Button type="button" variant="ghost" size="lg" onClick={onTerug} className="w-fit print:hidden">
+        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
         Wijzigen
       </Button>
 
@@ -606,7 +606,7 @@ function ResultaatKaart({
                   <input type="hidden" name="snapshot" value={JSON.stringify(snapshot)} />
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="lead-naam">Naam</Label>
-                    <Input id="lead-naam" name="naam" value={leadNaam} onChange={(e) => setLeadNaam(e.target.value)} required autoFocus />
+                    <Input id="lead-naam" name="naam" autoComplete="name" value={leadNaam} onChange={(e) => setLeadNaam(e.target.value)} required />
                     {state?.fieldErrors?.naam && <p className="text-xs text-destructive">{state.fieldErrors.naam}</p>}
                   </div>
                   <div className="flex flex-col gap-1.5">
@@ -615,6 +615,7 @@ function ResultaatKaart({
                       id="lead-email"
                       name="email"
                       type="email"
+                      autoComplete="email"
                       value={leadEmail}
                       onChange={(e) => setLeadEmail(e.target.value)}
                       required
@@ -627,11 +628,16 @@ function ResultaatKaart({
                       id="lead-telefoon"
                       name="telefoonnummer"
                       type="tel"
+                      autoComplete="tel"
                       value={leadTelefoon}
                       onChange={(e) => setLeadTelefoon(e.target.value)}
                     />
                   </div>
-                  {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
+                  {state?.error && (
+                    <p className="text-sm text-destructive" aria-live="polite">
+                      {state.error}
+                    </p>
+                  )}
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Button type="button" variant="ghost" size="lg" className="w-full sm:flex-1" onClick={() => setFormOpen(false)} disabled={pending}>
                       Terug
@@ -643,7 +649,7 @@ function ResultaatKaart({
                       className="w-full border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90 sm:flex-1"
                       disabled={pending}
                     >
-                      <Mail className="h-4 w-4" />
+                      <Mail className="h-4 w-4" aria-hidden="true" />
                       {pending ? "Versturen…" : "Versturen"}
                     </Button>
                   </div>
@@ -658,12 +664,12 @@ function ResultaatKaart({
                       className="w-full border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90 sm:flex-1"
                       onClick={() => setFormOpen(true)}
                     >
-                      <Mail className="h-4 w-4" />
+                      <Mail className="h-4 w-4" aria-hidden="true" />
                       {ctaTekst}
                     </Button>
                   )}
                   <Button type="button" variant="ghost" size="lg" className="w-full sm:flex-1" onClick={() => window.print()}>
-                    <Printer className="h-4 w-4" />
+                    <Printer className="h-4 w-4" aria-hidden="true" />
                     Bewaar als PDF
                   </Button>
                 </div>

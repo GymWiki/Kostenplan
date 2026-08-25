@@ -96,7 +96,7 @@ export function StartpuntKiezer({ templates }: { templates: TemplateSamenvatting
                     </div>
                     {template.soort === "modulair" && template.onderdelenAantal != null && (
                       <Badge variant="muted" className="shrink-0 gap-1">
-                        <Layers className="h-3 w-3" />
+                        <Layers className="h-3 w-3" aria-hidden="true" />
                         {template.onderdelenAantal} onderdelen
                       </Badge>
                     )}

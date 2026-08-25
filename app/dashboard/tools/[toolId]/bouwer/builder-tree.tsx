@@ -219,7 +219,7 @@ export function BuilderTree({
 
             return (
               <div className={cn("rounded-xl border transition-colors", dragHandleProps.isDragging && "shadow-lg", isGeselecteerd ? "border-primary bg-primary/5" : "border-border bg-card")}>
-                <div className="flex items-center gap-1 py-1.5 pr-1.5 pl-1">
+                <div className="flex items-center gap-1 py-2 pr-1.5 pl-1">
                   <DragHandle {...dragHandleProps} />
                   <button type="button" onClick={() => toggleUitgeklapt(onderdeel.id)} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary" aria-label={isUitgeklapt ? "Inklappen" : "Uitklappen"}>
                     {isUitgeklapt ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -413,7 +413,7 @@ function SubRij({
   menuItems: { label: string; icon: React.ComponentType<{ className?: string }>; onSelect: () => void; destructive?: boolean }[];
 }) {
   return (
-    <div className={cn("flex items-center gap-1 rounded-md border py-1 pr-1 pl-0.5", geselecteerd ? "border-primary bg-primary/5" : "border-transparent hover:bg-secondary/50", gedimd && "opacity-60")}>
+    <div className={cn("flex items-center gap-1 rounded-md border py-1.5 pr-1 pl-0.5", geselecteerd ? "border-primary bg-primary/5" : "border-transparent hover:bg-secondary/50", gedimd && "opacity-60")}>
       <DragHandle {...dragHandleProps} />
       <button type="button" onClick={onSelect} className="flex min-w-0 flex-1 flex-col items-start gap-0 rounded px-1 py-0.5 text-left">
         <span className="flex items-center gap-1.5">

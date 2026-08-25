@@ -48,17 +48,10 @@ export function BuilderListRow({
       <div className="flex items-center gap-1 py-2 pr-2 pl-1 sm:gap-2">
         <DragHandle {...dragHandleProps} />
         {icon}
-        <div
-          role="button"
-          tabIndex={0}
+        <button
+          type="button"
           onClick={onEdit}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              onEdit();
-            }
-          }}
-          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1"
+          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-left"
         >
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -67,7 +60,7 @@ export function BuilderListRow({
             </div>
             {meta && <div className="truncate text-xs text-muted-foreground">{meta}</div>}
           </div>
-        </div>
+        </button>
         {extra}
         <Button
           type="button"
