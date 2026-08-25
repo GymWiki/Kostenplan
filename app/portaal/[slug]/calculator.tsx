@@ -1093,7 +1093,7 @@ function Summary({
           ) : (
             <>
               {rows.length > 0 && (
-                <div className="flex flex-col gap-2 text-sm">
+                <div className="flex flex-col gap-2 text-sm tabular-nums">
                   {rows.map((row) => (
                     <div key={row.label} className="flex items-center justify-between">
                       <span className="text-muted-foreground">{row.label}</span>
@@ -1136,7 +1136,7 @@ function Summary({
                 <span className="text-xs font-medium uppercase tracking-wide text-[var(--brand-primary-foreground)]/75">
                   Totaal (incl. btw)
                 </span>
-                <span className="text-3xl font-bold leading-tight text-[var(--brand-primary-foreground)]">
+                <span className="text-3xl font-bold leading-tight tracking-tight tabular-nums text-[var(--brand-primary-foreground)]">
                   {formatCurrencyRange(breakdown.totaal)}
                 </span>
                 {breakdown.modus === "TOTAAL" &&

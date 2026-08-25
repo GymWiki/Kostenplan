@@ -71,7 +71,7 @@ export function StartpuntKiezer({ templates }: { templates: TemplateSamenvatting
               onClick={() => setStartpunt({ soort: "template", template })}
               className="rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              <Card className="h-full cursor-pointer transition-colors hover:border-primary/40">
+              <Card className="h-full cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_32px_-16px_rgba(15,23,42,0.22)]">
                 <CardContent className="flex flex-col gap-3">
                   {/* flex-wrap: op smalle kaarten (3 kolommen op een 768px-
                       brede pagina, zie tools/nieuw/page.tsx) is er te weinig
@@ -123,7 +123,7 @@ export function StartpuntKiezer({ templates }: { templates: TemplateSamenvatting
       </div>
 
       <button type="button" onClick={() => setStartpunt({ soort: "leeg" })} className="rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-        <Card className="cursor-pointer transition-colors hover:border-primary/40">
+        <Card className="cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_32px_-16px_rgba(15,23,42,0.22)]">
           <CardContent className="flex items-center gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
               <FilePlus className="h-4.5 w-4.5" />

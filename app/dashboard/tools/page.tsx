@@ -77,7 +77,7 @@ export default async function ToolsOverzichtPage() {
             const ToolIcon = getProductIcon(tool.icoon);
             const toolUrl = toolUrls[i];
             return (
-              <Card key={tool.id} className="relative flex h-full flex-col overflow-hidden transition-colors hover:border-primary/40">
+              <Card key={tool.id} className="relative flex h-full flex-col overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_32px_-16px_rgba(15,23,42,0.22)]">
                 <Link href={`/dashboard/tools/${tool.id}`} className="absolute inset-0" aria-label={`${tool.naam} bewerken`} />
                 <CardContent className="relative flex flex-1 flex-col gap-4">
                   <div className="flex flex-wrap items-start gap-2">

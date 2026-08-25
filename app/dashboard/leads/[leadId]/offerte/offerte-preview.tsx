@@ -56,7 +56,7 @@ export function OffertePreview({
 
       {introTekst && <p className="whitespace-pre-wrap text-sm text-foreground">{introTekst}</p>}
 
-      <div className="flex flex-col divide-y divide-border rounded-lg border border-border">
+      <div className="flex flex-col divide-y divide-border rounded-lg border border-border tabular-nums">
         {regels.length === 0 ? (
           <p className="p-3 text-sm text-muted-foreground">Nog geen regels.</p>
         ) : (
@@ -74,7 +74,7 @@ export function OffertePreview({
         )}
       </div>
 
-      <div className="flex flex-col gap-1.5 rounded-lg bg-secondary/40 p-3 text-sm">
+      <div className="flex flex-col gap-1.5 rounded-lg bg-secondary/40 p-3 text-sm tabular-nums">
         <div className="flex items-center justify-between text-muted-foreground">
           <span>Subtotaal</span>
           <span>{formatCurrency(subtotaal)}</span>

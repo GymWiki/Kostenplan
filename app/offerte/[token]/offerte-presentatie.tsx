@@ -117,7 +117,7 @@ export function OffertePresentatie({
 
           {introTekst && <p className="mt-4 whitespace-pre-wrap text-sm text-foreground">{introTekst}</p>}
 
-          <div className="mt-5 flex flex-col divide-y divide-border rounded-lg border border-border">
+          <div className="mt-5 flex flex-col divide-y divide-border rounded-lg border border-border tabular-nums">
             {regels.map((regel) => (
               <div key={regel.id} className="flex items-start justify-between gap-3 p-3 text-sm">
                 <div className="min-w-0">
@@ -131,7 +131,7 @@ export function OffertePresentatie({
             ))}
           </div>
 
-          <div className="mt-4 flex flex-col gap-1.5 rounded-lg bg-secondary/40 p-3 text-sm">
+          <div className="mt-4 flex flex-col gap-1.5 rounded-lg bg-secondary/40 p-3 text-sm tabular-nums">
             <div className="flex items-center justify-between text-muted-foreground">
               <span>Subtotaal</span>
               <span>{formatCurrency(subtotaal)}</span>

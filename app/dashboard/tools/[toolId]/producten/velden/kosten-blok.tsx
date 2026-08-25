@@ -276,7 +276,7 @@ export function KostenUitsplitsing({
       <p className="text-sm font-medium text-foreground">
         {naam || "Dit product"} van {hoeveelheid} {unitLabel(eenheid)}
       </p>
-      <div className="flex flex-col gap-1 text-sm">
+      <div className="flex flex-col gap-1 text-sm tabular-nums">
         {regels.map((regel, index) => (
           <div key={`${regel.label}-${index}`} className="flex items-center justify-between gap-3">
             <span className="text-muted-foreground">

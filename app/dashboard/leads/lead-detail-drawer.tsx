@@ -187,7 +187,7 @@ export function LeadDetailDrawer({
 
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-semibold text-foreground">Aanvraag</h3>
-            <div className="flex flex-col divide-y divide-border rounded-lg border border-border">
+            <div className="flex flex-col divide-y divide-border rounded-lg border border-border tabular-nums">
               {lead.snapshot.regels.map((regel, i) => {
                 const details = [
                   regel.type === "product" && regel.aantal != null
@@ -214,7 +214,7 @@ export function LeadDetailDrawer({
                 );
               })}
             </div>
-            <div className="flex flex-col gap-1.5 rounded-lg bg-secondary/40 p-3 text-sm">
+            <div className="flex flex-col gap-1.5 rounded-lg bg-secondary/40 p-3 text-sm tabular-nums">
               <TotalRow label="Arbeidskosten" value={lead.snapshot.arbeidskosten} />
               <TotalRow label="Materiaalkosten" value={lead.snapshot.materiaalkosten} />
               <TotalRow label="Transportkosten" value={lead.snapshot.transportkosten} />

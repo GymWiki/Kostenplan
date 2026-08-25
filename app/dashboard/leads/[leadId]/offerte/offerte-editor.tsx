@@ -435,7 +435,7 @@ export function OfferteEditor({
                 Regel toevoegen
               </Button>
 
-              <div className="flex flex-col gap-1 border-t border-border pt-3 text-sm">
+              <div className="flex flex-col gap-1 border-t border-border pt-3 text-sm tabular-nums">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Subtotaal</span>
                   <span>{formatCurrency(totalen.subtotaal)}</span>

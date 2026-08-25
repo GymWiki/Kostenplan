@@ -117,7 +117,7 @@ export function PricingTable({
               <div>
                 <h3 className="text-lg font-semibold text-foreground">{PLAN_LABELS[plan]}</h3>
                 <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-bold tracking-tight text-foreground">
+                  <span className="text-3xl font-bold tracking-tight tabular-nums text-foreground">
                     {formatCurrency(prijs)}
                   </span>
                   {isBetaald && (

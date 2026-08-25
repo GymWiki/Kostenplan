@@ -558,7 +558,7 @@ function ResultaatKaart({
           ) : (
             <>
               {weergave === "UITGEBREID" && zichtbareRegels.length > 0 && (
-                <div className="flex flex-col gap-2 text-sm">
+                <div className="flex flex-col gap-2 text-sm tabular-nums">
                   {onderdeelGroepen
                     ? onderdeelGroepen.map((groep) => (
                         <div key={groep.naam} className="flex items-center justify-between">
@@ -589,7 +589,7 @@ function ResultaatKaart({
                   <span className="text-xs font-medium uppercase tracking-wide text-[var(--brand-primary-foreground)]/75">
                     {weergave === "VANAF" ? "Geschatte kosten" : "Totaal (incl. btw)"}
                   </span>
-                  <span className="text-3xl font-bold leading-tight text-[var(--brand-primary-foreground)]">{prijsTekst}</span>
+                  <span className="text-3xl font-bold leading-tight tracking-tight tabular-nums text-[var(--brand-primary-foreground)]">{prijsTekst}</span>
                 </div>
               )}
 
