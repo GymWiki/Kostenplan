@@ -72,7 +72,15 @@ export function OnderdelenBouwer({
   const [materiaalOpties, setMateriaalOpties] = useState(initieleMateriaalOpties);
   const [onderdeelBibliotheek, setOnderdeelBibliotheek] = useState(initieleOnderdeelBibliotheek);
   const [tab, setTab] = useState<Tab>("onderdelen");
-  const [selectie, setSelectie] = useState<Selectie | null>(null);
+  // Desktoplayout-professionaliteitsslag: de lege staat in het
+  // instellingenpaneel moet de uitzondering zijn (een tool zonder
+  // onderdelen), niet het startpunt — bij het openen van de bouwer is
+  // meteen het eerste onderdeel (op volgorde) geselecteerd i.p.v. dat de
+  // gebruiker eerst zelf iets moet aanklikken.
+  const [selectie, setSelectie] = useState<Selectie | null>(() => {
+    const eerste = [...initieleConfig.onderdelen].sort((a, b) => a.order - b.order)[0];
+    return eerste ? { soort: "onderdeel", onderdeelId: eerste.id } : null;
+  });
   const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
   const [mobielPaneel, setMobielPaneel] = useState<"lijst" | "instellingen" | "preview">("lijst");
   const [opslaanStatus, setOpslaanStatus] = useState<"idle" | "bezig" | "opgeslagen">("opgeslagen");

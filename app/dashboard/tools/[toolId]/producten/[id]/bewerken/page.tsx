@@ -35,7 +35,7 @@ export default async function BewerkProductPage({
   if (!product) notFound();
 
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
+    <div className="flex max-w-[820px] flex-col gap-6">
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-semibold text-foreground">
           Product bewerken

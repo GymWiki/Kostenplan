@@ -24,7 +24,7 @@ export default async function EmbedPage({
     : [null, null];
 
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
+    <div className="flex max-w-[820px] flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Embed</h1>
         <p className="mt-1 text-muted-foreground">

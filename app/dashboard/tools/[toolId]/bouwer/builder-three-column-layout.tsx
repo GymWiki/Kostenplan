@@ -56,13 +56,26 @@ export function BuilderThreeColumnLayout({
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[240px_360px_1fr]">
+      {/* Desktoplayout-professionaliteitsslag: instellingen kon voorheen niet
+          meegroeien (vast 360px) terwijl de preview (1fr) op een brede
+          desktop uitgroeide tot ruim voorbij hoe breed de rekentool ooit
+          écht bij een klant rendert (die is zelf op max-w-3xl/768px
+          begrensd) — vandaar het lege gevoel. Instellingen is nu de enige
+          flexibele kolom (minmax(340px,1fr): nooit smaller dan voorheen,
+          groeit mee op brede/ultrawide schermen — de kaart erbinnen blijft
+          zelf op 640px begrensd, zie hieronder, dus dat wordt bewuste
+          binnenmarge, geen uitgerekt formulier). Preview is nu vast (290px)
+          i.p.v. 1fr, dus die balloont niet meer mee. Kolombreedtes
+          geverifieerd tegen de werkelijke shell-breedte (dashboard-sidebar
+          256px + tool-nav 208px) op 1440/1920/2560px — past zonder
+          horizontale overflow. */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[220px_minmax(340px,1fr)_290px]">
         <div className={cn("lg:sticky lg:top-6 lg:self-start", mobielPaneel !== "lijst" && "hidden lg:block")}>
           <div className="max-h-[75vh] overflow-y-auto pr-1">{lijst}</div>
         </div>
 
         <div className={cn("lg:sticky lg:top-6 lg:self-start", mobielPaneel !== "instellingen" && "hidden lg:block")}>
-          <div className="max-h-[75vh] overflow-y-auto rounded-xl border border-border bg-card p-4">{instellingen}</div>
+          <div className="max-h-[75vh] max-w-[640px] overflow-y-auto rounded-xl border border-border bg-card p-4">{instellingen}</div>
         </div>
 
         <div className={cn("lg:sticky lg:top-6 lg:self-start", mobielPaneel !== "preview" && "hidden lg:block")}>
