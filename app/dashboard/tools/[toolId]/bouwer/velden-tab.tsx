@@ -278,7 +278,16 @@ function VeldFormModal({
   const isKeuzeSoort = soort === "DROPDOWN" || soort === "RADIO" || soort === "MEERKEUZE";
 
   return (
-    <Overlay open onClose={onClose} ariaLabel="Vraag bewerken" className="flex items-center justify-center p-4">
+    // Bugfix: was `items-center` — op mobiel duwt het native toetsenbord de
+    // zichtbare viewport in, en een verticaal gecentreerde `fixed`-overlay
+    // verschuift dan zo mee dat alleen een middenstrook (bijv. losstaand de
+    // "Verplicht"-schakelaar) nog in beeld blijft, met de rest van het
+    // formulier onzichtbaar boven/onder de zichtbare viewport. Bovenaan
+    // verankeren (met wat lucht erboven) is stabiel ongeacht toetsenbordhoogte;
+    // vanaf sm (waar geen mobiel toetsenbord het scherm verkleint) weer
+    // gecentreerd. Zie ook: autoFocus hieronder verwijderd, dat opende
+    // voorheen meteen bij mount het toetsenbord.
+    <Overlay open onClose={onClose} ariaLabel="Vraag bewerken" className="flex items-start justify-center overflow-y-auto p-4 pt-[10vh] sm:items-center sm:pt-4">
       <div className="flex max-h-[85vh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-lg">
         <h3 className="text-lg font-semibold text-foreground">{veld ? "Vraag bewerken" : "Vraag toevoegen"}</h3>
 
@@ -304,7 +313,7 @@ function VeldFormModal({
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="veld-label">Wat wil je weten?</Label>
-          <Input id="veld-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Bijv. Hoeveel meter schutting?" autoFocus />
+          <Input id="veld-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Bijv. Hoeveel meter schutting?" />
         </div>
 
         <div className="flex flex-col gap-1.5">
