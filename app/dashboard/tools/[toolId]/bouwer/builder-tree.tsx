@@ -228,11 +228,18 @@ export function BuilderTree({
                     <Icon className="h-3.5 w-3.5" />
                   </span>
                   <button type="button" onClick={() => selecteerOnderdeel(onderdeel)} className="flex min-w-0 flex-1 flex-col items-start gap-0.5 rounded-md px-1.5 py-1 text-left">
-                    <span className="flex items-center gap-1.5">
-                      <span className="truncate text-sm font-medium text-foreground">{onderdeel.naam || "Naamloos onderdeel"}</span>
+                    {/* w-full + min-w-0 op elke schakel tot aan de titel-span:
+                        `items-start` op deze knop (i.p.v. de flex-default
+                        `stretch`) laat kinderen anders sizen op hun eigen
+                        inhoud in plaats van op de (al ingekrompen) breedte
+                        van de knop, waardoor min-w-0/truncate geen krimpruimte
+                        kregen en een lange onderdeelnaam over de status-badge
+                        heen bleef doorlopen i.p.v. af te breken. */}
+                    <span className="flex w-full min-w-0 items-center gap-1.5">
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{onderdeel.naam || "Naamloos onderdeel"}</span>
                       <StatusIndicator status={status} />
                     </span>
-                    <span className="truncate text-xs text-muted-foreground">
+                    <span className="w-full truncate text-xs text-muted-foreground">
                       {onderdeel.velden.length} {onderdeel.velden.length === 1 ? "vraag" : "vragen"} · {onderdeel.regels.length} {onderdeel.regels.length === 1 ? "prijsregel" : "prijsregels"}
                     </span>
                   </button>
@@ -416,11 +423,11 @@ function SubRij({
     <div className={cn("flex items-center gap-1 rounded-md border py-1.5 pr-1 pl-0.5", geselecteerd ? "border-primary bg-primary/5" : "border-transparent hover:bg-secondary/50", gedimd && "opacity-60")}>
       <DragHandle {...dragHandleProps} />
       <button type="button" onClick={onSelect} className="flex min-w-0 flex-1 flex-col items-start gap-0 rounded px-1 py-0.5 text-left">
-        <span className="flex items-center gap-1.5">
-          <span className="truncate text-sm text-foreground">{titel}</span>
+        <span className="flex w-full min-w-0 items-center gap-1.5">
+          <span className="min-w-0 flex-1 truncate text-sm text-foreground">{titel}</span>
           {fout && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" aria-label="Bevat een fout" />}
         </span>
-        <span className="truncate text-xs text-muted-foreground">{meta}</span>
+        <span className="w-full truncate text-xs text-muted-foreground">{meta}</span>
       </button>
       <DropdownMenu ariaLabel={`Meer acties voor ${titel}`} items={menuItems} />
     </div>

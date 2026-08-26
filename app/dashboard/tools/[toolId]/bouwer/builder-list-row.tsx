@@ -54,8 +54,8 @@ export function BuilderListRow({
           className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-left"
         >
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <p className="truncate text-sm font-medium text-foreground">{title}</p>
+            <div className="flex min-w-0 items-center gap-2">
+              <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{title}</p>
               {badge}
             </div>
             {meta && <div className="truncate text-xs text-muted-foreground">{meta}</div>}
