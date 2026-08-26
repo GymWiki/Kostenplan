@@ -60,7 +60,14 @@ export function Overlay({
         onClick={onClose}
         className={cn("absolute inset-0 cursor-pointer", backdropClassName)}
       />
-      {children}
+      {/* isolate: zonder een eigen stacking context wordt de eigenlijke
+          dialooginhoud hierboven zelf mee-geblurd door de backdrop-blur van
+          de sluitknop hierboven (bekend backdrop-filter-compositinggedrag in
+          Chromium: een sibling zonder eigen z-index/stacking context kan
+          worden meegenomen in de backdrop-sample) — het scherm oogt dan
+          grijs/onleesbaar in plaats van een scherp dialoogvenster op een
+          wazige achtergrond. */}
+      <div className="relative isolate">{children}</div>
     </div>,
     document.body
   );
