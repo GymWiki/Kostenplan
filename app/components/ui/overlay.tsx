@@ -60,14 +60,20 @@ export function Overlay({
         onClick={onClose}
         className={cn("absolute inset-0 cursor-pointer", backdropClassName)}
       />
-      {/* isolate: zonder een eigen stacking context wordt de eigenlijke
-          dialooginhoud hierboven zelf mee-geblurd door de backdrop-blur van
-          de sluitknop hierboven (bekend backdrop-filter-compositinggedrag in
-          Chromium: een sibling zonder eigen z-index/stacking context kan
-          worden meegenomen in de backdrop-sample) — het scherm oogt dan
-          grijs/onleesbaar in plaats van een scherp dialoogvenster op een
-          wazige achtergrond. */}
-      <div className="relative isolate">{children}</div>
+      {/* isolate (zonder position:relative): zonder een eigen stacking
+          context wordt de eigenlijke dialooginhoud hierboven zelf mee-
+          geblurd door de backdrop-blur van de sluitknop hierboven (bekend
+          backdrop-filter-compositinggedrag in Chromium: een sibling zonder
+          eigen z-index/stacking context kan worden meegenomen in de
+          backdrop-sample) — het scherm oogt dan grijs/onleesbaar in plaats
+          van een scherp dialoogvenster op een wazige achtergrond.
+          `isolation: isolate` alleen is genoeg voor die stacking context en
+          verandert niets aan de layout; `position: relative` zou dat wél
+          doen — het maakt deze wrapper dan zelf de containing block voor elk
+          absoluut gepositioneerd kind (bijv. een drawer met
+          `absolute inset-y-0`), wat top/bottom onbepaald maakt zodra de
+          wrapper zelf geen expliciete hoogte heeft. */}
+      <div className="isolate">{children}</div>
     </div>,
     document.body
   );

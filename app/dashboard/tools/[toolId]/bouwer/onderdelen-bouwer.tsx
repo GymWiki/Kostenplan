@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { AlertCircle, AlertTriangle, CheckCircle2, Puzzle, Redo2, Rocket, Undo2 } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, Eye, Puzzle, Redo2, Rocket, Undo2 } from "lucide-react";
 import { valideerCalculatorConfig, type ModulaireCalculatorConfigData } from "@/app/lib/calculator-engine";
 import {
   saveCalculatorConfigDraftAction,
@@ -16,7 +16,8 @@ import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import { Tabs, type TabItem } from "@/app/components/ui/tabs";
 import { useToast } from "@/app/components/ui/toast";
 import { BouwerPreviewLayout } from "./bouwer-preview-layout";
-import { BuilderThreeColumnLayout } from "./builder-three-column-layout";
+import { BuilderTwoColumnLayout } from "./builder-two-column-layout";
+import { PreviewDrawer } from "./preview-drawer";
 import { BuilderTree, type Selectie } from "./builder-tree";
 import { VeldSettingsForm } from "./veld-settings-form";
 import { RegelSettingsForm } from "./regel-settings-form";
@@ -82,7 +83,8 @@ export function OnderdelenBouwer({
     return eerste ? { soort: "onderdeel", onderdeelId: eerste.id } : null;
   });
   const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
-  const [mobielPaneel, setMobielPaneel] = useState<"lijst" | "instellingen" | "preview">("lijst");
+  const [mobielPaneel, setMobielPaneel] = useState<"lijst" | "instellingen">("lijst");
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [opslaanStatus, setOpslaanStatus] = useState<"idle" | "bezig" | "opgeslagen">("opgeslagen");
   const [gepubliceerd, setGepubliceerd] = useState(heeftLiveVersie);
   const [publiceerFout, setPubliceerFout] = useState<string | null>(null);
@@ -249,10 +251,18 @@ export function OnderdelenBouwer({
           {opslaanStatus === "bezig" && <span className="text-xs text-muted-foreground">Opslaan…</span>}
           {opslaanStatus === "opgeslagen" && <span className="text-xs text-muted-foreground">Concept opgeslagen</span>}
         </div>
-        <Button type="button" onClick={handlePublish} disabled={publiceren || fouten.length > 0}>
-          <Rocket className="h-4 w-4" />
-          {publiceren ? "Publiceren…" : gepubliceerd ? "Wijzigingen publiceren" : "Publiceren"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {tab === "onderdelen" && (
+            <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>
+              <Eye className="h-4 w-4" />
+              Voorbeeld bekijken
+            </Button>
+          )}
+          <Button type="button" onClick={handlePublish} disabled={publiceren || fouten.length > 0}>
+            <Rocket className="h-4 w-4" />
+            {publiceren ? "Publiceren…" : gepubliceerd ? "Wijzigingen publiceren" : "Publiceren"}
+          </Button>
+        </div>
       </div>
 
       {publiceerFout && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{publiceerFout}</p>}
@@ -283,23 +293,25 @@ export function OnderdelenBouwer({
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
 
       {tab === "onderdelen" && (
-        <BuilderThreeColumnLayout
-          mobielPaneel={mobielPaneel}
-          onMobielPaneelChange={setMobielPaneel}
-          lijst={
-            <BuilderTree
-              toolId={toolId}
-              onderdelen={config.onderdelen}
-              onChange={(onderdelen) => setConfig({ ...config, onderdelen })}
-              meldingen={meldingen}
-              selectie={selectie}
-              onSelect={selecteer}
-              onderdeelBibliotheek={onderdeelBibliotheek}
-              onJustCreated={setJustCreatedId}
-            />
-          }
-          instellingen={instellingenPaneel()}
-          preview={
+        <>
+          <BuilderTwoColumnLayout
+            mobielPaneel={mobielPaneel}
+            onMobielPaneelChange={setMobielPaneel}
+            lijst={
+              <BuilderTree
+                toolId={toolId}
+                onderdelen={config.onderdelen}
+                onChange={(onderdelen) => setConfig({ ...config, onderdelen })}
+                meldingen={meldingen}
+                selectie={selectie}
+                onSelect={selecteer}
+                onderdeelBibliotheek={onderdeelBibliotheek}
+                onJustCreated={setJustCreatedId}
+              />
+            }
+            instellingen={instellingenPaneel()}
+          />
+          <PreviewDrawer open={previewOpen} onClose={() => setPreviewOpen(false)}>
             <EngineCalculator
               toolId={toolId}
               bedrijfsnaam={bedrijfsnaam}
@@ -311,8 +323,8 @@ export function OnderdelenBouwer({
               materiaalOpties={materiaalOpties}
               previewModus
             />
-          }
-        />
+          </PreviewDrawer>
+        </>
       )}
 
       {tab === "resultaat" && (
