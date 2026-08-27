@@ -11,6 +11,7 @@ import { Trash2, Plus } from "lucide-react";
 import { numeriekeVariabelen, type BeschikbareVariabele } from "./variabelen-utils";
 import { VoorwaardeEditor, ontleedVoorwaarde, bouwVoorwaarde, legeConditie, type VoorwaardeGroep } from "./voorwaarde-editor";
 import { Bedragveld } from "./bedragveld";
+import { AdvancedSettings } from "./advanced-settings";
 
 type BouwbaarType = "VAST" | "PER_EENHEID" | "PERCENTAGE" | "TOESLAG" | "KORTING" | "STAFFEL";
 
@@ -337,21 +338,23 @@ export function RegelSettingsForm({
         </>
       )}
 
-      <div className="flex flex-col gap-2 border-t border-border pt-4">
-        <label className="flex items-center justify-between gap-3">
-          <span className="text-sm font-medium text-foreground">Alleen toepassen onder een voorwaarde</span>
-          <Switch
-            checked={state.heeftVoorwaarde}
-            onChange={(e) =>
-              commit({
-                heeftVoorwaarde: e.target.checked,
-                voorwaardeGroep: state.voorwaardeGroep.condities.length > 0 ? state.voorwaardeGroep : { combinator: "EN", condities: [legeConditie(variabelen)] },
-              })
-            }
-          />
-        </label>
-        {state.heeftVoorwaarde && <VoorwaardeEditor groep={state.voorwaardeGroep} onChange={(voorwaardeGroep) => commit({ voorwaardeGroep })} variabelen={variabelen} />}
-      </div>
+      <AdvancedSettings>
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center justify-between gap-3">
+            <span className="text-sm font-medium text-foreground">Alleen toepassen onder een voorwaarde</span>
+            <Switch
+              checked={state.heeftVoorwaarde}
+              onChange={(e) =>
+                commit({
+                  heeftVoorwaarde: e.target.checked,
+                  voorwaardeGroep: state.voorwaardeGroep.condities.length > 0 ? state.voorwaardeGroep : { combinator: "EN", condities: [legeConditie(variabelen)] },
+                })
+              }
+            />
+          </label>
+          {state.heeftVoorwaarde && <VoorwaardeEditor groep={state.voorwaardeGroep} onChange={(voorwaardeGroep) => commit({ voorwaardeGroep })} variabelen={variabelen} />}
+        </div>
+      </AdvancedSettings>
 
       <div className="flex flex-col gap-2 border-t border-border pt-4">
         <label className="flex items-center justify-between gap-3">

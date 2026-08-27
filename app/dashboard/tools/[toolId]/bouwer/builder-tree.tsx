@@ -189,21 +189,25 @@ export function BuilderTree({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Componenten</h2>
-        <Button type="button" size="sm" variant="ghost" onClick={() => setToevoegenOpen(true)} aria-label="Onderdeel toevoegen">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Onderdelen</h2>
+        <Button type="button" size="sm" variant="ghost" onClick={() => setToevoegenOpen(true)}>
           <Plus className="h-4 w-4" />
+          Onderdeel
         </Button>
       </div>
 
       {gesorteerd.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-8 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-10 text-center">
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-muted-foreground">
             <Puzzle className="h-5 w-5" />
           </span>
-          <p className="px-3 text-sm text-muted-foreground">Nog geen onderdelen. Begin met je eerste onderdeel.</p>
+          <div className="px-4">
+            <p className="text-sm font-medium text-foreground">Je calculator begint hier</p>
+            <p className="mt-1 text-sm text-muted-foreground">Voeg je eerste onderdeel toe om vragen en prijsberekeningen te maken.</p>
+          </div>
           <Button type="button" size="sm" onClick={() => setToevoegenOpen(true)}>
             <Plus className="h-4 w-4" />
-            Onderdeel toevoegen
+            Eerste onderdeel toevoegen
           </Button>
         </div>
       ) : (
@@ -218,8 +222,8 @@ export function BuilderTree({
             const isGeselecteerd = selectieGelijk(selectie, { soort: "onderdeel", onderdeelId: onderdeel.id });
 
             return (
-              <div className={cn("rounded-xl border transition-colors", dragHandleProps.isDragging && "shadow-lg", isGeselecteerd ? "border-primary bg-primary/5" : "border-border bg-card")}>
-                <div className="flex items-center gap-1 py-2 pr-1.5 pl-1">
+              <div className={cn("overflow-hidden rounded-xl border transition-colors", dragHandleProps.isDragging && "shadow-lg", isGeselecteerd ? "border-primary bg-primary/5" : "border-border bg-card")}>
+                <div className="flex items-center gap-1 py-2.5 pr-1.5 pl-1">
                   <DragHandle {...dragHandleProps} />
                   <button type="button" onClick={() => toggleUitgeklapt(onderdeel.id)} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary" aria-label={isUitgeklapt ? "Inklappen" : "Uitklappen"}>
                     {isUitgeklapt ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -237,7 +241,7 @@ export function BuilderTree({
                         heen bleef doorlopen i.p.v. af te breken. */}
                     <span className="flex w-full min-w-0 items-center gap-1.5">
                       <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{onderdeel.naam || "Naamloos onderdeel"}</span>
-                      <StatusIndicator status={status} />
+                      <StatusIndicator status={status} compact />
                     </span>
                     <span className="w-full truncate text-xs text-muted-foreground">
                       {onderdeel.velden.length} {onderdeel.velden.length === 1 ? "vraag" : "vragen"} · {onderdeel.regels.length} {onderdeel.regels.length === 1 ? "prijsregel" : "prijsregels"}
@@ -254,11 +258,14 @@ export function BuilderTree({
                 </div>
 
                 {isUitgeklapt && (
-                  <div className="flex flex-col gap-3 border-t border-border px-2 py-2 pl-9">
+                  // Subtiele achtergrondtint + inspringing maakt het onderscheid
+                  // Onderdeel (container) vs. Vraag/Prijsregel (child) visueel
+                  // ondubbelzinnig, i.p.v. alleen een dunne rand.
+                  <div className="flex flex-col gap-4 border-t border-border bg-secondary/25 px-3 py-3 pl-10">
                     <SubLijst
                       titel="Vragen"
                       leegIcon={HelpCircle}
-                      leegTekst="Nog geen vragen"
+                      leegTekst="Nog geen vragen. Voeg een vraag toe om te bepalen wat je van de klant wilt weten."
                       onToevoegen={() => voegVeldToe(onderdeel)}
                       toevoegenLabel="Vraag toevoegen"
                     >
@@ -269,6 +276,7 @@ export function BuilderTree({
                           onReorder={(velden) => wijzigOnderdeel(onderdeel.id, (o) => ({ ...o, velden }))}
                           renderItem={(veld, dh) => (
                             <SubRij
+                              icon={HelpCircle}
                               dragHandleProps={dh}
                               titel={veld.label || "Naamloze vraag"}
                               meta={veldMeta(veld)}
@@ -291,7 +299,7 @@ export function BuilderTree({
                     <SubLijst
                       titel="Prijsregels"
                       leegIcon={Coins}
-                      leegTekst="Nog geen prijsregels"
+                      leegTekst="Nog geen prijsregels. Stel in hoe de antwoorden de prijs bepalen."
                       onToevoegen={() => voegRegelToe(onderdeel)}
                       toevoegenLabel="Prijsregel toevoegen"
                     >
@@ -302,6 +310,7 @@ export function BuilderTree({
                           onReorder={(regels) => wijzigOnderdeel(onderdeel.id, (o) => ({ ...o, regels }))}
                           renderItem={(regel, dh) => (
                             <SubRij
+                              icon={Coins}
                               dragHandleProps={dh}
                               titel={regel.label || "Naamloze prijsregel"}
                               meta={regelSamenvatting(regel, beschikbareVariabelen(onderdeel.velden, onderdeel.afgeleideVariabelen))}
@@ -381,26 +390,26 @@ function SubLijst({
 }) {
   const heeftInhoud = Array.isArray(children) ? children.some(Boolean) : Boolean(children);
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{titel}</span>
-        <Button type="button" size="sm" variant="ghost" onClick={onToevoegen} aria-label={toevoegenLabel}>
-          <Plus className="h-3.5 w-3.5" />
-        </Button>
-      </div>
+    <div className="flex flex-col gap-2">
+      <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{titel}</span>
       {heeftInhoud ? (
-        children
+        <div className="flex flex-col gap-1">{children}</div>
       ) : (
-        <div className="flex items-center gap-2 rounded-md border border-dashed border-border px-2.5 py-2 text-xs text-muted-foreground">
-          <LeegIcon className="h-3.5 w-3.5 shrink-0" />
+        <div className="flex items-start gap-2 rounded-md border border-dashed border-border bg-card px-3 py-2.5 text-xs text-muted-foreground">
+          <LeegIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           {leegTekst}
         </div>
       )}
+      <Button type="button" size="sm" variant="ghost" onClick={onToevoegen} className="w-fit">
+        <Plus className="h-3.5 w-3.5" />
+        {toevoegenLabel}
+      </Button>
     </div>
   );
 }
 
 function SubRij({
+  icon: Icon,
   dragHandleProps,
   titel,
   meta,
@@ -410,6 +419,7 @@ function SubRij({
   onSelect,
   menuItems,
 }: {
+  icon: React.ComponentType<{ className?: string }>;
   dragHandleProps: Parameters<typeof DragHandle>[0];
   titel: string;
   meta: string;
@@ -420,8 +430,9 @@ function SubRij({
   menuItems: { label: string; icon: React.ComponentType<{ className?: string }>; onSelect: () => void; destructive?: boolean }[];
 }) {
   return (
-    <div className={cn("flex items-center gap-1 rounded-md border py-1.5 pr-1 pl-0.5", geselecteerd ? "border-primary bg-primary/5" : "border-transparent hover:bg-secondary/50", gedimd && "opacity-60")}>
+    <div className={cn("flex items-center gap-1 rounded-md border bg-card py-2 pr-1 pl-0.5", geselecteerd ? "border-primary bg-primary/5" : "border-transparent hover:bg-secondary/50", gedimd && "opacity-60")}>
       <DragHandle {...dragHandleProps} />
+      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
       <button type="button" onClick={onSelect} className="flex min-w-0 flex-1 flex-col items-start gap-0 rounded px-1 py-0.5 text-left">
         <span className="flex w-full min-w-0 items-center gap-1.5">
           <span className="min-w-0 flex-1 truncate text-sm text-foreground">{titel}</span>

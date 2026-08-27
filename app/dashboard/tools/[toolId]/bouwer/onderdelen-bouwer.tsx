@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { AlertCircle, AlertTriangle, CheckCircle2, Eye, Puzzle, Redo2, Rocket, Undo2 } from "lucide-react";
-import { valideerCalculatorConfig, type ModulaireCalculatorConfigData } from "@/app/lib/calculator-engine";
+import { Puzzle, Redo2, Rocket, Undo2 } from "lucide-react";
+import { valideerCalculatorConfig, type ModulaireCalculatorConfigData, type ValidatieMelding } from "@/app/lib/calculator-engine";
 import {
   saveCalculatorConfigDraftAction,
   publishCalculatorConfigAction,
@@ -16,8 +16,8 @@ import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import { Tabs, type TabItem } from "@/app/components/ui/tabs";
 import { useToast } from "@/app/components/ui/toast";
 import { BouwerPreviewLayout } from "./bouwer-preview-layout";
-import { BuilderTwoColumnLayout } from "./builder-two-column-layout";
-import { PreviewDrawer } from "./preview-drawer";
+import { BuilderWorkspaceLayout } from "./builder-workspace-layout";
+import { AandachtspuntenSamenvatting } from "./aandachtspunten-samenvatting";
 import { BuilderTree, type Selectie } from "./builder-tree";
 import { VeldSettingsForm } from "./veld-settings-form";
 import { RegelSettingsForm } from "./regel-settings-form";
@@ -83,8 +83,7 @@ export function OnderdelenBouwer({
     return eerste ? { soort: "onderdeel", onderdeelId: eerste.id } : null;
   });
   const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
-  const [mobielPaneel, setMobielPaneel] = useState<"lijst" | "instellingen">("lijst");
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [mobielPaneel, setMobielPaneel] = useState<"structuur" | "bewerken" | "preview">("structuur");
   const [opslaanStatus, setOpslaanStatus] = useState<"idle" | "bezig" | "opgeslagen">("opgeslagen");
   const [gepubliceerd, setGepubliceerd] = useState(heeftLiveVersie);
   const [publiceerFout, setPubliceerFout] = useState<string | null>(null);
@@ -95,7 +94,6 @@ export function OnderdelenBouwer({
 
   const meldingen = valideerCalculatorConfig(config);
   const fouten = meldingen.filter((m) => m.ernst === "FOUT");
-  const waarschuwingen = meldingen.filter((m) => m.ernst === "WAARSCHUWING");
 
   const eersteRender = useRef(true);
   useEffect(() => {
@@ -118,7 +116,24 @@ export function OnderdelenBouwer({
   function selecteer(nieuw: Selectie) {
     resetGroepering();
     setSelectie(nieuw);
-    setMobielPaneel("instellingen");
+    setMobielPaneel("bewerken");
+  }
+
+  // Voor de "Aandachtspunten"-popover: een melding met een veldId/regelId
+  // wijst naar een specifieke Vraag/Prijsregel binnen een Onderdeel — zoek
+  // dat Onderdeel op en selecteer de juiste rij, zodat klikken op een
+  // aandachtspunt direct naar de betreffende plek in de editor navigeert.
+  function navigeerNaarMelding(melding: ValidatieMelding) {
+    for (const onderdeel of config.onderdelen) {
+      if (melding.veldId && onderdeel.velden.some((v) => v.id === melding.veldId)) {
+        selecteer({ soort: "veld", onderdeelId: onderdeel.id, veldId: melding.veldId });
+        return;
+      }
+      if (melding.regelId && onderdeel.regels.some((r) => r.id === melding.regelId)) {
+        selecteer({ soort: "regel", onderdeelId: onderdeel.id, regelId: melding.regelId });
+        return;
+      }
+    }
   }
 
   function handlePublish() {
@@ -180,7 +195,10 @@ export function OnderdelenBouwer({
     if (selectie.soort === "veld" && geselecteerdVeld) {
       return (
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Vraag · {geselecteerdOnderdeel.naam}</p>
+          <div>
+            <p className="text-xs text-muted-foreground">{geselecteerdOnderdeel.naam}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Vraag · {geselecteerdVeld.label || "Naamloze vraag"}</p>
+          </div>
           <VeldSettingsForm
             key={geselecteerdVeld.id}
             toolId={toolId}
@@ -207,7 +225,10 @@ export function OnderdelenBouwer({
       const variabelen = beschikbareVariabelen(geselecteerdOnderdeel.velden, geselecteerdOnderdeel.afgeleideVariabelen);
       return (
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Prijsregel · {geselecteerdOnderdeel.naam}</p>
+          <div>
+            <p className="text-xs text-muted-foreground">{geselecteerdOnderdeel.naam}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Prijsregel · {geselecteerdRegel.label || "Naamloze prijsregel"}</p>
+          </div>
           <RegelSettingsForm
             key={geselecteerdRegel.id}
             regel={geselecteerdRegel}
@@ -234,12 +255,13 @@ export function OnderdelenBouwer({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold text-foreground">Calculator-bouwer</h1>
-            <Badge variant={gepubliceerd ? "success" : "muted"}>{gepubliceerd ? "Live" : "Nog niet gepubliceerd"}</Badge>
+            <h1 className="text-xl font-semibold text-foreground">{toolNaam}</h1>
+            <Badge variant={gepubliceerd ? "success" : "muted"}>{gepubliceerd ? "Live" : "Concept"}</Badge>
           </div>
-          <p className="text-sm text-muted-foreground">Voor &ldquo;{toolNaam}&rdquo;</p>
+          <p className="text-lg font-medium text-foreground">Calculator-bouwer</p>
+          <p className="text-sm text-muted-foreground">Bouw en configureer je rekentool. Voeg vragen toe, stel berekeningen in en zie direct een voorbeeld.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
             <Button type="button" variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Ongedaan maken (Ctrl+Z)" title="Ongedaan maken (Ctrl+Z)">
               <Undo2 className="h-4 w-4" />
@@ -249,69 +271,43 @@ export function OnderdelenBouwer({
             </Button>
           </div>
           {opslaanStatus === "bezig" && <span className="text-xs text-muted-foreground">Opslaan…</span>}
-          {opslaanStatus === "opgeslagen" && <span className="text-xs text-muted-foreground">Concept opgeslagen</span>}
-        </div>
-        <div className="flex items-center gap-2">
-          {tab === "onderdelen" && (
-            <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>
-              <Eye className="h-4 w-4" />
-              Voorbeeld bekijken
-            </Button>
-          )}
+          {opslaanStatus === "opgeslagen" && <span className="text-xs text-muted-foreground">✓ Opgeslagen</span>}
           <Button type="button" onClick={handlePublish} disabled={publiceren || fouten.length > 0}>
-            <Rocket className="h-4 w-4" />
             {publiceren ? "Publiceren…" : gepubliceerd ? "Wijzigingen publiceren" : "Publiceren"}
+            <Rocket className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      {publiceerFout && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{publiceerFout}</p>}
-
-      {(fouten.length > 0 || waarschuwingen.length > 0) && (
-        <div className="flex flex-col gap-1.5">
-          {fouten.map((m, i) => (
-            <p key={`fout-${i}`} className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              {m.boodschap}
-            </p>
-          ))}
-          {waarschuwingen.map((m, i) => (
-            <p key={`waarschuwing-${i}`} className="flex items-center gap-2 rounded-md bg-warning/10 px-3 py-2 text-sm text-warning">
-              <AlertTriangle className="h-4 w-4 shrink-0" />
-              {m.boodschap}
-            </p>
-          ))}
+      {publiceerFout && (
+        <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <p className="font-medium">Publiceren niet mogelijk</p>
+          <p>{publiceerFout}</p>
         </div>
       )}
-      {fouten.length === 0 && waarschuwingen.length === 0 && config.onderdelen.length > 0 && (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
-          Geen problemen gevonden.
-        </p>
-      )}
+
+      <AandachtspuntenSamenvatting meldingen={meldingen} onNavigate={navigeerNaarMelding} />
 
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
 
       {tab === "onderdelen" && (
-        <>
-          <BuilderTwoColumnLayout
-            mobielPaneel={mobielPaneel}
-            onMobielPaneelChange={setMobielPaneel}
-            lijst={
-              <BuilderTree
-                toolId={toolId}
-                onderdelen={config.onderdelen}
-                onChange={(onderdelen) => setConfig({ ...config, onderdelen })}
-                meldingen={meldingen}
-                selectie={selectie}
-                onSelect={selecteer}
-                onderdeelBibliotheek={onderdeelBibliotheek}
-                onJustCreated={setJustCreatedId}
-              />
-            }
-            instellingen={instellingenPaneel()}
-          />
-          <PreviewDrawer open={previewOpen} onClose={() => setPreviewOpen(false)}>
+        <BuilderWorkspaceLayout
+          mobielPaneel={mobielPaneel}
+          onMobielPaneelChange={setMobielPaneel}
+          structuur={
+            <BuilderTree
+              toolId={toolId}
+              onderdelen={config.onderdelen}
+              onChange={(onderdelen) => setConfig({ ...config, onderdelen })}
+              meldingen={meldingen}
+              selectie={selectie}
+              onSelect={selecteer}
+              onderdeelBibliotheek={onderdeelBibliotheek}
+              onJustCreated={setJustCreatedId}
+            />
+          }
+          editor={instellingenPaneel()}
+          preview={
             <EngineCalculator
               toolId={toolId}
               bedrijfsnaam={bedrijfsnaam}
@@ -323,8 +319,8 @@ export function OnderdelenBouwer({
               materiaalOpties={materiaalOpties}
               previewModus
             />
-          </PreviewDrawer>
-        </>
+          }
+        />
       )}
 
       {tab === "resultaat" && (

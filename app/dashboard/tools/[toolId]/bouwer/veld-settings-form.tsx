@@ -10,6 +10,7 @@ import { beschikbareVariabelen } from "./variabelen-utils";
 import { VoorwaardeEditor, ontleedVoorwaarde, bouwVoorwaarde, legeConditie, type VoorwaardeGroep } from "./voorwaarde-editor";
 import { KeuzeOptiesEditor } from "./keuze-opties-editor";
 import { ProductOptiesEditor } from "./product-opties-editor";
+import { AdvancedSettings } from "./advanced-settings";
 import { SOORT_LABELS, SOORT_UITLEG } from "./veld-soort-labels";
 import type { MateriaalOptie } from "@/app/portaal/[slug]/engine-fields";
 
@@ -293,8 +294,8 @@ export function VeldSettingsForm({
       </label>
 
       {conditieVariabelen.length > 0 && (
-        <>
-          <div className="flex flex-col gap-2 border-t border-border pt-4">
+        <AdvancedSettings>
+          <div className="flex flex-col gap-2">
             <label className="flex items-center justify-between gap-3">
               <span className="text-sm font-medium text-foreground">Alleen tonen onder een voorwaarde</span>
               <Switch
@@ -310,7 +311,7 @@ export function VeldSettingsForm({
             {state.heeftZichtbaarAls && <VoorwaardeEditor groep={state.zichtbaarAlsGroep} onChange={(zichtbaarAlsGroep) => commit({ zichtbaarAlsGroep })} variabelen={conditieVariabelen} />}
           </div>
 
-          <div className="flex flex-col gap-2 border-t border-border pt-4">
+          <div className="flex flex-col gap-2">
             <label className="flex items-center justify-between gap-3">
               <span className="text-sm font-medium text-foreground">Ook verplicht onder een voorwaarde</span>
               <Switch
@@ -325,7 +326,7 @@ export function VeldSettingsForm({
             </label>
             {state.heeftVerplichtAls && <VoorwaardeEditor groep={state.verplichtAlsGroep} onChange={(verplichtAlsGroep) => commit({ verplichtAlsGroep })} variabelen={conditieVariabelen} />}
           </div>
-        </>
+        </AdvancedSettings>
       )}
     </div>
   );

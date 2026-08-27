@@ -16,13 +16,16 @@ const STATUS_CONFIG: Record<
   concept: { icon: Circle, label: "Concept", className: "text-muted-foreground" },
 };
 
-export function StatusIndicator({ status, className }: { status: BouwerStatus; className?: string }) {
+export function StatusIndicator({ status, compact, className }: { status: BouwerStatus; compact?: boolean; className?: string }) {
   const config = STATUS_CONFIG[status];
   const Icon = config.icon;
   return (
-    <span className={cn("inline-flex shrink-0 items-center gap-1 text-xs font-medium", config.className, className)}>
+    <span
+      className={cn("inline-flex shrink-0 items-center gap-1 text-xs font-medium", config.className, className)}
+      title={compact ? config.label : undefined}
+    >
       <Icon className="h-3.5 w-3.5" />
-      {config.label}
+      {!compact && config.label}
     </span>
   );
 }
