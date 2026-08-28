@@ -1,14 +1,15 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { ArrowLeft, FilePlus, Layers } from "lucide-react";
+import { useActionState, useMemo, useState } from "react";
+import { ArrowLeft, FilePlus, SearchX } from "lucide-react";
 import { createToolFromTemplateAction, createModulaireToolFromTemplateAction, type TemplateToolFormState } from "@/app/lib/actions/tools";
-import { getProductIcon } from "@/app/lib/icons";
-import { Badge } from "@/app/components/ui/badge";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Input, Label } from "@/app/components/ui/input";
 import { NieuweToolForm } from "./nieuwe-tool-form";
+import { TemplateToolbar } from "./template-toolbar";
+import { TemplateCard } from "./template-card";
+import { TemplatePreviewModal } from "./template-preview-modal";
 
 export type TemplateSamenvatting = {
   id: string;
@@ -27,14 +28,33 @@ export type TemplateSamenvatting = {
 
 type Startpunt = { soort: "template"; template: TemplateSamenvatting } | { soort: "leeg" } | null;
 
-// "Kies een startpunt" (Deel 28, uitgebreid met Deel 7 modulaire
-// templates): templates + een lege rekentool, in twee stappen — eerst
-// kiezen, dan een naam geven. Geen tussenpagina die zegt "deze tool is
-// gekoppeld aan template X" (Deel 29): na het aanmaken is de tool volledig
+const ALLE_CATEGORIEEN = "Alle";
+
+// "Kies een startpunt" (Herontwerp "Nieuwe rekentool"): eerst de primaire
+// keuze "zelf beginnen" vs. "sjabloon gebruiken", dan zoeken/filteren, dan
+// een preview vóór je 'm daadwerkelijk gebruikt, dan pas de naam-stap. Geen
+// tussenpagina die zegt "deze tool is gekoppeld aan template X" (Deel 29
+// van de oorspronkelijke opdracht): na het aanmaken is de tool volledig
 // zelfstandig, precies zoals createToolFromTemplateAction /
-// createModulaireToolFromTemplateAction het bouwen.
+// createModulaireToolFromTemplateAction het bouwen — de preview-modal hier
+// is puur eenmalig, vestigt geen blijvende relatie.
 export function StartpuntKiezer({ templates }: { templates: TemplateSamenvatting[] }) {
   const [startpunt, setStartpunt] = useState<Startpunt>(null);
+  const [zoekterm, setZoekterm] = useState("");
+  const [categorie, setCategorie] = useState(ALLE_CATEGORIEEN);
+  const [previewTemplate, setPreviewTemplate] = useState<TemplateSamenvatting | null>(null);
+
+  const categorieen = useMemo(() => [ALLE_CATEGORIEEN, ...new Set(templates.map((t) => t.categorie))], [templates]);
+
+  const zichtbareTemplates = useMemo(() => {
+    const q = zoekterm.trim().toLowerCase();
+    return templates.filter((t) => {
+      if (categorie !== ALLE_CATEGORIEEN && t.categorie !== categorie) return false;
+      if (!q) return true;
+      const doorzoekbaar = [t.naam, t.categorie, t.beschrijving, ...(t.onderdeelNamen ?? [])].join(" ").toLowerCase();
+      return doorzoekbaar.includes(q);
+    });
+  }, [templates, zoekterm, categorie]);
 
   if (startpunt?.soort === "template") {
     return <TemplateNaamStap template={startpunt.template} onTerug={() => setStartpunt(null)} />;
@@ -60,81 +80,94 @@ export function StartpuntKiezer({ templates }: { templates: TemplateSamenvatting
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {templates.map((template) => {
-          const Icon = getProductIcon(template.icoon);
-          return (
-            <button
-              key={template.id}
-              type="button"
-              onClick={() => setStartpunt({ soort: "template", template })}
-              className="rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              <Card className="h-full cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_32px_-16px_rgba(15,23,42,0.22)]">
-                <CardContent className="flex flex-col gap-3">
-                  {/* flex-wrap: op smalle kaarten (3 kolommen op een 768px-
-                      brede pagina, zie tools/nieuw/page.tsx) is er te weinig
-                      ruimte om icoon + titel + badge altijd op één regel te
-                      houden. Met min-w-0/flex-1 alléén werd de titelkolom dan
-                      wel dichtgeknepen, maar zo hard dat break-words elk
-                      woord letter-voor-letter ging afbreken (onleesbaar) —
-                      met flex-wrap zakt het badge in plaats daarvan naar een
-                      eigen regel onder de titel, die dan gewoon op zijn
-                      basisbreedte (9rem) kan blijven staan. break-words blijft
-                      als vangnet voor het zeldzame geval van een enkel woord
-                      dat zelfs die 9rem niet past. */}
-                  <div className="flex flex-wrap items-start gap-2.5">
-                    {Icon && (
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <Icon className="h-4.5 w-4.5" />
-                      </span>
-                    )}
-                    <div className="min-w-20 flex-[1_1_9rem]">
-                      <p className="break-words font-medium text-foreground">{template.naam}</p>
-                      <p className="text-xs text-muted-foreground">{template.categorie}</p>
-                    </div>
-                    {template.soort === "modulair" && template.onderdelenAantal != null && (
-                      <Badge variant="muted" className="shrink-0 gap-1">
-                        <Layers className="h-3 w-3" aria-hidden="true" />
-                        {template.onderdelenAantal} onderdelen
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground">{template.beschrijving}</p>
-                  {template.soort === "modulair" && template.onderdeelNamen && template.onderdeelNamen.length > 0 && (
-                    <p className="text-xs text-muted-foreground">{template.onderdeelNamen.join(" · ")}</p>
-                  )}
-                  <div className="mt-auto flex flex-col gap-1 border-t border-border pt-3 text-xs text-muted-foreground">
-                    <p>
-                      <span className="font-medium text-foreground">Berekent: </span>
-                      {template.watHetBerekent}
-                    </p>
-                    <p>
-                      <span className="font-medium text-foreground">Nog te doen: </span>
-                      {template.resterendWerk}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </button>
-          );
-        })}
-      </div>
-
-      <button type="button" onClick={() => setStartpunt({ soort: "leeg" })} className="rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-        <Card className="cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_32px_-16px_rgba(15,23,42,0.22)]">
-          <CardContent className="flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
-              <FilePlus className="h-4.5 w-4.5" />
+    <div className="flex flex-col gap-8">
+      {/* Zelf beginnen: een zelfstandige primaire keuze, geen gewone
+          template-card — dashed border + neutrale achtergrond onderscheidt
+          'm bewust van de sjabloon-grid hieronder. */}
+      <section aria-labelledby="startpunt-heading">
+        <h2 id="startpunt-heading" className="sr-only">
+          Startpunt
+        </h2>
+        <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-border bg-secondary/20 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+              <FilePlus className="h-5 w-5" />
             </span>
             <div>
-              <p className="font-medium text-foreground">Lege rekentool</p>
-              <p className="text-sm text-muted-foreground">Voor een unieke berekening — stel zelf alles samen.</p>
+              <p className="font-semibold text-foreground">Zelf beginnen</p>
+              <p className="text-sm text-muted-foreground">Start met een lege rekentool en bouw alles zelf op.</p>
             </div>
-          </CardContent>
-        </Card>
-      </button>
+          </div>
+          <Button type="button" variant="outline" onClick={() => setStartpunt({ soort: "leeg" })} className="w-full shrink-0 sm:w-auto">
+            Begin vanaf 0 →
+          </Button>
+        </div>
+      </section>
+
+      <section aria-labelledby="sjablonen-heading" className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 id="sjablonen-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Sjablonen
+          </h2>
+          <p className="text-sm text-muted-foreground">Kies een sjabloon en pas &apos;m daarna volledig aan naar jouw bedrijf.</p>
+        </div>
+
+        <TemplateToolbar
+          zoekterm={zoekterm}
+          onZoektermChange={setZoekterm}
+          categorieen={categorieen}
+          actieveCategorie={categorie}
+          onCategorieChange={setCategorie}
+        />
+
+        {zichtbareTemplates.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-12 text-center">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+              <SearchX className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="font-medium text-foreground">Geen sjablonen gevonden</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                We konden geen sjablonen vinden{zoekterm ? ` voor "${zoekterm}"` : " in deze categorie"}.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setZoekterm("");
+                setCategorie(ALLE_CATEGORIEEN);
+              }}
+            >
+              Zoekopdracht aanpassen
+            </Button>
+            <div className="mt-2 flex flex-col items-center gap-2 border-t border-border pt-4">
+              <p className="text-sm text-muted-foreground">Of begin helemaal vanaf 0</p>
+              <Button type="button" size="sm" onClick={() => setStartpunt({ soort: "leeg" })}>
+                Lege rekentool maken
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {zichtbareTemplates.map((template) => (
+              <TemplateCard key={template.id} template={template} onSelect={() => setPreviewTemplate(template)} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {previewTemplate && (
+        <TemplatePreviewModal
+          template={previewTemplate}
+          onClose={() => setPreviewTemplate(null)}
+          onGebruik={() => {
+            setStartpunt({ soort: "template", template: previewTemplate });
+            setPreviewTemplate(null);
+          }}
+        />
+      )}
     </div>
   );
 }
