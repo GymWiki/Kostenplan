@@ -1,19 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  AppWindow,
   ArrowRight,
   BadgeCheck,
+  Bath,
   Check,
   Clock3,
+  Construction,
+  Fence,
   Filter,
   Frown,
+  Globe2,
+  Grid2x2,
   Kanban,
+  LayoutGrid,
+  LayoutTemplate,
   Mail,
   MessageCircle,
   MousePointerClick,
+  PaintRoller,
   Phone,
   Scale,
+  SlidersHorizontal,
   TrendingUp,
+  Trees,
+  Umbrella,
+  Wrench,
 } from "lucide-react";
 import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -22,14 +35,16 @@ import { Reveal } from "@/app/components/ui/reveal";
 import { SiteHeader } from "@/app/components/marketing/site-header";
 import { SiteFooter } from "@/app/components/marketing/site-footer";
 import { FaqSection } from "@/app/components/marketing/faq-section";
+import { GeoAnswer } from "@/app/components/marketing/geo-answer";
 import { GoogleDataSection } from "@/app/components/marketing/google-data-section";
 import { StructuredData } from "@/app/components/marketing/structured-data";
+import { WebsiteCalculatorMockup } from "@/app/components/marketing/website-calculator-mockup";
 import { MarketingPricingTable } from "@/app/components/pricing/marketing-pricing-table";
 import { LEAD_STATUS_LABELS } from "@/app/lib/leads";
 
-const TITLE = "Kostenplan | Offertecalculator voor Hoveniers en Vakmensen";
+const TITLE = "Kostenplan | Maak een rekentool voor je website";
 const DESCRIPTION =
-  "Automatiseer je offertetraject: klanten berekenen zelf een prijsindicatie, jij ontvangt alleen serieuze aanvragen in je eigen leads-CRM. Start nu gratis.";
+  "Maak zonder programmeerkennis een professionele rekentool voor je website. Kies een sjabloon, pas je prijzen aan en laat klanten zelf hun prijs berekenen.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -55,6 +70,23 @@ export const metadata: Metadata = {
   },
 };
 
+const TOEPASSINGEN: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  href?: string;
+}[] = [
+  { icon: Trees, label: "Tuin", href: "/voor/hoveniers" },
+  { icon: Grid2x2, label: "Bestrating", href: "/voor/stratenmakers" },
+  { icon: Fence, label: "Schutting", href: "/voor/schuttingbedrijven" },
+  { icon: AppWindow, label: "Kozijnen", href: "/voor/kozijnen" },
+  { icon: Umbrella, label: "Veranda" },
+  { icon: Construction, label: "Verbouwing", href: "/voor/bouwbedrijven" },
+  { icon: PaintRoller, label: "Schilderwerk", href: "/voor/schilders" },
+  { icon: Wrench, label: "Maatwerk", href: "/voor/klusbedrijven" },
+  { icon: Bath, label: "Badkamer", href: "/voor/badkamerbedrijven" },
+  { icon: LayoutGrid, label: "Andere diensten", href: "/voor" },
+];
+
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -72,53 +104,226 @@ export default function Home() {
             />
           </div>
 
-          <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 sm:py-28">
-            <div className="mx-auto max-w-2xl text-center">
-              <span className="animate-fade-in-up inline-flex items-center rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-                Voor vakmensen
-              </span>
-              <h1
-                className="animate-fade-in-up mt-6 text-4xl font-bold tracking-tight text-balance text-foreground sm:text-5xl"
-                style={{ animationDelay: "80ms" }}
-              >
-                Stop met urenlang offertes maken voor klanten die toch niet kopen.
-              </h1>
-              <p
-                className="animate-fade-in-up mt-6 text-lg text-muted-foreground"
-                style={{ animationDelay: "160ms" }}
-              >
-                <strong className="font-semibold text-foreground">
-                  Kostenplan is een online offertecalculator voor hoveniers, stratenmakers,
-                  schilders en andere vakmensen
-                </strong>{" "}
-                waarmee je snel en nauwkeurig prijsindicaties en offertes opstelt. Laat
-                websitebezoekers zelf een prijsindicatie berekenen. Jij krijgt alleen nog
-                aanvragen van serieuze klanten met een realistisch budget. Geen nutteloze
-                belletjes, geen offerte-shoppers.
-              </p>
-              <div
-                className="animate-fade-in-up mt-8 flex flex-col justify-center gap-3 sm:flex-row"
-                style={{ animationDelay: "240ms" }}
-              >
-                <LinkButton href="/registreren" size="lg">
-                  Start nu gratis
-                  <ArrowRight className="h-4 w-4" />
-                </LinkButton>
-                <LinkButton href="#voorbeeld" size="lg" variant="outline">
-                  Bekijk een voorbeeld
-                </LinkButton>
+          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+            <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+              <div className="text-center lg:text-left">
+                <span className="animate-fade-in-up inline-flex items-center rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
+                  Rekentool voor je website
+                </span>
+                <h1
+                  className="animate-fade-in-up mt-6 text-4xl font-bold tracking-tight text-balance text-foreground sm:text-5xl"
+                  style={{ animationDelay: "80ms" }}
+                >
+                  Maak een rekentool voor je website
+                </h1>
+                <p
+                  className="animate-fade-in-up mt-6 text-lg text-muted-foreground"
+                  style={{ animationDelay: "160ms" }}
+                >
+                  Laat klanten zelf hun prijs berekenen voor bijvoorbeeld een tuin, schutting,
+                  veranda, bestrating, kozijnen of een andere dienst — zonder programmeerkennis.
+                  Jij ontvangt aanvragen van mensen die al weten wat hun project ongeveer kost.
+                </p>
+                <div
+                  className="animate-fade-in-up mt-6 text-left"
+                  style={{ animationDelay: "200ms" }}
+                >
+                  <GeoAnswer>
+                    Kostenplan is een platform waarmee vakmensen zelf een online rekentool voor
+                    hun website bouwen. Bezoekers berekenen zelf een prijsindicatie; jij ontvangt
+                    de aanvraag met de exacte selectie in je eigen leads-overzicht.
+                  </GeoAnswer>
+                </div>
+                <div
+                  className="animate-fade-in-up mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start"
+                  style={{ animationDelay: "240ms" }}
+                >
+                  <LinkButton href="/registreren" size="lg">
+                    Maak gratis een rekentool
+                    <ArrowRight className="h-4 w-4" />
+                  </LinkButton>
+                  <LinkButton href="/voorbeelden-rekentools" size="lg" variant="outline">
+                    Bekijk voorbeelden
+                  </LinkButton>
+                </div>
               </div>
+
+              <Reveal delay={150}>
+                <WebsiteCalculatorMockup
+                  siteUrl="groenenzo.nl"
+                  bedrijfsnaam="Groen & Zo Tuinen"
+                  productTitel="Bereken de kosten van jouw tuin"
+                  velden={[
+                    { label: "Oppervlakte tuin", waarde: "85 m²" },
+                    { label: "Bestrating", waarde: "Ja" },
+                    { label: "Beplanting", waarde: "Ja" },
+                    { label: "Schutting", waarde: "12 m1" },
+                    { label: "Tuinverlichting", waarde: "Ja" },
+                  ]}
+                  resultaatLabel="Indicatieprijs"
+                  resultaatWaarde="€ 8.250 – € 10.500"
+                  cta="Offerte aanvragen"
+                  rotate="sm:rotate-1"
+                />
+              </Reveal>
             </div>
           </div>
         </section>
 
-        {/* PIJNPUNTEN */}
+        {/* ZO WERKT HET */}
         <section className="border-y border-border bg-secondary/40 py-20">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <Reveal className="mx-auto max-w-2xl text-center">
+              <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">Zo werkt het</h2>
+              <p className="mt-3 text-muted-foreground">
+                Van een leeg dashboard naar een werkende rekentool op je eigen website.
+              </p>
+            </Reveal>
+            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Reveal delay={0}>
+                <StapCard
+                  nummer={1}
+                  icon={LayoutTemplate}
+                  titel="Kies een sjabloon"
+                  tekst="Begin met een bestaande rekentool voor jouw vakgebied of maak er zelf één vanaf nul."
+                />
+              </Reveal>
+              <Reveal delay={100}>
+                <StapCard
+                  nummer={2}
+                  icon={SlidersHorizontal}
+                  titel="Pas hem aan"
+                  tekst="Voeg je eigen producten, prijzen, vragen en berekeningen toe."
+                />
+              </Reveal>
+              <Reveal delay={200}>
+                <StapCard
+                  nummer={3}
+                  icon={Globe2}
+                  titel="Zet hem op je website"
+                  tekst="Plaats je rekentool eenvoudig op je eigen website en laat bezoekers zelf rekenen."
+                />
+              </Reveal>
+            </div>
+            <Reveal delay={250} className="mt-10 text-center">
+              <LinkButton href="/registreren" size="lg">
+                Maak mijn rekentool
+                <ArrowRight className="h-4 w-4" />
+              </LinkButton>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* WAT KUN JE LATEN BEREKENEN */}
+        <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+          <Reveal className="mx-auto max-w-2xl text-center">
+            <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
+              Wat kun je laten berekenen?
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              Elke rekentool is opgebouwd uit jouw eigen vragen en tarieven — dit zijn een paar
+              voorbeelden van vakgebieden waarin dat goed werkt.
+            </p>
+          </Reveal>
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {TOEPASSINGEN.map((toepassing, i) => (
+              <Reveal key={toepassing.label} delay={i * 40}>
+                <ToepassingCard {...toepassing} />
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        {/* SHOWCASE: EEN PLATFORM, ONTELBAAR VEEL REKENTOOLS */}
+        <section className="border-y border-border bg-secondary/40 py-20 sm:py-28">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <Reveal className="mx-auto max-w-2xl text-center">
+              <h2 className="text-2xl font-semibold text-balance text-foreground sm:text-3xl">
+                Eén platform. Ontelbaar veel rekentools.
+              </h2>
+              <p className="mt-3 text-muted-foreground">
+                Kostenplan is niet alleen een rekenprogramma voor intern gebruik — je laat de
+                rekentool daadwerkelijk aan je klant zien, op je eigen website.
+              </p>
+            </Reveal>
+            <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              <Reveal delay={0}>
+                <WebsiteCalculatorMockup
+                  compact
+                  siteUrl="groenenzo.nl"
+                  bedrijfsnaam="Groen & Zo Tuinen"
+                  productTitel="Bereken je tuin"
+                  velden={[
+                    { label: "Oppervlakte tuin", waarde: "85 m²" },
+                    { label: "Bestrating", waarde: "Ja" },
+                    { label: "Schutting", waarde: "12 m1" },
+                  ]}
+                  resultaatWaarde="€ 8.250 – € 10.500"
+                  cta="Offerte aanvragen"
+                />
+              </Reveal>
+              <Reveal delay={80}>
+                <WebsiteCalculatorMockup
+                  compact
+                  siteUrl="schuttingdirect.nl"
+                  bedrijfsnaam="SchuttingDirect"
+                  productTitel="Bereken jouw schutting"
+                  velden={[
+                    { label: "Lengte", waarde: "18 m1" },
+                    { label: "Hoogte", waarde: "180 cm" },
+                    { label: "Materiaal", waarde: "Hardhout" },
+                  ]}
+                  resultaatLabel="Vanaf"
+                  resultaatWaarde="€ 2.950"
+                  cta="Vraag offerte aan"
+                />
+              </Reveal>
+              <Reveal delay={160}>
+                <WebsiteCalculatorMockup
+                  compact
+                  siteUrl="vandijkkozijnen.nl"
+                  bedrijfsnaam="Van Dijk Kozijnen"
+                  productTitel="Bereken je nieuwe kozijnen"
+                  velden={[
+                    { label: "Aantal kozijnen", waarde: "6" },
+                    { label: "Materiaal", waarde: "Kunststof" },
+                    { label: "Glas", waarde: "HR++" },
+                  ]}
+                  resultaatLabel="Indicatie vanaf"
+                  resultaatWaarde="€ 7.850"
+                  cta="Ontvang mijn prijs"
+                />
+              </Reveal>
+              <Reveal delay={240}>
+                <WebsiteCalculatorMockup
+                  compact
+                  siteUrl="vanderbergbouw.nl"
+                  bedrijfsnaam="Van der Berg Bouw"
+                  productTitel="Bereken je verbouwing"
+                  velden={[
+                    { label: "Type verbouwing", waarde: "Aanbouw" },
+                    { label: "Oppervlakte", waarde: "24 m²" },
+                    { label: "Afwerking", waarde: "Compleet" },
+                  ]}
+                  resultaatLabel="Indicatie vanaf"
+                  resultaatWaarde="€ 15.500"
+                  cta="Offerte aanvragen"
+                />
+              </Reveal>
+            </div>
+          </div>
+        </section>
+
+        {/* PIJNPUNTEN (secundair: tijdsbesparing) */}
+        <section className="py-20">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <Reveal className="mx-auto max-w-2xl text-center">
               <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
                 Herken je deze tijdverslinders?
               </h2>
+              <p className="mt-3 text-muted-foreground">
+                Een rekentool op je website lost ze automatisch op.
+              </p>
             </Reveal>
             <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
               <Reveal delay={0}>
@@ -153,17 +358,17 @@ export default function Home() {
         </section>
 
         {/* OPLOSSING */}
-        <section id="voorbeeld" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+        <section id="voorbeeld" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 sm:pb-28">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <Reveal>
               <h2 className="text-2xl font-semibold text-balance text-foreground sm:text-3xl">
-                Jouw nieuwe, automatische filter voor serieuze leads.
+                Minder tijd aan rekenen. Meer tijd voor klanten.
               </h2>
               <div className="mt-10 flex flex-col gap-8">
                 <SolutionPoint
                   icon={MousePointerClick}
                   title="Klant rekent het zelf uit"
-                  description="Bezoekers klikken op jouw link of website hun wensen aan (materialen en producten) en zien direct een realistische prijsindicatie. Ze hoeven jou hiervoor niet te bellen."
+                  description="Bezoekers klikken op jouw website hun wensen aan (materialen en producten) en zien direct een realistische prijsindicatie. Ze hoeven jou hiervoor niet te bellen."
                   winst="Direct 4 uur administratiewerk per week besparen."
                 />
                 <SolutionPoint
@@ -238,39 +443,43 @@ export default function Home() {
           </div>
         </section>
 
-        {/* VOORDELEN */}
-        <section className="border-y border-border bg-secondary/40 py-20">
+        {/* WAAROM EEN REKENTOOL OP JE WEBSITE */}
+        <section className="py-20 sm:py-28">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <Reveal className="mx-auto max-w-2xl text-center">
               <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
-                Wat levert dit je op?
+                Waarom een rekentool op je website?
               </h2>
             </Reveal>
-            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Reveal delay={0}>
-                <BenefitItem
-                  title="Professionele uitstraling"
-                  winst="Meer vertrouwen en hogere conversie op je serieuze offertes."
-                >
-                  Je straalt direct transparantie en betrouwbaarheid uit naar je klanten, met je
-                  eigen logo en huisstijl op de rekentool.
+                <BenefitItem title="Meer relevante aanvragen">
+                  Bezoekers zien vooraf wat een project ongeveer kost, voordat ze contact
+                  opnemen.
                 </BenefitItem>
               </Reveal>
-              <Reveal delay={100}>
-                <BenefitItem
-                  title="Focus op het echte werk"
-                  winst="Meer omzet draaien met dezelfde uren, want minder tijd kwijt aan de laptop."
-                >
-                  Minder tijd achter de computer, meer tijd in de tuin.
+              <Reveal delay={80}>
+                <BenefitItem title="Minder tijd kwijt aan simpele aanvragen">
+                  Laat je website een deel van het rekenwerk voor je doen, ook buiten
+                  kantooruren.
                 </BenefitItem>
               </Reveal>
-              <Reveal delay={200}>
-                <BenefitItem
-                  title="Conversie gaat omhoog"
-                  winst="Minder offerte-uren verspild aan aanvragen die toch niets worden."
-                >
-                  De offertes die je nog wél maakt, worden veel vaker geaccepteerd omdat het
-                  budget al is afgestemd.
+              <Reveal delay={160}>
+                <BenefitItem title="Bezoekers worden actieve leads">
+                  Een bezoeker die zijn gegevens invult en een berekening maakt, heeft meer
+                  intentie dan iemand die alleen je homepage bekijkt.
+                </BenefitItem>
+              </Reveal>
+              <Reveal delay={240}>
+                <BenefitItem title="Professionele uitstraling">
+                  Geef bezoekers een moderne manier om zelf hun project samen te stellen, met
+                  jouw eigen logo en huisstijl.
+                </BenefitItem>
+              </Reveal>
+              <Reveal delay={320}>
+                <BenefitItem title="Geen programmeerkennis nodig">
+                  Maak en beheer je rekentool volledig vanuit Kostenplan, zonder developer of
+                  externe hulp.
                 </BenefitItem>
               </Reveal>
             </div>
@@ -312,8 +521,8 @@ export default function Home() {
                 Test het zelf. Binnen 5 minuten online.
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                Voeg je 10 populairste producten toe en deel je rekentool direct
-                met je klanten. Helemaal gratis.
+                Voeg je 10 populairste producten toe en zet je rekentool direct op je eigen
+                website. Helemaal gratis.
               </p>
               <div className="relative mt-8 inline-flex">
                 <span
@@ -325,7 +534,7 @@ export default function Home() {
                   size="lg"
                   className="border-transparent bg-white text-primary hover:bg-white/90"
                 >
-                  Maak je eerste Kostenplan aan
+                  Maak gratis een rekentool
                   <ArrowRight className="h-4 w-4" />
                 </LinkButton>
               </div>
@@ -338,6 +547,71 @@ export default function Home() {
 
       <SiteFooter />
     </div>
+  );
+}
+
+function StapCard({
+  nummer,
+  icon: Icon,
+  titel,
+  tekst,
+}: {
+  nummer: number;
+  icon: React.ComponentType<{ className?: string }>;
+  titel: string;
+  tekst: string;
+}) {
+  return (
+    <Card className="h-full">
+      <CardContent className="flex h-full flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+            {nummer}
+          </span>
+          <Icon className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h3 className="font-semibold text-foreground">{titel}</h3>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{tekst}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ToepassingCard({
+  icon: Icon,
+  label,
+  href,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  href?: string;
+}) {
+  const inhoud = (
+    <>
+      <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
+        <Icon className="h-5 w-5" />
+      </span>
+      <span className="text-sm font-medium text-foreground">{label}</span>
+    </>
+  );
+
+  if (!href) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-5 text-center">
+        {inhoud}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      className="group flex h-full flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+    >
+      {inhoud}
+    </Link>
   );
 }
 
@@ -397,15 +671,7 @@ function SolutionPoint({
   );
 }
 
-function BenefitItem({
-  title,
-  winst,
-  children,
-}: {
-  title: string;
-  winst: string;
-  children: React.ReactNode;
-}) {
+function BenefitItem({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex h-full flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-start gap-3">
@@ -417,12 +683,6 @@ function BenefitItem({
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{children}</p>
         </div>
       </div>
-      <p className="flex items-start gap-1.5 rounded-lg bg-primary/5 px-3 py-2 text-sm font-medium text-primary">
-        <TrendingUp className="mt-0.5 h-4 w-4 shrink-0" />
-        <span>
-          <span className="font-semibold">Winst:</span> {winst}
-        </span>
-      </p>
     </div>
   );
 }

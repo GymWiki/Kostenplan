@@ -16,6 +16,7 @@ import { SiteFooter } from "@/app/components/marketing/site-footer";
 import { Breadcrumbs } from "@/app/components/marketing/breadcrumbs";
 import { GeoAnswer } from "@/app/components/marketing/geo-answer";
 import { FaqSection } from "@/app/components/marketing/faq-section";
+import { WebsiteCalculatorMockup } from "@/app/components/marketing/website-calculator-mockup";
 import { DOELGROEPEN } from "@/app/lib/doelgroepen";
 
 const TITLE = "Rekentool voor je website maken";
@@ -83,31 +84,53 @@ export default function RekentoolPage() {
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
             <div className="animate-blob-drift absolute -top-32 left-1/2 h-[28rem] w-[28rem] -translate-x-[70%] rounded-full bg-primary/15 blur-3xl" />
           </div>
-          <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
-            <div className="mx-auto max-w-2xl text-center">
-              <span className="inline-flex items-center rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-                Rekentool
-              </span>
-              <h1 className="mt-6 text-4xl font-bold tracking-tight text-balance text-foreground sm:text-5xl">
-                Een rekentool voor je website, gebouwd voor vakmensen
-              </h1>
-              <div className="mt-6">
-                <GeoAnswer>
-                  Een rekentool is een interactief onderdeel op je website waarmee bezoekers zelf,
-                  op basis van hun eigen invoer, direct een prijsindicatie berekenen. Kostenplan is
-                  een online tool waarmee vakmensen zo&apos;n rekentool zelf bouwen — zonder
-                  programmeerkennis — en op hun eigen website of via een link delen met klanten.
-                </GeoAnswer>
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+            <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+              <div className="text-center lg:text-left">
+                <span className="inline-flex items-center rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
+                  Rekentool
+                </span>
+                <h1 className="mt-6 text-4xl font-bold tracking-tight text-balance text-foreground sm:text-5xl">
+                  Een rekentool voor je website, gebouwd voor vakmensen
+                </h1>
+                <div className="mt-6 text-left">
+                  <GeoAnswer>
+                    Een rekentool is een interactief onderdeel op je website waarmee bezoekers
+                    zelf, op basis van hun eigen invoer, direct een prijsindicatie berekenen.
+                    Kostenplan is een online tool waarmee vakmensen zo&apos;n rekentool zelf bouwen
+                    — zonder programmeerkennis — en op hun eigen website of via een link delen
+                    met klanten.
+                  </GeoAnswer>
+                </div>
+                <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
+                  <LinkButton href="/registreren" size="lg">
+                    Maak je eigen rekentool
+                    <ArrowRight className="h-4 w-4" />
+                  </LinkButton>
+                  <LinkButton href="/voorbeelden-rekentools" size="lg" variant="outline">
+                    Bekijk voorbeelden
+                  </LinkButton>
+                </div>
               </div>
-              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-                <LinkButton href="/registreren" size="lg">
-                  Maak je eigen rekentool
-                  <ArrowRight className="h-4 w-4" />
-                </LinkButton>
-                <LinkButton href="/rekentool-op-eigen-website" size="lg" variant="outline">
-                  Zo plaats je hem op je site
-                </LinkButton>
-              </div>
+
+              <Reveal delay={150}>
+                <WebsiteCalculatorMockup
+                  siteUrl="vandijkkozijnen.nl"
+                  bedrijfsnaam="Van Dijk Kozijnen"
+                  productTitel="Bereken de prijs van je nieuwe kozijnen"
+                  velden={[
+                    { label: "Aantal kozijnen", waarde: "6" },
+                    { label: "Type kozijn", waarde: "Draai-kiep" },
+                    { label: "Materiaal", waarde: "Kunststof" },
+                    { label: "Glas", waarde: "HR++" },
+                    { label: "Montage", waarde: "Inclusief" },
+                  ]}
+                  resultaatLabel="Indicatie vanaf"
+                  resultaatWaarde="€ 7.850"
+                  cta="Ontvang mijn prijs"
+                  rotate="sm:-rotate-1"
+                />
+              </Reveal>
             </div>
           </div>
         </section>
@@ -227,22 +250,36 @@ export default function RekentoolPage() {
               Meer over rekentools
             </h2>
           </Reveal>
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Reveal delay={0}>
+              <VerdiepingKaart
+                href="/voorbeelden-rekentools"
+                titel="Voorbeelden van rekentools"
+                tekst="Bekijk hoe een Kostenplan-rekentool eruitziet op de website van een hovenier, schuttingbedrijf of kozijnenbedrijf."
+              />
+            </Reveal>
+            <Reveal delay={60}>
+              <VerdiepingKaart
+                href="/rekentool-templates"
+                titel="Rekentool templates"
+                tekst="Ontdek de sjablonen waarmee je direct kunt starten, per vakgebied."
+              />
+            </Reveal>
+            <Reveal delay={120}>
               <VerdiepingKaart
                 href="/rekentool-op-eigen-website"
                 titel="Rekentool op je eigen website"
                 tekst="De technische kant: hoe je een rekentool insluit op je eigen domein, met of zonder ontwikkelaar."
               />
             </Reveal>
-            <Reveal delay={100}>
+            <Reveal delay={180}>
               <VerdiepingKaart
                 href="/offerte-calculator"
                 titel="Offerte calculator vs. offerteprogramma"
                 tekst="Het verschil tussen software waarmee jij offertes typt, en een tool waarmee de klant zelf rekent."
               />
             </Reveal>
-            <Reveal delay={200}>
+            <Reveal delay={240}>
               <VerdiepingKaart
                 href="/prijs-calculator"
                 titel="Klanten zelf een prijs laten berekenen"

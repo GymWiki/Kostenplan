@@ -14,6 +14,8 @@ const snelleLinks = [
 
 const productLinks = [
   { href: "/rekentool", label: "Wat is een rekentool?" },
+  { href: "/voorbeelden-rekentools", label: "Voorbeelden" },
+  { href: "/rekentool-templates", label: "Templates" },
   { href: "/rekentool-op-eigen-website", label: "Op je eigen website" },
   { href: "/offerte-calculator", label: "Offerte calculator" },
   { href: "/prijs-calculator", label: "Prijs calculator" },

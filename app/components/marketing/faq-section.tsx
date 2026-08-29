@@ -8,19 +8,24 @@ export type Faq = { vraag: string; antwoord: string };
 
 const HOMEPAGE_FAQS: Faq[] = [
   {
-    vraag: "Zit ik direct vast aan een contract als ik upgrade naar een betaald pakket?",
+    vraag: "Wat is een rekentool voor een website?",
     antwoord:
-      "Nee. Plus en Pro zijn flexibele maandelijkse of jaarlijkse abonnementen zonder verplichte looptijd. Je kunt op elk moment upgraden, downgraden naar Gratis of opzeggen via je dashboard.",
+      "Een rekentool is een interactief onderdeel op je website waarmee een bezoeker zelf, op basis van eigen invoer zoals oppervlakte, materiaalkeuze of aantal, direct een prijsindicatie te zien krijgt — in plaats van dat hij hiervoor moet bellen of mailen.",
+  },
+  {
+    vraag: "Kan ik zelf een rekentool maken zonder programmeerkennis?",
+    antwoord:
+      "Ja. Je kiest een sjabloon voor jouw vakgebied of begint helemaal vanaf 0, en stelt daarna via een visuele bouwer je eigen vragen, prijzen en voorwaarden in — zonder code of technische kennis.",
+  },
+  {
+    vraag: "Kan ik de rekentool op mijn eigen website plaatsen?",
+    antwoord:
+      "Ja. Je plaatst de rekentool met een korte embedcode op je eigen pagina, of je deelt de directe link — bijvoorbeeld in je e-mailhandtekening of op social media. Er is geen hosting of ontwikkelaar voor nodig.",
   },
   {
     vraag: "Hoe voeg ik mijn eigen prijzen en tarieven toe?",
     antwoord:
       "Na het aanmaken van je account stel je eenmalig je kosteninstellingen in (uurtarief, voorrijkosten, materiaalmarge en btw). Daarna voeg je je eigen producten met hun prijzen toe. De rekentool berekent automatisch een prijsindicatie op basis van jouw tarieven — nooit die van iemand anders.",
-  },
-  {
-    vraag: "Werkt Kostenplan ook voor andere vakmensen dan hoveniers?",
-    antwoord:
-      "Zeker. Kostenplan is ontworpen met hoveniersbedrijven in gedachten, maar werkt net zo goed voor stratenmakers, schilders, klussenbedrijven en andere vakmensen die offertes baseren op arbeid, materiaal en transport.",
   },
   {
     vraag: "Wat gebeurt er nadat een klant een offerte aanvraagt via mijn rekentool?",

@@ -21,7 +21,7 @@ export function StructuredData() {
         operatingSystem: "Web",
         url: "https://www.kostenplan.nl",
         description:
-          "Offertecalculator voor hoveniers en andere vakmensen: klanten berekenen zelf een prijsindicatie, aanvragen komen binnen in een leads-CRM.",
+          "Platform waarmee vakmensen een online rekentool voor hun website bouwen: klanten berekenen zelf een prijsindicatie, aanvragen komen binnen in een leads-CRM.",
         offers: {
           "@type": "Offer",
           price: "0",

@@ -483,6 +483,98 @@ export const DOELGROEPEN: Doelgroep[] = [
       },
     ],
   },
+  {
+    slug: "schuttingbedrijven",
+    naam: "schuttingbedrijf",
+    naamMeervoud: "schuttingbedrijven",
+    projectVoorbeeld: "een nieuwe schutting",
+    title: "Offertecalculator voor Schuttingbedrijven",
+    description:
+      "Laat klanten zelf een prijsindicatie voor een nieuwe schutting berekenen — lengte, materiaal en poorten. Ontvang alleen serieuze aanvragen. Start gratis.",
+    h1: "Prijsberekening voor schuttingbedrijven, zonder losse offertes te typen",
+    intro:
+      "Als schuttingbedrijf krijg je veel telefoontjes met de vraag \"wat kost een metertje schutting ongeveer\", vaak van mensen die nog aan het oriënteren zijn. Met Kostenplan berekenen bezoekers zelf een prijsindicatie voor hun schutting — jij ontvangt alleen aanvragen van mensen die al weten wat het ongeveer gaat kosten.",
+    voordelen: [
+      {
+        titel: "Prijs per strekkende meter, per materiaal",
+        tekst:
+          "Stel voor elk materiaal (hardhout, vurenhout, composiet) een eigen prijs per strekkende meter in, zodat de klant direct het verschil tussen materiaalkeuzes ziet.",
+      },
+      {
+        titel: "Poorten als apart onderdeel",
+        tekst:
+          "Reken een poort als losse regel met een eigen prijs, alleen zichtbaar wanneer de klant aangeeft dat er één of meerdere poorten nodig zijn.",
+      },
+      {
+        titel: "Hoogte bepaalt de toeslag",
+        tekst:
+          "Laat de klant kiezen tussen standaardhoogtes (bijvoorbeeld 180 of 200 cm) met een eigen prijstoeslag voor een hogere schutting.",
+      },
+    ],
+    faqs: [
+      {
+        vraag: "Kan de prijs meeschalen met de lengte van de schutting?",
+        antwoord:
+          "Ja. Je stelt een prijs per strekkende meter in, die automatisch wordt vermenigvuldigd met de lengte die de klant invult.",
+      },
+      {
+        vraag: "Kan ik een poort als extra optie toevoegen?",
+        antwoord:
+          "Ja, als aanvinkbare extra optie met een eigen prijs — je kunt zelfs een prijs per aantal poorten instellen, die alleen meetelt wanneer de klant die optie kiest.",
+      },
+      {
+        vraag: "Kan ik montage los van het materiaal doorrekenen?",
+        antwoord:
+          "Ja. Je voegt montage toe als aparte prijsregel (bijvoorbeeld per strekkende meter of als vast bedrag), zodat een klant die zelf plaatst een andere indicatie krijgt dan een klant die montage erbij wil.",
+      },
+    ],
+  },
+  {
+    slug: "bouwbedrijven",
+    naam: "bouwbedrijf",
+    naamMeervoud: "bouwbedrijven",
+    projectVoorbeeld: "een verbouwing of bouwproject",
+    title: "Offertecalculator voor Bouwbedrijven",
+    description:
+      "Laat klanten zelf een eerste prijsindicatie voor een bouwproject berekenen, per dienst die je aanbiedt. Ontvang alleen serieuze aanvragen. Start gratis.",
+    h1: "Prijsberekening voor bouwbedrijven, zonder losse offertes te typen",
+    intro:
+      "Een bouwbedrijf biedt vaak meerdere soorten werk aan — van een dakkapel tot een complete uitbouw — die onmogelijk in één offerteformulier passen. Met Kostenplan zet je voor elke dienst een eigen rekentool op, zodat bezoekers zelf een eerste prijsindicatie krijgen voor precies het project dat ze willen laten uitvoeren.",
+    voordelen: [
+      {
+        titel: "Eén rekentool per dienst",
+        tekst:
+          "Zet een aparte rekentool op voor bijvoorbeeld een dakkapel, een uitbouw en een complete verbouwing, zodat elke bezoeker alleen de vragen ziet die bij zijn eigen project horen.",
+      },
+      {
+        titel: "Prijsrange per vierkante meter",
+        tekst:
+          "Geef op basis van vloeroppervlak en gewenst afwerkingsniveau een prijsrange in plaats van één vast bedrag, passend bij hoe wisselend bouwprojecten in de praktijk geprijsd worden.",
+      },
+      {
+        titel: "Ruimte voor een voorbehoud",
+        tekst:
+          "Voeg een vaste toelichting aan de uitkomst toe dat de prijsindicatie een eerste inschatting is, afhankelijk van bijvoorbeeld grondonderzoek of vergunningen — zodat verwachtingen bij de klant kloppen voordat er contact is.",
+      },
+    ],
+    faqs: [
+      {
+        vraag: "Kan ik voor elke bouwdienst een eigen rekentool maken?",
+        antwoord:
+          "Ja. Je kunt losse rekentools maken voor bijvoorbeeld een dakkapel, een uitbouw en een complete verbouwing, elk met de vragen en prijsopbouw die bij dat type project horen.",
+      },
+      {
+        vraag: "Geeft de rekentool een vaste prijs of een prijsrange?",
+        antwoord:
+          "Dat stel je zelf in. Voor bouwprojecten is een prijsrange vaak realistischer dan één vast bedrag, omdat de uiteindelijke prijs afhangt van factoren die pas bij een opname duidelijk worden.",
+      },
+      {
+        vraag: "Kan ik aangeven dat de prijs afhankelijk is van een vergunning of grondonderzoek?",
+        antwoord:
+          "Ja, je kunt een vaste toelichtingstekst aan de uitkomst toevoegen die aangeeft dat de indicatie een eerste inschatting is en afhankelijk kan zijn van bijvoorbeeld een vergunning of grondonderzoek.",
+      },
+    ],
+  },
 ];
 
 export function getDoelgroep(slug: string): Doelgroep | undefined {
