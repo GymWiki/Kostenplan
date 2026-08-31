@@ -39,8 +39,12 @@ import { GeoAnswer } from "@/app/components/marketing/geo-answer";
 import { GoogleDataSection } from "@/app/components/marketing/google-data-section";
 import { StructuredData } from "@/app/components/marketing/structured-data";
 import { WebsiteCalculatorMockup } from "@/app/components/marketing/website-calculator-mockup";
+import { ScrollCalculatorDemo } from "@/app/components/marketing/scroll-calculator-demo";
+import { TryItDemo } from "@/app/components/marketing/try-it-demo";
+import { UseCaseSwitcher } from "@/app/components/marketing/use-case-switcher";
 import { MarketingPricingTable } from "@/app/components/pricing/marketing-pricing-table";
 import { LEAD_STATUS_LABELS } from "@/app/lib/leads";
+import { CALCULATOR_TEMPLATES } from "@/app/lib/calculator-engine/templates";
 
 const TITLE = "Kostenplan | Maak een rekentool voor je website";
 const DESCRIPTION =
@@ -170,6 +174,51 @@ export default function Home() {
           </div>
         </section>
 
+        {/* PRODUCTDEMO */}
+        <ScrollCalculatorDemo />
+
+        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-xl font-semibold text-foreground sm:text-2xl">Of probeer het zelf</h2>
+            <p className="mt-2 text-muted-foreground">
+              Dit is geen animatie — klik hieronder echt een lengte en materiaal aan.
+            </p>
+          </div>
+          <div className="mt-10">
+            <TryItDemo />
+          </div>
+          <div className="mx-auto mt-12 max-w-2xl border-t border-border pt-10">
+            <h3 className="text-center text-sm font-semibold text-foreground">
+              Hoe werkt een rekentool op je website?
+            </h3>
+            <ol className="mt-4 flex flex-col gap-2 text-sm text-muted-foreground">
+              <li>
+                <span className="font-medium text-foreground">1.</span> Je klant kiest de gewenste
+                opties.
+              </li>
+              <li>
+                <span className="font-medium text-foreground">2.</span> Kostenplan berekent
+                automatisch de prijs.
+              </li>
+              <li>
+                <span className="font-medium text-foreground">3.</span> De klant ziet een
+                prijsindicatie.
+              </li>
+              <li>
+                <span className="font-medium text-foreground">4.</span> De klant kan vervolgens een
+                aanvraag doen.
+              </li>
+            </ol>
+            <div className="mt-6">
+              <GeoAnswer>
+                Met Kostenplan kunnen vakbedrijven rekentools maken waarmee websitebezoekers zelf
+                opties selecteren en een prijsindicatie berekenen. De rekentool kan vervolgens
+                worden gebruikt om bezoekers naar een offerte- of aanvraagproces te leiden.
+              </GeoAnswer>
+            </div>
+          </div>
+        </section>
+
         {/* ZO WERKT HET */}
         <section className="border-y border-border bg-secondary/40 py-20">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -243,74 +292,13 @@ export default function Home() {
               </h2>
               <p className="mt-3 text-muted-foreground">
                 Kostenplan is niet alleen een rekenprogramma voor intern gebruik — je laat de
-                rekentool daadwerkelijk aan je klant zien, op je eigen website.
+                rekentool daadwerkelijk aan je klant zien, op je eigen website. Klik hieronder
+                door de vakgebieden heen.
               </p>
             </Reveal>
-            <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              <Reveal delay={0}>
-                <WebsiteCalculatorMockup
-                  compact
-                  siteUrl="groenenzo.nl"
-                  bedrijfsnaam="Groen & Zo Tuinen"
-                  productTitel="Bereken je tuin"
-                  velden={[
-                    { label: "Oppervlakte tuin", waarde: "85 m²" },
-                    { label: "Bestrating", waarde: "Ja" },
-                    { label: "Schutting", waarde: "12 m1" },
-                  ]}
-                  resultaatWaarde="€ 8.250 – € 10.500"
-                  cta="Offerte aanvragen"
-                />
-              </Reveal>
-              <Reveal delay={80}>
-                <WebsiteCalculatorMockup
-                  compact
-                  siteUrl="schuttingdirect.nl"
-                  bedrijfsnaam="SchuttingDirect"
-                  productTitel="Bereken jouw schutting"
-                  velden={[
-                    { label: "Lengte", waarde: "18 m1" },
-                    { label: "Hoogte", waarde: "180 cm" },
-                    { label: "Materiaal", waarde: "Hardhout" },
-                  ]}
-                  resultaatLabel="Vanaf"
-                  resultaatWaarde="€ 2.950"
-                  cta="Vraag offerte aan"
-                />
-              </Reveal>
-              <Reveal delay={160}>
-                <WebsiteCalculatorMockup
-                  compact
-                  siteUrl="vandijkkozijnen.nl"
-                  bedrijfsnaam="Van Dijk Kozijnen"
-                  productTitel="Bereken je nieuwe kozijnen"
-                  velden={[
-                    { label: "Aantal kozijnen", waarde: "6" },
-                    { label: "Materiaal", waarde: "Kunststof" },
-                    { label: "Glas", waarde: "HR++" },
-                  ]}
-                  resultaatLabel="Indicatie vanaf"
-                  resultaatWaarde="€ 7.850"
-                  cta="Ontvang mijn prijs"
-                />
-              </Reveal>
-              <Reveal delay={240}>
-                <WebsiteCalculatorMockup
-                  compact
-                  siteUrl="vanderbergbouw.nl"
-                  bedrijfsnaam="Van der Berg Bouw"
-                  productTitel="Bereken je verbouwing"
-                  velden={[
-                    { label: "Type verbouwing", waarde: "Aanbouw" },
-                    { label: "Oppervlakte", waarde: "24 m²" },
-                    { label: "Afwerking", waarde: "Compleet" },
-                  ]}
-                  resultaatLabel="Indicatie vanaf"
-                  resultaatWaarde="€ 15.500"
-                  cta="Offerte aanvragen"
-                />
-              </Reveal>
-            </div>
+            <Reveal delay={80} className="mt-12">
+              <UseCaseSwitcher />
+            </Reveal>
           </div>
         </section>
 
@@ -486,6 +474,34 @@ export default function Home() {
           </div>
         </section>
 
+        {/* TEMPLATES */}
+        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+          <Reveal className="mx-auto max-w-2xl text-center">
+            <h2 className="text-xl font-semibold text-foreground sm:text-2xl">
+              Begin met een bestaand sjabloon
+            </h2>
+            <p className="mt-2 text-muted-foreground">
+              Kies een sjabloon voor jouw vakgebied en pas het daarna volledig aan naar je eigen
+              tarieven.
+            </p>
+          </Reveal>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+            {CALCULATOR_TEMPLATES.map((template) => (
+              <span
+                key={template.id}
+                className="rounded-full border border-border bg-card px-3.5 py-1.5 text-sm font-medium text-foreground"
+              >
+                {template.naam}
+              </span>
+            ))}
+          </div>
+          <div className="mt-8 text-center">
+            <LinkButton href="/rekentool-templates" variant="outline">
+              Bekijk alle templates
+            </LinkButton>
+          </div>
+        </section>
+
         {/* PRIJZEN */}
         <section id="prijzen" className="border-y border-border bg-secondary/40 py-20 sm:py-28">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -518,11 +534,11 @@ export default function Home() {
                 />
               </div>
               <h2 className="text-2xl font-semibold text-balance text-primary-foreground sm:text-3xl">
-                Test het zelf. Binnen 5 minuten online.
+                Laat je website voor je rekenen
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                Voeg je 10 populairste producten toe en zet je rekentool direct op je eigen
-                website. Helemaal gratis.
+                Geef bezoekers de mogelijkheid om zelf hun prijs te berekenen. Binnen 5 minuten
+                online, helemaal gratis.
               </p>
               <div className="relative mt-8 inline-flex">
                 <span

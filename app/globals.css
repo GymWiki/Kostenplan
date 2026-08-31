@@ -141,13 +141,19 @@ body {
   color: var(--foreground);
   /* Voorkomt dat decoratieve, licht buiten hun kader lopende elementen
      (zoals de achtergrond-gloed achter de landingspagina-mockups) een
-     horizontale scrollbar op mobiel veroorzaken. */
-  overflow-x: hidden;
+     horizontale scrollbar op mobiel veroorzaken. Bewust `clip` i.p.v.
+     `hidden`: `hidden`/`scroll`/`auto` op maar één as dwingt de browser om
+     de andere as (hier overflow-y) alsnog als `auto` te berekenen — dan
+     krijgen zowel <html> als <body> hun eigen scrollcontainer, en breekt
+     `position: sticky` dieper in de pagina (de sticky-berekening loopt dan
+     tegen de verkeerde, nooit-scrollende box aan). `clip` voorkomt
+     horizontale overflow zonder die berekende-auto-bijwerking. */
+  overflow-x: clip;
 }
 
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 @keyframes fade-in-up {
