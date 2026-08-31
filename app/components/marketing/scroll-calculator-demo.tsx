@@ -5,6 +5,8 @@ import { Check } from "lucide-react";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { DecimalInput, Label } from "@/app/components/ui/input";
 import { Reveal } from "@/app/components/ui/reveal";
+import { GeoAnswer } from "@/app/components/marketing/geo-answer";
+import { TryItDemo } from "@/app/components/marketing/try-it-demo";
 import { formatCurrency } from "@/app/lib/format";
 import { useCountUp } from "@/app/lib/use-count-up";
 import { cn } from "@/app/lib/cn";
@@ -194,6 +196,49 @@ export function ScrollCalculatorDemo() {
               </div>
             </Reveal>
           ))}
+        </div>
+
+        {/* Vervolg van dezelfde demo: dit is geen script maar een echte klik. */}
+        <div className="mx-auto mt-20 max-w-2xl border-t border-border pt-14 text-center sm:mt-24">
+          <h3 className="text-xl font-semibold text-foreground sm:text-2xl">Of probeer het zelf</h3>
+          <p className="mt-2 text-muted-foreground">
+            Dit is geen animatie — klik hieronder echt een lengte en materiaal aan en zie de prijs
+            veranderen.
+          </p>
+          <div className="mt-8">
+            <TryItDemo />
+          </div>
+        </div>
+
+        <div className="mx-auto mt-14 max-w-2xl">
+          <h3 className="text-center text-sm font-semibold text-foreground">
+            Hoe werkt een rekentool op je website?
+          </h3>
+          <ol className="mt-4 flex flex-col gap-2 text-sm text-muted-foreground">
+            <li>
+              <span className="font-medium text-foreground">1.</span> Je klant kiest de gewenste
+              opties.
+            </li>
+            <li>
+              <span className="font-medium text-foreground">2.</span> Kostenplan berekent
+              automatisch de prijs.
+            </li>
+            <li>
+              <span className="font-medium text-foreground">3.</span> De klant ziet een
+              prijsindicatie.
+            </li>
+            <li>
+              <span className="font-medium text-foreground">4.</span> De klant kan vervolgens een
+              aanvraag doen.
+            </li>
+          </ol>
+          <div className="mt-6">
+            <GeoAnswer>
+              Met Kostenplan kunnen vakbedrijven rekentools maken waarmee websitebezoekers zelf
+              opties selecteren en een prijsindicatie berekenen. De rekentool kan vervolgens
+              worden gebruikt om bezoekers naar een offerte- of aanvraagproces te leiden.
+            </GeoAnswer>
+          </div>
         </div>
       </div>
     </section>

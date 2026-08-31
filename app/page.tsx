@@ -1,32 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  AppWindow,
   ArrowRight,
   BadgeCheck,
-  Bath,
-  Check,
   Clock3,
-  Construction,
-  Fence,
-  Filter,
-  Frown,
   Globe2,
-  Grid2x2,
   Kanban,
-  LayoutGrid,
   LayoutTemplate,
   Mail,
   MessageCircle,
-  MousePointerClick,
-  PaintRoller,
-  Phone,
-  Scale,
+  Sparkles,
   SlidersHorizontal,
+  Target,
   TrendingUp,
-  Trees,
-  Umbrella,
-  Wrench,
+  Wand2,
 } from "lucide-react";
 import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -40,7 +27,6 @@ import { GoogleDataSection } from "@/app/components/marketing/google-data-sectio
 import { StructuredData } from "@/app/components/marketing/structured-data";
 import { WebsiteCalculatorMockup } from "@/app/components/marketing/website-calculator-mockup";
 import { ScrollCalculatorDemo } from "@/app/components/marketing/scroll-calculator-demo";
-import { TryItDemo } from "@/app/components/marketing/try-it-demo";
 import { UseCaseSwitcher } from "@/app/components/marketing/use-case-switcher";
 import { MarketingPricingTable } from "@/app/components/pricing/marketing-pricing-table";
 import { LEAD_STATUS_LABELS } from "@/app/lib/leads";
@@ -74,21 +60,23 @@ export const metadata: Metadata = {
   },
 };
 
-const TOEPASSINGEN: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  href?: string;
-}[] = [
-  { icon: Trees, label: "Tuin", href: "/voor/hoveniers" },
-  { icon: Grid2x2, label: "Bestrating", href: "/voor/stratenmakers" },
-  { icon: Fence, label: "Schutting", href: "/voor/schuttingbedrijven" },
-  { icon: AppWindow, label: "Kozijnen", href: "/voor/kozijnen" },
-  { icon: Umbrella, label: "Veranda" },
-  { icon: Construction, label: "Verbouwing", href: "/voor/bouwbedrijven" },
-  { icon: PaintRoller, label: "Schilderwerk", href: "/voor/schilders" },
-  { icon: Wrench, label: "Maatwerk", href: "/voor/klusbedrijven" },
-  { icon: Bath, label: "Badkamer", href: "/voor/badkamerbedrijven" },
-  { icon: LayoutGrid, label: "Andere diensten", href: "/voor" },
+// Compacte scanregel i.p.v. een volledige icoon-grid-sectie (herontwerp
+// "logisch geheel"): dit moet in één oogopslag geruststellen — "dit werkt
+// ook voor mij" — zonder aandacht weg te nemen van de productdemo die
+// direct erna komt. De rijkere "dit is hoe het eruitziet per vakgebied"-
+// claim wordt verderop door de UseCaseSwitcher gedaan; deze regel is puur
+// een snelle, doorklikbare bevestiging + interne links naar /voor/*.
+const VAKGEBIEDEN: { label: string; href?: string }[] = [
+  { label: "Tuin", href: "/voor/hoveniers" },
+  { label: "Bestrating", href: "/voor/stratenmakers" },
+  { label: "Schutting", href: "/voor/schuttingbedrijven" },
+  { label: "Kozijnen", href: "/voor/kozijnen" },
+  { label: "Veranda" },
+  { label: "Verbouwing", href: "/voor/bouwbedrijven" },
+  { label: "Schilderwerk", href: "/voor/schilders" },
+  { label: "Maatwerk", href: "/voor/klusbedrijven" },
+  { label: "Badkamer", href: "/voor/badkamerbedrijven" },
+  { label: "Andere diensten", href: "/voor" },
 ];
 
 export default function Home() {
@@ -124,9 +112,8 @@ export default function Home() {
                   className="animate-fade-in-up mt-6 text-lg text-muted-foreground"
                   style={{ animationDelay: "160ms" }}
                 >
-                  Laat klanten zelf hun prijs berekenen voor bijvoorbeeld een tuin, schutting,
-                  veranda, bestrating, kozijnen of een andere dienst — zonder programmeerkennis.
-                  Jij ontvangt aanvragen van mensen die al weten wat hun project ongeveer kost.
+                  Laat klanten zelf hun prijs berekenen, zonder programmeerkennis. Jij ontvangt
+                  aanvragen van mensen die al weten wat hun project ongeveer kost.
                 </p>
                 <div
                   className="animate-fade-in-up mt-6 text-left"
@@ -174,50 +161,34 @@ export default function Home() {
           </div>
         </section>
 
-        {/* PRODUCTDEMO */}
-        <ScrollCalculatorDemo />
-
-        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-xl font-semibold text-foreground sm:text-2xl">Of probeer het zelf</h2>
-            <p className="mt-2 text-muted-foreground">
-              Dit is geen animatie — klik hieronder echt een lengte en materiaal aan.
-            </p>
-          </div>
-          <div className="mt-10">
-            <TryItDemo />
-          </div>
-          <div className="mx-auto mt-12 max-w-2xl border-t border-border pt-10">
-            <h3 className="text-center text-sm font-semibold text-foreground">
-              Hoe werkt een rekentool op je website?
-            </h3>
-            <ol className="mt-4 flex flex-col gap-2 text-sm text-muted-foreground">
-              <li>
-                <span className="font-medium text-foreground">1.</span> Je klant kiest de gewenste
-                opties.
-              </li>
-              <li>
-                <span className="font-medium text-foreground">2.</span> Kostenplan berekent
-                automatisch de prijs.
-              </li>
-              <li>
-                <span className="font-medium text-foreground">3.</span> De klant ziet een
-                prijsindicatie.
-              </li>
-              <li>
-                <span className="font-medium text-foreground">4.</span> De klant kan vervolgens een
-                aanvraag doen.
-              </li>
-            </ol>
-            <div className="mt-6">
-              <GeoAnswer>
-                Met Kostenplan kunnen vakbedrijven rekentools maken waarmee websitebezoekers zelf
-                opties selecteren en een prijsindicatie berekenen. De rekentool kan vervolgens
-                worden gebruikt om bezoekers naar een offerte- of aanvraagproces te leiden.
-              </GeoAnswer>
-            </div>
+        {/* VOOR ELK VAKGEBIED (compacte scanregel) */}
+        <section className="py-6">
+          <div className="mx-auto max-w-4xl border-t border-border" />
+          <div className="mx-auto mt-6 flex max-w-6xl flex-wrap items-center justify-center gap-x-2 gap-y-2 px-4 sm:px-6">
+            <span className="mr-1 text-sm font-medium text-muted-foreground">Rekentools voor:</span>
+            {VAKGEBIEDEN.map((v) =>
+              v.href ? (
+                <Link
+                  key={v.label}
+                  href={v.href}
+                  className="rounded-full border border-border bg-card px-3 py-1 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                >
+                  {v.label}
+                </Link>
+              ) : (
+                <span
+                  key={v.label}
+                  className="rounded-full border border-dashed border-border px-3 py-1 text-sm text-muted-foreground"
+                >
+                  {v.label}
+                </span>
+              )
+            )}
           </div>
         </section>
+
+        {/* PRODUCTDEMO (incl. "probeer het zelf" en de GEO-uitleg) */}
+        <ScrollCalculatorDemo />
 
         {/* ZO WERKT HET */}
         <section className="border-y border-border bg-secondary/40 py-20">
@@ -254,7 +225,18 @@ export default function Home() {
                 />
               </Reveal>
             </div>
-            <Reveal delay={250} className="mt-10 text-center">
+            <Reveal delay={260} className="mt-10 flex flex-col items-center gap-4">
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <span className="text-sm text-muted-foreground">Bijvoorbeeld:</span>
+                {CALCULATOR_TEMPLATES.map((template) => (
+                  <span
+                    key={template.id}
+                    className="rounded-full border border-border bg-card px-3 py-1 text-sm font-medium text-foreground"
+                  >
+                    {template.naam}
+                  </span>
+                ))}
+              </div>
               <LinkButton href="/registreren" size="lg">
                 Maak mijn rekentool
                 <ArrowRight className="h-4 w-4" />
@@ -263,28 +245,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* WAT KUN JE LATEN BEREKENEN */}
-        <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-          <Reveal className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
-              Wat kun je laten berekenen?
-            </h2>
-            <p className="mt-3 text-muted-foreground">
-              Elke rekentool is opgebouwd uit jouw eigen vragen en tarieven — dit zijn een paar
-              voorbeelden van vakgebieden waarin dat goed werkt.
-            </p>
-          </Reveal>
-          <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {TOEPASSINGEN.map((toepassing, i) => (
-              <Reveal key={toepassing.label} delay={i * 40}>
-                <ToepassingCard {...toepassing} />
-              </Reveal>
-            ))}
-          </div>
-        </section>
-
-        {/* SHOWCASE: EEN PLATFORM, ONTELBAAR VEEL REKENTOOLS */}
-        <section className="border-y border-border bg-secondary/40 py-20 sm:py-28">
+        {/* VOORBEELDEN PER VAKGEBIED */}
+        <section className="py-20 sm:py-28">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <Reveal className="mx-auto max-w-2xl text-center">
               <h2 className="text-2xl font-semibold text-balance text-foreground sm:text-3xl">
@@ -302,86 +264,54 @@ export default function Home() {
           </div>
         </section>
 
-        {/* PIJNPUNTEN (secundair: tijdsbesparing) */}
-        <section className="py-20">
+        {/* WAAROM KOSTENPLAN */}
+        <section className="border-y border-border bg-secondary/40 py-20 sm:py-28">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <Reveal className="mx-auto max-w-2xl text-center">
               <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
-                Herken je deze tijdverslinders?
+                Waarom een rekentool op je website?
               </h2>
               <p className="mt-3 text-muted-foreground">
-                Een rekentool op je website lost ze automatisch op.
+                Herkenbaar: uren kwijt aan offertes voor mensen die toch niet kopen, of een
+                aanvraag missen omdat je gewoon aan het werk was. Een rekentool lost dat op.
               </p>
             </Reveal>
-            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Reveal delay={0}>
-                <PainCard
-                  icon={Scale}
-                  title="De Vergelijker"
-                  description="Klanten die alleen een offerte opvragen om jouw prijzen te gebruiken als onderhandelingsmiddel bij een andere hovenier."
-                />
+                <WaaromItem icon={Target} title="Meer relevante aanvragen">
+                  Bezoekers zien vooraf wat een project ongeveer kost, dus alleen serieuze
+                  aanvragen komen binnen.
+                </WaaromItem>
               </Reveal>
-              <Reveal delay={100}>
-                <PainCard
-                  icon={Phone}
-                  title="De Beller"
-                  description={
-                    <>
-                      Mensen die je tijdens je werk bellen met de vraag: &ldquo;Wat kost een
-                      metertje schutting ongeveer?&rdquo;, om vervolgens nooit meer iets te
-                      laten horen.
-                    </>
-                  }
-                />
+              <Reveal delay={80}>
+                <WaaromItem icon={Clock3} title="Minder tijd kwijt aan rekenen">
+                  Je website rekent voor je, ook buiten kantooruren en zonder dat jij iets hoeft
+                  te doen.
+                </WaaromItem>
               </Reveal>
-              <Reveal delay={200}>
-                <PainCard
-                  icon={Frown}
-                  title="De Schrikker"
-                  description="Je steekt een uur in een prachtige, gedetailleerde offerte, maar de klant haakt af omdat hun budget onrealistisch laag was."
-                />
+              <Reveal delay={160}>
+                <WaaromItem icon={BadgeCheck} title="Nooit meer offerte-shoppers">
+                  Wie een aanvraag doet, heeft jouw prijzen al gezien en geaccepteerd — geen tijd
+                  meer kwijt aan mensen die toch niet boeken.
+                </WaaromItem>
+              </Reveal>
+              <Reveal delay={240}>
+                <WaaromItem icon={Sparkles} title="Professionele uitstraling">
+                  Eigen logo en huisstijl op de rekentool, in plaats van een los contactformulier.
+                </WaaromItem>
+              </Reveal>
+              <Reveal delay={320}>
+                <WaaromItem icon={Wand2} title="Geen programmeerkennis nodig">
+                  Maak en beheer je rekentool volledig vanuit Kostenplan, zonder developer of
+                  externe hulp.
+                </WaaromItem>
               </Reveal>
             </div>
           </div>
         </section>
 
-        {/* OPLOSSING */}
-        <section id="voorbeeld" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 sm:pb-28">
-          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-            <Reveal>
-              <h2 className="text-2xl font-semibold text-balance text-foreground sm:text-3xl">
-                Minder tijd aan rekenen. Meer tijd voor klanten.
-              </h2>
-              <div className="mt-10 flex flex-col gap-8">
-                <SolutionPoint
-                  icon={MousePointerClick}
-                  title="Klant rekent het zelf uit"
-                  description="Bezoekers klikken op jouw website hun wensen aan (materialen en producten) en zien direct een realistische prijsindicatie. Ze hoeven jou hiervoor niet te bellen."
-                  winst="Direct 4 uur administratiewerk per week besparen."
-                />
-                <SolutionPoint
-                  icon={Filter}
-                  title="Prijsindicatie vooraf"
-                  description="Past de prijs niet binnen hun budget? Dan klikken ze weg. Jij hebt er geen minuut tijd aan verspild."
-                  winst="Nooit meer in de auto stappen voor een klant zonder realistisch budget."
-                />
-                <SolutionPoint
-                  icon={BadgeCheck}
-                  title="Alleen warme leads"
-                  description="Past de prijs wél? Dan vraagt de klant via de tool een officiële offerte aan. Jij weet nu zeker dat deze persoon jouw tarieven al heeft geaccepteerd en écht wil kopen."
-                  winst="Geen tijd meer kwijt aan offerte-shoppers die toch niet boeken."
-                />
-              </div>
-            </Reveal>
-
-            <Reveal delay={150}>
-              <CalculatorMockup />
-            </Reveal>
-          </div>
-        </section>
-
         {/* LEADS / CRM */}
-        <section className="border-y border-border bg-secondary/40 py-20 sm:py-28">
+        <section className="py-20 sm:py-28">
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16">
             <Reveal className="lg:order-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
@@ -428,77 +358,6 @@ export default function Home() {
             <Reveal delay={150} className="lg:order-1">
               <LeadsMockup />
             </Reveal>
-          </div>
-        </section>
-
-        {/* WAAROM EEN REKENTOOL OP JE WEBSITE */}
-        <section className="py-20 sm:py-28">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <Reveal className="mx-auto max-w-2xl text-center">
-              <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
-                Waarom een rekentool op je website?
-              </h2>
-            </Reveal>
-            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <Reveal delay={0}>
-                <BenefitItem title="Meer relevante aanvragen">
-                  Bezoekers zien vooraf wat een project ongeveer kost, voordat ze contact
-                  opnemen.
-                </BenefitItem>
-              </Reveal>
-              <Reveal delay={80}>
-                <BenefitItem title="Minder tijd kwijt aan simpele aanvragen">
-                  Laat je website een deel van het rekenwerk voor je doen, ook buiten
-                  kantooruren.
-                </BenefitItem>
-              </Reveal>
-              <Reveal delay={160}>
-                <BenefitItem title="Bezoekers worden actieve leads">
-                  Een bezoeker die zijn gegevens invult en een berekening maakt, heeft meer
-                  intentie dan iemand die alleen je homepage bekijkt.
-                </BenefitItem>
-              </Reveal>
-              <Reveal delay={240}>
-                <BenefitItem title="Professionele uitstraling">
-                  Geef bezoekers een moderne manier om zelf hun project samen te stellen, met
-                  jouw eigen logo en huisstijl.
-                </BenefitItem>
-              </Reveal>
-              <Reveal delay={320}>
-                <BenefitItem title="Geen programmeerkennis nodig">
-                  Maak en beheer je rekentool volledig vanuit Kostenplan, zonder developer of
-                  externe hulp.
-                </BenefitItem>
-              </Reveal>
-            </div>
-          </div>
-        </section>
-
-        {/* TEMPLATES */}
-        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-          <Reveal className="mx-auto max-w-2xl text-center">
-            <h2 className="text-xl font-semibold text-foreground sm:text-2xl">
-              Begin met een bestaand sjabloon
-            </h2>
-            <p className="mt-2 text-muted-foreground">
-              Kies een sjabloon voor jouw vakgebied en pas het daarna volledig aan naar je eigen
-              tarieven.
-            </p>
-          </Reveal>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-            {CALCULATOR_TEMPLATES.map((template) => (
-              <span
-                key={template.id}
-                className="rounded-full border border-border bg-card px-3.5 py-1.5 text-sm font-medium text-foreground"
-              >
-                {template.naam}
-              </span>
-            ))}
-          </div>
-          <div className="mt-8 text-center">
-            <LinkButton href="/rekentool-templates" variant="outline">
-              Bekijk alle templates
-            </LinkButton>
           </div>
         </section>
 
@@ -595,63 +454,25 @@ function StapCard({
   );
 }
 
-function ToepassingCard({
-  icon: Icon,
-  label,
-  href,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  href?: string;
-}) {
-  const inhoud = (
-    <>
-      <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
-        <Icon className="h-5 w-5" />
-      </span>
-      <span className="text-sm font-medium text-foreground">{label}</span>
-    </>
-  );
-
-  if (!href) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-5 text-center">
-        {inhoud}
-      </div>
-    );
-  }
-
-  return (
-    <Link
-      href={href}
-      className="group flex h-full flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
-    >
-      {inhoud}
-    </Link>
-  );
-}
-
-function PainCard({
+function WaaromItem({
   icon: Icon,
   title,
-  description,
+  children,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
-  description: React.ReactNode;
+  children: React.ReactNode;
 }) {
   return (
-    <Card className="group h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
-      <CardContent className="flex h-full flex-col gap-4">
-        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-warning/10 text-warning transition-transform duration-300 group-hover:scale-110">
-          <Icon className="h-5 w-5" />
-        </span>
-        <div>
-          <h3 className="font-semibold text-foreground">{title}</h3>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex h-full flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-sm">
+      <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <Icon className="h-5 w-5" />
+      </span>
+      <div>
+        <h3 className="font-semibold text-foreground">{title}</h3>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{children}</p>
+      </div>
+    </div>
   );
 }
 
@@ -683,87 +504,6 @@ function SolutionPoint({
           </p>
         )}
       </div>
-    </div>
-  );
-}
-
-function BenefitItem({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="flex h-full flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-sm">
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Check className="h-3.5 w-3.5" />
-        </span>
-        <div>
-          <h3 className="font-semibold text-foreground">{title}</h3>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{children}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CalculatorMockup() {
-  return (
-    <div className="relative mx-auto max-w-sm" aria-hidden="true">
-      <div className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-primary/10 blur-2xl" />
-      <Card className="overflow-hidden shadow-xl transition-transform duration-500 hover:rotate-0 sm:rotate-1">
-        <div className="flex items-center gap-1.5 border-b border-border bg-secondary/60 px-4 py-3">
-          <span className="h-2.5 w-2.5 rounded-full bg-destructive/40" />
-          <span className="h-2.5 w-2.5 rounded-full bg-warning/50" />
-          <span className="h-2.5 w-2.5 rounded-full bg-primary/50" />
-          <span className="ml-2 truncate text-xs font-medium text-muted-foreground">
-            jouwbedrijf.kostenplan.nl
-          </span>
-        </div>
-        <CardContent className="flex flex-col gap-4">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Product
-            </p>
-            <p className="font-semibold text-foreground">Schutting plaatsen</p>
-          </div>
-
-          <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/40 px-3 py-2">
-            <span className="text-sm text-muted-foreground">Aantal meters</span>
-            <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-sm font-medium text-foreground">
-                −
-              </span>
-              <span className="w-6 text-center text-sm font-semibold text-foreground">12</span>
-              <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-sm font-medium text-foreground">
-                +
-              </span>
-            </div>
-          </div>
-
-          <ul className="flex flex-col gap-2 text-sm">
-            <li className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-foreground">
-                <Check className="h-3.5 w-3.5 text-primary" />
-                Hardhouten palen
-              </span>
-              <span className="text-muted-foreground">+ € 18 / m1</span>
-            </li>
-            <li className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-foreground">
-                <Check className="h-3.5 w-3.5 text-primary" />
-                Tussenschot planken
-              </span>
-              <span className="text-muted-foreground">+ € 24 / m1</span>
-            </li>
-          </ul>
-
-          <div className="flex items-center justify-between border-t border-border pt-4">
-            <span className="text-sm font-medium text-foreground">Totale schatting</span>
-            <span className="text-xl font-bold text-primary">€ 1.480,-</span>
-          </div>
-
-          <span className="flex w-full items-center justify-center rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground">
-            Offerte aanvragen
-          </span>
-        </CardContent>
-      </Card>
     </div>
   );
 }
