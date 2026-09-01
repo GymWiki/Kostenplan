@@ -1,4 +1,5 @@
 import { requireActiveTool } from "@/app/lib/dal";
+import { prisma } from "@/app/lib/prisma";
 import { Badge } from "@/app/components/ui/badge";
 import { Breadcrumbs } from "@/app/components/dashboard/breadcrumbs";
 import { getProductIcon } from "@/app/lib/icons";
@@ -29,6 +30,12 @@ export default async function ToolLayout({
   const { tool } = await requireActiveTool(toolId);
   const ToolIcon = getProductIcon(tool.icoon);
 
+  // UX-audit punt 2: zelfde conditie als in bouwer/page.tsx — een tool met
+  // Producten die nog nooit een CalculatorConfig heeft gepubliceerd, toont
+  // de Bouwer-tab hier niet (nooit beide systemen tegelijk voor dezelfde tool).
+  const productCount = await prisma.product.count({ where: { toolId } });
+  const verbergBouwer = productCount > 0 && tool.activeCalculatorConfigId == null;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
@@ -49,7 +56,7 @@ export default async function ToolLayout({
 
       <div className="flex flex-col gap-6 sm:flex-row">
         <div className="sm:w-52 sm:shrink-0">
-          <ToolNav toolId={toolId} />
+          <ToolNav toolId={toolId} verbergBouwer={verbergBouwer} />
         </div>
         <div className="min-w-0 flex-1">{children}</div>
       </div>

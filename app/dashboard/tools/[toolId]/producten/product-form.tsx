@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LinkButton } from "@/app/components/ui/button";
 import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
@@ -13,6 +13,7 @@ import { OverrideVeld, MateriaalkostenVeld, KostenUitsplitsing } from "./velden/
 import type { ProductFormState } from "@/app/lib/actions/products";
 import { arbeidEenheidEnkelvoud } from "@/app/lib/arbeid";
 import { arbeidTariefVoorStapEenheid, berekenMateriaalRegels } from "@/app/lib/calculate";
+import { cn } from "@/app/lib/cn";
 import {
   berekenHoeveelheidVoorSjabloon,
   coerceVeldWaarden,
@@ -51,6 +52,66 @@ export type PricingSettings = {
   materiaalEnabled: boolean;
   btwPercentage: number;
 };
+
+// Punt 4 van de UX-audit: het bewerkscherm is één lange verticale scroll
+// (naam → eenheid → btw → afrekenmethode → kosten → rekenvoorbeeld → icoon →
+// materiaalcategorieën). Geen functionaliteit gaat achter een wizard of
+// tab schuil — alleen navigatie ERdoorheen wordt korter, met sectie-ankers
+// (vgl. de sticky ToolNav ernaast, zie tool-nav.tsx). Sticky vlak onder de
+// Topbar (die zelf sticky top-0 h-16 is, zie components/dashboard/topbar.tsx)
+// — top-16 hier voorkomt overlap; de scroll-mt-28 op elke sectie hieronder
+// compenseert weer voor deze balk zodat een gesprongen sectie niet half
+// achter de sticky balken verdwijnt.
+const SECTIE_ANKERS = [
+  { id: "sectie-basis", label: "Basis" },
+  { id: "sectie-kosten", label: "Kosten" },
+  { id: "sectie-materialen", label: "Materialen" },
+] as const;
+
+function ProductFormSectieNav() {
+  const [actief, setActief] = useState<string>(SECTIE_ANKERS[0].id);
+
+  useEffect(() => {
+    const elementen = SECTIE_ANKERS.map((sectie) => document.getElementById(sectie.id)).filter(
+      (el): el is HTMLElement => el != null
+    );
+    if (elementen.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const zichtbaar = entries.filter((entry) => entry.isIntersecting);
+        if (zichtbaar.length === 0) return;
+        const bovenste = zichtbaar.reduce((a, b) => (a.boundingClientRect.top <= b.boundingClientRect.top ? a : b));
+        setActief(bovenste.target.id);
+      },
+      { rootMargin: "-112px 0px -70% 0px", threshold: 0 }
+    );
+    elementen.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <nav
+      aria-label="Secties in dit product"
+      className="sticky top-16 z-20 -mx-1 flex gap-1 overflow-x-auto border-b border-border bg-background/95 px-1 py-2 backdrop-blur"
+    >
+      {SECTIE_ANKERS.map((sectie) => (
+        <a
+          key={sectie.id}
+          href={`#${sectie.id}`}
+          className={cn(
+            "shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+            actief === sectie.id
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+          )}
+        >
+          {sectie.label}
+        </a>
+      ))}
+    </nav>
+  );
+}
 
 export function ProductForm({
   toolId,
@@ -183,6 +244,7 @@ export function ProductForm({
 
   return (
     <div className="flex flex-col gap-8">
+      <ProductFormSectieNav />
       <form
         id="product-form"
         ref={formRef}
@@ -196,7 +258,7 @@ export function ProductForm({
         </p>
       )}
 
-      <div className="flex flex-col gap-1.5">
+      <div id="sectie-basis" className="scroll-mt-28 flex flex-col gap-1.5">
         <Label htmlFor="naam">Naam van het product</Label>
         <Input
           id="naam"
@@ -308,7 +370,7 @@ export function ProductForm({
         )}
       </div>
 
-      <div className="flex flex-col gap-4 rounded-md border border-border p-4">
+      <div id="sectie-kosten" className="scroll-mt-28 flex flex-col gap-4 rounded-md border border-border p-4">
         <p className="text-sm font-medium text-foreground">Kosten</p>
 
         {isArtikelregels ? (
@@ -457,7 +519,7 @@ export function ProductForm({
         )}
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div id="sectie-materialen" className="scroll-mt-28 flex flex-col gap-1.5">
         <p className="text-sm font-medium text-foreground">Icoon</p>
         <IconPicker name="icoon" defaultValue={product?.icoon} onChange={scheduleAutosave} />
       </div>

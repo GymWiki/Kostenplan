@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import { requireDraftCalculatorConfig, getMateriaalOptiesVoorEngineVelden, getOnderdeelBibliotheekVoorCompany } from "@/app/lib/dal";
+import { Blocks } from "lucide-react";
+import { requireActiveTool, requireDraftCalculatorConfig, getMateriaalOptiesVoorEngineVelden, getOnderdeelBibliotheekVoorCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { parseCalculatorConfig, alleVeldenVanConfig } from "@/app/lib/calculator-engine";
 import { resolveCostSettings } from "@/app/lib/tools";
 import { effectiveTier } from "@/app/lib/subscription";
+import { Card, CardContent } from "@/app/components/ui/card";
+import { LinkButton } from "@/app/components/ui/button";
 import { CalculatorBouwer } from "./calculator-bouwer";
 import { OnderdelenBouwer } from "./onderdelen-bouwer";
 
@@ -15,7 +18,25 @@ export default async function CalculatorBouwerPage({
   params: Promise<{ toolId: string }>;
 }) {
   const { toolId } = await params;
-  const { company, tool, draft } = await requireDraftCalculatorConfig(toolId);
+
+  // UX-audit punt 2: Bouwer (het oude vragen/prijsregels-systeem) en
+  // Producten (het huidige kostengebaseerde systeem) mogen nooit tegelijk
+  // een tegenstrijdig beeld geven voor dezelfde tool. Een tool die al
+  // Producten heeft én nog nooit een CalculatorConfig heeft gepubliceerd
+  // (activeCalculatorConfigId is dan null) gebruikt Bouwer niet — de lege
+  // "nog geen vragen"-staat die anders hier zou verschijnen is dan gewoon
+  // onwaar (de tool staat al live via Producten) en dus verwarrend i.p.v.
+  // informatief. Toon in dat geval een duidelijke uitleg i.p.v. de builder.
+  // Bewust vóór requireDraftCalculatorConfig (die anders al een lege
+  // DRAFT-rij aanmaakt door alleen al deze pagina te bezoeken).
+  const { tool } = await requireActiveTool(toolId);
+  const productCount = await prisma.product.count({ where: { toolId } });
+
+  if (productCount > 0 && tool.activeCalculatorConfigId == null) {
+    return <BouwerNietInGebruikMelding toolId={toolId} />;
+  }
+
+  const { company, draft } = await requireDraftCalculatorConfig(toolId);
   const config = parseCalculatorConfig(draft.config);
 
   const [branding, costSettings, creator] = await Promise.all([
@@ -68,5 +89,28 @@ export default async function CalculatorBouwerPage({
       btwPercentage={btwPercentage}
       materiaalOpties={materiaalOpties}
     />
+  );
+}
+
+function BouwerNietInGebruikMelding({ toolId }: { toolId: string }) {
+  return (
+    <Card className="mx-auto max-w-lg">
+      <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+          <Blocks className="h-5 w-5" />
+        </span>
+        <div>
+          <p className="font-medium text-foreground">Deze rekentool is opgebouwd met Producten</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Bouwer is een ouder, vragen-gebaseerd systeem dat deze tool niet gebruikt — je prijzen,
+            vragen en berekeningen beheer je hier via Producten. Er is dus niets om hier in te
+            richten.
+          </p>
+        </div>
+        <LinkButton href={`/dashboard/tools/${toolId}/producten`} size="sm" className="mt-1">
+          Naar Producten
+        </LinkButton>
+      </CardContent>
+    </Card>
   );
 }

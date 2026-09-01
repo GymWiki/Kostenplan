@@ -78,6 +78,33 @@ describe("prefillOfferteRegels", () => {
     expect(offerteSubtotaal(regels)).toBeCloseTo(snapshot.subtotaal, 6);
   });
 
+  it("geeft nog steeds de volledige prijs als aantal letterlijk 0 is maar de regel wél een bekende prijs heeft (regressie)", () => {
+    // `lijn.aantal ?? 1` ving dit niet op: nullish coalescing vervangt alleen
+    // null/undefined, niet een echte 0. Zo'n regel komt voor bij het
+    // ARTIKELREGELS-sjabloon, dat volledig via regelsBedrag (niet via een
+    // schaal-hoeveelheid) geprijsd wordt — zie productRegelsBedrag in
+    // calculate.ts. Vóór de fix leverde dit exact hetzelfde symptoom op als
+    // de oorspronkelijke bug: een regel op €0,00 terwijl de prijs wel degelijk
+    // bekend was.
+    const snapshot: LeadSnapshot = {
+      regels: [{ naam: "Materiaalpost", type: "product", aantal: 0, eenheid: "post", prijs: 450 }],
+      arbeidskosten: 0,
+      materiaalkosten: 450,
+      transportkosten: 0,
+      voorrijkosten: 0,
+      subtotaal: 450,
+      btw: 94.5,
+      totaal: 544.5,
+    };
+
+    const regels = prefillOfferteRegels(snapshot);
+
+    expect(regels).toHaveLength(1);
+    expect(regels[0].prijsPerEenheid).toBe(450);
+    expect(regels[0].aantal).toBe(1);
+    expect(regelTotaal(regels[0])).toBe(450);
+  });
+
   it("laat geen restpost achter als alle regels al kloppen (geen centverschil dat als 'post' wordt getoond)", () => {
     const snapshot: LeadSnapshot = {
       regels: [

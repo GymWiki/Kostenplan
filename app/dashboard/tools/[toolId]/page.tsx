@@ -8,6 +8,7 @@ import { getToolAnalyticsSummary } from "@/app/lib/analytics";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { LinkButton } from "@/app/components/ui/button";
 import { CopyButton } from "@/app/components/dashboard/copy-link";
+import { RecenteAanvragen } from "@/app/components/dashboard/recente-aanvragen";
 
 export const metadata: Metadata = { title: "Overzicht" };
 
@@ -28,10 +29,19 @@ export default async function ToolOverzichtPage({
   const { toolId } = await params;
   const { company, tool } = await requireActiveTool(toolId);
 
-  const [productenCount, leadsCount, analytics] = await Promise.all([
+  const [productenCount, leadsCount, analytics, recenteLeads] = await Promise.all([
     prisma.product.count({ where: { toolId } }),
     prisma.lead.count({ where: { toolId } }),
     getToolAnalyticsSummary(toolId),
+    // UX-audit punt 5: hergebruikt dezelfde Lead-tabel als leadsCount
+    // hierboven — geen nieuwe databron, alleen de laatste 5 rijen voor déze
+    // tool i.p.v. enkel een aantal.
+    prisma.lead.findMany({
+      where: { toolId },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, naam: true, toolNaamSnapshot: true, status: true, totaalIndicatie: true, createdAt: true },
+    }),
   ]);
   const toolUrl = await getToolUrl(company.slug, tool.slug);
 
@@ -81,6 +91,14 @@ export default async function ToolOverzichtPage({
           value={analytics.conversieRatio === null ? "—" : `${analytics.conversieRatio}%`}
         />
       </div>
+
+      {/* UX-audit punt 5: vult de ruimte die hier op brede schermen anders
+          leeg bleef tussen de statistiekkaarten en "Snel naar" hieronder. */}
+      <RecenteAanvragen
+        aanvragen={recenteLeads}
+        toonTool={false}
+        bekijkAlleHref={`/dashboard/leads?tool=${toolId}&weergave=lijst`}
+      />
 
       <div>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Snel naar</h2>

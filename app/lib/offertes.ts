@@ -47,7 +47,15 @@ export function berekenOfferteTotalen(regels: OfferteRegel[], btwPercentage: num
 // stilzwijgend te laten verdwijnen.
 export function prefillOfferteRegels(snapshot: LeadSnapshot): OfferteRegel[] {
   const regels: OfferteRegel[] = snapshot.regels.map((lijn, i) => {
-    const aantal = lijn.aantal ?? 1;
+    // `lijn.aantal ?? 1` alleen is niet genoeg: nullish coalescing vervangt
+    // enkel null/undefined, niet een letterlijke 0. Een regel met een echt
+    // bekende prijs maar aantal 0 (bijv. een ARTIKELREGELS-sjabloonproduct,
+    // dat volledig via regelsBedrag geprijsd wordt in plaats van via een
+    // schaal-hoeveelheid — zie productRegelsBedrag in calculate.ts) kreeg
+    // hierdoor alsnog prijsPerEenheid 0, met exact hetzelfde symptoom als de
+    // oorspronkelijke bug. Elk aantal <= 0 telt daarom ook als "geen
+    // betekenisvolle hoeveelheid" en valt terug op één post (aantal 1).
+    const aantal = lijn.aantal != null && lijn.aantal > 0 ? lijn.aantal : 1;
     const details = [
       lijn.materiaal,
       lijn.extras && lijn.extras.length > 0 ? lijn.extras.join(", ") : null,
@@ -57,7 +65,7 @@ export function prefillOfferteRegels(snapshot: LeadSnapshot): OfferteRegel[] {
       omschrijving: details.length > 0 ? `${lijn.naam} (${details.join(", ")})` : lijn.naam,
       aantal,
       eenheid: lijn.eenheid ? unitLabel(lijn.eenheid) : "stuk",
-      prijsPerEenheid: lijn.prijs != null && aantal > 0 ? lijn.prijs / aantal : 0,
+      prijsPerEenheid: lijn.prijs != null ? lijn.prijs / aantal : 0,
     };
   });
 

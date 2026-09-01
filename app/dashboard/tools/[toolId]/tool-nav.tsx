@@ -60,13 +60,27 @@ const TOOL_NAV_GROUPS: { titel: string; items: ToolNavItem[] }[] = [
   },
 ];
 
-export function ToolNav({ toolId }: { toolId: string }) {
+export function ToolNav({ toolId, verbergBouwer = false }: { toolId: string; verbergBouwer?: boolean }) {
   const pathname = usePathname();
   const basis = `/dashboard/tools/${toolId}`;
 
+  // UX-audit punt 2: een tool die al via Producten is opgebouwd en nog nooit
+  // een CalculatorConfig heeft gepubliceerd, laat hier de verwarrende
+  // "Bouwer"-tab weg — anders staat er een tab naast Producten die een
+  // misleidende lege staat toont voor een tool die al live staat. Zie de
+  // gelijke conditie in app/dashboard/tools/[toolId]/bouwer/page.tsx en
+  // layout.tsx (waar verbergBouwer berekend wordt).
+  const groepen = verbergBouwer
+    ? TOOL_NAV_GROUPS.map((groep) =>
+        groep.titel === "Calculator"
+          ? { ...groep, items: groep.items.filter((item) => item.segment !== "bouwer") }
+          : groep
+      )
+    : TOOL_NAV_GROUPS;
+
   return (
     <nav className="flex gap-1 overflow-x-auto border-b border-border pb-px sm:flex-col sm:gap-4 sm:overflow-visible sm:border-b-0 sm:pb-0">
-      {TOOL_NAV_GROUPS.map((groep) => (
+      {groepen.map((groep) => (
         <div key={groep.titel} className="flex gap-1 sm:flex-col sm:gap-0.5">
           <span className="hidden px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:block">{groep.titel}</span>
           {groep.items.map((item) => {

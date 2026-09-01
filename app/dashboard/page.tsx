@@ -7,13 +7,14 @@ import { bouwOnboardingStappen } from "@/app/lib/onboarding";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { LinkButton } from "@/app/components/ui/button";
 import { OnboardingChecklist } from "@/app/components/dashboard/onboarding-checklist";
+import { RecenteAanvragen } from "@/app/components/dashboard/recente-aanvragen";
 
 export const metadata: Metadata = { title: "Overzicht" };
 
 export default async function DashboardPage() {
   const { company } = await requireActiveCompany();
 
-  const [toolsCount, publishedTool, productsCount, leadsCount, nieuweLeadsCount] = await Promise.all([
+  const [toolsCount, publishedTool, productsCount, leadsCount, nieuweLeadsCount, recenteLeads] = await Promise.all([
     prisma.tool.count({ where: { companyId: company.id, deletedAt: null } }),
     prisma.tool.findFirst({
       where: { companyId: company.id, deletedAt: null },
@@ -23,6 +24,15 @@ export default async function DashboardPage() {
     prisma.product.count({ where: { tool: { companyId: company.id } } }),
     prisma.lead.count({ where: { companyId: company.id } }),
     prisma.lead.count({ where: { companyId: company.id, status: "NIEUW" } }),
+    // UX-audit punt 5: hergebruikt de Lead-tabel die hierboven ook al voor
+    // leadsCount wordt geteld — geen nieuwe databron, alleen de laatste 5
+    // rijen in plaats van enkel een aantal.
+    prisma.lead.findMany({
+      where: { companyId: company.id },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, naam: true, toolNaamSnapshot: true, status: true, totaalIndicatie: true, createdAt: true },
+    }),
   ]);
   const heeftGepubliceerdeTool =
     publishedTool?.status === "GEPUBLICEERD" ||
@@ -72,21 +82,32 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <Card className="border-primary/20 bg-gradient-to-br from-accent to-card">
-        <CardContent className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <p className="font-semibold text-foreground">Mijn rekentools</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Elke rekentool heeft zijn eigen producten, prijzen, huisstijl en publieke link — beheer ze
-              allemaal op één plek.
-            </p>
-          </div>
-          <LinkButton href="/dashboard/tools" className="shrink-0">
-            Naar mijn rekentools
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </LinkButton>
-        </CardContent>
-      </Card>
+      {/* UX-audit punt 5: op brede schermen liet dit vroeger een groot leeg
+          vlak naast/onder deze ene kaart staan — de tweekoloms-grid hier
+          gebruikt die breedte nu voor de recente-aanvragen-lijst hiernaast. */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+        <RecenteAanvragen
+          aanvragen={recenteLeads}
+          toonTool={toolsCount > 1}
+          bekijkAlleHref="/dashboard/leads"
+        />
+
+        <Card className="border-primary/20 bg-gradient-to-br from-accent to-card">
+          <CardContent className="flex h-full flex-col justify-between gap-4">
+            <div>
+              <p className="font-semibold text-foreground">Mijn rekentools</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Elke rekentool heeft zijn eigen producten, prijzen, huisstijl en publieke link — beheer ze
+                allemaal op één plek.
+              </p>
+            </div>
+            <LinkButton href="/dashboard/tools" className="shrink-0 self-start">
+              Naar mijn rekentools
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </LinkButton>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

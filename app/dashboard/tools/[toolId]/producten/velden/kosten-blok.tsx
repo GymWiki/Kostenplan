@@ -11,12 +11,18 @@ import {
 import { berekenProductKosten, type MateriaalRegel } from "@/app/lib/calculate";
 import { formatCurrency } from "@/app/lib/format";
 import { unitLabel } from "@/app/lib/units";
+import { cn } from "@/app/lib/cn";
 import type { MaterialOption } from "@/app/generated/prisma/client";
 
-// Switch "wijkt af voor dit product" + invoerveld, of anders de
-// company-instelling als vaste waarde met een link ernaartoe. Gedeeld door
-// de arbeid/transport/voorrij-blokken hieronder — elk product krijgt altijd
-// deze keuze, geen aparte accountinstelling die dat toestaat/blokkeert.
+// Switch "wijkt af voor dit product" + invoerveld + contextregel — hetzelfde
+// toggle+override+context-patroon als AccountDefaultField op de
+// Prijzen-pagina (app/dashboard/tools/[toolId]/prijzen/cost-settings-form.tsx):
+// de standaardwaarde staat inline bij de toggle, het invoerveld blijft altijd
+// zichtbaar (alleen gedimd als de override uitstaat, i.p.v. helemaal
+// verdwijnen) zodat je ziet wat er verandert zodra je 'm aanzet, en een vaste
+// contextregel legt uit wat de toggle op dit moment betekent. Gedeeld door de
+// arbeid/transport/voorrij-blokken hieronder — elk product krijgt altijd deze
+// keuze, geen aparte accountinstelling die dat toestaat/blokkeert.
 // `waarde` is de EFFECTIEVE waarde (override, of anders de company-waarde)
 // en blijft ook bij het omschakelen van de switch in sync, zodat een live
 // voorbeeld ernaast altijd het juiste bedrag laat zien.
@@ -51,6 +57,7 @@ export function OverrideVeld({
   children?: React.ReactNode;
 }) {
   const [wijktAf, setWijktAf] = useState(defaultOverrideValue != null);
+  const standaardTekst = `${formatCurrency(companyWaarde)} ${companyWaardeTekst}`;
 
   function toggle(nieuw: boolean) {
     setWijktAf(nieuw);
@@ -60,7 +67,7 @@ export function OverrideVeld({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="flex items-center gap-2 text-sm text-foreground">
+      <label className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground">
         <input
           type="checkbox"
           checked={wijktAf}
@@ -68,31 +75,34 @@ export function OverrideVeld({
           className="h-4 w-4 rounded border-input accent-primary"
         />
         {titel} wijkt af voor dit product
+        <span className="font-normal text-muted-foreground">(standaard {standaardTekst})</span>
       </label>
-      {wijktAf ? (
-        <div className="relative">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-            €
-          </span>
-          <DecimalInput
-            name={name}
-            value={waarde}
-            onChange={(e) => onWaardeChange(e.target.value)}
-            className="pl-7"
-          />
-        </div>
-      ) : (
-        <>
-          <input type="hidden" name={name} value="" />
-          <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
-            {formatCurrency(companyWaarde)} {companyWaardeTekst} — in te stellen bij{" "}
+      <div className={cn("relative", !wijktAf && "opacity-50")}>
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+          €
+        </span>
+        <DecimalInput
+          name={wijktAf ? name : undefined}
+          value={waarde}
+          onChange={(e) => onWaardeChange(e.target.value)}
+          className="pl-7"
+        />
+      </div>
+      {!wijktAf && <input type="hidden" name={name} value="" />}
+      <p className="text-xs text-muted-foreground">
+        {wijktAf ? (
+          <>Dit product gebruikt vanaf nu een eigen bedrag in plaats van de standaard van {standaardTekst}.</>
+        ) : (
+          <>
+            Volgt de standaardinstelling — vink aan voor een eigen bedrag voor dit product. Standaard
+            in te stellen bij{" "}
             <Link href={instellingenHref} className="underline hover:text-foreground">
               Kosteninstellingen
             </Link>
             .
-          </p>
-        </>
-      )}
+          </>
+        )}
+      </p>
       {error && <p className="text-sm text-destructive">{error}</p>}
       {children}
     </div>
