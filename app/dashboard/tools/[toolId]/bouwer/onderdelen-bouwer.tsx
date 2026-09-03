@@ -90,6 +90,7 @@ export function OnderdelenBouwer({
   const [publiceren, startPublicerenTransition] = useTransition();
   const [uitschakelenOpen, setUitschakelenOpen] = useState(false);
   const [uitschakelen, startUitschakelenTransition] = useTransition();
+  const [, startAutosaveTransition] = useTransition();
   const { toast } = useToast();
 
   const meldingen = valideerCalculatorConfig(config);
@@ -103,12 +104,18 @@ export function OnderdelenBouwer({
     }
     setOpslaanStatus("bezig");
     const timer = setTimeout(() => {
-      void saveCalculatorConfigDraftAction(toolId, config)
-        .then(() => setOpslaanStatus("opgeslagen"))
-        .catch(() => {
-          setOpslaanStatus("opgeslagen");
-          toast("Opslaan is mislukt — controleer je verbinding en probeer de wijziging opnieuw.", "error");
-        });
+      // In startTransition: voorkomt dat React deze achtergrond-save als een
+      // urgente update behandelt, wat de dichtstbijzijnde Suspense-boundary
+      // (dashboard/loading.tsx) anders bij elke autosave even kan tonen
+      // (zelfde patroon als product-form.tsx's scheduleAutosave).
+      startAutosaveTransition(() => {
+        void saveCalculatorConfigDraftAction(toolId, config)
+          .then(() => setOpslaanStatus("opgeslagen"))
+          .catch(() => {
+            setOpslaanStatus("opgeslagen");
+            toast("Opslaan is mislukt — controleer je verbinding en probeer de wijziging opnieuw.", "error");
+          });
+      });
     }, 700);
     return () => clearTimeout(timer);
   }, [config, toolId, toast]);

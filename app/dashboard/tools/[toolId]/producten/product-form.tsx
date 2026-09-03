@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { LinkButton } from "@/app/components/ui/button";
 import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
@@ -145,10 +145,22 @@ export function ProductForm({
   // en roepen dit daarom expliciet zelf aan.
   const formRef = useRef<HTMLFormElement>(null);
   const autosaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // formAction() hier is geen echte <form>-submit (die roept de gebruiker
+  // nooit aan — er is geen submit-knop), maar een handmatige aanroep vanuit
+  // een setTimeout-callback. Zonder expliciete startTransition() behandelt
+  // React zo'n aanroep als een urgente update i.p.v. een achtergrond-
+  // transitie, wat de dichtstbijzijnde Suspense-boundary (dashboard/
+  // loading.tsx) alsnog even laat opflitsen — ook wanneer de actie zelf geen
+  // revalidatePath meer aanroept. startTransition() dekt dat generiek af,
+  // ongeacht de precieze interne reden.
+  const [, startTransition] = useTransition();
   function scheduleAutosave() {
     if (autosaveTimeout.current) clearTimeout(autosaveTimeout.current);
     autosaveTimeout.current = setTimeout(() => {
-      if (formRef.current) formAction(new FormData(formRef.current));
+      if (formRef.current) {
+        const formData = new FormData(formRef.current);
+        startTransition(() => formAction(formData));
+      }
     }, 800);
   }
 

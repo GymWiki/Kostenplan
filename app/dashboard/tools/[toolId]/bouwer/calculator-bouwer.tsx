@@ -66,6 +66,7 @@ export function CalculatorBouwer({
   const [publiceren, startPublicerenTransition] = useTransition();
   const [uitschakelenOpen, setUitschakelenOpen] = useState(false);
   const [uitschakelen, startUitschakelenTransition] = useTransition();
+  const [, startAutosaveTransition] = useTransition();
 
   const meldingen = useMemo(() => valideerCalculatorConfig(config), [config]);
   const fouten = meldingen.filter((m) => m.ernst === "FOUT");
@@ -82,7 +83,13 @@ export function CalculatorBouwer({
     }
     setOpslaanStatus("bezig");
     const timer = setTimeout(() => {
-      void saveCalculatorConfigDraftAction(toolId, config).then(() => setOpslaanStatus("opgeslagen"));
+      // In startTransition: voorkomt dat React deze achtergrond-save als een
+      // urgente update behandelt, wat de dichtstbijzijnde Suspense-boundary
+      // (dashboard/loading.tsx) anders bij elke autosave even kan tonen
+      // (zelfde patroon als product-form.tsx's scheduleAutosave).
+      startAutosaveTransition(() => {
+        void saveCalculatorConfigDraftAction(toolId, config).then(() => setOpslaanStatus("opgeslagen"));
+      });
     }, 700);
     return () => clearTimeout(timer);
   }, [config, toolId]);
