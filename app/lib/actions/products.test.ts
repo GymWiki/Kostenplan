@@ -17,22 +17,21 @@ vi.mock("@/app/lib/prisma", () => ({
     product: {
       findFirst: vi.fn(async () => ({ id: "product-1" })),
       update: vi.fn(async () => ({})),
-      findUniqueOrThrow: vi.fn(async () => ({
-        toolId: "tool-1",
-        tool: { slug: "test-tool" },
-      })),
     },
   },
 }));
 
 const { redirect } = await import("next/navigation");
+const { revalidatePath } = await import("next/cache");
 const { updateProductDraftAction } = await import("./products");
 
-// Regressietest voor de "autosave springt terug naar het productenoverzicht"-
-// bug: het product-bewerkscherm heeft geen submit-knop, elke wijziging slaat
-// via autosave op (zie scheduleAutosave in product-form.tsx), en die actie
-// mag daarom NOOIT doorsturen — de gebruiker verlaat de pagina alleen via de
-// expliciete "Terug naar producten"-link.
+// Regressietests voor twee bugs in het autosave-pad van het product-
+// bewerkscherm (geen submit-knop, elke wijziging slaat via scheduleAutosave
+// in product-form.tsx op): (1) de actie mag nooit doorsturen — de gebruiker
+// verlaat de pagina alleen via de expliciete "Terug naar producten"-link, en
+// (2) de actie mag nooit revalidatePath aanroepen — dat laat Next.js de
+// aanroepende pagina server-side opnieuw renderen, wat bij een doorlopende
+// autosave als een skeleton/loading-flits zichtbaar wordt na elke wijziging.
 function geldigProductFormData(overrides: Record<string, string> = {}) {
   const formData = new FormData();
   const velden: Record<string, string> = {
@@ -61,6 +60,11 @@ describe("updateProductDraftAction (autosave-pad van het product-bewerkscherm)",
     );
 
     expect(redirect).not.toHaveBeenCalled();
+    // Regressie voor de skeleton-flits-bug: revalidatePath laat Next.js de
+    // aanroepende pagina server-side opnieuw renderen (zie
+    // node_modules/next/dist/docs/01-app/02-guides/server-actions.md), wat
+    // bij een doorlopende autosave als een loading-flits zichtbaar wordt.
+    expect(revalidatePath).not.toHaveBeenCalled();
     expect(result).toBeNull();
   });
 
@@ -72,6 +76,11 @@ describe("updateProductDraftAction (autosave-pad van het product-bewerkscherm)",
     );
 
     expect(redirect).not.toHaveBeenCalled();
+    // Regressie voor de skeleton-flits-bug: revalidatePath laat Next.js de
+    // aanroepende pagina server-side opnieuw renderen (zie
+    // node_modules/next/dist/docs/01-app/02-guides/server-actions.md), wat
+    // bij een doorlopende autosave als een loading-flits zichtbaar wordt.
+    expect(revalidatePath).not.toHaveBeenCalled();
     expect(result).toBeNull();
   });
 });

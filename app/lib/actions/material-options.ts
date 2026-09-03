@@ -139,6 +139,12 @@ export async function deleteMaterialOptionAction(formData: FormData) {
   );
 }
 
+// Bewust GEEN revalidatePath: dit schakelt inline om terwijl het
+// bewerkscherm openblijft (zie ActiveMiniToggle in
+// material-categories-manager.tsx) — de Switch toont de nieuwe stand al
+// direct zelf (native, ongecontroleerd element), en revalidatePath zou hier
+// alleen de aanroepende pagina laten herladen en zo de skeleton laten
+// opflitsen (zelfde patroon als updateProductDraftAction hierboven).
 export async function toggleMaterialOptionActiveAction(formData: FormData) {
   const { company } = await requireActiveCompany();
   const materialOptionId = formData.get("materialOptionId");
@@ -147,9 +153,7 @@ export async function toggleMaterialOptionActiveAction(formData: FormData) {
 
   const option = await prisma.materialOption.findFirst({
     where: { id: materialOptionId, materialCategory: { product: { tool: { companyId: company.id } } } },
-    select: {
-      materialCategory: { select: { productId: true, product: { select: { toolId: true } } } },
-    },
+    select: { id: true },
   });
   if (!option) return;
 
@@ -157,8 +161,4 @@ export async function toggleMaterialOptionActiveAction(formData: FormData) {
     where: { id: materialOptionId },
     data: { actief: !actief },
   });
-
-  revalidatePath(
-    `/dashboard/tools/${option.materialCategory.product.toolId}/producten/${option.materialCategory.productId}/bewerken`
-  );
 }

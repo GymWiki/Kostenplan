@@ -178,6 +178,17 @@ async function saveProduct(
 // stuurt bewust nooit door. De wizard gebruikt 'm ook, en beslist zelf
 // wanneer naar de volgende stap of naar het volledige bewerkscherm gegaan
 // wordt.
+//
+// Bewust GEEN revalidatePath hier: een Server Action die revalidatePath/
+// revalidateTag/refresh() aanroept, laat Next.js de aanroepende route
+// server-side opnieuw renderen en dat antwoord (inclusief een nieuwe RSC
+// payload) samen met de actie terugsturen — bij een doorlopende autosave-flow
+// zorgt dat voor de skeleton/loading-flits na elke wijziging (zie
+// node_modules/next/dist/docs/01-app/02-guides/server-actions.md). Het
+// bewerkscherm zelf toont de laatst getypte waarde al via zijn eigen
+// React-state; geen enkele pagina in deze app gebruikt "use cache", dus er is
+// ook geen server-cache om hier stil te laten verlopen (bewerkscherm-content
+// wordt sowieso altijd vers gerenderd bij het volgende bezoek).
 export async function updateProductDraftAction(
   productId: string,
   _prevState: ProductFormState,
@@ -187,11 +198,6 @@ export async function updateProductDraftAction(
   const result = await saveProduct(productId, company.id, formData);
   if (!result.success) return result.state;
 
-  const product = await prisma.product.findUniqueOrThrow({
-    where: { id: productId },
-    select: { toolId: true, tool: { select: { slug: true } } },
-  });
-  revalidateToolPaths(product.toolId, company.slug, product.tool.slug);
   return null;
 }
 

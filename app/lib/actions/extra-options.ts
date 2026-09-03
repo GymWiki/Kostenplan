@@ -137,6 +137,12 @@ export async function deleteExtraOptionAction(formData: FormData) {
   revalidatePath(`/dashboard/tools/${option.product.toolId}/producten/${option.productId}/bewerken`);
 }
 
+// Bewust GEEN revalidatePath: dit schakelt inline om terwijl het
+// bewerkscherm openblijft (zie ActiveMiniToggle in extra-options-manager.tsx)
+// — de Switch toont de nieuwe stand al direct zelf (native, ongecontroleerd
+// element), en revalidatePath zou hier alleen de aanroepende pagina laten
+// herladen en zo de skeleton laten opflitsen (zelfde patroon als
+// updateProductDraftAction in products.ts).
 export async function toggleExtraOptionActiveAction(formData: FormData) {
   const { company } = await requireActiveCompany();
   const extraOptionId = formData.get("extraOptionId");
@@ -145,7 +151,7 @@ export async function toggleExtraOptionActiveAction(formData: FormData) {
 
   const option = await prisma.extraOption.findFirst({
     where: { id: extraOptionId, product: { tool: { companyId: company.id } } },
-    select: { productId: true, product: { select: { toolId: true } } },
+    select: { id: true },
   });
   if (!option) return;
 
@@ -153,6 +159,4 @@ export async function toggleExtraOptionActiveAction(formData: FormData) {
     where: { id: extraOptionId },
     data: { actief: !actief },
   });
-
-  revalidatePath(`/dashboard/tools/${option.product.toolId}/producten/${option.productId}/bewerken`);
 }

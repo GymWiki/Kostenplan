@@ -30,6 +30,16 @@ export type SaveCalculatorConfigResult = { meldingen: ValidatieMelding[] };
 // Slaat altijd op, ook met FOUT-meldingen: een DRAFT mag onderweg tijdelijk
 // ongeldig zijn (zie Deel 20 — pas publiceren blokkeert daadwerkelijk op
 // fouten, zie publishCalculatorConfigAction hieronder).
+//
+// Bewust GEEN revalidatePath: dit draait continu, bij elke wijziging, terwijl
+// de bouwer-pagina openblijft. Een Server Action die revalidatePath aanroept
+// laat Next.js de aanroepende route server-side opnieuw renderen (zie
+// node_modules/next/dist/docs/01-app/02-guides/server-actions.md), wat bij
+// een doorlopende autosave-flow als een skeleton/loading-flits zichtbaar
+// wordt na elke wijziging. De builder-UI toont de laatst bewerkte config al
+// via zijn eigen React-state; de DRAFT is bovendien nooit publiek zichtbaar
+// (pas publishCalculatorConfigAction hieronder revalideert de publieke
+// paden, precies op het moment dat dat er echt toe doet).
 export async function saveCalculatorConfigDraftAction(
   toolId: string,
   config: AnyCalculatorConfigData
@@ -41,7 +51,6 @@ export async function saveCalculatorConfigDraftAction(
     data: { config: config as unknown as Prisma.InputJsonValue },
   });
 
-  revalidatePath(`/dashboard/tools/${toolId}/bouwer`);
   return { meldingen: valideerCalculatorConfig(config) };
 }
 
