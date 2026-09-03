@@ -173,26 +173,11 @@ async function saveProduct(
   return { success: true };
 }
 
-export async function updateProductAction(
-  productId: string,
-  _prevState: ProductFormState,
-  formData: FormData
-): Promise<ProductFormState> {
-  const { company } = await requireActiveCompany();
-  const result = await saveProduct(productId, company.id, formData);
-  if (!result.success) return result.state;
-
-  const product = await prisma.product.findUniqueOrThrow({
-    where: { id: productId },
-    select: { toolId: true, tool: { select: { slug: true } } },
-  });
-  revalidateToolPaths(product.toolId, company.slug, product.tool.slug);
-  redirect(`/dashboard/tools/${product.toolId}/producten`);
-}
-
-// Voor de wizard: dezelfde opslag als updateProductAction, maar zonder
-// doorsturen — de wizard beslist zelf wanneer naar de volgende stap of naar
-// het volledige bewerkscherm gegaan wordt.
+// Het bewerkscherm heeft geen submit-knop — elke wijziging slaat via
+// autosave op (zie scheduleAutosave in product-form.tsx), dus deze actie
+// stuurt bewust nooit door. De wizard gebruikt 'm ook, en beslist zelf
+// wanneer naar de volgende stap of naar het volledige bewerkscherm gegaan
+// wordt.
 export async function updateProductDraftAction(
   productId: string,
   _prevState: ProductFormState,

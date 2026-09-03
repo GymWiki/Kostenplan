@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireActiveTool, getProductPricingSettings } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { updateProductAction } from "@/app/lib/actions/products";
+import { updateProductDraftAction } from "@/app/lib/actions/products";
 import { ProductForm } from "../../product-form";
 import { MaterialCategoriesManager } from "./material-categories-manager";
 import { ExtraOptionsManager } from "./extra-options-manager";
@@ -45,7 +45,11 @@ export default async function BewerkProductPage({
       </div>
       <ProductForm
         toolId={toolId}
-        action={updateProductAction.bind(null, product.id)}
+        // Dit scherm heeft geen submit-knop — elke wijziging slaat via
+        // autosave op (zie scheduleAutosave in product-form.tsx). Gebruik
+        // daarom de niet-doorsturende variant, anders stuurt elke autosave
+        // de gebruiker terug naar het productenoverzicht (bug).
+        action={updateProductDraftAction.bind(null, product.id)}
         product={product}
         pricingSettings={pricingSettings}
         materialenSectie={
