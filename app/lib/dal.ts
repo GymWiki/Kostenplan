@@ -214,7 +214,22 @@ export async function canPublishTool(companyId: string, tier: ReturnType<typeof 
 // Tool gebruikt precies één van de twee, zie welkeCalculatorVoorTool()
 // hieronder.
 const PUBLIEKE_TOOL_INCLUDE = {
-  company: { include: { creator: { select: { email: true } } } },
+  // Performance-audit (Fase 2, P1.4): deze route is publiek/hoogfrequent en
+  // haalde voorheen élke Company-kolom op (Mollie-ids, abonnementsstatus,
+  // onboarding-vlaggen, enz.) terwijl downstream (deze pagina's,
+  // resolveCostSettings, effectiveTier) maar deze velden echt lezen.
+  company: {
+    select: {
+      naam: true,
+      slug: true,
+      subscriptionTier: true,
+      overrideTier: true,
+      standaardArbeidTariefUur: true,
+      standaardVoorrijTarief: true,
+      standaardBtwPercentage: true,
+      creator: { select: { email: true } },
+    },
+  },
   branding: true,
   costSettings: true,
   products: {
