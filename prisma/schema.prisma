@@ -804,6 +804,10 @@ model Lead {
 
   @@index([companyId, status])
   @@index([toolId, status])
+  // Dekt de company-brede /dashboard/leads-lijst (findMany where companyId,
+  // orderBy createdAt desc) — zonder deze index viel die query terug op
+  // companyId-only uit de bovenstaande index plus een losse sort.
+  @@index([companyId, createdAt])
 }
 
 // Individuele, los bewerkbare/verwijderbare aantekening bij een Lead (zie
