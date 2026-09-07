@@ -1,3 +1,5 @@
+import { round2, berekenBtw } from "@/app/lib/money";
+
 export type ArbeidStapEenheid = "UUR" | "DAGDEEL" | "DAG";
 
 export type CalcCostSettings = {
@@ -345,7 +347,7 @@ export function calculateBreakdown({
 
   const heeftSelectie = itemCount > 0;
   const subtotaal = arbeidskosten + materiaalkosten + transportkosten + voorrijkosten;
-  const btw = subtotaal * (costSettings.btwPercentage / 100);
+  const btw = berekenBtw(subtotaal, costSettings.btwPercentage);
   const totaal = subtotaal + btw;
 
   return {
@@ -382,10 +384,6 @@ export type BreakdownRange = {
   // regels, die zelf nooit een bandbreedte tonen.
   productRegels: ProductRegel[];
 };
-
-function round2(value: number) {
-  return Math.round(value * 100) / 100;
-}
 
 // Een cent-verschil (floating point-ruis) telt niet als een echte
 // bandbreedte — dan tonen we één bedrag in plaats van een schijnbare range.

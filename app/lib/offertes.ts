@@ -1,4 +1,5 @@
 import { unitLabel } from "@/app/lib/units";
+import { round2, berekenBtw } from "@/app/lib/money";
 import type { LeadSnapshot } from "@/app/lib/leads";
 import type { OfferteStatus } from "@/app/generated/prisma/client";
 
@@ -32,7 +33,7 @@ export function offerteSubtotaal(regels: OfferteRegel[]) {
 
 export function berekenOfferteTotalen(regels: OfferteRegel[], btwPercentage: number) {
   const subtotaal = offerteSubtotaal(regels);
-  const btw = subtotaal * (btwPercentage / 100);
+  const btw = berekenBtw(subtotaal, btwPercentage);
   return { subtotaal, btw, totaal: subtotaal + btw };
 }
 
@@ -70,7 +71,7 @@ export function prefillOfferteRegels(snapshot: LeadSnapshot): OfferteRegel[] {
   });
 
   const bekendTotaal = offerteSubtotaal(regels);
-  const restant = Math.round((snapshot.subtotaal - bekendTotaal) * 100) / 100;
+  const restant = round2(snapshot.subtotaal - bekendTotaal);
   if (restant > 0.01) {
     regels.push({
       id: "snapshot-restant",
