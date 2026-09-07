@@ -33,6 +33,10 @@ export default async function ToolsOverzichtPage() {
   const tools = await prisma.tool.findMany({
     where: { companyId: company.id, deletedAt: null },
     orderBy: { order: "asc" },
+    // Defensieve bovengrens (geen plan staat vandaag meer dan een paar
+    // tientallen tools per company toe) — voorkomt dat deze query
+    // onbegrensd blijft groeien als die aanname ooit wijzigt.
+    take: 200,
     include: { _count: { select: { products: true, leads: true } } },
   });
 

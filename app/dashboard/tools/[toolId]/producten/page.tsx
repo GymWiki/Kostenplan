@@ -21,6 +21,10 @@ export default async function ProductenPage({
     prisma.product.findMany({
       where: { toolId },
       orderBy: { order: "asc" },
+      // Defensieve bovengrens (geen plan staat vandaag meer dan een paar
+      // tientallen producten per tool toe) — voorkomt dat deze query
+      // onbegrensd blijft groeien als die aanname ooit wijzigt.
+      take: 200,
       include: { _count: { select: { materiaalCategorieen: true, extraOpties: true } } },
     }),
     prisma.product.count({ where: { tool: { companyId: company.id } } }),
