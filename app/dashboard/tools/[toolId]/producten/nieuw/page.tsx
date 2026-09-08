@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireActiveTool, getProductPricingSettings } from "@/app/lib/dal";
-import { ProductWizard } from "./product-wizard";
+import { ProductWizardLazy } from "./product-wizard-lazy";
 
 export const metadata: Metadata = { title: "Nieuw product" };
 
@@ -19,7 +19,7 @@ export default async function NieuwProductPage({
         <h1 className="text-2xl font-semibold text-foreground">Nieuw product</h1>
         <p className="mt-1 text-muted-foreground">In een paar stappen staat je product live.</p>
       </div>
-      <ProductWizard toolId={toolId} pricingSettings={pricingSettings} />
+      <ProductWizardLazy toolId={toolId} pricingSettings={pricingSettings} />
     </div>
   );
 }

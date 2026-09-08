@@ -7,8 +7,8 @@ import { resolveCostSettings } from "@/app/lib/tools";
 import { effectiveTier } from "@/app/lib/subscription";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { LinkButton } from "@/app/components/ui/button";
-import { CalculatorBouwer } from "./calculator-bouwer";
-import { OnderdelenBouwer } from "./onderdelen-bouwer";
+import { CalculatorBouwerLazy } from "./calculator-bouwer-lazy";
+import { OnderdelenBouwerLazy } from "./onderdelen-bouwer-lazy";
 
 export const metadata: Metadata = { title: "Calculator-bouwer" };
 
@@ -60,7 +60,7 @@ export default async function CalculatorBouwerPage({
   if (config.versie === 2) {
     const onderdeelBibliotheek = await getOnderdeelBibliotheekVoorCompany(company.id);
     return (
-      <OnderdelenBouwer
+      <OnderdelenBouwerLazy
         toolId={toolId}
         toolNaam={tool.naam}
         heeftLiveVersie={tool.activeCalculatorConfigId != null}
@@ -77,7 +77,7 @@ export default async function CalculatorBouwerPage({
   }
 
   return (
-    <CalculatorBouwer
+    <CalculatorBouwerLazy
       toolId={toolId}
       toolNaam={tool.naam}
       heeftLiveVersie={tool.activeCalculatorConfigId != null}

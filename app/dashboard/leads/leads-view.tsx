@@ -2,15 +2,16 @@
 
 import { useCallback, useMemo, useOptimistic, useState, useSyncExternalStore, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import { LayoutGrid, List, TrendingUp, Users, Trophy, Target } from "lucide-react";
 import { cn } from "@/app/lib/cn";
 import { formatCurrency } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import { HelpTip } from "@/app/components/ui/help-tip";
 import { ProFeatureLock } from "@/app/components/dashboard/pro-feature-lock";
 import { updateLeadStatusAction } from "@/app/lib/actions/leads";
 import { telItMeeVoorPipeline } from "@/app/lib/leads";
-import { KanbanBoard } from "./kanban-board";
 import { LeadsTable } from "./leads-table";
 import { LeadDetailDrawer } from "./lead-detail-drawer";
 import type { Lead, LeadNote, LeadStatus, Offerte } from "@/app/generated/prisma/client";
@@ -25,6 +26,20 @@ export type LeadWithNotes = Omit<Lead, "snapshot"> & {
 };
 
 type View = "kanban" | "lijst";
+
+// Performance-audit (Fase 2, P1.2): @dnd-kit hoeft alleen geladen te worden
+// als de gebruiker daadwerkelijk het Bord bekijkt — de Lijst-weergave (ook de
+// mobiele standaard, zie useIsNarrowViewport hieronder) heeft het nooit nodig.
+const KanbanBoard = dynamic(() => import("./kanban-board").then((mod) => mod.KanbanBoard), {
+  ssr: false,
+  loading: () => (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Skeleton key={i} className="h-64 rounded-xl" />
+      ))}
+    </div>
+  ),
+});
 
 const NARROW_QUERY = "(max-width: 639px)";
 

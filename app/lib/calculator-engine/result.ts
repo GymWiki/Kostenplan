@@ -1,4 +1,5 @@
 import { applyPrijsAfronding } from "@/app/lib/tools";
+import { round2, berekenBtw } from "@/app/lib/money";
 import type { CalculatorResultSettings } from "./types";
 import type { EvaluatedLineItem, PriceRuleEvaluationResult } from "./pricing";
 
@@ -29,10 +30,6 @@ export type EngineResult = {
   totaalMax?: number;
   heeftGeldigeInvoer: boolean;
 };
-
-function round2(waarde: number) {
-  return Math.round(waarde * 100) / 100;
-}
 
 export function bouwResultaat(
   evaluatie: PriceRuleEvaluationResult,
@@ -73,7 +70,7 @@ export function bouwResultaat(
   }
 
   const subtotaal = round2(evaluatie.subtotaal);
-  const btw = round2(subtotaal * (btwPercentage / 100));
+  const btw = round2(berekenBtw(subtotaal, btwPercentage));
   const totaalOnafgerond = subtotaal + btw;
   const totaal = applyPrijsAfronding(totaalOnafgerond, resultaatInstellingen.afronding);
 

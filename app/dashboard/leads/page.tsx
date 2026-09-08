@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { requireActiveCompany } from "@/app/lib/dal";
-import { prisma } from "@/app/lib/prisma";
+import { requireActiveCompany, getLeadsPageData } from "@/app/lib/dal";
 import { effectiveTier } from "@/app/lib/subscription";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import type { LeadSnapshot } from "@/app/lib/leads";
@@ -41,30 +40,7 @@ export default async function LeadsPage() {
     );
   }
 
-  const [rawLeads, tools] = await Promise.all([
-    // Audit-bevinding T-04 (kritiek): deze query had geen enkele grens en
-    // laadt bij groei naar duizenden aanvragen steeds meer data op elk
-    // bezoek. `take: 500` is een veilige, direct werkzame ondergrens (ruim
-    // boven wat één company vandaag heeft) zonder de client-architectuur
-    // (optimistische statuswijziging, Kanban-bord, KPI-afleiding — die
-    // allemaal op de volledige, al-geladen lijst leunen) te moeten
-    // herbouwen. Echte cursor-paginering met server-side KPI-aggregatie is
-    // vervolgwerk zodra een company dit plafond daadwerkelijk nadert.
-    prisma.lead.findMany({
-      where: { companyId: company.id },
-      include: { notities: { orderBy: { createdAt: "asc" } }, offerte: true },
-      orderBy: { createdAt: "desc" },
-      take: 500,
-    }),
-    // Voor het toolfilter hierboven de <LeadsView> — alleen niet-verwijderde
-    // tools zijn te kiezen, een lead van een inmiddels verwijderde tool blijft
-    // gewoon zichtbaar in "Alle rekentools" via toolNaamSnapshot.
-    prisma.tool.findMany({
-      where: { companyId: company.id, deletedAt: null },
-      orderBy: { order: "asc" },
-      select: { id: true, naam: true },
-    }),
-  ]);
+  const { rawLeads, tools } = await getLeadsPageData(company.id);
 
   const leads: LeadWithNotes[] = rawLeads.map((lead) => ({
     ...lead,
