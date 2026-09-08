@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { Mail, Phone, Printer, ArrowLeft, ArrowRight } from "lucide-react";
 import {
   bouwScope,
@@ -348,8 +349,14 @@ export function EngineCalculator({
       <header className="border-b border-border" style={{ backgroundColor: "var(--brand-primary)" }}>
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-6 sm:px-6">
           {branding?.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- external Supabase Storage URL, not a local asset
-            <img src={branding.logoUrl} alt={bedrijfsnaam} className="h-11 w-auto max-w-[10rem] shrink-0 object-contain" />
+            <Image
+              src={branding.logoUrl}
+              alt={bedrijfsnaam}
+              width={160}
+              height={44}
+              className="h-11 w-auto max-w-[10rem] shrink-0 object-contain"
+              priority
+            />
           ) : (
             <Logo className="h-11 w-11 rounded-xl p-1.5" />
           )}

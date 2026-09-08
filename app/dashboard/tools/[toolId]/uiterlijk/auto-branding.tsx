@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Loader2, Sparkles, Info } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
@@ -240,8 +241,7 @@ function AutoBrandingPreview({
 
           {result.logoUrl && (
             <CheckField checked={applyLogo} onChange={setApplyLogo} label="Logo">
-              {/* eslint-disable-next-line @next/next/no-img-element -- eigen Supabase Storage-URL, geen lokaal asset */}
-              <img
+              <Image
                 src={result.logoUrl}
                 alt="Gevonden logo"
                 width={160}
@@ -381,8 +381,7 @@ function RekentoolPreview({
         style={{ backgroundColor: primaryColor, color: textOnPrimary }}
       >
         {logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- eigen Supabase Storage-URL, geen lokaal asset
-          <img src={logoUrl} alt="" width={20} height={20} className="h-5 w-5 rounded bg-white object-contain p-0.5" />
+          <Image src={logoUrl} alt="" width={20} height={20} className="h-5 w-5 rounded bg-white object-contain p-0.5" />
         ) : (
           <span className="h-5 w-5 rounded bg-white/20" />
         )}

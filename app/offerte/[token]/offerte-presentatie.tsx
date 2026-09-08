@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { formatCurrency } from "@/app/lib/format";
 import { brandingFontVariables } from "@/app/lib/fonts";
 import { OFFERTE_STATUS_LABELS, berekenOfferteTotalen, regelTotaal, type OfferteRegel } from "@/app/lib/offertes";
@@ -73,8 +74,7 @@ export function OffertePresentatie({
               {bedrijfsnaam}
             </p>
             {logoUrl && (
-              // eslint-disable-next-line @next/next/no-img-element -- externe Supabase Storage-URL
-              <img src={logoUrl} alt="" className="h-10 w-auto max-w-[140px] object-contain" />
+              <Image src={logoUrl} alt="" width={140} height={40} className="h-10 w-auto max-w-[140px] object-contain" />
             )}
           </div>
           <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
@@ -97,8 +97,7 @@ export function OffertePresentatie({
             {bedrijfsnaam}
           </p>
           {logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- externe Supabase Storage-URL
-            <img src={logoUrl} alt="" className="h-10 w-auto max-w-[140px] object-contain" />
+            <Image src={logoUrl} alt="" width={140} height={40} className="h-10 w-auto max-w-[140px] object-contain" />
           )}
         </div>
 

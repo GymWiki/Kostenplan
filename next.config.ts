@@ -1,6 +1,19 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  images: {
+    // Performance-audit (Fase 2, P2.10): branding-logo's en offerte-
+    // huisstijlafbeeldingen komen uit Supabase Storage (zie app/lib/
+    // storage.ts, publieke URL's op <project-ref>.supabase.co) — vereist
+    // voor next/image om ze te mogen optimaliseren/serveren.
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
+  },
   experimental: {
     serverActions: {
       // Material-/extra-optie foto's zijn max 5MB (zie app/lib/storage.ts);
