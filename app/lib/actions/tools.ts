@@ -102,48 +102,57 @@ export async function createToolFromTemplateAction(
   }
 
   const slug = await generateUniqueToolSlug(company.id, parsed.data.naam);
-  const count = await prisma.tool.count({ where: { companyId: company.id } });
 
-  const tool = await prisma.tool.create({
-    data: {
-      companyId: company.id,
-      naam: parsed.data.naam,
-      icoon: template.icoon,
-      slug,
-      order: count,
-      costSettings: { create: {} },
-    },
-  });
+  // Performance-audit (Fase 2, P2.7): tool + carrier-Producten/Categorieën/
+  // Opties + CalculatorConfig ontstaan hier als één geheel — zonder
+  // transactie liet een fout halverwege de lus een tool zonder (volledige)
+  // config achter. Eén $transaction maakt dit atomisch: alles of niets.
+  const tool = await prisma.$transaction(async (tx) => {
+    const count = await tx.tool.count({ where: { companyId: company.id } });
 
-  // Elk PRODUCT_KEUZE-veld krijgt zijn eigen, verborgen "drager"-Product +
-  // MaterialCategory + MaterialOption-rijen (Deel 11: hergebruik van de
-  // bestaande materiaalstructuur, geen tweede productcatalogus).
-  const materialCategoryIdPerVeld = new Map<string, string>();
-  for (const keuze of template.materiaalKeuzes) {
-    const product = await prisma.product.create({
-      data: { toolId: tool.id, naam: `${keuze.veldId} (calculator-bouwer)`, actief: false, order: -1 },
+    const tool = await tx.tool.create({
+      data: {
+        companyId: company.id,
+        naam: parsed.data.naam,
+        icoon: template.icoon,
+        slug,
+        order: count,
+        costSettings: { create: {} },
+      },
     });
-    const category = await prisma.materialCategory.create({
-      data: { productId: product.id, naam: keuze.veldId, order: 0 },
-    });
-    await prisma.materialOption.createMany({
-      data: keuze.opties.map((optie, i) => ({
-        materialCategoryId: category.id,
-        naam: optie.naam,
-        prijs: optie.prijs,
-        order: i,
-      })),
-    });
-    materialCategoryIdPerVeld.set(keuze.veldId, category.id);
-  }
 
-  const config = template.bouwConfig();
-  config.velden = config.velden.map((veld) =>
-    veld.soort === "PRODUCT_KEUZE" ? { ...veld, materialCategoryId: materialCategoryIdPerVeld.get(veld.id) ?? veld.materialCategoryId } : veld
-  );
+    // Elk PRODUCT_KEUZE-veld krijgt zijn eigen, verborgen "drager"-Product +
+    // MaterialCategory + MaterialOption-rijen (Deel 11: hergebruik van de
+    // bestaande materiaalstructuur, geen tweede productcatalogus).
+    const materialCategoryIdPerVeld = new Map<string, string>();
+    for (const keuze of template.materiaalKeuzes) {
+      const product = await tx.product.create({
+        data: { toolId: tool.id, naam: `${keuze.veldId} (calculator-bouwer)`, actief: false, order: -1 },
+      });
+      const category = await tx.materialCategory.create({
+        data: { productId: product.id, naam: keuze.veldId, order: 0 },
+      });
+      await tx.materialOption.createMany({
+        data: keuze.opties.map((optie, i) => ({
+          materialCategoryId: category.id,
+          naam: optie.naam,
+          prijs: optie.prijs,
+          order: i,
+        })),
+      });
+      materialCategoryIdPerVeld.set(keuze.veldId, category.id);
+    }
 
-  await prisma.calculatorConfig.create({
-    data: { toolId: tool.id, version: 1, status: "DRAFT", config: config as unknown as Prisma.InputJsonValue },
+    const config = template.bouwConfig();
+    config.velden = config.velden.map((veld) =>
+      veld.soort === "PRODUCT_KEUZE" ? { ...veld, materialCategoryId: materialCategoryIdPerVeld.get(veld.id) ?? veld.materialCategoryId } : veld
+    );
+
+    await tx.calculatorConfig.create({
+      data: { toolId: tool.id, version: 1, status: "DRAFT", config: config as unknown as Prisma.InputJsonValue },
+    });
+
+    return tool;
   });
 
   revalidatePath("/dashboard/tools");
@@ -180,68 +189,77 @@ export async function createModulaireToolFromTemplateAction(
   }
 
   const slug = await generateUniqueToolSlug(company.id, parsed.data.naam);
-  const count = await prisma.tool.count({ where: { companyId: company.id } });
 
-  const tool = await prisma.tool.create({
-    data: {
-      companyId: company.id,
-      naam: parsed.data.naam,
-      icoon: template.icoon,
-      slug,
-      order: count,
-      costSettings: { create: {} },
-    },
-  });
+  // Performance-audit (Fase 2, P2.7): zelfde reden als createToolFromTemplateAction
+  // hierboven — tool + alle Onderdelen (elk met eigen carrier-Producten/
+  // Categorieën/Opties) + CalculatorConfig atomisch, i.p.v. losse awaits die
+  // bij een fout halverwege een onvolledige tool achter konden laten.
+  const tool = await prisma.$transaction(async (tx) => {
+    const count = await tx.tool.count({ where: { companyId: company.id } });
 
-  const onderdelen: OnderdeelConfig[] = [];
-  const bestaandeOnderdeelIds = new Set<string>();
-  let orderIndex = 0;
+    const tool = await tx.tool.create({
+      data: {
+        companyId: company.id,
+        naam: parsed.data.naam,
+        icoon: template.icoon,
+        slug,
+        order: count,
+        costSettings: { create: {} },
+      },
+    });
 
-  for (const onderdeelTemplateId of template.onderdeelTemplateIds) {
-    const onderdeelTemplate = onderdeelTemplateById(onderdeelTemplateId);
-    if (!onderdeelTemplate) continue;
+    const onderdelen: OnderdeelConfig[] = [];
+    const bestaandeOnderdeelIds = new Set<string>();
+    let orderIndex = 0;
 
-    const materialCategoryIdPerVeld = new Map<string, string>();
-    for (const keuze of onderdeelTemplate.materiaalKeuzes) {
-      const product = await prisma.product.create({
-        data: { toolId: tool.id, naam: `${onderdeelTemplate.naam} — ${keuze.veldId} (calculator-bouwer)`, actief: false, order: -1 },
+    for (const onderdeelTemplateId of template.onderdeelTemplateIds) {
+      const onderdeelTemplate = onderdeelTemplateById(onderdeelTemplateId);
+      if (!onderdeelTemplate) continue;
+
+      const materialCategoryIdPerVeld = new Map<string, string>();
+      for (const keuze of onderdeelTemplate.materiaalKeuzes) {
+        const product = await tx.product.create({
+          data: { toolId: tool.id, naam: `${onderdeelTemplate.naam} — ${keuze.veldId} (calculator-bouwer)`, actief: false, order: -1 },
+        });
+        const category = await tx.materialCategory.create({
+          data: { productId: product.id, naam: keuze.veldId, order: 0 },
+        });
+        await tx.materialOption.createMany({
+          data: keuze.opties.map((optie, i) => ({ materialCategoryId: category.id, naam: optie.naam, prijs: optie.prijs, order: i })),
+        });
+        materialCategoryIdPerVeld.set(keuze.veldId, category.id);
+      }
+
+      const slice = onderdeelTemplate.bouwSlice();
+      const velden = slice.velden.map((veld) =>
+        veld.soort === "PRODUCT_KEUZE" ? { ...veld, materialCategoryId: materialCategoryIdPerVeld.get(veld.id) ?? veld.materialCategoryId } : veld
+      );
+
+      const onderdeelId = genereerId(onderdeelTemplate.naam, bestaandeOnderdeelIds);
+      bestaandeOnderdeelIds.add(onderdeelId);
+      onderdelen.push({
+        id: onderdeelId,
+        naam: onderdeelTemplate.naam,
+        actief: true,
+        order: orderIndex++,
+        velden,
+        afgeleideVariabelen: slice.afgeleideVariabelen,
+        regels: slice.regels,
       });
-      const category = await prisma.materialCategory.create({
-        data: { productId: product.id, naam: keuze.veldId, order: 0 },
-      });
-      await prisma.materialOption.createMany({
-        data: keuze.opties.map((optie, i) => ({ materialCategoryId: category.id, naam: optie.naam, prijs: optie.prijs, order: i })),
-      });
-      materialCategoryIdPerVeld.set(keuze.veldId, category.id);
     }
 
-    const slice = onderdeelTemplate.bouwSlice();
-    const velden = slice.velden.map((veld) =>
-      veld.soort === "PRODUCT_KEUZE" ? { ...veld, materialCategoryId: materialCategoryIdPerVeld.get(veld.id) ?? veld.materialCategoryId } : veld
-    );
+    const config: ModulaireCalculatorConfigData = {
+      versie: 2,
+      calculatorType: "CONFIGURATOR",
+      onderdelen,
+      resultaatInstellingen: legeModulaireCalculatorConfig().resultaatInstellingen,
+    };
 
-    const onderdeelId = genereerId(onderdeelTemplate.naam, bestaandeOnderdeelIds);
-    bestaandeOnderdeelIds.add(onderdeelId);
-    onderdelen.push({
-      id: onderdeelId,
-      naam: onderdeelTemplate.naam,
-      actief: true,
-      order: orderIndex++,
-      velden,
-      afgeleideVariabelen: slice.afgeleideVariabelen,
-      regels: slice.regels,
+    await tx.calculatorConfig.create({
+      data: { toolId: tool.id, version: 1, status: "DRAFT", config: config as unknown as Prisma.InputJsonValue },
     });
-  }
 
-  const config: ModulaireCalculatorConfigData = {
-    versie: 2,
-    calculatorType: "CONFIGURATOR",
-    onderdelen,
-    resultaatInstellingen: legeModulaireCalculatorConfig().resultaatInstellingen,
-  };
-
-  await prisma.calculatorConfig.create({
-    data: { toolId: tool.id, version: 1, status: "DRAFT", config: config as unknown as Prisma.InputJsonValue },
+    return tool;
   });
 
   revalidatePath("/dashboard/tools");
