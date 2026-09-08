@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Wrench, Package, Users, Pencil, ExternalLink } from "lucide-react";
-import { requireActiveCompany, canCreateTool } from "@/app/lib/dal";
-import { prisma } from "@/app/lib/prisma";
+import { requireActiveCompany, canCreateTool, listToolsVoorCompany } from "@/app/lib/dal";
 import { getToolUrl } from "@/app/lib/url";
 import { TOOL_STATUS_LABELS } from "@/app/lib/tools";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
@@ -30,15 +29,7 @@ export default async function ToolsOverzichtPage() {
   const { company } = await requireActiveCompany();
   const tier = effectiveTier(company);
 
-  const tools = await prisma.tool.findMany({
-    where: { companyId: company.id, deletedAt: null },
-    orderBy: { order: "asc" },
-    // Defensieve bovengrens (geen plan staat vandaag meer dan een paar
-    // tientallen tools per company toe) — voorkomt dat deze query
-    // onbegrensd blijft groeien als die aanname ooit wijzigt.
-    take: 200,
-    include: { _count: { select: { products: true, leads: true } } },
-  });
+  const tools = await listToolsVoorCompany(company.id);
 
   const [magNieuweTool, toolUrls] = await Promise.all([
     canCreateTool(company.id, tier),

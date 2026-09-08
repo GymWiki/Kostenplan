@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Eye, Package, Euro, Palette, Target, ClipboardList, Rocket, Code2 } from "lucide-react";
-import { requireActiveTool } from "@/app/lib/dal";
-import { prisma } from "@/app/lib/prisma";
+import { requireActiveTool, getToolOverzichtStats } from "@/app/lib/dal";
 import { getToolUrl } from "@/app/lib/url";
 import { getToolAnalyticsSummary } from "@/app/lib/analytics";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -29,19 +28,9 @@ export default async function ToolOverzichtPage({
   const { toolId } = await params;
   const { company, tool } = await requireActiveTool(toolId);
 
-  const [productenCount, leadsCount, analytics, recenteLeads] = await Promise.all([
-    prisma.product.count({ where: { toolId } }),
-    prisma.lead.count({ where: { toolId } }),
+  const [{ productenCount, leadsCount, recenteLeads }, analytics] = await Promise.all([
+    getToolOverzichtStats(toolId),
     getToolAnalyticsSummary(toolId),
-    // UX-audit punt 5: hergebruikt dezelfde Lead-tabel als leadsCount
-    // hierboven — geen nieuwe databron, alleen de laatste 5 rijen voor déze
-    // tool i.p.v. enkel een aantal.
-    prisma.lead.findMany({
-      where: { toolId },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      select: { id: true, naam: true, toolNaamSnapshot: true, status: true, totaalIndicatie: true, createdAt: true },
-    }),
   ]);
   const toolUrl = await getToolUrl(company.slug, tool.slug);
 

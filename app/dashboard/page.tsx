@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Wrench, Package, Users, ArrowRight } from "lucide-react";
-import { requireActiveCompany } from "@/app/lib/dal";
-import { prisma } from "@/app/lib/prisma";
+import { requireActiveCompany, getDashboardStats } from "@/app/lib/dal";
+import { markOnboardingVoltooid } from "@/app/lib/actions/onboarding";
 import { bouwOnboardingStappen } from "@/app/lib/onboarding";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { LinkButton } from "@/app/components/ui/button";
@@ -14,29 +14,8 @@ export const metadata: Metadata = { title: "Overzicht" };
 export default async function DashboardPage() {
   const { company } = await requireActiveCompany();
 
-  const [toolsCount, publishedTool, productsCount, leadsCount, nieuweLeadsCount, recenteLeads] = await Promise.all([
-    prisma.tool.count({ where: { companyId: company.id, deletedAt: null } }),
-    prisma.tool.findFirst({
-      where: { companyId: company.id, deletedAt: null },
-      orderBy: { createdAt: "asc" },
-      select: { id: true, status: true },
-    }),
-    prisma.product.count({ where: { tool: { companyId: company.id } } }),
-    prisma.lead.count({ where: { companyId: company.id } }),
-    prisma.lead.count({ where: { companyId: company.id, status: "NIEUW" } }),
-    // UX-audit punt 5: hergebruikt de Lead-tabel die hierboven ook al voor
-    // leadsCount wordt geteld — geen nieuwe databron, alleen de laatste 5
-    // rijen in plaats van enkel een aantal.
-    prisma.lead.findMany({
-      where: { companyId: company.id },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      select: { id: true, naam: true, toolNaamSnapshot: true, status: true, totaalIndicatie: true, createdAt: true },
-    }),
-  ]);
-  const heeftGepubliceerdeTool =
-    publishedTool?.status === "GEPUBLICEERD" ||
-    (await prisma.tool.count({ where: { companyId: company.id, deletedAt: null, status: "GEPUBLICEERD" } })) > 0;
+  const { toolsCount, publishedTool, productsCount, leadsCount, nieuweLeadsCount, recenteLeads, heeftGepubliceerdeTool } =
+    await getDashboardStats(company.id);
 
   // Onboarding-checklist: alle drie stappen live afgeleid van bestaande data
   // (zie app/lib/onboarding.ts) — geen aparte "voltooid"-vlaggen om te laten
@@ -50,7 +29,7 @@ export default async function DashboardPage() {
   const alleStappenVoltooid = onboardingStappen.every((stap) => stap.voltooid);
   let justCompletedOnboarding = false;
   if (alleStappenVoltooid && !company.onboardingVoltooid) {
-    await prisma.company.update({ where: { id: company.id }, data: { onboardingVoltooid: true } });
+    await markOnboardingVoltooid(company.id);
     justCompletedOnboarding = true;
   }
   const toonOnboarding = !company.onboardingVoltooid || justCompletedOnboarding;

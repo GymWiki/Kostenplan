@@ -371,3 +371,88 @@ export async function getProductPricingSettings(toolId: string, company: Account
       };
   return effectief;
 }
+
+// Performance-audit (Fase 2, P2.9): onderstaande vier functies stonden
+// voorheen als losse prisma.*-aanroepen rechtstreeks in de betreffende
+// page.tsx's — verplaatst hierheen voor consistentie met de rest van de DAL
+// (alle andere dashboardpagina's lezen al via dal.ts).
+
+// /dashboard — company-brede statistieken + laatste 5 aanvragen.
+export async function getDashboardStats(companyId: string) {
+  const [toolsCount, publishedTool, productsCount, leadsCount, nieuweLeadsCount, recenteLeads] = await Promise.all([
+    prisma.tool.count({ where: { companyId, deletedAt: null } }),
+    prisma.tool.findFirst({
+      where: { companyId, deletedAt: null },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, status: true },
+    }),
+    prisma.product.count({ where: { tool: { companyId } } }),
+    prisma.lead.count({ where: { companyId } }),
+    prisma.lead.count({ where: { companyId, status: "NIEUW" } }),
+    prisma.lead.findMany({
+      where: { companyId },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, naam: true, toolNaamSnapshot: true, status: true, totaalIndicatie: true, createdAt: true },
+    }),
+  ]);
+  const heeftGepubliceerdeTool =
+    publishedTool?.status === "GEPUBLICEERD" ||
+    (await prisma.tool.count({ where: { companyId, deletedAt: null, status: "GEPUBLICEERD" } })) > 0;
+
+  return { toolsCount, publishedTool, productsCount, leadsCount, nieuweLeadsCount, recenteLeads, heeftGepubliceerdeTool };
+}
+
+// /dashboard/tools — overzichtslijst van alle rekentools van een company.
+export async function listToolsVoorCompany(companyId: string) {
+  return prisma.tool.findMany({
+    where: { companyId, deletedAt: null },
+    orderBy: { order: "asc" },
+    take: 200,
+    include: { _count: { select: { products: true, leads: true } } },
+  });
+}
+
+// /dashboard/tools/[toolId] — statistieken + laatste 5 aanvragen voor één tool.
+export async function getToolOverzichtStats(toolId: string) {
+  const [productenCount, leadsCount, recenteLeads] = await Promise.all([
+    prisma.product.count({ where: { toolId } }),
+    prisma.lead.count({ where: { toolId } }),
+    prisma.lead.findMany({
+      where: { toolId },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, naam: true, toolNaamSnapshot: true, status: true, totaalIndicatie: true, createdAt: true },
+    }),
+  ]);
+  return { productenCount, leadsCount, recenteLeads };
+}
+
+// /dashboard/leads — de (Plus/Pro-only) aanvragenlijst plus de toolfilter.
+export async function getLeadsPageData(companyId: string) {
+  const [rawLeads, tools] = await Promise.all([
+    // Audit-bevinding T-04 (kritiek): deze query had geen enkele grens en
+    // laadt bij groei naar duizenden aanvragen steeds meer data op elk
+    // bezoek. `take: 500` is een veilige, direct werkzame ondergrens (ruim
+    // boven wat één company vandaag heeft) zonder de client-architectuur
+    // (optimistische statuswijziging, Kanban-bord, KPI-afleiding — die
+    // allemaal op de volledige, al-geladen lijst leunen) te moeten
+    // herbouwen. Echte cursor-paginering met server-side KPI-aggregatie is
+    // vervolgwerk zodra een company dit plafond daadwerkelijk nadert.
+    prisma.lead.findMany({
+      where: { companyId },
+      include: { notities: { orderBy: { createdAt: "asc" } }, offerte: true },
+      orderBy: { createdAt: "desc" },
+      take: 500,
+    }),
+    // Voor het toolfilter hierboven de <LeadsView> — alleen niet-verwijderde
+    // tools zijn te kiezen, een lead van een inmiddels verwijderde tool blijft
+    // gewoon zichtbaar in "Alle rekentools" via toolNaamSnapshot.
+    prisma.tool.findMany({
+      where: { companyId, deletedAt: null },
+      orderBy: { order: "asc" },
+      select: { id: true, naam: true },
+    }),
+  ]);
+  return { rawLeads, tools };
+}
