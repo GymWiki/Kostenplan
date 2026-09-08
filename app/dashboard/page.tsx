@@ -6,7 +6,7 @@ import { markOnboardingVoltooid } from "@/app/lib/actions/onboarding";
 import { bouwOnboardingStappen } from "@/app/lib/onboarding";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { LinkButton } from "@/app/components/ui/button";
-import { OnboardingChecklist } from "@/app/components/dashboard/onboarding-checklist";
+import { OnboardingChecklist } from "./onboarding-checklist";
 import { RecenteAanvragen } from "@/app/components/dashboard/recente-aanvragen";
 
 export const metadata: Metadata = { title: "Overzicht" };
