@@ -328,7 +328,37 @@ summary,
   animation: soft-pulse 4s ease-in-out infinite;
 }
 
+@keyframes modal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modal-fade {
+  animation: modal-fade 0.18s ease-out both;
+}
+
+.animate-modal-pop {
+  animation: modal-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .animate-modal-fade,
+  .animate-modal-pop,
   .animate-fade-in-up,
   .animate-blob-drift,
   .animate-soft-pulse {
