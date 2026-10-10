@@ -24,9 +24,8 @@ export function OnboardingToolForm() {
         <Input
           id="naam"
           name="naam"
-          placeholder="Bijv. Schuttingen & Erfafscheidingen"
+          placeholder="Bijv. Schuttingen & Erfafscheidingen…"
           required
-          autoFocus
         />
         <p className="text-xs text-muted-foreground">
           Dit ziet je klant bovenaan de rekentool. Je kunt dit later altijd nog wijzigen.

@@ -310,7 +310,7 @@ export function ProductForm({
         <Input
           id="naam"
           name="naam"
-          placeholder="Bijv. Terras aanleggen"
+          placeholder="Bijv. Terras aanleggen…"
           value={naam}
           onChange={(e) => setNaam(e.target.value)}
           required
@@ -325,7 +325,7 @@ export function ProductForm({
         <Textarea
           id="omschrijving"
           name="omschrijving"
-          placeholder="Korte toelichting die klanten zien in de calculator"
+          placeholder="Korte toelichting die klanten zien in de calculator…"
           defaultValue={product?.omschrijving ?? ""}
         />
       </div>
@@ -370,7 +370,7 @@ export function ProductForm({
             <Input
               id="eenheid-eigen"
               name="eenheid"
-              placeholder="Bijv. strekkende voet"
+              placeholder="Bijv. strekkende voet…"
               value={eenheid}
               onChange={(e) => setEenheid(e.target.value)}
               maxLength={20}
@@ -471,7 +471,7 @@ export function ProductForm({
                 <DecimalInput
                   id="productiviteit"
                   name="productiviteit"
-                  placeholder="Bijv. 5"
+                  placeholder="Bijv. 5…"
                   value={productiviteit}
                   onChange={(e) => setProductiviteit(e.target.value)}
                 />

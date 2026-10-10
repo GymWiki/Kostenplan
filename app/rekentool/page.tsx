@@ -177,7 +177,7 @@ export default function RekentoolPage() {
               <Reveal key={d.slug} delay={i * 80}>
                 <Link
                   href={`/voor/${d.slug}`}
-                  className="group flex h-full flex-col justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                  className="group flex h-full flex-col justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-md"
                 >
                   <div>
                     <h3 className="font-semibold text-foreground">
@@ -378,7 +378,7 @@ function VerdiepingKaart({ href, titel, tekst }: { href: string; titel: string; 
   return (
     <Link
       href={href}
-      className="group flex h-full flex-col justify-between gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+      className="group flex h-full flex-col justify-between gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-md"
     >
       <div>
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">

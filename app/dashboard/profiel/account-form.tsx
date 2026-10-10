@@ -23,7 +23,7 @@ export function AccountForm({ email }: { email: string }) {
         <PasswordInput
           id="password"
           name="password"
-          placeholder="Minimaal 8 tekens"
+          placeholder="Minimaal 8 tekens…"
           minLength={8}
           required
           autoComplete="new-password"

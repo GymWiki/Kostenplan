@@ -75,7 +75,7 @@ export function OnderdeelSettingsForm({
             setBeschrijving(e.target.value);
             commit({ beschrijving: e.target.value });
           }}
-          placeholder="Bijv. Kosten voor het plaatsen van een nieuwe schutting"
+          placeholder="Bijv. Kosten voor het plaatsen van een nieuwe schutting…"
         />
       </div>
 

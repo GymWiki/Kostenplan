@@ -57,7 +57,7 @@ export default function FeaturesPage() {
               <Reveal key={feature.slug} delay={i * 80}>
                 <Link
                   href={`/features/${feature.slug}`}
-                  className="group flex h-full flex-col justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                  className="group flex h-full flex-col justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-md"
                 >
                   <div>
                     <h2 className="font-semibold text-foreground">{feature.frontmatter.title}</h2>

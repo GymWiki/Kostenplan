@@ -280,7 +280,7 @@ function NieuweRekentoolDialoog({ open, onClose }: { open: boolean; onClose: () 
         <label htmlFor="nieuw-naam" className="text-sm font-semibold text-foreground">
           Hoe heet je rekentool?
         </label>
-        <Input id="nieuw-naam" value={naam} maxLength={80} autoFocus placeholder="Bijv. Tuinaanleg" onChange={(e) => setNaam(e.target.value)} aria-invalid={fout ? true : undefined} />
+        <Input id="nieuw-naam" value={naam} maxLength={80} autoFocus placeholder="Bijv. Tuinaanleg…" onChange={(e) => setNaam(e.target.value)} aria-invalid={fout ? true : undefined} />
         <p className="text-sm text-muted-foreground">Daarna kies je in de editor je werkzaamheden.</p>
         {fout && (
           <p role="alert" className="text-sm font-medium text-destructive">

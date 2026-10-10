@@ -82,7 +82,7 @@ export function PaneelResultaat({ toolId, start, onStatus, onWijzig }: { toolId:
       </fieldset>
       <p className="-mt-2 text-sm text-muted-foreground">Verborgen regels tellen nog wel mee in het totaal.</p>
       <Field label="Tekst op de knop" htmlFor="res-cta" hint="Leeg laten voor “Offerte aanvragen”.">
-        <Input id="res-cta" value={v.ctaTekst} maxLength={60} placeholder="Bijv. Vraag nu je offerte aan" onChange={(e) => zet({ ctaTekst: e.target.value })} />
+        <Input id="res-cta" value={v.ctaTekst} maxLength={60} placeholder="Bijv. Vraag nu je offerte aan…" onChange={(e) => zet({ ctaTekst: e.target.value })} />
       </Field>
       <Field label="Toelichting onder de prijs" htmlFor="res-toel" hint="Bijvoorbeeld: dit is een indicatie, je ontvangt binnen 1 werkdag een offerte.">
         <Textarea id="res-toel" value={v.toelichting} maxLength={300} onChange={(e) => zet({ toelichting: e.target.value })} />

@@ -316,7 +316,7 @@ function NoteRow({ note }: { note: LeadNote }) {
         }}
         className="flex flex-col gap-2 rounded-lg border border-border p-3"
       >
-        <Textarea name="tekst" defaultValue={note.tekst} rows={2} required autoFocus />
+        <Textarea name="tekst" aria-label="Notitie" defaultValue={note.tekst} rows={2} required autoFocus />
         {error && <p className="text-xs text-destructive">{error}</p>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)} disabled={pending}>

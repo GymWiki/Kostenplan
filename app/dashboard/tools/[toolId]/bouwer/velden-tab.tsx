@@ -314,18 +314,18 @@ function VeldFormModal({
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="veld-label">Wat wil je weten?</Label>
-          <Input id="veld-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Bijv. Hoeveel meter schutting?" />
+          <Input id="veld-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Bijv. Hoeveel meter schutting?…" />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="veld-help">Toelichting (optioneel)</Label>
-          <Input id="veld-help" value={helpTekst} onChange={(e) => setHelpTekst(e.target.value)} placeholder="Extra uitleg voor je klant" />
+          <Input id="veld-help" value={helpTekst} onChange={(e) => setHelpTekst(e.target.value)} placeholder="Extra uitleg voor je klant…" />
         </div>
 
         {(soort === "NUMMER" || soort === "AANTAL" || soort === "OPPERVLAKTE" || soort === "SLIDER" || soort === "AFMETINGEN") && (
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="veld-eenheid">Eenheid</Label>
-            <Input id="veld-eenheid" value={eenheid} onChange={(e) => setEenheid(e.target.value)} placeholder="Bijv. meter, m², stuks" />
+            <Input id="veld-eenheid" value={eenheid} onChange={(e) => setEenheid(e.target.value)} placeholder="Bijv. meter, m², stuks…" />
           </div>
         )}
 

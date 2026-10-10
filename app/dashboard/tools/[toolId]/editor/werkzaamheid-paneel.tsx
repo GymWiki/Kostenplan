@@ -254,7 +254,7 @@ export function WerkzaamheidPaneel({
               id="wz-tempo"
               suffix={`${eenheidKort} per ${woord}`}
               value={draft.productiviteit}
-              placeholder="Bijv. 6"
+              placeholder="Bijv. 6…"
               onChange={(e) => wijzig({ productiviteit: e.target.value })}
             />
           </Field>

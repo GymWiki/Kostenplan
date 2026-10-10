@@ -170,7 +170,7 @@ export function RegelSettingsForm({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="regel-label">Naam</Label>
-        <Input id="regel-label" value={state.label} onChange={(e) => commit({ label: e.target.value })} placeholder="Bijv. Materiaal" autoFocus />
+        <Input id="regel-label" value={state.label} onChange={(e) => commit({ label: e.target.value })} placeholder="Bijv. Materiaal…" autoFocus />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -226,7 +226,7 @@ export function RegelSettingsForm({
             {state.prijsBron === "vast" ? (
               <Bedragveld label="" waarde={state.prijsPerEenheid} onChange={(prijsPerEenheid) => commit({ prijsPerEenheid })} />
             ) : (
-              <Select value={state.prijsPerEenheidVariabele} onChange={(e) => commit({ prijsPerEenheidVariabele: e.target.value })}>
+              <Select aria-label="Materiaalkeuze" value={state.prijsPerEenheidVariabele} onChange={(e) => commit({ prijsPerEenheidVariabele: e.target.value })}>
                 <option value="" disabled>
                   Kies een materiaalkeuze
                 </option>
@@ -242,7 +242,7 @@ export function RegelSettingsForm({
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="regel-eenheid">Eenheid</Label>
-            <Input id="regel-eenheid" value={state.eenheid} onChange={(e) => commit({ eenheid: e.target.value })} placeholder="Bijv. meter, m², uur" />
+            <Input id="regel-eenheid" value={state.eenheid} onChange={(e) => commit({ eenheid: e.target.value })} placeholder="Bijv. meter, m², uur…" />
           </div>
         </>
       )}
@@ -271,7 +271,7 @@ export function RegelSettingsForm({
             </label>
           </div>
           <div className="relative">
-            <DecimalInput value={state.kortingWaarde} onChange={(e) => commit({ kortingWaarde: e.target.value })} className={state.kortingType === "percentage" ? "pr-8" : "pl-7"} />
+            <DecimalInput aria-label="Korting" value={state.kortingWaarde} onChange={(e) => commit({ kortingWaarde: e.target.value })} className={state.kortingType === "percentage" ? "pr-8" : "pl-7"} />
             {state.kortingType === "percentage" ? (
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
             ) : (
@@ -295,7 +295,7 @@ export function RegelSettingsForm({
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="regel-staffel-eenheid">Eenheid</Label>
-            <Input id="regel-staffel-eenheid" value={state.eenheid} onChange={(e) => commit({ eenheid: e.target.value })} placeholder="Bijv. meter" />
+            <Input id="regel-staffel-eenheid" value={state.eenheid} onChange={(e) => commit({ eenheid: e.target.value })} placeholder="Bijv. meter…" />
           </div>
           <div className="flex flex-col gap-2">
             <span className="flex items-center gap-1.5">
@@ -306,17 +306,19 @@ export function RegelSettingsForm({
               <div key={i} className="flex items-center gap-2 text-sm">
                 <span className="w-16 shrink-0 text-muted-foreground">t/m</span>
                 <Input
+                  aria-label="Tot en met"
                   value={schijf.tot}
                   onChange={(e) => {
                     const nieuw = [...state.schijven];
                     nieuw[i] = { ...schijf, tot: e.target.value };
                     commit({ schijven: nieuw });
                   }}
-                  placeholder="onbeperkt"
+                  placeholder="onbeperkt…"
                   className="w-24"
                 />
                 <span className="shrink-0 text-muted-foreground">à €</span>
                 <DecimalInput
+                  aria-label="Prijs per eenheid"
                   value={schijf.prijsPerEenheid}
                   onChange={(e) => {
                     const nieuw = [...state.schijven];

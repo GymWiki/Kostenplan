@@ -120,7 +120,7 @@ export function ResultaatTab({
               id="res-cta-tekst"
               value={instellingen.ctaTekst ?? ""}
               onChange={(e) => onChange({ ...instellingen, ctaTekst: e.target.value || null })}
-              placeholder="Bijv. Vraag nu je offerte aan"
+              placeholder="Bijv. Vraag nu je offerte aan…"
               maxLength={60}
             />
           </div>
@@ -130,7 +130,7 @@ export function ResultaatTab({
               id="res-toelichting"
               value={instellingen.toelichting ?? ""}
               onChange={(e) => onChange({ ...instellingen, toelichting: e.target.value || null })}
-              placeholder="Bijv. Dit is een indicatie. Je ontvangt binnen 1 werkdag een definitieve offerte."
+              placeholder="Bijv. Dit is een indicatie. Je ontvangt binnen 1 werkdag een definitieve offerte.…"
               maxLength={300}
             />
           </div>

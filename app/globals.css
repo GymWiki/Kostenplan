@@ -257,6 +257,29 @@ body {
 html {
   scroll-behavior: smooth;
   overflow-x: clip;
+  /* Native formulierelementen en scrollbars volgen het thema. */
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/* Geen dubbeltik-zoom-vertraging op knoppen en velden (touch). */
+button,
+a,
+input,
+select,
+textarea,
+summary,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 @keyframes fade-in-up {

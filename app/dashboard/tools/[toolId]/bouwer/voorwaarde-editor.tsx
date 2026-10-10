@@ -44,6 +44,7 @@ export function VoorwaardeEditor({
             <div className="flex items-center gap-2 text-sm">
               <span className="shrink-0 text-muted-foreground">{i === 0 ? "Als" : groep.combinator === "EN" ? "en" : "of"}</span>
               <Select
+                aria-label="Veld"
                 value={conditie.variabele}
                 onChange={(e) => {
                   const nieuweType = typeVoorVariabele(variabelen, e.target.value);
@@ -67,7 +68,7 @@ export function VoorwaardeEditor({
             {veld?.type === "BOOLEAN" ? (
               <div className="flex items-center gap-2 text-sm">
                 <span className="shrink-0 text-muted-foreground">is</span>
-                <Select value={conditie.waarde || "waar"} onChange={(e) => wijzigConditie(i, { waarde: e.target.value })} className="flex-1">
+                <Select aria-label="Waarde" value={conditie.waarde || "waar"} onChange={(e) => wijzigConditie(i, { waarde: e.target.value })} className="flex-1">
                   <option value="waar">aan</option>
                   <option value="onwaar">uit</option>
                 </Select>
@@ -75,7 +76,7 @@ export function VoorwaardeEditor({
             ) : veld?.type === "OPTIONS" ? (
               <div className="flex items-center gap-2 text-sm">
                 <span className="shrink-0 text-muted-foreground">bevat</span>
-                <Select value={conditie.waarde} onChange={(e) => wijzigConditie(i, { waarde: e.target.value })} className="flex-1">
+                <Select aria-label="Waarde" value={conditie.waarde} onChange={(e) => wijzigConditie(i, { waarde: e.target.value })} className="flex-1">
                   <option value="" disabled>
                     Kies een optie
                   </option>
@@ -89,6 +90,7 @@ export function VoorwaardeEditor({
             ) : (
               <>
                 <Select
+                  aria-label="Vergelijking"
                   value={conditie.operator}
                   onChange={(e) => wijzigConditie(i, { operator: e.target.value as Operator })}
                 >
@@ -101,7 +103,7 @@ export function VoorwaardeEditor({
                     ))}
                 </Select>
                 {veld?.type === "OPTION" && veld.opties ? (
-                  <Select value={conditie.waarde} onChange={(e) => wijzigConditie(i, { waarde: e.target.value })}>
+                  <Select aria-label="Waarde" value={conditie.waarde} onChange={(e) => wijzigConditie(i, { waarde: e.target.value })}>
                     <option value="" disabled>
                       Kies een optie
                     </option>

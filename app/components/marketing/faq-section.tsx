@@ -106,7 +106,7 @@ export function FaqSection({
                 id={`faq-answer-${index}`}
                 role="region"
                 className={cn(
-                  "grid overflow-hidden transition-all duration-300 ease-out",
+                  "grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out",
                   open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
                 )}
               >

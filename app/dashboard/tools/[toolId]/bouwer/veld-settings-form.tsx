@@ -235,18 +235,18 @@ export function VeldSettingsForm({
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="veld-label">Wat wil je weten?</Label>
-        <Input id="veld-label" value={state.label} onChange={(e) => commit({ label: e.target.value })} placeholder="Bijv. Hoeveel meter schutting?" autoFocus />
+        <Input id="veld-label" value={state.label} onChange={(e) => commit({ label: e.target.value })} placeholder="Bijv. Hoeveel meter schutting?…" autoFocus />
       </div>
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="veld-help">Toelichting (optioneel)</Label>
-        <Input id="veld-help" value={state.helpTekst} onChange={(e) => commit({ helpTekst: e.target.value })} placeholder="Extra uitleg voor je klant" />
+        <Input id="veld-help" value={state.helpTekst} onChange={(e) => commit({ helpTekst: e.target.value })} placeholder="Extra uitleg voor je klant…" />
       </div>
 
       {(state.soort === "NUMMER" || state.soort === "AANTAL" || state.soort === "OPPERVLAKTE" || state.soort === "SLIDER" || state.soort === "AFMETINGEN") && (
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="veld-eenheid">Eenheid</Label>
-          <Input id="veld-eenheid" value={state.eenheid} onChange={(e) => commit({ eenheid: e.target.value })} placeholder="Bijv. meter, m², stuks" />
+          <Input id="veld-eenheid" value={state.eenheid} onChange={(e) => commit({ eenheid: e.target.value })} placeholder="Bijv. meter, m², stuks…" />
         </div>
       )}
 
