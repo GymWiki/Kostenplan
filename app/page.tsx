@@ -32,9 +32,9 @@ import { MarketingPricingTable } from "@/app/components/pricing/marketing-pricin
 import { LEAD_STATUS_LABELS } from "@/app/lib/leads";
 import { CALCULATOR_TEMPLATES } from "@/app/lib/calculator-engine/templates";
 
-const TITLE = "Kostenplan | Maak een rekentool voor je website";
+const TITLE = "Kostenplan | Rekentool voor hoveniers: klanten berekenen zelf de prijs";
 const DESCRIPTION =
-  "Maak zonder programmeerkennis een professionele rekentool voor je website. Kies een sjabloon, pas je prijzen aan en laat klanten zelf hun prijs berekenen.";
+  "Maak in 2 minuten een rekentool voor je hoveniersbedrijf, met je eigen logo en prijzen. Klanten berekenen zelf wat hun tuin kost en jij krijgt serieuze aanvragen. Gratis proberen, geen account nodig.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -86,75 +86,68 @@ export default function Home() {
       <main id="main-content" className="flex-1">
         {/* HERO */}
         <section className="relative overflow-hidden">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-            <div className="animate-blob-drift absolute -top-32 left-1/2 h-[28rem] w-[28rem] -translate-x-[70%] rounded-full bg-primary/15 blur-3xl" />
-            <div
-              className="animate-blob-drift absolute -bottom-24 right-1/2 h-[24rem] w-[24rem] translate-x-[60%] rounded-full bg-accent blur-3xl"
-              style={{ animationDelay: "3s" }}
-            />
-          </div>
+          {/* Statische gloed: geen geanimeerde blur, dus snel en rustig. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_50%_at_50%_0%,var(--accent),transparent)] opacity-70"
+          />
 
-          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-            <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
+            <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
               <div className="text-center lg:text-left">
-                <span className="animate-fade-in-up inline-flex items-center rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-                  Rekentool voor je website
+                <span className="inline-flex items-center rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
+                  Voor hoveniers
                 </span>
-                <h1
-                  className="animate-fade-in-up mt-6 text-4xl font-bold tracking-tight text-balance text-foreground sm:text-5xl"
-                  style={{ animationDelay: "80ms" }}
-                >
-                  Maak een rekentool voor je website
+                <h1 className="mt-5 text-4xl font-bold leading-[1.1] tracking-tight text-balance text-foreground sm:text-5xl lg:text-6xl">
+                  Laat klanten zelf de prijs van hun tuin berekenen
                 </h1>
-                <p
-                  className="animate-fade-in-up mt-6 text-lg text-muted-foreground"
-                  style={{ animationDelay: "160ms" }}
-                >
-                  Laat klanten zelf hun prijs berekenen, zonder programmeerkennis. Jij ontvangt
-                  aanvragen van mensen die al weten wat hun project ongeveer kost.
+                <p className="mx-auto mt-5 max-w-xl text-lg text-pretty text-muted-foreground lg:mx-0">
+                  Maak in 2 minuten een rekentool met je eigen logo en prijzen. Jij krijgt aanvragen
+                  van mensen die al weten wat hun project ongeveer kost.
                 </p>
-                <div
-                  className="animate-fade-in-up mt-6 text-left"
-                  style={{ animationDelay: "200ms" }}
-                >
-                  <GeoAnswer>
-                    Kostenplan is een platform waarmee hoveniers zelf een online rekentool voor
-                    hun website bouwen. Bezoekers berekenen zelf een prijsindicatie; jij ontvangt
-                    de aanvraag met de exacte selectie in je eigen leads-overzicht.
-                  </GeoAnswer>
-                </div>
-                <div
-                  className="animate-fade-in-up mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start"
-                  style={{ animationDelay: "240ms" }}
-                >
-                  <LinkButton href="/probeer" size="lg">
-                    Maak gratis je rekentool — geen account nodig
-                    <ArrowRight className="h-4 w-4" />
+                <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
+                  <LinkButton href="/probeer" size="lg" className="h-14 px-8 text-lg">
+                    Maak gratis je rekentool
+                    <ArrowRight className="h-5 w-5" aria-hidden="true" />
                   </LinkButton>
-                  <LinkButton href="/voorbeelden-rekentools" size="lg" variant="outline">
+                  <LinkButton href="/voorbeelden-rekentools" size="lg" variant="outline" className="h-14 text-lg">
                     Bekijk voorbeelden
                   </LinkButton>
                 </div>
+                <ul className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-1 text-sm text-muted-foreground lg:justify-start">
+                  {["Geen account nodig", "Klaar in 2 minuten", "Gratis proberen"].map((t) => (
+                    <li key={t} className="flex items-center gap-1.5">
+                      <BadgeCheck className="h-4 w-4 text-primary" aria-hidden="true" />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-              <Reveal delay={150}>
-                <WebsiteCalculatorMockup
-                  siteUrl="groenenzo.nl"
-                  bedrijfsnaam="Groen & Zo Tuinen"
-                  productTitel="Bereken de kosten van jouw tuin"
-                  velden={[
-                    { label: "Oppervlakte tuin", waarde: "85 m²" },
-                    { label: "Bestrating", waarde: "Ja" },
-                    { label: "Beplanting", waarde: "Ja" },
-                    { label: "Schutting", waarde: "12 m1" },
-                    { label: "Tuinverlichting", waarde: "Ja" },
-                  ]}
-                  resultaatLabel="Indicatieprijs"
-                  resultaatWaarde="€ 8.250 – € 10.500"
-                  cta="Offerte aanvragen"
-                  rotate="sm:rotate-1"
-                />
-              </Reveal>
+              <WebsiteCalculatorMockup
+                siteUrl="groenenzo.nl"
+                bedrijfsnaam="Groen & Zo Tuinen"
+                productTitel="Bereken de kosten van jouw tuin"
+                velden={[
+                  { label: "Oppervlakte tuin", waarde: "85 m²" },
+                  { label: "Bestrating", waarde: "Ja" },
+                  { label: "Beplanting", waarde: "Ja" },
+                  { label: "Schutting", waarde: "12 m" },
+                  { label: "Tuinverlichting", waarde: "Ja" },
+                ]}
+                resultaatLabel="Indicatieprijs"
+                resultaatWaarde="€ 8.250 – € 10.500"
+                cta="Offerte aanvragen"
+                rotate="sm:rotate-1"
+              />
+            </div>
+
+            <div className="mx-auto mt-12 max-w-3xl text-left">
+              <GeoAnswer>
+                Kostenplan is een platform waarmee hoveniers zelf een online rekentool voor hun
+                website bouwen. Bezoekers berekenen zelf een prijsindicatie; jij ontvangt de
+                aanvraag met de exacte selectie in je eigen leads-overzicht.
+              </GeoAnswer>
             </div>
           </div>
         </section>
@@ -163,13 +156,13 @@ export default function Home() {
         <section className="py-6">
           <div className="mx-auto max-w-4xl border-t border-border" />
           <div className="mx-auto mt-6 flex max-w-6xl flex-wrap items-center justify-center gap-x-2 gap-y-2 px-4 sm:px-6">
-            <span className="mr-1 text-sm font-medium text-muted-foreground">Rekentool voor al je werkzaamheden:</span>
+            <span className="mr-1 text-sm font-medium text-muted-foreground">Rekentool voor al je tuinwerk:</span>
             {VAKGEBIEDEN.map((v) =>
               v.href ? (
                 <Link
                   key={v.label}
                   href={v.href}
-                  className="rounded-full border border-border bg-card px-3 py-1 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                  className="rounded-full border border-border bg-card px-3 py-1 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   {v.label}
                 </Link>
@@ -235,8 +228,8 @@ export default function Home() {
                   </span>
                 ))}
               </div>
-              <LinkButton href="/registreren" size="lg">
-                Maak mijn rekentool
+              <LinkButton href="/probeer" size="lg">
+                Maak gratis je rekentool
                 <ArrowRight className="h-4 w-4" />
               </LinkButton>
             </Reveal>
@@ -383,19 +376,12 @@ export default function Home() {
         <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
           <Reveal>
             <div className="relative overflow-hidden rounded-3xl bg-primary px-6 py-16 text-center shadow-lg sm:px-12 sm:py-20">
-              <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-                <div className="animate-blob-drift absolute -top-24 -left-16 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-                <div
-                  className="animate-blob-drift absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-white/10 blur-3xl"
-                  style={{ animationDelay: "4s" }}
-                />
-              </div>
               <h2 className="text-2xl font-semibold text-balance text-primary-foreground sm:text-3xl">
                 Laat je website voor je rekenen
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                Geef bezoekers de mogelijkheid om zelf hun prijs te berekenen. Binnen 5 minuten
-                online, helemaal gratis.
+                Geef bezoekers de mogelijkheid om zelf hun prijs te berekenen. Binnen 2 minuten
+                klaar, helemaal gratis en zonder account.
               </p>
               <div className="relative mt-8 inline-flex">
                 <span
@@ -403,11 +389,11 @@ export default function Home() {
                   className="animate-soft-pulse absolute -inset-3 -z-10 rounded-full bg-white/20 blur-xl"
                 />
                 <LinkButton
-                  href="/registreren"
+                  href="/probeer"
                   size="lg"
                   className="border-transparent bg-white text-primary hover:bg-white/90"
                 >
-                  Maak gratis een rekentool
+                  Maak gratis je rekentool
                   <ArrowRight className="h-4 w-4" />
                 </LinkButton>
               </div>

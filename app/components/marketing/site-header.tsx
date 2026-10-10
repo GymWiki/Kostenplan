@@ -27,11 +27,16 @@ export function SiteHeader() {
         </nav>
         <div className="flex shrink-0 items-center gap-2">
           <SearchDialog />
-          <ThemeToggle />
+          <span className="hidden sm:block">
+            <ThemeToggle />
+          </span>
           <LinkButton href="/login" variant="ghost" className="hidden sm:inline-flex">
             Inloggen
           </LinkButton>
-          <LinkButton href="/registreren">Start nu gratis</LinkButton>
+          <LinkButton href="/probeer" className="whitespace-nowrap px-3 sm:px-4">
+            <span className="sm:hidden">Probeer gratis</span>
+            <span className="hidden sm:inline">Start nu gratis</span>
+          </LinkButton>
           <MobileNav />
         </div>
       </div>
