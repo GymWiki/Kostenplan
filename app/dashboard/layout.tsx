@@ -1,6 +1,7 @@
 import { requireActiveCompany } from "@/app/lib/dal";
 import { Sidebar } from "@/app/components/dashboard/sidebar";
 import { Topbar } from "@/app/components/dashboard/topbar";
+import { adminFontClasses } from "@/app/lib/admin-fonts";
 
 export default async function DashboardLayout({
   children,
@@ -10,7 +11,7 @@ export default async function DashboardLayout({
   const { company, alleBedrijven } = await requireActiveCompany();
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div data-admin-theme className={`flex min-h-screen bg-background text-foreground ${adminFontClasses}`}>
       <aside className="hidden w-64 shrink-0 border-r border-border md:flex">
         <Sidebar />
       </aside>

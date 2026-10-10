@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-:root {
+:root,
+[data-portal-shell] {
   --background: #f7faf8;
   --foreground: #0f172a;
 
@@ -8,7 +9,9 @@
   --card-foreground: #0f172a;
 
   --border: #e2efe7;
-  --input: #e2efe7;
+  /* Invoerrand: apart van --border en minimaal 3:1 tegen kaart/achtergrond
+     (WCAG 1.4.11) — #7a8b80 haalt 3.6:1 op wit. */
+  --input: #7a8b80;
   --ring: #15803d;
 
   --primary: #15803d;
@@ -66,6 +69,8 @@
 
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-example: var(--example);
+  --color-example-foreground: var(--example-foreground);
 
   /* Audit-bevinding DS-04: --radius-xl was nooit overschreven en bleef op
      Tailwind's default (toevallig identiek aan --radius-lg hieronder,
@@ -80,7 +85,8 @@
   --font-sans: var(--font-plus-jakarta-sans);
 }
 
-.dark {
+.dark,
+.dark [data-portal-shell] {
   --background: #0b1512;
   --foreground: #eaf3ee;
 
@@ -88,7 +94,7 @@
   --card-foreground: #eaf3ee;
 
   --border: #1d3226;
-  --input: #1d3226;
+  --input: #6f8b7b;
   --ring: #34d399;
 
   --primary: #34d399;
@@ -111,8 +117,105 @@
   --warning: #fbbf24;
 }
 
-* {
-  border-color: var(--border);
+/* ---------------------------------------------------------------------------
+   Admin-thema (dashboard + onboarding) — alleen daar. De klant-rekentool
+   ([data-portal-shell], ook als voorbeeld binnen het dashboard) houdt de
+   standaardtokens hierboven: branding hoort alleen in de klant-rekentool, en
+   de klant-rekentool hoort er in het dashboard precies zo uit te zien als
+   voor de klant. Contrast wordt bewaakt in app/lib/design-tokens.test.ts:
+   gedempte tekst >= 4.5:1, invoerrand >= 3:1.
+   --------------------------------------------------------------------------- */
+[data-admin-theme] {
+  --background: hsl(96 16% 96%);
+  --foreground: hsl(150 22% 10%);
+
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(150 22% 10%);
+
+  --border: hsl(120 10% 80%);
+  --input: hsl(150 10% 52%);
+  --ring: hsl(152 48% 32%);
+
+  --primary: hsl(152 48% 22%);
+  --primary-hover: hsl(152 48% 17%);
+  --primary-foreground: hsl(0 0% 100%);
+
+  --secondary: hsl(100 18% 90%);
+  --secondary-foreground: hsl(150 22% 12%);
+
+  --muted: hsl(100 14% 93%);
+  --muted-foreground: hsl(150 10% 30%);
+
+  --accent: hsl(140 24% 92%);
+  --accent-foreground: hsl(152 48% 22%);
+
+  --destructive: hsl(2 70% 44%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  --success: hsl(152 48% 22%);
+  --warning: hsl(30 90% 27%);
+
+  /* Geel "voorbeeld"-label en voorbeeldwaarschuwingen. */
+  --example: hsl(38 92% 50%);
+  --example-foreground: hsl(30 60% 10%);
+
+  font-family: var(--font-figtree), var(--font-plus-jakarta-sans), system-ui, sans-serif;
+}
+
+.dark [data-admin-theme] {
+  --background: hsl(150 14% 7%);
+  --foreground: hsl(90 18% 94%);
+
+  --card: hsl(150 12% 11%);
+  --card-foreground: hsl(90 18% 94%);
+
+  --border: hsl(150 8% 24%);
+  --input: hsl(150 8% 48%);
+  --ring: hsl(142 42% 58%);
+
+  --primary: hsl(142 42% 58%);
+  --primary-hover: hsl(142 42% 66%);
+  --primary-foreground: hsl(150 40% 7%);
+
+  --secondary: hsl(150 10% 18%);
+  --secondary-foreground: hsl(90 18% 94%);
+
+  --muted: hsl(150 10% 15%);
+  --muted-foreground: hsl(100 10% 74%);
+
+  --accent: hsl(150 14% 16%);
+  --accent-foreground: hsl(142 42% 66%);
+
+  --destructive: hsl(2 75% 62%);
+  --destructive-foreground: hsl(0 0% 8%);
+
+  --success: hsl(142 42% 58%);
+  --warning: hsl(40 92% 58%);
+
+  --example: hsl(40 92% 58%);
+  --example-foreground: hsl(30 60% 8%);
+}
+
+[data-admin-theme] h1,
+[data-admin-theme] h2,
+[data-admin-theme] h3 {
+  font-family: var(--font-bricolage), var(--font-figtree), system-ui, sans-serif;
+}
+/* De klant-rekentool binnen het dashboard houdt zijn eigen lettertypes. */
+[data-admin-theme] [data-portal-shell] h1,
+[data-admin-theme] [data-portal-shell] h2,
+[data-admin-theme] [data-portal-shell] h3 {
+  font-family: inherit;
+}
+
+/* In @layer base: een ongelaagde `* { border-color }` wint van álle Tailwind-
+   utilities (border-input, border-primary, border-destructive, ...), waardoor
+   elke rand stilletjes de zwakke standaardrand kreeg. In de base-laag blijven
+   utilities gewoon winnen. */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
 }
 
 /* Publieke portal-calculator: achtergrondKleur is een tenant-gekozen hex

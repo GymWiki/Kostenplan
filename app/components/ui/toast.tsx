@@ -107,7 +107,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               );
             })}
           </div>,
-          document.body
+          document.querySelector<HTMLElement>("[data-admin-theme]") ?? document.body
         )}
     </ToastContext.Provider>
   );

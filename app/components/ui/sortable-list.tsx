@@ -114,7 +114,7 @@ export function DragHandle({
       type="button"
       aria-label="Verslepen om te herordenen"
       className={cn(
-        "flex h-9 w-8 shrink-0 touch-none cursor-grab items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-secondary hover:text-muted-foreground active:cursor-grabbing",
+        "flex h-9 w-8 shrink-0 touch-none cursor-grab items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-muted-foreground active:cursor-grabbing",
         isDragging && "cursor-grabbing text-foreground"
       )}
       {...attributes}
