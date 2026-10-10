@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronLeft,
   Clock,
+  Copy,
   Eye,
   Layers,
   Ruler,
@@ -25,6 +26,7 @@ import { PRODUCT_ICONS } from "@/app/lib/icons";
 import { cn } from "@/app/lib/cn";
 import { formatCurrency } from "@/app/lib/format";
 import { deleteWerkzaamheidAction, saveWerkzaamheidAction } from "@/app/lib/actions/werkzaamheden";
+import { copyProductAction } from "@/app/lib/actions/products";
 import { STAP_WOORD } from "@/app/lib/werkzaamheid";
 import {
   METHODE_OPTIES,
@@ -393,7 +395,17 @@ export function WerkzaamheidEditor({
                     </p>
                   </div>
                 )}
-                <div className="p-4 sm:px-5">
+                <div className="flex flex-col gap-2 p-4 sm:px-5">
+                  <form action={copyProductAction} className="ml-auto">
+                    <input type="hidden" name="productId" value={product.id} />
+                    <button
+                      type="submit"
+                      className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-foreground hover:underline"
+                    >
+                      <Copy className="h-4 w-4" aria-hidden="true" />
+                      Kopie maken
+                    </button>
+                  </form>
                   {verwijderOpen ? (
                     <div role="alertdialog" aria-labelledby="verwijder-titel" className="rounded-lg border border-destructive bg-destructive/5 p-4">
                       <p id="verwijder-titel" className="font-semibold text-foreground">

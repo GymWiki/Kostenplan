@@ -1,75 +1,106 @@
 import type { Metadata } from "next";
-import { Package } from "lucide-react";
-import { requireActiveTool } from "@/app/lib/dal";
+import Link from "next/link";
+import { Plus } from "lucide-react";
+import { getToolCostSettings, requireActiveTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { Card, CardContent } from "@/app/components/ui/card";
 import { NieuwItemButton } from "@/app/components/dashboard/nieuw-item-button";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
-import { ProductenTable } from "./producten-table";
+import { voorbeeldHoeveelheidVoor } from "@/app/lib/werkzaamheid";
+import { berekenKostenOpbouw, prijsRange } from "@/app/lib/werkzaamheid-kosten";
+import { NieuwMelding } from "./editor/nieuw-melding";
+import { WerkzaamheidKaart } from "./editor/werkzaamheid-kaart";
 
 export const metadata: Metadata = { title: "Werkzaamheden" };
 
-export default async function ProductenPage({
+export default async function WerkzaamhedenPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ toolId: string }>;
+  searchParams: Promise<{ nieuw?: string }>;
 }) {
   const { toolId } = await params;
+  const { nieuw } = await searchParams;
   const { company } = await requireActiveTool(toolId);
 
-  const [products, totaalOverAlleTools] = await Promise.all([
+  const [products, totaalOverAlleTools, costSettings] = await Promise.all([
     prisma.product.findMany({
       where: { toolId },
       orderBy: { order: "asc" },
       // Defensieve bovengrens (geen plan staat vandaag meer dan een paar
-      // tientallen producten per tool toe) — voorkomt dat deze query
-      // onbegrensd blijft groeien als die aanname ooit wijzigt.
+      // tientallen werkzaamheden per tool toe).
       take: 200,
-      include: { _count: { select: { materiaalCategorieen: true, extraOpties: true } } },
+      include: {
+        materiaalCategorieen: { orderBy: { order: "asc" }, include: { materialen: { orderBy: { order: "asc" } } } },
+        extraOpties: { orderBy: { order: "asc" } },
+      },
     }),
     prisma.product.count({ where: { tool: { companyId: company.id } } }),
+    getToolCostSettings(toolId, company),
   ]);
   const limiet = PLAN_LIMITS[effectiveTier(company)].maxProductsPerCompany;
   const atLimit = limiet !== null && totaalOverAlleTools >= limiet;
+  const nieuweNaam = nieuw ? (products.find((p) => p.id === nieuw)?.naam ?? null) : null;
+
+  const nieuwHref = `/dashboard/tools/${toolId}/producten/nieuw`;
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold text-foreground">
-            Werkzaamheden
-          </h1>
+      <NieuwMelding naam={nieuweNaam} />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-bold leading-tight text-foreground">Je werkzaamheden</h1>
           <p className="mt-1 text-muted-foreground">
-            Wat je klant kan laten berekenen, met materiaalkeuzes, bijv. een schutting met palen en
-            tussenbekleding, of een vloer met tegels en voegmateriaal.
+            Dit kunnen klanten uitrekenen op je website. Tik op een werkzaamheid om prijzen aan te passen.
           </p>
         </div>
-        <NieuwItemButton href={`/dashboard/tools/${toolId}/producten/nieuw`} label="Nieuwe werkzaamheid" atLimit={atLimit} />
+        <NieuwItemButton href={nieuwHref} label="Werkzaamheid toevoegen" atLimit={atLimit} />
       </div>
 
-      {products.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Package className="h-6 w-6" />
-            </span>
-            <div>
-              <p className="font-medium text-foreground">Nog geen werkzaamheden</p>
-              <p className="text-sm text-muted-foreground">
-                Kies een werkzaamheid zoals schutting of bestrating; de prijzen vul je zelf in.
-              </p>
-            </div>
-            <NieuwItemButton
-              href={`/dashboard/tools/${toolId}/producten/nieuw`}
-              label="Nieuwe werkzaamheid"
-              atLimit={atLimit}
-              variant="secondary"
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+        {products.map((product) => {
+          const preview = { ...product, extraOpties: product.extraOpties.filter((e) => e.actief) };
+          const opbouw = berekenKostenOpbouw({
+            product: {
+              ...preview,
+              materiaalCategorieen: preview.materiaalCategorieen.map((c) => ({
+                ...c,
+                materialen: c.materialen.filter((m) => m.actief),
+              })),
+            },
+            optieId: null,
+            hoeveelheid: voorbeeldHoeveelheidVoor(product.eenheid),
+            costSettings,
+          });
+          const range = prijsRange({
+            ...preview,
+            materiaalCategorieen: preview.materiaalCategorieen.map((c) => ({
+              ...c,
+              materialen: c.materialen.filter((m) => m.actief),
+            })),
+          });
+          return (
+            <WerkzaamheidKaart
+              key={product.id}
+              toolId={toolId}
+              product={product}
+              range={range}
+              opbouw={opbouw}
+              gemarkeerd={product.id === nieuw}
             />
-          </CardContent>
-        </Card>
-      ) : (
-        <ProductenTable toolId={toolId} products={products} atLimit={atLimit} />
-      )}
+          );
+        })}
+        {!atLimit && (
+          <Link
+            href={nieuwHref}
+            className="flex min-h-[10rem] flex-col items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-dashed border-input p-5 text-center transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/35"
+          >
+            <Plus className="h-6 w-6 text-foreground" aria-hidden="true" />
+            <span className="font-bold text-foreground">Nieuwe werkzaamheid</span>
+            <span className="text-sm text-muted-foreground">Klaar in 3 stappen</span>
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
