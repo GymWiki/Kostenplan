@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Copy, Globe, Monitor, Pencil, Play, Settings2, Smartphone, Trash2, X } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
-import { meldGastGebeurtenisAction } from "@/app/lib/actions/gast";
 import { Logo } from "@/app/components/ui/logo";
 import { BottomSheet } from "@/app/components/ui/bottom-sheet";
 import { Button } from "@/app/components/ui/button";
@@ -15,17 +14,13 @@ import { Input } from "@/app/components/ui/input";
 import { Overlay } from "@/app/components/ui/overlay";
 import { cn } from "@/app/lib/cn";
 import { duplicateToolAction } from "@/app/lib/actions/tools";
-import {
-  hernoemRekentoolAction,
-  verwijderRekentoolAction,
-  zetWerkzaamhedenVolgordeAction,
-} from "@/app/lib/actions/rekentools";
-import { deleteWerkzaamheidAction, setWerkzaamheidActiefAction } from "@/app/lib/actions/werkzaamheden";
+import { verwijderRekentoolAction } from "@/app/lib/actions/rekentools";
 import type { ProductMetRelaties } from "@/app/lib/werkzaamheid";
 import type { Branding, CostSettings, SubscriptionTier, ToolStatus } from "@/app/generated/prisma/client";
 import type { ToolEmbedConfig } from "@/app/lib/tools";
 import type { NaarVoorbeeld, VanVoorbeeld } from "@/app/voorbeeld/[toolId]/voorbeeld-client";
 import type { Waarschuwing } from "@/app/portaal/[slug]/bewerkbaar";
+import { useEditorRepository } from "./repository";
 import { OpslaanStatus } from "../producten/editor/opslaan-status";
 import type { AutosaveStatus } from "../producten/editor/use-autosave";
 import { useTarieven } from "../tarieven-context";
@@ -66,7 +61,7 @@ export type EditorProps = {
   startPaneel: string;
   // Alleen voor de probeer-flow (gast): dezelfde editor, met een
   // account-maken-paneel in plaats van publiceren en embed.
-  gast?: { verlooptOpTekst: string; logoMislukt: boolean; accountPaneel: React.ReactNode };
+  gast?: { logoMislukt: boolean; opslagMelding: string | null; accountPaneel: React.ReactNode; uiterlijkPaneel: React.ReactNode; bedrijfsnaam: string };
   // Standaard de voorbeeld-route van deze rekentool; de gast-flow en tests
   // geven hier een eigen bron.
   voorbeeldUrl?: string;
@@ -109,31 +104,13 @@ export function RekentoolEditor(props: EditorProps) {
   const [naam, setNaam] = useState(props.toolNaam);
   const [producten, setProducten] = useState(props.products);
   const bewerkt = useRef(new Set<string>());
-  const vorigePrijzen = useRef(new Map<string, string>());
   const [paneel, setPaneelState] = useState(props.startPaneel);
   const [sheetOpen, setSheetOpen] = useState(props.startPaneel !== "start");
   const gast = props.gast;
   // Een gast begint in Uitproberen: meteen een prijs zien.
   const [modus, setModusState] = useState<"bewerken" | "uitproberen">(gast ? "uitproberen" : "bewerken");
-  const gemeld = useRef(new Set<string>());
-  const meld = useCallback(
-    (type: string) => {
-      if (!gast || gemeld.current.has(type)) return;
-      gemeld.current.add(type);
-      void meldGastGebeurtenisAction(type);
-    },
-    [gast]
-  );
-  const setModus = useCallback(
-    (m: "bewerken" | "uitproberen" | ((x: "bewerken" | "uitproberen") => "bewerken" | "uitproberen")) =>
-      setModusState((huidig) => {
-        const nieuw = typeof m === "function" ? m(huidig) : m;
-        if (nieuw === "uitproberen" && huidig !== "uitproberen") meld("uitproberen_gebruikt");
-        return nieuw;
-      }),
-    [meld]
-  );
-  useEffect(() => meld("editor_geopend"), [meld]);
+  const setModus = setModusState;
+  const repo = useEditorRepository();
   const [apparaat, setApparaat] = useState<"desktop" | "mobiel">("desktop");
   const [opslag, setOpslag] = useState<Opslag>(KLAAR);
   const [volgordeBezig, setVolgordeBezig] = useState(false);
@@ -165,12 +142,11 @@ export function RekentoolEditor(props: EditorProps) {
   // Een recent bezochte pagina kan uit de router-cache komen; haal bij het
   // openen eenmalig verse gegevens op.
   useEffect(() => {
-    router.refresh();
-  }, [router]);
+    if (!repo.gast) router.refresh();
+  }, [router, repo]);
 
   const setPaneel = useCallback((p: string) => {
     if (p === "account") {
-      meld("account_paneel_geopend");
       setModusState("bewerken");
     }
     setPaneelState(p);
@@ -180,7 +156,7 @@ export function RekentoolEditor(props: EditorProps) {
     if (p === "start") url.searchParams.delete("paneel");
     else url.searchParams.set("paneel", p);
     window.history.replaceState(null, "", url);
-  }, [meld]);
+  }, []);
 
   // --- Gegevens voor de rekentool in het midden
   const costSettings: CostSettings = useMemo(() => ({ ...tarieven, ...resultaat }), [tarieven, resultaat]);
@@ -234,7 +210,7 @@ export function RekentoolEditor(props: EditorProps) {
 
   async function bewaarVolgorde(ids: string[]) {
     setVolgordeBezig(true);
-    const r = await zetWerkzaamhedenVolgordeAction(toolId, ids);
+    const r = await repo.zetVolgorde(toolId, ids);
     setVolgordeBezig(false);
     if (!r.ok) setMelding("De volgorde opslaan is niet gelukt.");
   }
@@ -266,24 +242,20 @@ export function RekentoolEditor(props: EditorProps) {
       toelichting: resultaat.toelichting.trim() || null,
       ctaTekst: resultaat.ctaTekst.trim() || null,
       vraagTelefoon: aanvraag.vraagTelefoon,
+      bedrijfsnaam: gast?.bedrijfsnaam,
     };
     iframeRef.current?.contentWindow?.postMessage(bericht, window.location.origin);
-  }, [iframeKlaar, producten, branding, costSettings, modus, paneel, waarschuwingen, resultaat, aanvraag]);
+  }, [iframeKlaar, producten, branding, costSettings, modus, paneel, waarschuwingen, resultaat, aanvraag, gast?.bedrijfsnaam]);
 
   const updateProduct = useCallback((p: ProductMetRelaties) => {
-    const prijzen = (x: ProductMetRelaties) => x.materiaalCategorieen.flatMap((c) => c.materialen.map((m) => m.prijs)).join(",");
-    const vorig = vorigePrijzen.current.get(p.id);
-    const nu = prijzen(p);
-    if (vorig !== undefined && vorig !== nu) meld("prijs_aangepast");
-    vorigePrijzen.current.set(p.id, nu);
     bewerkt.current.add(p.id);
     setProducten((lijst) => lijst.map((x) => (x.id === p.id ? p : x)));
-  }, [meld]);
+  }, []);
 
   // --- Acties
   async function hernoem() {
     setBezig(true);
-    const r = await hernoemRekentoolAction(toolId, hernoemTekst);
+    const r = await repo.hernoemRekentool(toolId, hernoemTekst);
     setBezig(false);
     if (r.ok) {
       setNaam(hernoemTekst.trim());
@@ -301,7 +273,7 @@ export function RekentoolEditor(props: EditorProps) {
   async function verwijderWerkzaamheid() {
     if (!verwijderProduct) return;
     setBezig(true);
-    const r = await deleteWerkzaamheidAction(verwijderProduct);
+    const r = await repo.verwijderWerkzaamheid(verwijderProduct);
     setBezig(false);
     if (r.ok) {
       setProducten((l) => l.filter((p) => p.id !== verwijderProduct));
@@ -313,7 +285,7 @@ export function RekentoolEditor(props: EditorProps) {
   async function zetZichtbaar(id: string, aan: boolean) {
     setProducten((l) => l.map((p) => (p.id === id ? { ...p, actief: aan } : p)));
     bewerkt.current.add(id);
-    const r = await setWerkzaamheidActiefAction(id, aan);
+    const r = await repo.zetActief(id, aan);
     if (!r.ok) {
       setProducten((l) => l.map((p) => (p.id === id ? { ...p, actief: !aan } : p)));
       setMelding("Wijzigen is niet gelukt.");
@@ -321,7 +293,9 @@ export function RekentoolEditor(props: EditorProps) {
   }
 
   function nieuwToegevoegd(productId: string) {
-    router.refresh();
+    const lokaal = repo.laadProducten?.();
+    if (lokaal) setProducten((cur) => [...cur, ...lokaal.filter((p) => !cur.some((c) => c.id === p.id))]);
+    else router.refresh();
     setPaneel(`werkzaamheid:${productId}`);
   }
 
@@ -408,9 +382,18 @@ export function RekentoolEditor(props: EditorProps) {
           onToegevoegd={nieuwToegevoegd}
         />
       )}
-      {paneel === "uiterlijk" && <PaneelUiterlijk toolId={toolId} branding={branding} tier={tier} email={email} />}
-      {paneel === "resultaat" && <PaneelResultaat toolId={toolId} start={resultaat} onStatus={setOpslag} onWijzig={setResultaat} />}
-      {paneel === "aanvraag" && <PaneelAanvraag toolId={toolId} start={aanvraag} onStatus={setOpslag} onWijzig={setAanvraag} />}
+      {paneel === "uiterlijk" && (gast ? gast.uiterlijkPaneel : <PaneelUiterlijk toolId={toolId} branding={branding} tier={tier} email={email} />)}
+      {paneel === "resultaat" && !gast && <PaneelResultaat toolId={toolId} start={resultaat} onStatus={setOpslag} onWijzig={setResultaat} />}
+      {paneel === "aanvraag" && !gast && <PaneelAanvraag toolId={toolId} start={aanvraag} onStatus={setOpslag} onWijzig={setAanvraag} />}
+      {gast && (paneel === "resultaat" || paneel === "aanvraag") && (
+        <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+          <h2 className="text-lg font-bold text-foreground">{paneel === "resultaat" ? "Resultaat" : "Aanvraagformulier"}</h2>
+          <p className="text-sm text-muted-foreground">Maak een gratis account om dit te gebruiken.</p>
+          <Button type="button" className="h-11 w-fit" onClick={() => setPaneel("account")}>
+            Account maken
+          </Button>
+        </div>
+      )}
       {paneel === "account" && gast && gast.accountPaneel}
       {paneel === "website" && !gast && (
         <PaneelWebsite
@@ -436,12 +419,17 @@ export function RekentoolEditor(props: EditorProps) {
       {gast && (
         <div role="status" className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-accent px-4 py-2 text-sm text-foreground">
           <p className="min-w-0 flex-1">
-            Dit is een voorbeeld. Maak een gratis account om hem op je website te zetten. {gast.verlooptOpTekst}
+            Je voorbeeld staat alleen in deze browser en verdwijnt als je je browsergegevens wist. Maak een gratis account om hem te bewaren.
           </p>
           <Button type="button" className="h-11 shrink-0" onClick={() => setPaneel("account")}>
             Account maken
           </Button>
         </div>
+      )}
+      {gast?.opslagMelding && (
+        <p role="status" className="shrink-0 bg-example/15 px-4 py-2 text-sm text-foreground">
+          {gast.opslagMelding}
+        </p>
       )}
       {gast?.logoMislukt && (
         <p className="shrink-0 bg-example/15 px-4 py-2 text-sm text-foreground">

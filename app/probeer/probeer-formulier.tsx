@@ -1,69 +1,163 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Check, Ruler } from "lucide-react";
-import { TurnstileVeld } from "@/app/components/auth/turnstile-veld";
 import { Button } from "@/app/components/ui/button";
 import { Input, Label } from "@/app/components/ui/input";
 import { UnitInput } from "@/app/components/ui/unit-input";
 import { cn } from "@/app/lib/cn";
 import { PRODUCT_ICONS } from "@/app/lib/icons";
 import { HOVENIER_PRESETS } from "@/app/lib/presets";
-import { meldGastGebeurtenisAction, startGastAction, type GastStartState } from "@/app/lib/actions/gast";
+import { draftOpslag } from "@/app/lib/draft-opslag";
+import { maakDraft } from "@/app/lib/draft-editor";
+import { verkleinLogo } from "@/app/lib/logo-verklein";
+import { normaliseerSite } from "@/app/lib/site";
+import { parseGetal } from "@/app/lib/sjablonen";
 
 const STANDAARD_GEKOZEN = ["bestrating", "schutting"];
 
-export function ProbeerFormulier({
-  siteStart,
-  metSiteParam,
-  utm,
-  verlopen,
-}: {
-  siteStart: string;
-  metSiteParam: boolean;
-  utm: { utm_source: string; utm_medium: string; utm_campaign: string };
-  verlopen: boolean;
-}) {
-  const [state, formAction, pending] = useActionState<GastStartState, FormData>(startGastAction, null);
+type Huisstijl = {
+  kleur?: string;
+  bedrijfsnaam?: string;
+  lettertype?: "MODERN" | "KLASSIEK" | "VRIENDELIJK" | "STOER";
+  titel?: string;
+  welkomst?: string;
+  logoDataUrl?: string;
+  logoMislukt: boolean;
+};
+
+// Haalt logo en kleuren op via het publieke endpoint. Mislukt het, dan stil
+// terugvallen op neutrale kleuren: de hovenier kan alles zelf aanpassen.
+async function haalHuisstijl(site: string): Promise<Huisstijl> {
+  const mislukt: Huisstijl = { logoMislukt: true };
+  try {
+    const stop = new AbortController();
+    const timer = window.setTimeout(() => stop.abort(), 20_000);
+    const antwoord = await fetch("/api/branding/voorbeeld", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: site }),
+      signal: stop.signal,
+      credentials: "omit",
+    }).finally(() => window.clearTimeout(timer));
+    const data = (await antwoord.json()) as {
+      success?: boolean;
+      primaryColor?: string;
+      lettertype?: Huisstijl["lettertype"];
+      logoDataUrl?: string | null;
+      companyName?: string | null;
+      title?: string;
+      subtitle?: string;
+    };
+    if (!data.success) return mislukt;
+    let logoDataUrl: string | undefined;
+    if (data.logoDataUrl) {
+      const blob = await (await fetch(data.logoDataUrl)).blob();
+      const klein = await verkleinLogo(blob);
+      if (klein.ok) logoDataUrl = klein.dataUrl;
+    }
+    return {
+      kleur: data.primaryColor && /^#[0-9a-fA-F]{6}$/.test(data.primaryColor) ? data.primaryColor : undefined,
+      bedrijfsnaam: data.companyName ?? undefined,
+      lettertype: data.lettertype,
+      titel: data.title && data.title.length <= 120 ? data.title : undefined,
+      welkomst: data.subtitle && data.subtitle.length <= 500 ? data.subtitle : undefined,
+      logoDataUrl,
+      logoMislukt: !logoDataUrl,
+    };
+  } catch {
+    return mislukt;
+  }
+}
+
+const abonneer = (cb: () => void) => {
+  window.addEventListener("storage", cb);
+  return () => window.removeEventListener("storage", cb);
+};
+
+export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
+  const router = useRouter();
+  const heeftVoorbeeld = useSyncExternalStore(abonneer, () => draftOpslag().lees().draft !== null, () => false);
+  const [opnieuw, setOpnieuw] = useState(false);
   const [site, setSite] = useState(siteStart);
   const [gekozen, setGekozen] = useState<string[]>(STANDAARD_GEKOZEN);
-  const [captchaKlaar, setCaptchaKlaar] = useState(false);
-  const [stap, setStap] = useState(0);
+  const [tarief, setTarief] = useState("180");
+  const [fout, setFout] = useState<string | null>(null);
+  const [bezig, setBezig] = useState(false);
+  const [ophalen, setOphalen] = useState<string | null>(null);
+  const cache = useRef<{ site: string; belofte: Promise<Huisstijl> } | null>(null);
 
-  useEffect(() => {
-    void meldGastGebeurtenisAction("probeer_bekeken", { ...utm, metSiteParam });
-  }, [utm, metSiteParam]);
+  const ophalenVoor = (naam: string) => {
+    if (cache.current?.site === naam) return cache.current.belofte;
+    setOphalen(naam);
+    const belofte = haalHuisstijl(naam).finally(() => setOphalen((n) => (n === naam ? null : n)));
+    cache.current = { site: naam, belofte };
+    return belofte;
+  };
 
-  // Laadstatus tijdens het aanmaken.
-  const stappen = [
-    site.trim() ? `Logo en kleuren ophalen van ${site.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "")}…` : null,
-    "Onderdelen klaarzetten…",
-    "Je rekentool opbouwen…",
-  ].filter((s): s is string => s !== null);
+  // /probeer?site=voorbeeld.nl: meteen beginnen met het ophalen van logo en kleuren.
   useEffect(() => {
-    if (!pending) return;
-    const t = window.setInterval(() => setStap((s) => Math.min(s + 1, stappen.length - 1)), 3000);
-    return () => {
-      window.clearInterval(t);
-      setStap(0);
-    };
-  }, [pending, stappen.length]);
+    if (siteStart) void ophalenVoor(siteStart);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (heeftVoorbeeld && !opnieuw) {
+    return (
+      <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+        <h2 className="text-lg font-semibold text-foreground">Je hebt al een voorbeeld gemaakt</h2>
+        <p className="text-sm text-muted-foreground">Ga verder waar je gebleven was, of begin helemaal opnieuw.</p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button type="button" size="lg" className="w-full sm:w-auto" onClick={() => router.push("/probeer/editor")}>
+            Verder met je voorbeeld
+          </Button>
+          <Button
+            type="button"
+            size="lg"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => {
+              draftOpslag().wis();
+              setOpnieuw(true);
+            }}
+          >
+            Opnieuw beginnen
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const wissel = (id: string) => setGekozen((g) => (g.includes(id) ? g.filter((x) => x !== id) : [...g, id]));
 
+  async function maak(e: React.FormEvent) {
+    e.preventDefault();
+    setFout(null);
+    const bedrag = parseGetal(tarief, NaN);
+    if (Number.isNaN(bedrag) || bedrag < 0 || bedrag > 10_000) return setFout("Vul een bedrag in voor je tarief per dagdeel.");
+    if (gekozen.length === 0) return setFout("Kies minstens één werkzaamheid.");
+    setBezig(true);
+    const naam = normaliseerSite(site);
+    const stijl: Huisstijl = naam ? await ophalenVoor(naam) : { logoMislukt: false };
+    const draft = maakDraft({
+      presetIds: gekozen,
+      tarief: bedrag,
+      bedrijfsnaam: stijl.bedrijfsnaam,
+      logoDataUrl: stijl.logoDataUrl,
+      kleur: stijl.kleur,
+      titel: stijl.titel,
+      welkomst: stijl.welkomst,
+      lettertype: stijl.lettertype,
+    });
+    draftOpslag().schrijf(draft);
+    router.push(stijl.logoMislukt && naam ? "/probeer/editor?logo=mislukt" : "/probeer/editor");
+  }
+
+  const naamOphalen = ophalen;
+
   return (
-    <form action={formAction} className="flex flex-col gap-8" noValidate>
-      <input type="hidden" name="utm_source" value={utm.utm_source} />
-      <input type="hidden" name="utm_medium" value={utm.utm_medium} />
-      <input type="hidden" name="utm_campaign" value={utm.utm_campaign} />
-      <input type="hidden" name="metSiteParam" value={metSiteParam ? "1" : "0"} />
-
-      {verlopen && (
-        <p role="status" className="rounded-lg bg-secondary px-4 py-3 text-sm text-foreground">
-          Je vorige voorbeeld is verlopen. Maak gerust een nieuwe, dat kost twee minuten.
-        </p>
-      )}
-
+    <form onSubmit={maak} className="flex flex-col gap-8" noValidate>
       <section aria-labelledby="stap-site" className="flex flex-col gap-2">
         <h2 id="stap-site" className="text-lg font-semibold text-foreground">
           1. Wat is je website?
@@ -85,6 +179,9 @@ export function ProbeerFormulier({
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">Dan halen we je logo en kleuren daar vandaan. Lukt dat niet, dan voeg je ze zelf toe.</p>
+        <p role="status" aria-live="polite" className="min-h-5 text-sm text-muted-foreground">
+          {naamOphalen ? `Logo en kleuren ophalen van ${naamOphalen}…` : ""}
+        </p>
       </section>
 
       <fieldset className="flex flex-col gap-3">
@@ -118,23 +215,24 @@ export function ProbeerFormulier({
           3. Wat reken je per dagdeel?
         </h2>
         <Label htmlFor="tarief">Tarief per dagdeel (ochtend of middag)</Label>
-        <UnitInput id="tarief" name="tarief" prefix="€" defaultValue="180" placeholder="Bijv. 180…" className="sm:max-w-[14rem]" />
+        <UnitInput id="tarief" name="tarief" prefix="€" value={tarief} onChange={(e) => setTarief(e.target.value)} placeholder="Bijv. 180…" className="sm:max-w-[14rem]" />
         <p className="text-sm text-muted-foreground">Voorrijkosten en transport zetten we alvast voor je klaar. Die pas je later aan.</p>
       </section>
 
-      <TurnstileVeld onKlaar={setCaptchaKlaar} />
-
       <div className="flex flex-col gap-3">
-        {state?.error && (
+        {fout && (
           <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
-            {state.error}
+            {fout}
           </p>
         )}
-        <Button type="submit" size="lg" disabled={pending || gekozen.length === 0 || !captchaKlaar} className="w-full sm:w-auto">
-          {pending ? "Bezig…" : "Maak mijn rekentool"}
+        <Button type="submit" size="lg" disabled={bezig || gekozen.length === 0} className="w-full sm:w-auto">
+          {bezig ? "Je rekentool wordt gemaakt…" : "Maak mijn rekentool"}
         </Button>
-        <p role="status" aria-live="polite" className="min-h-6 text-sm text-muted-foreground">
-          {pending ? stappen[Math.min(stap, stappen.length - 1)] : ""}
+        <p className="text-sm text-muted-foreground">
+          Geen account nodig. Heb je al een account?{" "}
+          <Link href="/login" className="font-semibold text-primary underline">
+            Inloggen
+          </Link>
         </p>
       </div>
     </form>

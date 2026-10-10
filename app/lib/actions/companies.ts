@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireUser, requireActiveCompany, ACTIEF_BEDRIJF_COOKIE, requireVolledigAccount } from "@/app/lib/dal";
+import { requireUser, requireActiveCompany, ACTIEF_BEDRIJF_COOKIE } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { getMollieClient } from "@/app/lib/mollie";
 import { generateUniqueSlug, generateUniqueToolSlug } from "@/app/lib/slug";
@@ -36,7 +36,6 @@ export async function createCompanyAction(
   _prevState: CompanyFormState,
   formData: FormData
 ): Promise<CompanyFormState> {
-  await requireVolledigAccount();
   const user = await requireUser();
 
   const parsed = companySchema.safeParse({ naam: formData.get("naam") });
@@ -98,7 +97,6 @@ const SWITCH_REDIRECT_TARGETS = {
 // toch negeren, maar dit voorkomt een overbodige round-trip met een cookie
 // die nooit ergens toe leidt).
 export async function switchActiveCompanyAction(formData: FormData) {
-  await requireVolledigAccount();
   const { user } = await requireActiveCompany();
   const companyId = formData.get("companyId");
   if (typeof companyId !== "string") return;
@@ -137,7 +135,6 @@ export async function updateCompanyDetailsAction(
   _prevState: CompanyFormState,
   formData: FormData
 ): Promise<CompanyFormState> {
-  await requireVolledigAccount();
   const user = await requireMembership(companyId);
   if (!user) return { error: "Bedrijf niet gevonden" };
 
@@ -181,7 +178,6 @@ export async function cancelSubscriptionAction(
   _prevState: CompanyFormState,
   formData: FormData
 ): Promise<CompanyFormState> {
-  await requireVolledigAccount();
   const user = await requireMembership(companyId);
   if (!user) return { error: "Bedrijf niet gevonden" };
 
@@ -235,7 +231,6 @@ export async function pauseSubscriptionAction(
   _prevState: CompanyFormState,
   formData: FormData
 ): Promise<CompanyFormState> {
-  await requireVolledigAccount();
   const user = await requireMembership(companyId);
   if (!user) return { error: "Bedrijf niet gevonden" };
 
@@ -283,7 +278,6 @@ export async function deleteCompanyAction(
   _prevState: CompanyFormState,
   formData: FormData
 ): Promise<CompanyFormState> {
-  await requireVolledigAccount();
   const user = await requireMembership(companyId);
   if (!user) return { error: "Bedrijf niet gevonden" };
 

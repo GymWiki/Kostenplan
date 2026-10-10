@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/app/components/marketing/site-header";
 import { SiteFooter } from "@/app/components/marketing/site-footer";
-import { normaliseerSite } from "@/app/lib/gast";
+import { normaliseerSite } from "@/app/lib/site";
 import { ProbeerFormulier } from "./probeer-formulier";
 
 const TITLE = "Gratis rekentool voor hoveniers maken, zonder account";
@@ -18,7 +18,8 @@ export const metadata: Metadata = {
 
 const eerste = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
 
-// Publiek, geen sessie: de gast-sessie start pas bij "Maak mijn rekentool".
+// Publiek, zonder account en zonder database: het voorbeeld dat hier gemaakt wordt
+// leeft alleen in de browser van de bezoeker.
 // /probeer?site=voorbeeld.nl vult de website alvast in (voor outreach-links);
 // de site wordt gevalideerd en genormaliseerd voordat hij in het veld komt.
 export default async function ProbeerPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -31,12 +32,7 @@ export default async function ProbeerPage({ searchParams }: { searchParams: Prom
         <h1 className="text-3xl font-bold leading-tight text-foreground sm:text-4xl">Maak gratis je rekentool</h1>
         <p className="mt-3 text-lg text-muted-foreground">Je ziet hem meteen zoals je klant hem ziet. Geen account nodig.</p>
         <div className="mt-8">
-          <ProbeerFormulier
-            siteStart={site ? site.replace(/^https:\/\//, "") : ""}
-            metSiteParam={Boolean(site)}
-            utm={{ utm_source: eerste(p.utm_source), utm_medium: eerste(p.utm_medium), utm_campaign: eerste(p.utm_campaign) }}
-            verlopen={eerste(p.verlopen) === "1"}
-          />
+          <ProbeerFormulier siteStart={site} />
         </div>
       </main>
       <SiteFooter />

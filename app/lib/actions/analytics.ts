@@ -28,7 +28,7 @@ export async function recordPublicAnalyticsEventAction(
   type: Extract<AnalyticsEventType, "VISIT" | "START" | "COMPLETE">
 ) {
   const tool = await prisma.tool.findFirst({
-    where: { id: toolId, status: "GEPUBLICEERD", deletedAt: null, company: { gastVerlooptOp: null } },
+    where: { id: toolId, status: "GEPUBLICEERD", deletedAt: null },
     select: { companyId: true },
   });
   if (!tool) return;

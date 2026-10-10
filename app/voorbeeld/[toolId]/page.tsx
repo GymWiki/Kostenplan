@@ -48,7 +48,7 @@ export default async function VoorbeeldPage({ params }: { params: Promise<{ tool
       toolId={toolId}
       bedrijfsnaam={company.naam}
       email={user.email}
-      subscriptionTier={user.isGast ? "PLUS" : effectiveTier(company)}
+      subscriptionTier={effectiveTier(company)}
       initieel={{
         products,
         branding,

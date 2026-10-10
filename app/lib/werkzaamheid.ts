@@ -135,7 +135,10 @@ export type ProductMetRelaties = Product & {
 };
 
 let teller = 0;
-export const nieuweSleutel = () => `nieuw-${++teller}`;
+// Uniek binnen en tussen sessies: een concept uit de browser kan sleutels van
+// een eerdere sessie bevatten, dus alleen een teller zou botsen.
+const sessieTag = Math.random().toString(36).slice(2, 6);
+export const nieuweSleutel = () => `nieuw-${sessieTag}-${++teller}`;
 
 export function legeRij(): MateriaalRij {
   return {

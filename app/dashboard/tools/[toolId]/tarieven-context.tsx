@@ -8,7 +8,7 @@ import { cn } from "@/app/lib/cn";
 import { Field } from "@/app/components/ui/field";
 import { Sheet } from "@/app/components/ui/sheet";
 import { UnitInput } from "@/app/components/ui/unit-input";
-import { saveTarievenAction } from "@/app/lib/actions/werkzaamheden";
+import { useEditorRepository } from "./editor/repository";
 import { arbeidTariefVoorStapEenheid } from "@/app/lib/calculate";
 import { STAP_WOORD } from "@/app/lib/werkzaamheid";
 import type { CostSettings } from "@/app/generated/prisma/client";
@@ -104,6 +104,7 @@ function TarievenSheet({
   tarief: number;
   onOpgeslagen: (t: Partial<CostSettings>) => void;
 }) {
+  const repo = useEditorRepository();
   const stap = STAP_WOORD[costSettings.arbeidStapEenheid];
   const [tariefTekst, setTariefTekst] = useState(String(tarief));
   const [voorrij, setVoorrij] = useState(String(costSettings.voorrijTarief));
@@ -115,7 +116,7 @@ function TarievenSheet({
     e.preventDefault();
     setBezig(true);
     setFout(null);
-    const r = await saveTarievenAction(toolId, { tarief: tariefTekst, voorrij, transport });
+    const r = await repo.slaTarievenOp(toolId, { tarief: tariefTekst, voorrij, transport });
     setBezig(false);
     if (r.ok) {
       const { arbeidTariefUur, arbeidTariefDagdeel, arbeidTariefDag, voorrijTarief, transportTarief } = r.tarieven;

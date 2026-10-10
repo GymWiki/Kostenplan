@@ -19,6 +19,8 @@ export type NaarVoorbeeld = {
   toelichting: string | null;
   ctaTekst: string | null;
   vraagTelefoon: boolean;
+  // Alleen de gast-flow: de bedrijfsnaam verandert daar tijdens het bewerken.
+  bedrijfsnaam?: string;
 };
 export type VanVoorbeeld =
   | { type: "kp:ready" }
@@ -42,7 +44,7 @@ function stuur(bericht: VanVoorbeeld) {
 
 export function VoorbeeldClient({
   toolId,
-  bedrijfsnaam,
+  bedrijfsnaam: startNaam,
   email,
   subscriptionTier,
   initieel,
@@ -56,6 +58,7 @@ export function VoorbeeldClient({
   engine: { config: AnyCalculatorConfigData; materiaalOpties: React.ComponentProps<typeof EngineCalculator>["materiaalOpties"] } | null;
 }) {
   const [data, setData] = useState<Initieel>(initieel);
+  const [bedrijfsnaam, setBedrijfsnaam] = useState(startNaam);
   const [modus, setModus] = useState<"bewerken" | "uitproberen">("bewerken");
   const [geselecteerd, setGeselecteerd] = useState<string | null>(null);
   const [waarschuwingen, setWaarschuwingen] = useState<Record<string, Waarschuwing>>({});
@@ -73,6 +76,7 @@ export function VoorbeeldClient({
         ctaTekst: m.ctaTekst,
         vraagTelefoon: m.vraagTelefoon,
       });
+      if (m.bedrijfsnaam) setBedrijfsnaam(m.bedrijfsnaam);
       setModus(m.modus);
       setGeselecteerd(m.geselecteerd);
       setWaarschuwingen(m.waarschuwingen);

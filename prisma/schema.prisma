@@ -340,6 +340,9 @@ model Tool {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
+  // Sleutel van het browser-concept waaruit deze rekentool is aangemaakt (idempotent importeren).
+  importSleutel String?
+
   naam   String
   // Uniek binnen het bedrijf (niet globaal) — de publieke URL is
   // /t/[bedrijfsslug]/[toolslug], dus alleen de combinatie hoeft uniek te
@@ -389,6 +392,8 @@ model Tool {
   updatedAt DateTime @updatedAt
 
   @@unique([companyId, slug])
+  // Eén keer importeren van een concept uit de browser (zie importDraftAction).
+  @@unique([companyId, importSleutel])
   @@index([companyId])
 }
 

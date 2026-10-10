@@ -3,11 +3,10 @@
 import { useActionState, useState } from "react";
 import { registerAction, type AuthFormState } from "@/app/lib/actions/auth";
 import { GoogleSignInButton } from "@/app/components/auth/google-signin-button";
-import { TurnstileVeld } from "@/app/components/auth/turnstile-veld";
 import { Button } from "@/app/components/ui/button";
 import { Input, Label, PasswordInput } from "@/app/components/ui/input";
 
-export function RegisterForm() {
+export function RegisterForm({ volgende }: { volgende?: string }) {
   const [state, formAction, pending] = useActionState<AuthFormState, FormData>(
     registerAction,
     null
@@ -20,13 +19,14 @@ export function RegisterForm() {
 
   return (
     <div className="flex flex-col gap-4">
-      <GoogleSignInButton />
+      <GoogleSignInButton volgende={volgende} />
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <div className="h-px flex-1 bg-border" />
         of
         <div className="h-px flex-1 bg-border" />
       </div>
       <form action={formAction} className="flex flex-col gap-4">
+        {volgende && <input type="hidden" name="next" value={volgende} />}
         {state?.error && (
           <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {state.error}
@@ -66,7 +66,6 @@ export function RegisterForm() {
             </p>
           )}
         </div>
-        <TurnstileVeld />
         <Button type="submit" disabled={pending} className="mt-2 w-full">
           {pending ? "Account aanmaken…" : "Gratis account aanmaken"}
         </Button>

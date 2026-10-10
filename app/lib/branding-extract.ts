@@ -44,6 +44,8 @@ export type ExtractResult =
       fontFamily: string | null;
       lettertype: Lettertype;
       logoUrl: string | null;
+      // Alleen bij een extractie zonder bedrijf: het logo zelf, voor de browser.
+      logoDataUrl?: string | null;
       companyName: string | null;
       title: string;
       titleAlternative?: string;
@@ -85,7 +87,9 @@ async function assertPublicHost(hostname: string): Promise<void> {
   }
 }
 
-const FETCH_TIMEOUT_MS = 8000;
+const FETCH_TIMEOUT_MS = 5000;
+// Totale tijd voor één extractie (pagina, stylesheets en logo's samen).
+const TOTAAL_TIJD_MS = 12000;
 const MAX_REDIRECTS = 3;
 const BROWSER_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
@@ -98,7 +102,8 @@ const BROWSER_USER_AGENT =
 async function safeFetch(
   startUrl: string,
   maxBytes: number,
-  accept: string
+  accept: string,
+  opties: { eind?: number; typeToegestaan?: (contentType: string) => boolean } = {}
 ): Promise<{ finalUrl: string; buffer: Buffer; contentType: string | null }> {
   let currentUrl = startUrl;
 
@@ -109,12 +114,17 @@ async function safeFetch(
     }
     await assertPublicHost(parsed.hostname);
 
+    const over = opties.eind === undefined ? FETCH_TIMEOUT_MS : Math.min(FETCH_TIMEOUT_MS, opties.eind - Date.now());
+    if (over <= 0) throw new Error("Time-out bij het ophalen van de website");
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const timeout = setTimeout(() => controller.abort(), over);
     let response: Response;
     try {
       response = await fetch(currentUrl, {
         redirect: "manual",
+        // Geen cookies of andere headers van de bezoeker doorgeven: alleen
+        // een vaste User-Agent en Accept.
+        credentials: "omit",
         signal: controller.signal,
         headers: { "User-Agent": BROWSER_USER_AGENT, Accept: accept },
       });
@@ -136,6 +146,11 @@ async function safeFetch(
 
     if (!response.ok) {
       throw new Error(`Website gaf status ${response.status} terug`);
+    }
+
+    if (opties.typeToegestaan && !opties.typeToegestaan(normalizeContentType(response.headers.get("content-type")))) {
+      await response.body?.cancel();
+      throw new Error("Onverwacht bestandstype");
     }
 
     const reader = response.body?.getReader();
@@ -308,27 +323,34 @@ async function uploadLogoToStorage(
   return result.url ?? null;
 }
 
-type LogoResult = { url: string; buffer: Buffer } | null;
+type LogoResult = { url: string | null; dataUrl: string | null; buffer: Buffer } | null;
+const MAX_LOGO_DATAURL_BYTES = 700 * 1024;
 
 // Probeert de kandidaten op volgorde; stopt bij de eerste die door de
 // validatie komt én succesvol geüpload wordt. Hotlinkt bewust nooit naar de
 // site van de vakman zelf (kan verdwijnen/blokkeren) — vandaar de upload
 // naar onze eigen Supabase Storage, dezelfde bucket/structuur als de
 // handmatige logo-upload (zie app/lib/storage.ts).
-async function resolveLogo(candidates: string[], companyId: string): Promise<LogoResult> {
+async function resolveLogo(candidates: string[], companyId: string | null, eind?: number): Promise<LogoResult> {
   for (const candidateUrl of candidates) {
     try {
-      const image = await safeFetch(candidateUrl, MAX_LOGO_BYTES, "image/*");
+      const image = await safeFetch(candidateUrl, MAX_LOGO_BYTES, "image/*", { eind, typeToegestaan: (t) => t.startsWith("image/") });
       const contentType = normalizeContentType(image.contentType);
       if (!isAcceptedLogoContentType(contentType)) continue;
 
       const validation = validateLogoImage(image.buffer, contentType);
       if (!validation.ok) continue;
 
+      if (companyId === null) {
+        // Zonder bedrijf (publiek voorbeeld): niets uploaden, het logo gaat als
+        // data-URL terug naar de browser, die het zelf verkleint en bewaart.
+        if (image.buffer.length > MAX_LOGO_DATAURL_BYTES) continue;
+        return { url: null, dataUrl: `data:${contentType};base64,${image.buffer.toString("base64")}`, buffer: image.buffer };
+      }
       const uploadedUrl = await uploadLogoToStorage(companyId, image.buffer, contentType);
       if (!uploadedUrl) continue;
 
-      return { url: uploadedUrl, buffer: image.buffer };
+      return { url: uploadedUrl, dataUrl: null, buffer: image.buffer };
     } catch {
       continue; // deze kandidaat mislukt -> volgende proberen, geen harde fout
     }
@@ -402,7 +424,8 @@ function finalizeColors(
   return { primaryColor, secondaryColor, textOnPrimary };
 }
 
-export async function extractBranding(inputUrl: string, companyId: string): Promise<ExtractResult> {
+export async function extractBranding(inputUrl: string, companyId: string | null): Promise<ExtractResult> {
+  const eind = Date.now() + TOTAAL_TIJD_MS;
   let startUrl: string;
   try {
     startUrl = normalizeUrl(inputUrl);
@@ -413,7 +436,10 @@ export async function extractBranding(inputUrl: string, companyId: string): Prom
   let html: string;
   let finalUrl: string;
   try {
-    const page = await safeFetch(startUrl, MAX_HTML_BYTES, "text/html,application/xhtml+xml");
+    const page = await safeFetch(startUrl, MAX_HTML_BYTES, "text/html,application/xhtml+xml", {
+      eind,
+      typeToegestaan: (t) => t === "text/html" || t === "application/xhtml+xml",
+    });
     html = page.buffer.toString("utf8");
     finalUrl = page.finalUrl;
   } catch (error) {
@@ -451,7 +477,7 @@ export async function extractBranding(inputUrl: string, companyId: string): Prom
 
   // --- Logo: kandidaten proberen, eerste geldige uploaden naar onze eigen Storage ---
   const logoCandidates = findLogoCandidates($, finalUrl, jsonLdBlocks);
-  const logo = await resolveLogo(logoCandidates, companyId);
+  const logo = await resolveLogo(logoCandidates, companyId, eind);
   const logoPalette = logo ? await paletteFromLogoBuffer(logo.buffer) : [];
 
   // --- CSS-analyse (gelinkte stylesheets, zelfde host of bekende
@@ -477,7 +503,7 @@ export async function extractBranding(inputUrl: string, companyId: string): Prom
   let cssText = $("style").text();
   for (const url of stylesheetUrls) {
     try {
-      const sheet = await safeFetch(url, MAX_HTML_BYTES, "text/css,*/*");
+      const sheet = await safeFetch(url, MAX_HTML_BYTES, "text/css,*/*", { eind, typeToegestaan: (t) => t === "text/css" });
       cssText += `\n${sheet.buffer.toString("utf8")}`;
     } catch {
       // Eén onbereikbare stylesheet mag de rest van de analyse niet blokkeren.
@@ -533,6 +559,7 @@ export async function extractBranding(inputUrl: string, companyId: string): Prom
     fontFamily,
     lettertype: fontFamily ? mapFontFamilyToLettertype(fontFamily) : "MODERN",
     logoUrl: logo?.url ?? null,
+    logoDataUrl: logo?.dataUrl ?? null,
     companyName,
     title,
     ...(titleAlternative ? { titleAlternative } : {}),

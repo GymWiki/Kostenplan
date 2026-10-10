@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireActiveCompany, requireVolledigAccount } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { offerteUpdateSchema, offerteReactieSchema, externAfgehandeldNotitieSchema } from "@/app/lib/validation";
 import { genereerEnUploadOffertePdf } from "@/app/lib/offerte-pdf";
@@ -27,7 +27,6 @@ async function requireOfferteOwnership(offerteId: string, companyId: string) {
 // hergebruikt (dezelfde knop dient dus ook als "bekijk offerte"), in plaats
 // van dat elke klik een nieuwe rij zou maken.
 export async function omzettenNaarOfferteAction(leadId: string) {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
 
   const lead = await prisma.lead.findFirst({
@@ -127,7 +126,6 @@ export async function saveOfferteAction(
   _prevState: OfferteFormState,
   formData: FormData
 ): Promise<OfferteFormState> {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const offerte = await requireOfferteOwnership(offerteId, company.id);
   if (!offerte) return { error: "Offerte niet gevonden" };
@@ -157,7 +155,6 @@ export async function genereerDeelLinkAction(
   _prevState: OfferteFormState,
   formData: FormData
 ): Promise<OfferteFormState> {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const offerte = await requireOfferteOwnership(offerteId, company.id);
   if (!offerte) return { error: "Offerte niet gevonden" };
@@ -231,7 +228,6 @@ export async function genereerDeelLinkAction(
 // mag dit) — de oude link stopt meteen met werken, de offerte-inhoud zelf
 // blijft ongewijzigd.
 export async function regenereerDeelLinkAction(offerteId: string) {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const offerte = await requireOfferteOwnership(offerteId, company.id);
   if (!offerte) return;
@@ -256,7 +252,6 @@ export async function regenereerDeelLinkAction(offerteId: string) {
 // client-side bewerkstate kan bijwerken — revalidatePath alleen is hier niet
 // genoeg, regels leven in useState, niet rechtstreeks in props.
 export async function herberekenOfferteAction(offerteId: string): Promise<OfferteRegel[] | null> {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const offerte = await requireOfferteOwnership(offerteId, company.id);
   if (!offerte || offerte.status !== "CONCEPT") return null;
@@ -274,7 +269,6 @@ export async function herberekenOfferteAction(offerteId: string): Promise<Offert
 // Zet reactieGezien terug op true zodra de vakman de offerte weer opent —
 // zie de in-app melding op de aanvragenpagina.
 export async function markOffertReactieGezienAction(offerteId: string) {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const offerte = await requireOfferteOwnership(offerteId, company.id);
   if (!offerte || offerte.reactieGezien) return;
@@ -293,7 +287,6 @@ export async function markOffertReactieGezienAction(offerteId: string) {
 // "Genereer offerte om te delen" klikken zet de status terug naar VERSTUURD
 // op dezelfde link.
 export async function intrekOfferteAction(offerteId: string) {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const offerte = await requireOfferteOwnership(offerteId, company.id);
   if (!offerte || offerte.status !== "VERSTUURD") return;
@@ -312,7 +305,6 @@ export async function intrekOfferteAction(offerteId: string) {
 // gehad (geen deelToken) en is dus nooit door de klant gezien, in
 // tegenstelling tot een verzonden offerte (die je intrekt, niet verwijdert).
 export async function deleteOfferteAction(formData: FormData) {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const offerteId = formData.get("offerteId");
   if (typeof offerteId !== "string") return;
@@ -334,7 +326,6 @@ export async function deleteOfferteAction(formData: FormData) {
 // app/offerte/[token]/page.tsx). Omgekeerd (alsnog "in Kostenplan"): zie de
 // reset in omzettenNaarOfferteAction hierboven.
 export async function markExternAfgehandeldAction(leadId: string, notitie: string) {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const parsed = externAfgehandeldNotitieSchema.safeParse({ notitie });
 

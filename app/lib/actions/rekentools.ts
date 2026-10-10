@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { canCreateTool, requireActiveCompany, requireActiveTool, requireVolledigAccount } from "@/app/lib/dal";
+import { canCreateTool, requireActiveCompany, requireActiveTool } from "@/app/lib/dal";
 import { generateUniqueToolSlug } from "@/app/lib/slug";
 import { prisma } from "@/app/lib/prisma";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
@@ -32,7 +32,6 @@ export async function hernoemRekentoolAction(toolId: string, naam: string): Prom
 }
 
 export async function verwijderRekentoolAction(toolId: string): Promise<Resultaat> {
-  await requireVolledigAccount();
   const { company, tool } = await requireActiveTool(toolId);
   await prisma.tool.update({ where: { id: toolId }, data: { deletedAt: new Date() } });
   ververs(toolId, company, tool.slug);
@@ -42,7 +41,6 @@ export async function verwijderRekentoolAction(toolId: string): Promise<Resultaa
 // "Ongedaan maken" na verwijderen. Alleen voor een tool van dit bedrijf die
 // zacht-verwijderd is (requireActiveTool weigert die, dus zelf controleren).
 export async function herstelRekentoolAction(toolId: string): Promise<Resultaat> {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const tool = await prisma.tool.findFirst({ where: { id: toolId, companyId: company.id, deletedAt: { not: null } }, select: { slug: true } });
   if (!tool) return { ok: false, error: "Deze rekentool kan niet meer worden teruggezet." };
@@ -114,7 +112,6 @@ export async function kopieerWerkzaamheidAction(
   bronProductId: string,
   doelToolId: string
 ): Promise<{ ok: true; productId: string } | { ok: false; error: string }> {
-  await requireVolledigAccount();
   const { company, tool } = await requireActiveTool(doelToolId);
   const bron = await prisma.product.findFirst({
     where: { id: bronProductId, tool: { companyId: company.id, deletedAt: null } },
@@ -189,7 +186,6 @@ export async function kopieerWerkzaamheidAction(
 // "+ Nieuwe rekentool": alleen een naam, daarna direct de editor in (met de
 // presetkiezer open). Volgt de bedrijfstarieven en begint als concept.
 export async function maakRekentoolAction(naam: string): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const schoon = naam.trim();
   if (schoon.length < 2) return { ok: false, error: "Geef je rekentool een naam van minstens 2 tekens." };

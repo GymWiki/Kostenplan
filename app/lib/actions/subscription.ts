@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { SequenceType } from "@mollie/api-client";
-import { requireActiveCompany, requireVolledigAccount } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { getMollieClient, getMollieWebhookUrl } from "@/app/lib/mollie";
 import { getBaseUrl } from "@/app/lib/url";
@@ -15,7 +15,6 @@ export async function startCheckoutAction(
   _prevState: CheckoutFormState,
   formData: FormData
 ): Promise<CheckoutFormState> {
-  await requireVolledigAccount();
   const { user, company } = await requireActiveCompany();
 
   const parsed = checkoutSchema.safeParse({
