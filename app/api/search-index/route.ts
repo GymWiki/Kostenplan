@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { DOELGROEPEN } from "@/app/lib/doelgroepen";
+import { ZICHTBARE_DOELGROEPEN } from "@/app/lib/doelgroepen";
 import { alleContent } from "@/app/lib/content";
 
 export const revalidate = 3600;
@@ -13,12 +13,12 @@ export type ZoekResultaat = { id: string; title: string; description: string; hr
 // .mdx-bestand of een nieuwe doelgroep wordt toegevoegd.
 export async function GET() {
   const items: ZoekResultaat[] = [
-    ...DOELGROEPEN.map((d) => ({
+    ...ZICHTBARE_DOELGROEPEN.map((d) => ({
       id: `voor-${d.slug}`,
       title: d.title,
       description: d.description,
       href: `/voor/${d.slug}`,
-      type: "Voor vakmensen",
+      type: "Voor hoveniers",
     })),
     ...alleContent("kennisbank").map((item) => ({
       id: `kennisbank-${item.slug}`,

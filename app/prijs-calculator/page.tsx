@@ -39,12 +39,12 @@ const FAQS = [
   {
     vraag: "Kan ik klanten direct een prijs laten zien, zonder dat ze eerst contact opnemen?",
     antwoord:
-      "Ja. Zodra een bezoeker de vragen in de rekentool heeft beantwoord, verschijnt de prijsindicatie direct op het scherm, nog vóórdat er enig contact met de vakman is geweest.",
+      "Ja. Zodra een bezoeker de vragen in de rekentool heeft beantwoord, verschijnt de prijsindicatie direct op het scherm, nog vóórdat er enig contact met de hovenier is geweest.",
   },
   {
     vraag: "Kan ik een compleet project laten berekenen, met meerdere onderdelen tegelijk?",
     antwoord:
-      "Ja. Een rekentool kan uit meerdere onderdelen bestaan die samen tot één totaalprijs worden opgeteld — bijvoorbeeld bestrating, een schutting en kunstgras samen in één tuinaanleg-berekening, of een compleet keukenblok met werkblad en apparatuur in één keukenberekening.",
+      "Ja. Een rekentool kan uit meerdere onderdelen bestaan die samen tot één totaalprijs worden opgeteld — bijvoorbeeld bestrating, een schutting en kunstgras samen in één tuinaanleg-berekening.",
   },
   {
     vraag: "Kan ik mijn eigen huisstijl gebruiken in de rekentool?",
@@ -59,7 +59,7 @@ const FAQS = [
   {
     vraag: "Is een prijsindicatie hetzelfde als een bindende offerte?",
     antwoord:
-      "Nee. Een prijsindicatie is een schatting op basis van de door de klant ingevulde gegevens. Een bindende offerte volgt pas na beoordeling door de vakman zelf, eventueel na een opname ter plaatse — de rekentool versnelt en filtert dat traject, maar vervangt niet de uiteindelijke offerte.",
+      "Nee. Een prijsindicatie is een schatting op basis van de door de klant ingevulde gegevens. Een bindende offerte volgt pas na beoordeling door de hovenier zelf, eventueel na een opname ter plaatse — de rekentool versnelt en filtert dat traject, maar vervangt niet de uiteindelijke offerte.",
   },
 ];
 
@@ -129,7 +129,7 @@ export default function PrijsCalculatorPage() {
               </Card>
               <p className="mt-4 text-center text-sm text-muted-foreground">
                 Elke regel volgt automatisch uit de antwoorden van de klant en de tarieven die de
-                vakman vooraf heeft ingesteld — niemand hoeft dit met de hand na te rekenen.
+                hovenier vooraf heeft ingesteld — niemand hoeft dit met de hand na te rekenen.
               </p>
             </Reveal>
           </div>
@@ -144,7 +144,7 @@ export default function PrijsCalculatorPage() {
             <ul className="mt-6 flex flex-col gap-4">
               {[
                 "Je basistarieven: uurtarief, voorrijkosten en gewenste materiaalmarge.",
-                "Een lijst van de producten of onderdelen die je aanbiedt, met hun prijs of prijs per eenheid.",
+                "Een lijst van de werkzaamheden die je aanbiedt, met hun prijs of prijs per eenheid.",
                 "De vragen die bepalen welke prijs van toepassing is, bijvoorbeeld afmetingen, materiaalkeuze of extra opties.",
               ].map((tekst) => (
                 <li key={tekst} className="flex items-start gap-3">
@@ -155,7 +155,7 @@ export default function PrijsCalculatorPage() {
             </ul>
             <p className="mt-6 text-muted-foreground">
               Met alleen deze basis staat een eerste prijs calculator al binnen enkele minuten
-              live — je kunt hem daarna altijd uitbreiden met meer producten, onderdelen of
+              live — je kunt hem daarna altijd uitbreiden met meer werkzaamheden of
               voorwaardelijke vragen.
             </p>
           </Reveal>
@@ -165,7 +165,7 @@ export default function PrijsCalculatorPage() {
           faqs={FAQS}
           id="prijs-calculator-faq"
           titel="Veelgestelde vragen over prijsberekening"
-          intro="Wat klanten precies zien, en wat jij als vakman zelf blijft bepalen."
+          intro="Wat klanten precies zien, en wat jij als hovenier zelf blijft bepalen."
         />
 
         <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
@@ -190,7 +190,7 @@ export default function PrijsCalculatorPage() {
                 Zet je eigen prijs calculator live
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                Gratis starten met tot 10 producten. Binnen 5 minuten online.
+                Gratis starten met tot 10 werkzaamheden. Binnen 5 minuten online.
               </p>
               <div className="relative mt-8 inline-flex">
                 <span

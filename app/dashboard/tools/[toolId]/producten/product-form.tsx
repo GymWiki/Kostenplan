@@ -93,7 +93,7 @@ function ProductFormSectieNav() {
 
   return (
     <nav
-      aria-label="Secties in dit product"
+      aria-label="Secties in deze werkzaamheid"
       className="sticky top-16 z-20 -mx-1 flex gap-1 overflow-x-auto border-b border-border bg-background/95 px-1 py-2 backdrop-blur"
     >
       {SECTIE_ANKERS.map((sectie) => (
@@ -310,7 +310,7 @@ export function ProductForm({
         <Input
           id="naam"
           name="naam"
-          placeholder="Bijv. Vloertegels"
+          placeholder="Bijv. Terras aanleggen"
           value={naam}
           onChange={(e) => setNaam(e.target.value)}
           required
@@ -379,7 +379,7 @@ export function ProductForm({
             />
           )}
           <p className="text-xs text-muted-foreground">
-            De hoeveelheid die de klant opgeeft, bijv. m² beplanting of uur timmerwerk.
+            De hoeveelheid die de klant opgeeft, bijv. m² bestrating of strekkende meter haag.
           </p>
         </div>
       )}
@@ -476,7 +476,7 @@ export function ProductForm({
                   onChange={(e) => setProductiviteit(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Laat leeg als dit product geen arbeidstijd kost.
+                  Laat leeg als dit werk geen arbeidstijd kost.
                 </p>
               </div>
             </div>

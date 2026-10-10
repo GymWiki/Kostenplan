@@ -577,6 +577,11 @@ export const DOELGROEPEN: Doelgroep[] = [
   },
 ];
 
+import { isZichtbareDoelgroep } from "@/app/lib/trade-config";
+
+// Alleen de doelgroepen die we nu actief aanbieden (zie trade-config.ts).
+export const ZICHTBARE_DOELGROEPEN = DOELGROEPEN.filter((d) => isZichtbareDoelgroep(d.slug));
+
 export function getDoelgroep(slug: string): Doelgroep | undefined {
   return DOELGROEPEN.find((d) => d.slug === slug);
 }

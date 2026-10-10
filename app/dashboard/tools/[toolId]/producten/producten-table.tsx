@@ -56,8 +56,8 @@ export function ProductenTable({ toolId, products, atLimit }: { toolId: string; 
           type="search"
           value={zoek}
           onChange={(e) => setZoek(e.target.value)}
-          placeholder="Zoek een product…"
-          aria-label="Zoek in producten"
+          placeholder="Zoek een werkzaamheid…"
+          aria-label="Zoek in werkzaamheden"
           className="h-10 w-full rounded-md border border-input bg-card pl-9 pr-3 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
         />
       </div>
@@ -67,7 +67,7 @@ export function ProductenTable({ toolId, products, atLimit }: { toolId: string; 
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10 bg-muted">
               <tr className="border-b border-border text-left text-muted-foreground">
-                <SorteerbareKolom label="Product" kolom="naam" sortering={sortering} onClick={wisselSortering} />
+                <SorteerbareKolom label="Werkzaamheid" kolom="naam" sortering={sortering} onClick={wisselSortering} />
                 <SorteerbareKolom label="Materiaalcategorieën" kolom="categorieen" sortering={sortering} onClick={wisselSortering} />
                 <SorteerbareKolom label="Extra opties" kolom="opties" sortering={sortering} onClick={wisselSortering} />
                 <th className="px-4 py-3 font-medium">Actief</th>
@@ -116,7 +116,7 @@ export function ProductenTable({ toolId, products, atLimit }: { toolId: string; 
                         <Copy className="h-4 w-4" />
                       </Button>
                     </form>
-                    <DeleteButton action={deleteProductAction} id={product.id} idField="productId" confirmMessage="Weet je zeker dat je dit product wilt verwijderen?" />
+                    <DeleteButton action={deleteProductAction} id={product.id} idField="productId" confirmMessage="Weet je zeker dat je deze werkzaamheid wilt verwijderen?" />
                   </div>
                 </div>
               </div>
@@ -127,7 +127,7 @@ export function ProductenTable({ toolId, products, atLimit }: { toolId: string; 
 
       {zichtbaar.length === 0 && (
         <p className="rounded-md border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
-          Geen producten gevonden voor &ldquo;{zoek}&rdquo;.
+          Geen werkzaamheden gevonden voor &ldquo;{zoek}&rdquo;.
         </p>
       )}
     </div>
@@ -172,7 +172,7 @@ function ProductRij({ toolId, product, atLimit }: { toolId: string; product: Pro
               <Copy className="h-4 w-4" />
             </Button>
           </form>
-          <DeleteButton action={deleteProductAction} id={product.id} idField="productId" confirmMessage="Weet je zeker dat je dit product wilt verwijderen?" />
+          <DeleteButton action={deleteProductAction} id={product.id} idField="productId" confirmMessage="Weet je zeker dat je deze werkzaamheid wilt verwijderen?" />
         </div>
       </td>
     </tr>

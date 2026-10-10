@@ -358,7 +358,7 @@ export function OnderdelenBouwer({
         <div className="mt-2 border-t border-border pt-4">
           <p className="text-sm font-medium text-foreground">Terug naar de oude rekentool-editor</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Schakelt de publieke rekentool terug naar de vorige, sjabloon-gedreven editor (Producten/Prijzen/enz.). Je
+            Schakelt de publieke rekentool terug naar de vorige, sjabloon-gedreven editor (Werkzaamheden/Prijzen/enz.). Je
             Onderdelen-configuratie blijft bewaard en kan je later gewoon weer publiceren.
           </p>
           <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => setUitschakelenOpen(true)}>
@@ -373,7 +373,7 @@ export function OnderdelenBouwer({
         onConfirm={handleSchakelUit}
         pending={uitschakelen}
         title="Terugschakelen naar de oude editor?"
-        description="De publieke rekentool toont hierna weer de sjabloon-gedreven calculator (Producten/Prijzen). Je Onderdelen-configuratie blijft bewaard."
+        description="De publieke rekentool toont hierna weer de sjabloon-gedreven calculator (Werkzaamheden/Prijzen). Je Onderdelen-configuratie blijft bewaard."
         confirmLabel="Terugschakelen"
         variant="primary"
       />

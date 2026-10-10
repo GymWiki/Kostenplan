@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { permanentRedirect } from "next/navigation";
+import { ALLEEN_HOVENIER } from "@/app/lib/trade-config";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Reveal } from "@/app/components/ui/reveal";
@@ -33,6 +35,7 @@ export const metadata: Metadata = {
 };
 
 export default function VoorIndexPage() {
+  if (ALLEEN_HOVENIER) permanentRedirect("/voor/hoveniers");
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />

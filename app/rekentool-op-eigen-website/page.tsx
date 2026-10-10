@@ -232,7 +232,7 @@ export default function RekentoolOpEigenWebsitePage() {
         <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
           <Reveal className="mx-auto max-w-2xl text-center">
             <p className="text-sm text-muted-foreground">
-              Benieuwd wat een rekentool voor jouw vakgebied concreet oplevert?{" "}
+              Benieuwd wat een rekentool voor jouw tuinwerk concreet oplevert?{" "}
               <Link href="/rekentool" className="font-medium text-primary hover:underline">
                 Bekijk de rekentool-pagina
               </Link>{" "}
@@ -255,7 +255,7 @@ export default function RekentoolOpEigenWebsitePage() {
                 Bouw je rekentool en plaats hem vandaag nog
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                Gratis starten met tot 10 producten, geen creditcard nodig.
+                Gratis starten met tot 10 werkzaamheden, geen creditcard nodig.
               </p>
               <div className="relative mt-8 inline-flex">
                 <span

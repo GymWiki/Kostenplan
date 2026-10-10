@@ -42,7 +42,7 @@ export default async function ToolsOverzichtPage() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Mijn rekentools</h1>
           <p className="mt-1 text-muted-foreground">
-            Elke rekentool heeft zijn eigen producten, prijzen, huisstijl en publieke link.
+            Elke rekentool heeft zijn eigen werkzaamheden, prijzen, huisstijl en publieke link.
           </p>
         </div>
         <NieuweRekentoolKnop
@@ -92,7 +92,7 @@ export default async function ToolsOverzichtPage() {
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1.5">
                       <Package className="h-3.5 w-3.5" />
-                      {tool._count.products} product{tool._count.products === 1 ? "" : "en"}
+                      {tool._count.products} werkzaamhe{tool._count.products === 1 ? "id" : "den"}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5" />

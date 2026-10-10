@@ -44,7 +44,7 @@ export function WebsiteCalculatorMockup({
           rotate
         )}
       >
-        {/* Fictieve browserbalk — toont het (verzonnen) domein van de vakman */}
+        {/* Fictieve browserbalk — toont het (verzonnen) domein van de hovenier */}
         <div className="flex items-center gap-1.5 border-b border-border bg-secondary/60 px-4 py-3">
           <span className="h-2.5 w-2.5 rounded-full bg-destructive/40" />
           <span className="h-2.5 w-2.5 rounded-full bg-warning/50" />

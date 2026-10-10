@@ -10,3 +10,14 @@ export const HOVENIER_CATEGORIE = "Hovenier";
 export function isZichtbaarSjabloon(categorie: string): boolean {
   return !ALLEEN_HOVENIER || categorie === HOVENIER_CATEGORIE;
 }
+
+export const HOVENIER_DOELGROEP_SLUG = "hoveniers";
+
+export function isZichtbareDoelgroep(slug: string): boolean {
+  return !ALLEEN_HOVENIER || slug === HOVENIER_DOELGROEP_SLUG;
+}
+
+// Voorbeeld-rekentools op de marketingsite die bij hoveniers passen.
+export function isZichtbareBranche(branche: string): boolean {
+  return !ALLEEN_HOVENIER || ["Hovenier", "Schuttingbedrijf"].includes(branche);
+}

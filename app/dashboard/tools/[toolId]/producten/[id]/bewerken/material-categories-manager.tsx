@@ -134,7 +134,7 @@ export function MaterialCategoriesManager({
       <div>
         <h2 className="font-semibold text-foreground">Materiaalcategorieën</h2>
         <p className="text-sm text-muted-foreground">
-          Onderdelen van dit product waarvoor de klant één materiaal kiest, bijv.
+          Onderdelen van deze werkzaamheid waarvoor de klant één materiaal kiest, bijv.
           &ldquo;Kleur&rdquo; of &ldquo;Materiaalsoort&rdquo;.
         </p>
       </div>

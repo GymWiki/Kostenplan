@@ -47,40 +47,40 @@ const USE_CASES: UseCase[] = [
     cta: "Vraag offerte aan",
   },
   {
-    key: "kozijnen",
-    label: "Kozijnenbedrijf",
-    siteUrl: "vandijkkozijnen.nl",
-    bedrijfsnaam: "Van Dijk Kozijnen",
-    productTitel: "Bereken je nieuwe kozijnen",
+    key: "terras",
+    label: "Terras & bestrating",
+    siteUrl: "tuinbestratingplus.nl",
+    bedrijfsnaam: "Tuinbestrating Plus",
+    productTitel: "Bereken de kosten van je terras",
     velden: [
-      { label: "Aantal kozijnen", waarde: "6" },
-      { label: "Materiaal", waarde: "Kunststof" },
-      { label: "Glas", waarde: "HR++" },
+      { label: "Oppervlakte", waarde: "24 m²" },
+      { label: "Type tegel", waarde: "Keramisch" },
+      { label: "Grondwerk", waarde: "Ja" },
     ],
     resultaatLabel: "Indicatie vanaf",
-    resultaatWaarde: "€ 7.850",
+    resultaatWaarde: "€ 3.650",
     cta: "Ontvang mijn prijs",
   },
   {
-    key: "bouw",
-    label: "Bouwbedrijf",
-    siteUrl: "vanderbergbouw.nl",
-    bedrijfsnaam: "Van der Berg Bouw",
-    productTitel: "Bereken je verbouwing",
+    key: "kunstgras",
+    label: "Kunstgras",
+    siteUrl: "kunstgrasvoordeel.nl",
+    bedrijfsnaam: "Kunstgras Voordeel",
+    productTitel: "Bereken je kunstgras",
     velden: [
-      { label: "Type verbouwing", waarde: "Aanbouw" },
-      { label: "Oppervlakte", waarde: "24 m²" },
-      { label: "Afwerking", waarde: "Compleet" },
+      { label: "Oppervlakte", waarde: "30 m²" },
+      { label: "Soort", waarde: "40 mm" },
+      { label: "Ondergrond", waarde: "Nieuw" },
     ],
     resultaatLabel: "Indicatie vanaf",
-    resultaatWaarde: "€ 15.500",
+    resultaatWaarde: "€ 1.950",
     cta: "Offerte aanvragen",
   },
 ];
 
 // "Eén platform. Ontelbaar veel rekentools." (SEO/GEO-opdracht "interactieve
 // productdemo's", Deel 12/13): i.p.v. vier statische mockups naast elkaar,
-// wisselt de bezoeker zelf tussen vakgebieden — dezelfde WebsiteCalculatorMockup,
+// wisselt de bezoeker zelf tussen werkzaamheden — dezelfde WebsiteCalculatorMockup,
 // alleen de inhoud verandert. De remount via `key` triggert de al bestaande
 // animate-fade-in-up-animatie (globals.css, respecteert prefers-reduced-motion
 // al) — geen aparte transitiemachine nodig voor een subtiele overgang.
@@ -90,7 +90,7 @@ export function UseCaseSwitcher() {
 
   return (
     <div className="flex flex-col items-center gap-8">
-      <div className="flex flex-wrap justify-center gap-1.5" role="tablist" aria-label="Voorbeeld per vakgebied">
+      <div className="flex flex-wrap justify-center gap-1.5" role="tablist" aria-label="Voorbeeld per werkzaamheid">
         {USE_CASES.map((u) => (
           <button
             key={u.key}

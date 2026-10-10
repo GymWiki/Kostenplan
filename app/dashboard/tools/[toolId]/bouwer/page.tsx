@@ -100,15 +100,15 @@ function BouwerNietInGebruikMelding({ toolId }: { toolId: string }) {
           <Blocks className="h-5 w-5" />
         </span>
         <div>
-          <p className="font-medium text-foreground">Deze rekentool is opgebouwd met Producten</p>
+          <p className="font-medium text-foreground">Deze rekentool is opgebouwd met Werkzaamheden</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Bouwer is een ouder, vragen-gebaseerd systeem dat deze tool niet gebruikt — je prijzen,
-            vragen en berekeningen beheer je hier via Producten. Er is dus niets om hier in te
+            vragen en berekeningen beheer je hier via Werkzaamheden. Er is dus niets om hier in te
             richten.
           </p>
         </div>
         <LinkButton href={`/dashboard/tools/${toolId}/producten`} size="sm" className="mt-1">
-          Naar Producten
+          Naar Werkzaamheden
         </LinkButton>
       </CardContent>
     </Card>

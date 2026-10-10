@@ -36,7 +36,7 @@ export const metadata: Metadata = {
 };
 
 const VERGELIJKING = [
-  { aspect: "Wie vult hem in", programma: "De vakman zelf, achter de schermen", calculator: "De klant, op de website van de vakman" },
+  { aspect: "Wie vult hem in", programma: "De hovenier zelf, achter de schermen", calculator: "De klant, op de website van de hovenier" },
   { aspect: "Moment in het traject", programma: "Nadat er al contact is geweest", calculator: "Vóórdat er contact is geweest" },
   { aspect: "Resultaat", programma: "Een opgemaakt offertedocument", calculator: "Een prijsindicatie, gevolgd door een offerteaanvraag" },
   { aspect: "Werkt op de website van de klant", programma: "Nee — het is interne software", calculator: "Ja — dat is het hele doel" },
@@ -47,7 +47,7 @@ const FAQS = [
   {
     vraag: "Wat is een offerte calculator?",
     antwoord:
-      "Een offerte calculator is een rekentool op de website van een vakman waarmee een bezoeker eerst zelf een prijsindicatie berekent, en vervolgens — als die indicatie past bij zijn budget — via dezelfde tool direct een offerte kan aanvragen. De aanvraag komt aan bij de vakman inclusief de exacte selectie die de klant heeft gemaakt.",
+      "Een offerte calculator is een rekentool op de website van een hovenier waarmee een bezoeker eerst zelf een prijsindicatie berekent, en vervolgens — als die indicatie past bij zijn budget — via dezelfde tool direct een offerte kan aanvragen. De aanvraag komt aan bij de hovenier inclusief de exacte selectie die de klant heeft gemaakt.",
   },
   {
     vraag: "Kan ik een offerteaanvraag ontvangen na de berekening?",
@@ -60,9 +60,9 @@ const FAQS = [
       "Ja. Je stelt zelf in welke vragen worden gesteld — bijvoorbeeld afmetingen, materiaalkeuze of extra opties — en welke prijsregel bij elk antwoord hoort. Je kunt vragen ook voorwaardelijk maken, zodat bijvoorbeeld een vraag over een poort alleen verschijnt wanneer daar bij een eerdere vraag voor gekozen is.",
   },
   {
-    vraag: "Kan ik verschillende producten en prijzen instellen?",
+    vraag: "Kan ik verschillende werkzaamheden en prijzen instellen?",
     antwoord:
-      "Ja. Je kunt meerdere producten of onderdelen combineren binnen één rekentool — bijvoorbeeld bestrating, een schutting en kunstgras samen in een tuinaanleg-calculator — elk met een eigen prijsopbouw op basis van jouw tarieven.",
+      "Ja. Je kunt meerdere werkzaamheden combineren binnen één rekentool — bijvoorbeeld bestrating, een schutting en kunstgras samen in een tuinaanleg-calculator — elk met een eigen prijsopbouw op basis van jouw tarieven.",
   },
   {
     vraag: "Vervangt een offerte calculator mijn offerteprogramma?",
@@ -96,7 +96,7 @@ export default function OfferteCalculatorPage() {
                 Een offerte calculator is een rekentool die naast een prijsindicatie ook direct
                 een offerteaanvraag verzamelt: zodra een bezoeker tevreden is met de berekende
                 prijs, vraagt hij via dezelfde tool een offerte aan. Dat is iets anders dan een
-                offerteprogramma, waarmee een vakman zelf, achter de schermen, een offerte
+                offerteprogramma, waarmee een hovenier zelf, achter de schermen, een offerte
                 opstelt.
               </GeoAnswer>
             </div>

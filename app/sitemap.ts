@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/app/lib/prisma";
-import { DOELGROEPEN } from "@/app/lib/doelgroepen";
+import { ZICHTBARE_DOELGROEPEN } from "@/app/lib/doelgroepen";
 import { alleContent, type ContentCollectie } from "@/app/lib/content";
 
 // Hardcoded productie-domein — bewust niet NEXT_PUBLIC_APP_URL, want die
@@ -46,8 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/offerte-calculator`, lastModified, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE_URL}/prijs-calculator`, lastModified, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE_URL}/online-offerte-maken`, lastModified, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${BASE_URL}/voor`, lastModified, changeFrequency: "monthly", priority: 0.8 },
-    ...DOELGROEPEN.map((d) => ({
+    ...ZICHTBARE_DOELGROEPEN.map((d) => ({
       url: `${BASE_URL}/voor/${d.slug}`,
       lastModified,
       changeFrequency: "monthly" as const,

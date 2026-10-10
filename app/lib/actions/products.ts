@@ -76,7 +76,7 @@ async function createProduct(
     return {
       success: false,
       state: {
-        error: `Je hebt de limiet van ${PLAN_LIMITS.GRATIS.maxProductsPerCompany} producten (over al je rekentools heen) voor het Gratis-pakket bereikt. Upgrade naar Plus of Pro voor onbeperkt producten.`,
+        error: `Je hebt de limiet van ${PLAN_LIMITS.GRATIS.maxProductsPerCompany} werkzaamheden (over al je rekentools heen) voor het Gratis-pakket bereikt. Upgrade naar Plus of Pro voor een onbeperkt aantal werkzaamheden.`,
       },
     };
   }
@@ -271,7 +271,7 @@ async function saveProduct(
     where: { id: productId, tool: { companyId } },
     select: { id: true },
   });
-  if (!existing) return { success: false, state: { error: "Product niet gevonden." } };
+  if (!existing) return { success: false, state: { error: "Werkzaamheid niet gevonden." } };
 
   await prisma.product.update({
     where: { id: productId },

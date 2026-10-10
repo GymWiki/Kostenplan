@@ -8,7 +8,7 @@ import { MaterialCategoriesManager } from "./material-categories-manager";
 import { ExtraOptionsManager } from "./extra-options-manager";
 import { HelpTip } from "@/app/components/ui/help-tip";
 
-export const metadata: Metadata = { title: "Product bewerken" };
+export const metadata: Metadata = { title: "Werkzaamheid bewerken" };
 
 export default async function BewerkProductPage({
   params,
@@ -38,10 +38,10 @@ export default async function BewerkProductPage({
     <div className="flex max-w-[820px] flex-col gap-6">
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-semibold text-foreground">
-          Product bewerken
+          Werkzaamheid bewerken
           <HelpTip contentKey="producten.opbouw" />
         </h1>
-        <p className="mt-1 text-muted-foreground">Werk de gegevens van dit product bij.</p>
+        <p className="mt-1 text-muted-foreground">Pas je prijzen en materialen aan. Alles wordt vanzelf opgeslagen.</p>
       </div>
       <ProductForm
         toolId={toolId}

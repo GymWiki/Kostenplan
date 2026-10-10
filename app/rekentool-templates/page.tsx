@@ -16,7 +16,7 @@ import { onderdeelTemplateById } from "@/app/lib/calculator-engine/templates-ond
 
 const TITLE = "Rekentool templates voor vakbedrijven";
 const DESCRIPTION =
-  "Bekijk de kant-en-klare rekentool templates in Kostenplan, per vakgebied — van tuinaanleg tot kozijnen. Pas een sjabloon aan met je eigen prijzen en zet 'm op je website.";
+  "Bekijk de kant-en-klare rekentool templates in Kostenplan, voor hoveniers — van tuinaanleg tot schutting en bestrating. Pas een sjabloon aan met je eigen prijzen en zet 'm op je website.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -94,7 +94,7 @@ export default function RekentoolTemplatesPage() {
               </h1>
               <div className="mt-6 text-left">
                 <GeoAnswer>
-                  Kostenplan levert kant-en-klare rekentool templates per vakgebied — elke
+                  Kostenplan levert kant-en-klare rekentool templates voor hoveniers — elke
                   template is een volledig werkende rekentool met vragen en prijsregels die je na
                   het aanmaken naar eigen tarieven aanpast. Je bent nooit verplicht een template
                   te gebruiken; zelf vanaf 0 beginnen kan ook.
@@ -212,7 +212,7 @@ export default function RekentoolTemplatesPage() {
                 Kies een sjabloon en pas het aan
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                Binnen 5 minuten online, met je eerste 10 producten. Helemaal gratis te starten.
+                Binnen 5 minuten online, met je eerste 10 werkzaamheden. Helemaal gratis te starten.
               </p>
               <div className="relative mt-8 inline-flex">
                 <span

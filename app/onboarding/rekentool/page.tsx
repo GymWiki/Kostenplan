@@ -33,7 +33,7 @@ export default async function OnboardingRekentoolPage() {
             Je eerste rekentool
           </CardTitle>
           <CardDescription>
-            Een rekentool is wat je klant invult om een prijsindicatie te krijgen. Je kunt er
+            Een rekentool is wat je klant invult om een prijsindicatie voor zijn tuin te krijgen. Je kunt er
             later meer aanmaken.
           </CardDescription>
         </CardHeader>

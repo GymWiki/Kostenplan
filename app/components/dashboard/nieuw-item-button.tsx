@@ -35,7 +35,7 @@ export function NieuwItemButton({
           onClose={() => setOpen(false)}
           requiredPlan="PLUS"
           title="Limiet van het Gratis-pakket bereikt"
-          description={`Het Gratis-pakket biedt plek voor maximaal ${GRATIS_CATALOGUS_LIMIET} producten. Upgrade naar Plus of Pro voor onbeperkt producten.`}
+          description={`Het Gratis-pakket biedt plek voor maximaal ${GRATIS_CATALOGUS_LIMIET} werkzaamheden. Upgrade naar Plus of Pro voor een onbeperkt aantal werkzaamheden.`}
         />
       </>
     );

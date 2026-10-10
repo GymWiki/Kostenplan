@@ -13,13 +13,13 @@ const PLANS: SubscriptionTier[] = ["GRATIS", "PLUS", "PRO"];
 const FEATURES: Record<SubscriptionTier, string[]> = {
   GRATIS: [
     "Eigen rekentool voor je klantenportaal",
-    "Tot 10 producten",
+    "Tot 10 werkzaamheden",
     "Alle kosteninstellingen (arbeid, transport, materiaal, btw)",
     "“Powered by Kostenplan”-badge op je portaal",
   ],
   PLUS: [
     "Alles van Gratis",
-    "Onbeperkt producten",
+    "Onbeperkt aantal werkzaamheden",
     "Eigen logo en merkkleuren, geen badge",
     "“Vraag offerte aan”-knop voor leads",
   ],

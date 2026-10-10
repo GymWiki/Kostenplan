@@ -53,7 +53,7 @@ const FAQS = [
   {
     vraag: "Heb ik programmeerkennis nodig om een rekentool te maken?",
     antwoord:
-      "Nee. Met Kostenplan stel je vragen, prijsregels en voorwaarden in via een visuele bouwer — zonder code, formules in een taal of technische kennis. Je kiest uit kant-en-klare onderdelen (bijvoorbeeld 'bestrating' of 'schilderwerk') of bouwt zelf een onderdeel op met je eigen vragen en prijzen.",
+      "Nee. Met Kostenplan stel je vragen, prijsregels en voorwaarden in via een visuele bouwer — zonder code, formules in een taal of technische kennis. Je kiest uit kant-en-klare onderdelen (bijvoorbeeld 'bestrating' of 'schutting') of bouwt zelf een onderdeel op met je eigen vragen en prijzen.",
   },
   {
     vraag: "Kan ik meerdere rekentools maken voor verschillende diensten?",
@@ -63,12 +63,12 @@ const FAQS = [
   {
     vraag: "Wat is het verschil tussen een rekentool en een offerteprogramma?",
     antwoord:
-      "Een offerteprogramma is bedoeld voor de vakman zelf: je typt er intern een offerte in die je vervolgens naar een klant stuurt. Een rekentool draait juist op de website van de vakman en wordt door de klant zelf bediend — die krijgt direct een prijsindicatie te zien vóórdat er contact is geweest. Kostenplan combineert beide: de rekentool op de website levert automatisch een lead met de gekozen opties in een eigen leads-overzicht, waar de vakman die vervolgens kan omzetten in een officiële offerte.",
+      "Een offerteprogramma is bedoeld voor de hovenier zelf: je typt er intern een offerte in die je vervolgens naar een klant stuurt. Een rekentool draait juist op de website van de hovenier en wordt door de klant zelf bediend — die krijgt direct een prijsindicatie te zien vóórdat er contact is geweest. Kostenplan combineert beide: de rekentool op de website levert automatisch een lead met de gekozen opties in een eigen leads-overzicht, waar de hovenier die vervolgens kan omzetten in een officiële offerte.",
   },
   {
-    vraag: "Werkt een rekentool voor elk vakgebied?",
+    vraag: "Werkt een rekentool voor al mijn tuinwerk?",
     antwoord:
-      "Een rekentool werkt goed voor elk vakgebied waarin de prijs is op te bouwen uit meetbare grootheden zoals oppervlakte, lengte, aantal, materiaalkeuze of extra opties — denk aan hoveniers, stratenmakers, schilders, klusbedrijven, keukenbedrijven, badkamerbedrijven en kozijnenbedrijven. Voor projecten die per geval volledig uniek zijn en zich niet in vaste onderdelen laten opdelen, blijft een rekentool een indicatie in plaats van een exacte offerte.",
+      "Een rekentool werkt goed voor tuinwerk, waarin de prijs is op te bouwen uit meetbare grootheden zoals oppervlakte, lengte, aantal, materiaalkeuze of extra opties — denk aan schutting, bestrating, kunstgras, vlonders en beplanting. Voor projecten die per geval volledig uniek zijn en zich niet in vaste onderdelen laten opdelen, blijft een rekentool een indicatie in plaats van een exacte offerte.",
   },
 ];
 
@@ -91,13 +91,13 @@ export default function RekentoolPage() {
                   Rekentool
                 </span>
                 <h1 className="mt-6 text-4xl font-bold tracking-tight text-balance text-foreground sm:text-5xl">
-                  Een rekentool voor je website, gebouwd voor vakmensen
+                  Een rekentool voor je website, gebouwd voor hoveniers
                 </h1>
                 <div className="mt-6 text-left">
                   <GeoAnswer>
                     Een rekentool is een interactief onderdeel op je website waarmee bezoekers
                     zelf, op basis van hun eigen invoer, direct een prijsindicatie berekenen.
-                    Kostenplan is een online tool waarmee vakmensen zo&apos;n rekentool zelf bouwen
+                    Kostenplan is een online tool waarmee hoveniers zo&apos;n rekentool zelf bouwen
                     — zonder programmeerkennis — en op hun eigen website of via een link delen
                     met klanten.
                   </GeoAnswer>
@@ -115,18 +115,18 @@ export default function RekentoolPage() {
 
               <Reveal delay={150}>
                 <WebsiteCalculatorMockup
-                  siteUrl="vandijkkozijnen.nl"
-                  bedrijfsnaam="Van Dijk Kozijnen"
-                  productTitel="Bereken de prijs van je nieuwe kozijnen"
+                  siteUrl="groenenzo.nl"
+                  bedrijfsnaam="Groen & Zo Tuinen"
+                  productTitel="Bereken de kosten van jouw tuin"
                   velden={[
-                    { label: "Aantal kozijnen", waarde: "6" },
-                    { label: "Type kozijn", waarde: "Draai-kiep" },
-                    { label: "Materiaal", waarde: "Kunststof" },
-                    { label: "Glas", waarde: "HR++" },
-                    { label: "Montage", waarde: "Inclusief" },
+                    { label: "Oppervlakte tuin", waarde: "85 m²" },
+                    { label: "Bestrating", waarde: "Ja" },
+                    { label: "Schutting", waarde: "12 m¹" },
+                    { label: "Kunstgras", waarde: "30 m²" },
+                    { label: "Grondwerk", waarde: "Inclusief" },
                   ]}
                   resultaatLabel="Indicatie vanaf"
-                  resultaatWaarde="€ 7.850"
+                  resultaatWaarde="€ 8.250 – € 10.500"
                   cta="Ontvang mijn prijs"
                   rotate="sm:-rotate-1"
                 />
@@ -153,7 +153,7 @@ export default function RekentoolPage() {
               </p>
               <p className="mt-4 text-muted-foreground">
                 Dat is een fundamenteel ander proces dan een contactformulier: bij een
-                contactformulier weet de vakman pas na het eerste contact of een bezoeker een
+                contactformulier weet de hovenier pas na het eerste contact of een bezoeker een
                 serieuze, passende klant is. Bij een rekentool weet de bezoeker dat zelf al vóórdat
                 hij contact opneemt.
               </p>
@@ -168,7 +168,7 @@ export default function RekentoolPage() {
               Welke rekentools kun je maken?
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Elk vakgebied heeft zijn eigen vragen en prijsopbouw. Kies een startpunt of bouw
+              Elke tuinklus heeft zijn eigen vragen en prijsopbouw. Kies een startpunt of bouw
               volledig zelf een rekentool op maat.
             </p>
           </Reveal>
@@ -220,7 +220,7 @@ export default function RekentoolPage() {
                   nummer={2}
                   icon={ListChecks}
                   titel="Kies je vragen en prijsregels"
-                  tekst="Begin met een kant-en-klaar onderdeel (bijv. schutting of keukenopstelling) of bouw zelf vragen, keuzes en prijsregels op."
+                  tekst="Begin met een kant-en-klaar onderdeel (bijv. schutting of terras) of bouw zelf vragen, keuzes en prijsregels op."
                 />
               </Reveal>
               <Reveal delay={200}>
@@ -255,14 +255,14 @@ export default function RekentoolPage() {
               <VerdiepingKaart
                 href="/voorbeelden-rekentools"
                 titel="Voorbeelden van rekentools"
-                tekst="Bekijk hoe een Kostenplan-rekentool eruitziet op de website van een hovenier, schuttingbedrijf of kozijnenbedrijf."
+                tekst="Bekijk hoe een Kostenplan-rekentool eruitziet op de website van een hovenier of schuttingbedrijf."
               />
             </Reveal>
             <Reveal delay={60}>
               <VerdiepingKaart
                 href="/rekentool-templates"
                 titel="Rekentool templates"
-                tekst="Ontdek de sjablonen waarmee je direct kunt starten, per vakgebied."
+                tekst="Ontdek de sjablonen waarmee je direct kunt starten, voor al je tuinwerk."
               />
             </Reveal>
             <Reveal delay={120}>
@@ -305,7 +305,7 @@ export default function RekentoolPage() {
           faqs={FAQS}
           id="rekentool-faq"
           titel="Veelgestelde vragen over rekentools"
-          intro="Antwoorden op de vragen die vakmensen ons het vaakst stellen voordat ze starten."
+          intro="Antwoorden op de vragen die hoveniers ons het vaakst stellen voordat ze starten."
         />
 
         {/* FINAL CTA */}
@@ -319,7 +319,7 @@ export default function RekentoolPage() {
                 Maak je eigen rekentool
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                Binnen 5 minuten online, met je eerste 10 producten. Helemaal gratis te starten.
+                Binnen 5 minuten online, met je eerste 10 werkzaamheden. Helemaal gratis te starten.
               </p>
               <div className="relative mt-8 inline-flex">
                 <span

@@ -51,7 +51,7 @@ export default async function Image() {
           </div>
         </div>
         <div style={{ marginTop: 28, fontSize: 34, color: "rgba(255,255,255,0.9)" }}>
-          Offertecalculator voor hoveniers en vakmensen
+          Rekentool voor hoveniers
         </div>
       </div>
     ),

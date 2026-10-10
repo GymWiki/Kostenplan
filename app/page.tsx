@@ -67,16 +67,14 @@ export const metadata: Metadata = {
 // claim wordt verderop door de UseCaseSwitcher gedaan; deze regel is puur
 // een snelle, doorklikbare bevestiging + interne links naar /voor/*.
 const VAKGEBIEDEN: { label: string; href?: string }[] = [
-  { label: "Tuin", href: "/voor/hoveniers" },
-  { label: "Bestrating", href: "/voor/stratenmakers" },
-  { label: "Schutting", href: "/voor/schuttingbedrijven" },
-  { label: "Kozijnen", href: "/voor/kozijnen" },
-  { label: "Veranda" },
-  { label: "Verbouwing", href: "/voor/bouwbedrijven" },
-  { label: "Schilderwerk", href: "/voor/schilders" },
-  { label: "Maatwerk", href: "/voor/klusbedrijven" },
-  { label: "Badkamer", href: "/voor/badkamerbedrijven" },
-  { label: "Andere diensten", href: "/voor" },
+  { label: "Schutting", href: "/voor/hoveniers" },
+  { label: "Bestrating & terras", href: "/voor/hoveniers" },
+  { label: "Graszoden", href: "/voor/hoveniers" },
+  { label: "Kunstgras", href: "/voor/hoveniers" },
+  { label: "Vlonder", href: "/voor/hoveniers" },
+  { label: "Haag & beplanting", href: "/voor/hoveniers" },
+  { label: "Grondwerk & afvoer", href: "/voor/hoveniers" },
+  { label: "Tuinonderhoud", href: "/voor/hoveniers" },
 ];
 
 export default function Home() {
@@ -120,7 +118,7 @@ export default function Home() {
                   style={{ animationDelay: "200ms" }}
                 >
                   <GeoAnswer>
-                    Kostenplan is een platform waarmee vakmensen zelf een online rekentool voor
+                    Kostenplan is een platform waarmee hoveniers zelf een online rekentool voor
                     hun website bouwen. Bezoekers berekenen zelf een prijsindicatie; jij ontvangt
                     de aanvraag met de exacte selectie in je eigen leads-overzicht.
                   </GeoAnswer>
@@ -165,7 +163,7 @@ export default function Home() {
         <section className="py-6">
           <div className="mx-auto max-w-4xl border-t border-border" />
           <div className="mx-auto mt-6 flex max-w-6xl flex-wrap items-center justify-center gap-x-2 gap-y-2 px-4 sm:px-6">
-            <span className="mr-1 text-sm font-medium text-muted-foreground">Rekentools voor:</span>
+            <span className="mr-1 text-sm font-medium text-muted-foreground">Rekentool voor al je werkzaamheden:</span>
             {VAKGEBIEDEN.map((v) =>
               v.href ? (
                 <Link
@@ -204,8 +202,8 @@ export default function Home() {
                 <StapCard
                   nummer={1}
                   icon={LayoutTemplate}
-                  titel="Kies een sjabloon"
-                  tekst="Begin met een bestaande rekentool voor jouw vakgebied of maak er zelf één vanaf nul."
+                  titel="Kies je werkzaamheden"
+                  tekst="Vink aan wat je doet, zoals schutting, bestrating of kunstgras. Je rekentool staat in 2 minuten klaar."
                 />
               </Reveal>
               <Reveal delay={100}>
@@ -213,7 +211,7 @@ export default function Home() {
                   nummer={2}
                   icon={SlidersHorizontal}
                   titel="Pas hem aan"
-                  tekst="Voeg je eigen producten, prijzen, vragen en berekeningen toe."
+                  tekst="Pas materialen, prijzen en hoe snel je werkt aan naar jouw tarieven."
                 />
               </Reveal>
               <Reveal delay={200}>
@@ -250,12 +248,12 @@ export default function Home() {
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <Reveal className="mx-auto max-w-2xl text-center">
               <h2 className="text-2xl font-semibold text-balance text-foreground sm:text-3xl">
-                Eén platform. Ontelbaar veel rekentools.
+                Eén rekentool voor al je tuinwerk.
               </h2>
               <p className="mt-3 text-muted-foreground">
                 Kostenplan is niet alleen een rekenprogramma voor intern gebruik — je laat de
                 rekentool daadwerkelijk aan je klant zien, op je eigen website. Klik hieronder
-                door de vakgebieden heen.
+                door de voorbeelden heen.
               </p>
             </Reveal>
             <Reveal delay={80} className="mt-12">

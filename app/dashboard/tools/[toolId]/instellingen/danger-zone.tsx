@@ -20,7 +20,7 @@ export function DangerZone({
         <CardHeader>
           <CardTitle>Dupliceren</CardTitle>
           <CardDescription>
-            Maakt een kopie van deze tool (producten, prijzen, huisstijl en instellingen) als nieuw
+            Maakt een kopie van deze tool (werkzaamheden, prijzen, huisstijl en instellingen) als nieuw
             concept. Leads, aanvragen en de publicatiestatus worden niet meegekopieerd.
           </CardDescription>
         </CardHeader>
