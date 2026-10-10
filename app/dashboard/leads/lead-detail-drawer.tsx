@@ -164,7 +164,7 @@ export function LeadDetailDrawer({
                       startStap: "notitie",
                       waarschuwing:
                         lead.offerte!.status !== "CONCEPT"
-                          ? "Er is al een offerte verzonden of geaccepteerd bij deze aanvraag."
+                          ? "Er is al een offerte verzonden of geaccepteerd bij deze lead."
                           : undefined,
                     })
                   }
@@ -195,7 +195,7 @@ export function LeadDetailDrawer({
 
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-foreground">Aanvraag</h3>
+              <h3 className="text-sm font-semibold text-foreground">Wat de klant koos</h3>
               {toolBestaat && (
                 <Link
                   href={rekentoolHref}

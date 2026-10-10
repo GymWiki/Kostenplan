@@ -325,7 +325,7 @@ export function ProductForm({
         <Textarea
           id="omschrijving"
           name="omschrijving"
-          placeholder="Korte toelichting die klanten zien in de calculator…"
+          placeholder="Korte toelichting die klanten zien in je rekentool…"
           defaultValue={product?.omschrijving ?? ""}
         />
       </div>

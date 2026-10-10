@@ -327,7 +327,7 @@ export function RekentoolEditor(props: EditorProps) {
           onClick={() => setPaneel("start")}
           className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-1 text-sm font-semibold text-foreground hover:underline"
         >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Alle onderdelen
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Terug naar overzicht
         </button>
       )}
       {paneel === "start" && isAangepast && (
@@ -477,7 +477,10 @@ export function RekentoolEditor(props: EditorProps) {
 
       <div className="flex min-h-0 flex-1">
         {/* Canvas */}
-        <div className={cn("relative min-w-0 flex-1 bg-muted", apparaat === "mobiel" && !isMobiel && "flex justify-center p-4")}>
+        <div
+          style={isMobiel && sheetOpen && modus === "bewerken" ? { paddingBottom: "62dvh" } : undefined}
+          className={cn("relative min-w-0 flex-1 bg-muted", apparaat === "mobiel" && !isMobiel && "flex justify-center p-4")}
+        >
           <iframe
             ref={iframeRef}
             title={`Voorbeeld van ${naam}`}
@@ -487,13 +490,6 @@ export function RekentoolEditor(props: EditorProps) {
               apparaat === "mobiel" && !isMobiel ? "w-[390px] max-w-full rounded-2xl border border-border shadow-lg" : "w-full"
             )}
           />
-          {isMobiel && !sheetOpen && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-              <Button type="button" className="pointer-events-auto h-11 shadow-lg" onClick={() => setSheetOpen(true)}>
-                Checklist en werkzaamheden
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Paneel (desktop) */}
@@ -512,6 +508,14 @@ export function RekentoolEditor(props: EditorProps) {
           </aside>
         )}
       </div>
+
+      {isMobiel && modus === "bewerken" && !sheetOpen && (
+        <div className="shrink-0 border-t border-border bg-card p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <Button type="button" className="h-11 w-full" onClick={() => setSheetOpen(true)}>
+            Checklist en werkzaamheden
+          </Button>
+        </div>
+      )}
 
       {/* Bottom sheet (mobiel) */}
       {isMobiel && modus === "bewerken" && (
@@ -562,7 +566,7 @@ export function RekentoolEditor(props: EditorProps) {
         onConfirm={() => void verwijderRekentool()}
         pending={bezig}
         title={`“${naam}” verwijderen?`}
-        description="De link en de code op je website werken daarna niet meer. Je aanvragen blijven bewaard. Je kunt dit direct ongedaan maken."
+        description="De link en de code op je website werken daarna niet meer. Je leads blijven bewaard. Je kunt dit direct ongedaan maken."
       />
       <ConfirmDialog
         open={verwijderProduct !== null}
