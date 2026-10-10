@@ -53,3 +53,19 @@ describe("wizard-hulpfuncties", () => {
     expect(zijnBasisTarievenNogDefault({ ...cs, transportTarief: 50 }, company)).toBe(false);
   });
 });
+
+describe("startpakket en productlimiet", () => {
+  it("maakt de eerste N aan en geeft de rest als upgrade-suggestie", async () => {
+    const { verdeelOverRuimte } = await import("./index");
+    expect(verdeelOverRuimte(["a", "b", "c"], 2)).toEqual({ aanmaken: ["a", "b"], over: ["c"] });
+    expect(verdeelOverRuimte(["a", "b"], 10)).toEqual({ aanmaken: ["a", "b"], over: [] });
+    expect(verdeelOverRuimte(["a", "b"], 0)).toEqual({ aanmaken: [], over: ["a", "b"] });
+    expect(verdeelOverRuimte(["a", "b"], -3)).toEqual({ aanmaken: [], over: ["a", "b"] });
+    expect(verdeelOverRuimte(["a", "b"], null)).toEqual({ aanmaken: ["a", "b"], over: [] });
+  });
+
+  it("past alle presets binnen de gratis productlimiet", async () => {
+    const { GRATIS_CATALOGUS_LIMIET } = await import("@/app/lib/subscription");
+    expect(HOVENIER_PRESETS.length).toBeLessThanOrEqual(GRATIS_CATALOGUS_LIMIET);
+  });
+});

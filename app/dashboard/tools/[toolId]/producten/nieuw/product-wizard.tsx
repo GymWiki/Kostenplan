@@ -19,7 +19,7 @@ import { PRODUCT_ICONS } from "@/app/lib/icons";
 import { cn } from "@/app/lib/cn";
 import { parseGetal } from "@/app/lib/sjablonen";
 import { unitLabel } from "@/app/lib/units";
-import { BASIS_TARIEVEN_DEFAULTS } from "@/app/lib/presets/basis-tarieven";
+import { BasisTarievenVelden } from "@/app/components/dashboard/basis-tarieven-velden";
 import {
   EIGEN_WERKZAAMHEID,
   HOVENIER_PRESETS,
@@ -495,24 +495,13 @@ function BasisTarievenKaart({
   huidigeEenheid: ArbeidStapEenheid;
   onOpgeslagen: (o: NonNullable<NonNullable<BasisTarievenState>["opgeslagen"]>) => void;
 }) {
-  const [eenheid, setEenheid] = useState<ArbeidStapEenheid>(eenheidVergrendeld ? huidigeEenheid : "DAG");
-  const [tarieven, setTarieven] = useState({
-    UUR: String(BASIS_TARIEVEN_DEFAULTS.arbeidTariefUur),
-    DAGDEEL: String(BASIS_TARIEVEN_DEFAULTS.arbeidTariefDagdeel),
-    DAG: String(BASIS_TARIEVEN_DEFAULTS.arbeidTariefDag),
-  });
-  const [voorrij, setVoorrij] = useState(String(BASIS_TARIEVEN_DEFAULTS.voorrijTarief));
-  const [transport, setTransport] = useState(String(BASIS_TARIEVEN_DEFAULTS.transportTarief));
   const [error, setError] = useState<string | undefined>();
   const [pending, startTransition] = useTransition();
 
-  function opslaan() {
+  function opslaan(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setError(undefined);
-    const fd = new FormData();
-    fd.set("arbeidStapEenheid", eenheid);
-    fd.set("arbeidTarief", tarieven[eenheid]);
-    fd.set("voorrijTarief", voorrij);
-    fd.set("transportTarief", transport);
+    const fd = new FormData(e.currentTarget);
     startTransition(async () => {
       const result = await saveBasisTarievenAction(toolId, null, fd);
       if (result?.opgeslagen) onOpgeslagen(result.opgeslagen);
@@ -520,15 +509,8 @@ function BasisTarievenKaart({
     });
   }
 
-  const euroVeld = (id: string, waarde: string, set: (v: string) => void) => (
-    <div className="relative">
-      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
-      <DecimalInput id={id} value={waarde} onChange={(e) => set(e.target.value)} className="pl-7" />
-    </div>
-  );
-
   return (
-    <div className="flex flex-col gap-4 rounded-md border border-primary/30 bg-primary/5 p-3 sm:p-4">
+    <form onSubmit={opslaan} className="flex flex-col gap-4 rounded-md border border-primary/30 bg-primary/5 p-3 sm:p-4">
       <div>
         <h2 className="text-lg font-semibold text-foreground">Eerst even je vaste tarieven</h2>
         <p className="text-sm text-muted-foreground">
@@ -537,43 +519,15 @@ function BasisTarievenKaart({
         <VoorbeeldLabel />
       </div>
       {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="basis-eenheid">Hoe bereken je je arbeid?</Label>
-        <Select
-          id="basis-eenheid"
-          value={eenheid}
-          disabled={eenheidVergrendeld}
-          onChange={(e) => setEenheid(e.target.value as ArbeidStapEenheid)}
-        >
-          <option value="DAG">Per dag</option>
-          <option value="DAGDEEL">Per dagdeel</option>
-          <option value="UUR">Per uur</option>
-        </Select>
-        {eenheidVergrendeld && (
-          <p className="text-xs text-muted-foreground">
-            Je bestaande werkzaamheden rekenen al zo; wijzigen kan via Prijzen.
-          </p>
-        )}
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="basis-tarief">Tarief per {arbeidEenheidEnkelvoud(eenheid)}</Label>
-        {euroVeld("basis-tarief", tarieven[eenheid], (v) => setTarieven((t) => ({ ...t, [eenheid]: v })))}
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basis-voorrij">Voorrijkosten per project</Label>
-          {euroVeld("basis-voorrij", voorrij, setVoorrij)}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basis-transport">Transportkosten per project</Label>
-          {euroVeld("basis-transport", transport, setTransport)}
-        </div>
-      </div>
-      <Button type="button" onClick={opslaan} disabled={pending} className="w-full sm:w-fit">
+      <BasisTarievenVelden
+        start={{ arbeidStapEenheid: huidigeEenheid }}
+        eenheidVergrendeld={eenheidVergrendeld}
+      />
+      <Button type="submit" disabled={pending} className="w-full sm:w-fit">
         {pending ? "Opslaan…" : "Opslaan en verder"}
         {!pending && <ArrowRight className="h-4 w-4" />}
       </Button>
-    </div>
+    </form>
   );
 }
 

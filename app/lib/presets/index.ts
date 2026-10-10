@@ -83,3 +83,12 @@ export function presetNaarProductFormData(
   fd.set("actief", "on");
   return fd;
 }
+
+// Productlimiet van het abonnement: de eerste `ruimte` presets worden
+// aangemaakt, de rest komt terug als upgrade-suggestie. `ruimte` null =
+// onbeperkt.
+export function verdeelOverRuimte<T>(items: T[], ruimte: number | null): { aanmaken: T[]; over: T[] } {
+  if (ruimte === null) return { aanmaken: items, over: [] };
+  const n = Math.max(0, ruimte);
+  return { aanmaken: items.slice(0, n), over: items.slice(n) };
+}

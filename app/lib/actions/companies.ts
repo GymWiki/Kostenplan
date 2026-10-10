@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { requireUser, requireActiveCompany, ACTIEF_BEDRIJF_COOKIE } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { getMollieClient } from "@/app/lib/mollie";
-import { generateUniqueSlug } from "@/app/lib/slug";
+import { generateUniqueSlug, generateUniqueToolSlug } from "@/app/lib/slug";
 import {
   companySchema,
   companyDetailsSchema,
@@ -61,12 +61,21 @@ export async function createCompanyAction(
   // Meteen naar het nieuwe bedrijf schakelen, zodat de gebruiker na het
   // aanmaken direct in de (lege) context van dat bedrijf terechtkomt.
   await setActiefBedrijfCookie(company.id);
-  // Een bedrijf zonder rekentool kan geen huisstijl/producten hebben (die
-  // horen nu bij Tool, niet bij Company) — eerst de naam van de eerste
-  // rekentool vragen, dan pas het auto-branding-wow-moment
-  // (/onboarding/huisstijl). Geldt voor zowel de allereerste onboarding als
-  // een extra bedrijf later.
-  redirect("/onboarding/rekentool");
+  // Een bedrijf zonder rekentool kan geen huisstijl/werkzaamheden hebben (die
+  // horen bij Tool, niet bij Company) — de eerste rekentool wordt daarom
+  // meteen automatisch aangemaakt (naam = bedrijfsnaam, later te wijzigen),
+  // zodat de hovenier direct naar het auto-branding-wow-moment kan.
+  // Geldt voor zowel de allereerste onboarding als een extra bedrijf later.
+  const toolNaam = `Rekentool ${parsed.data.naam}`.slice(0, 80);
+  await prisma.tool.create({
+    data: {
+      companyId: company.id,
+      naam: toolNaam,
+      slug: await generateUniqueToolSlug(company.id, toolNaam),
+      costSettings: { create: {} },
+    },
+  });
+  redirect("/onboarding/huisstijl");
 }
 
 // Interne bestemmingen na het wisselen van bedrijf — bewust een allowlist
