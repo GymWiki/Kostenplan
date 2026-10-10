@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { registerAction, type AuthFormState } from "@/app/lib/actions/auth";
 import { GoogleSignInButton } from "@/app/components/auth/google-signin-button";
+import { TurnstileVeld } from "@/app/components/auth/turnstile-veld";
 import { Button } from "@/app/components/ui/button";
 import { Input, Label, PasswordInput } from "@/app/components/ui/input";
 
@@ -65,6 +66,7 @@ export function RegisterForm() {
             </p>
           )}
         </div>
+        <TurnstileVeld />
         <Button type="submit" disabled={pending} className="mt-2 w-full">
           {pending ? "Account aanmaken…" : "Gratis account aanmaken"}
         </Button>

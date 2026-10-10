@@ -1,4 +1,4 @@
-import { requireActiveCompany } from "@/app/lib/dal";
+import { requireActiveCompany, requireVolledigAccount } from "@/app/lib/dal";
 import { Sidebar } from "@/app/components/dashboard/sidebar";
 import { Topbar } from "@/app/components/dashboard/topbar";
 import { adminFontClasses } from "@/app/lib/admin-fonts";
@@ -8,6 +8,8 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Gasten (probeer-flow) werken alleen in /probeer/editor.
+  await requireVolledigAccount();
   const { company, alleBedrijven } = await requireActiveCompany();
 
   return (

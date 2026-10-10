@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireActiveCompany } from "@/app/lib/dal";
+import { requireActiveCompany, requireVolledigAccount } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { parseGetal } from "@/app/lib/sjablonen";
 import { slaBasisTarievenOp } from "@/app/lib/basis-tarieven-server";
@@ -18,6 +18,7 @@ export async function saveBedrijfTarievenAction(invoer: {
   voorrij: string;
   transport: string;
 }): Promise<BedrijfTarievenResultaat> {
+  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const tarief = parseGetal(invoer.tarief, NaN);
   const voorrij = parseGetal(invoer.voorrij, NaN);

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { loginAction, type AuthFormState } from "@/app/lib/actions/auth";
 import { GoogleSignInButton } from "@/app/components/auth/google-signin-button";
+import { TurnstileVeld } from "@/app/components/auth/turnstile-veld";
 import { Button } from "@/app/components/ui/button";
 import { Input, Label, PasswordInput } from "@/app/components/ui/input";
 
@@ -61,6 +62,7 @@ export function LoginForm() {
             </p>
           )}
         </div>
+        <TurnstileVeld />
         <Button type="submit" disabled={pending} className="mt-2 w-full">
           {pending ? "Bezig met inloggen…" : "Inloggen"}
         </Button>
