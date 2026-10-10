@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Copy, Globe, Monitor, Pencil, Play, Settings2, Smartphone, Trash2, X } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
+import { meldGastGebeurtenisAction } from "@/app/lib/actions/gast";
+import { Logo } from "@/app/components/ui/logo";
 import { BottomSheet } from "@/app/components/ui/bottom-sheet";
 import { Button } from "@/app/components/ui/button";
 import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
@@ -62,6 +64,9 @@ export type EditorProps = {
   anderen: AndereRekentool[];
   magNieuweTool: boolean;
   startPaneel: string;
+  // Alleen voor de probeer-flow (gast): dezelfde editor, met een
+  // account-maken-paneel in plaats van publiceren en embed.
+  gast?: { verlooptOpTekst: string; logoMislukt: boolean; accountPaneel: React.ReactNode };
   // Standaard de voorbeeld-route van deze rekentool; de gast-flow en tests
   // geven hier een eigen bron.
   voorbeeldUrl?: string;
@@ -86,7 +91,7 @@ function useIsMobiel() {
 const PANEEL_TITEL = (p: string, products: ProductMetRelaties[]) => {
   if (p.startsWith("werkzaamheid:")) return products.find((x) => x.id === p.slice(13))?.naam || "Onderdeel";
   return (
-    { start: "Aan de slag", uiterlijk: "Uiterlijk", resultaat: "Resultaat", aanvraag: "Aanvraagformulier", website: "Zet op mijn website", toevoegen: "Onderdeel toevoegen", aangepast: "Aangepaste rekentool" } as Record<string, string>
+    { start: "Aan de slag", uiterlijk: "Uiterlijk", resultaat: "Resultaat", aanvraag: "Aanvraagformulier", website: "Zet op mijn website", account: "Account maken", toevoegen: "Onderdeel toevoegen", aangepast: "Aangepaste rekentool" } as Record<string, string>
   )[p] ?? "Aan de slag";
 };
 
@@ -104,9 +109,31 @@ export function RekentoolEditor(props: EditorProps) {
   const [naam, setNaam] = useState(props.toolNaam);
   const [producten, setProducten] = useState(props.products);
   const bewerkt = useRef(new Set<string>());
+  const vorigePrijzen = useRef(new Map<string, string>());
   const [paneel, setPaneelState] = useState(props.startPaneel);
   const [sheetOpen, setSheetOpen] = useState(props.startPaneel !== "start");
-  const [modus, setModus] = useState<"bewerken" | "uitproberen">("bewerken");
+  const gast = props.gast;
+  // Een gast begint in Uitproberen: meteen een prijs zien.
+  const [modus, setModusState] = useState<"bewerken" | "uitproberen">(gast ? "uitproberen" : "bewerken");
+  const gemeld = useRef(new Set<string>());
+  const meld = useCallback(
+    (type: string) => {
+      if (!gast || gemeld.current.has(type)) return;
+      gemeld.current.add(type);
+      void meldGastGebeurtenisAction(type);
+    },
+    [gast]
+  );
+  const setModus = useCallback(
+    (m: "bewerken" | "uitproberen" | ((x: "bewerken" | "uitproberen") => "bewerken" | "uitproberen")) =>
+      setModusState((huidig) => {
+        const nieuw = typeof m === "function" ? m(huidig) : m;
+        if (nieuw === "uitproberen" && huidig !== "uitproberen") meld("uitproberen_gebruikt");
+        return nieuw;
+      }),
+    [meld]
+  );
+  useEffect(() => meld("editor_geopend"), [meld]);
   const [apparaat, setApparaat] = useState<"desktop" | "mobiel">("desktop");
   const [opslag, setOpslag] = useState<Opslag>(KLAAR);
   const [volgordeBezig, setVolgordeBezig] = useState(false);
@@ -142,6 +169,10 @@ export function RekentoolEditor(props: EditorProps) {
   }, [router]);
 
   const setPaneel = useCallback((p: string) => {
+    if (p === "account") {
+      meld("account_paneel_geopend");
+      setModusState("bewerken");
+    }
     setPaneelState(p);
     setOpslag(KLAAR);
     setSheetOpen(true);
@@ -149,7 +180,7 @@ export function RekentoolEditor(props: EditorProps) {
     if (p === "start") url.searchParams.delete("paneel");
     else url.searchParams.set("paneel", p);
     window.history.replaceState(null, "", url);
-  }, []);
+  }, [meld]);
 
   // --- Gegevens voor de rekentool in het midden
   const costSettings: CostSettings = useMemo(() => ({ ...tarieven, ...resultaat }), [tarieven, resultaat]);
@@ -240,9 +271,14 @@ export function RekentoolEditor(props: EditorProps) {
   }, [iframeKlaar, producten, branding, costSettings, modus, paneel, waarschuwingen, resultaat, aanvraag]);
 
   const updateProduct = useCallback((p: ProductMetRelaties) => {
+    const prijzen = (x: ProductMetRelaties) => x.materiaalCategorieen.flatMap((c) => c.materialen.map((m) => m.prijs)).join(",");
+    const vorig = vorigePrijzen.current.get(p.id);
+    const nu = prijzen(p);
+    if (vorig !== undefined && vorig !== nu) meld("prijs_aangepast");
+    vorigePrijzen.current.set(p.id, nu);
     bewerkt.current.add(p.id);
     setProducten((lijst) => lijst.map((x) => (x.id === p.id ? p : x)));
-  }, []);
+  }, [meld]);
 
   // --- Acties
   async function hernoem() {
@@ -289,7 +325,7 @@ export function RekentoolEditor(props: EditorProps) {
     setPaneel(`werkzaamheid:${productId}`);
   }
 
-  const menu = [
+  const menu = gast ? [{ label: "Naam wijzigen", icon: Pencil, onSelect: () => { setHernoemTekst(naam); setHernoemFout(null); setHernoemOpen(true); } }] : [
     { label: "Naam wijzigen", icon: Pencil, onSelect: () => { setHernoemTekst(naam); setHernoemFout(null); setHernoemOpen(true); } },
     {
       label: "Dupliceren",
@@ -306,7 +342,7 @@ export function RekentoolEditor(props: EditorProps) {
   ];
   const mobielMenu = [
     { label: modus === "bewerken" ? "Uitproberen" : "Bewerken", icon: Play, onSelect: () => setModus((m) => (m === "bewerken" ? "uitproberen" : "bewerken")) },
-    { label: "Zet op mijn website", icon: Globe, onSelect: () => setPaneel("website") },
+    { label: gast ? "Account maken" : "Zet op mijn website", icon: Globe, onSelect: () => setPaneel(gast ? "account" : "website") },
     ...menu,
   ];
 
@@ -314,7 +350,7 @@ export function RekentoolEditor(props: EditorProps) {
     { id: "logo", label: "Logo ingesteld", klaar: Boolean(branding.logoUrl), paneel: "uiterlijk" },
     { id: "wz", label: "Minstens één onderdeel", klaar: producten.some((p) => p.actief), paneel: producten.length ? "start" : "toevoegen" },
     { id: "prijzen", label: "Geen voorbeeldprijzen meer", klaar: producten.length > 0 && Object.values(waarschuwingen).every((w) => w.soort !== "voorbeeld"), paneel: "start" },
-    { id: "web", label: "Op je website gezet", klaar: props.toolStatus === "GEPUBLICEERD", paneel: "website" },
+    { id: "web", label: "Op je website gezet", klaar: props.toolStatus === "GEPUBLICEERD", paneel: gast ? "account" : "website" },
   ];
 
   const geselecteerdProduct = paneel.startsWith("werkzaamheid:") ? producten.find((p) => p.id === paneel.slice(13)) : undefined;
@@ -375,7 +411,8 @@ export function RekentoolEditor(props: EditorProps) {
       {paneel === "uiterlijk" && <PaneelUiterlijk toolId={toolId} branding={branding} tier={tier} email={email} />}
       {paneel === "resultaat" && <PaneelResultaat toolId={toolId} start={resultaat} onStatus={setOpslag} onWijzig={setResultaat} />}
       {paneel === "aanvraag" && <PaneelAanvraag toolId={toolId} start={aanvraag} onStatus={setOpslag} onWijzig={setAanvraag} />}
-      {paneel === "website" && (
+      {paneel === "account" && gast && gast.accountPaneel}
+      {paneel === "website" && !gast && (
         <PaneelWebsite
           toolId={toolId}
           toolNaam={naam}
@@ -395,11 +432,29 @@ export function RekentoolEditor(props: EditorProps) {
   const nietOpgeslagen = opslag.status === "fout" || opslag.ongeldig;
 
   return (
-    <div className="-mx-4 -my-6 flex h-[calc(100dvh-4rem)] min-h-[32rem] flex-col md:-mx-8 md:-my-8">
+    <div className={cn("flex min-h-[32rem] flex-col", gast ? "h-dvh" : "-mx-4 -my-6 h-[calc(100dvh-4rem)] md:-mx-8 md:-my-8")}>
+      {gast && (
+        <div role="status" className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-accent px-4 py-2 text-sm text-foreground">
+          <p className="min-w-0 flex-1">
+            Dit is een voorbeeld. Maak een gratis account om hem op je website te zetten. {gast.verlooptOpTekst}
+          </p>
+          <Button type="button" className="h-11 shrink-0" onClick={() => setPaneel("account")}>
+            Account maken
+          </Button>
+        </div>
+      )}
+      {gast?.logoMislukt && (
+        <p className="shrink-0 bg-example/15 px-4 py-2 text-sm text-foreground">
+          We konden je logo niet ophalen. Je kunt het zelf toevoegen:{" "}
+          <button type="button" onClick={() => setPaneel("uiterlijk")} className="font-semibold underline">
+            Logo toevoegen
+          </button>
+        </p>
+      )}
       {/* Bovenbalk */}
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-2 sm:gap-3 sm:px-4">
         <Link
-          href="/dashboard/tools"
+          href={gast ? "/" : "/dashboard/tools"}
           onClick={(e) => {
             if (nietOpgeslagen) {
               e.preventDefault();
@@ -407,13 +462,13 @@ export function RekentoolEditor(props: EditorProps) {
             }
           }}
           className="inline-flex h-11 shrink-0 items-center gap-1 rounded-md px-2 text-sm font-semibold text-foreground hover:bg-secondary"
-          aria-label="Terug naar Rekentools"
+          aria-label={gast ? "Naar de homepage van Kostenplan" : "Terug naar Rekentools"}
         >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          <span className="hidden sm:inline">Rekentools</span>
+          {gast ? <Logo className="h-7 w-7 rounded-md p-1" /> : <ArrowLeft className="h-4 w-4" aria-hidden="true" />}
+          <span className="hidden sm:inline">{gast ? "Kostenplan" : "Rekentools"}</span>
         </Link>
         <h1 className="min-w-0 flex-1 truncate text-base font-bold text-foreground sm:flex-none sm:max-w-[16rem]">{naam}</h1>
-        <Badge variant={props.toolStatus === "GEPUBLICEERD" ? "success" : "muted"} className="hidden shrink-0 sm:inline-flex">
+        <Badge variant={props.toolStatus === "GEPUBLICEERD" ? "success" : "muted"} className={cn("hidden shrink-0", !gast && "sm:inline-flex")}>
           {props.toolStatus === "GEPUBLICEERD" ? "Live" : props.toolStatus === "GEPAUZEERD" ? "Gepauzeerd" : "Concept"}
         </Badge>
         <div aria-live="polite" className="ml-auto min-w-0 shrink-0 text-xs sm:ml-0 sm:flex-1 sm:text-sm">
@@ -461,9 +516,14 @@ export function RekentoolEditor(props: EditorProps) {
         <div className="md:hidden">
           <DropdownMenu ariaLabel="Meer acties voor deze rekentool" items={mobielMenu} className="h-11 w-11" />
         </div>
-        <Button type="button" className="hidden h-11 shrink-0 md:inline-flex" onClick={() => setPaneel("website")}>
+        <Button type="button" className="hidden h-11 shrink-0 md:inline-flex" onClick={() => setPaneel(gast ? "account" : "website")}>
           <Globe className="h-4 w-4" aria-hidden="true" /> Zet op mijn website
         </Button>
+        {gast && (
+          <Link href="/login" className="hidden h-11 shrink-0 items-center rounded-md px-3 text-sm font-semibold text-foreground hover:bg-secondary md:inline-flex">
+            Inloggen
+          </Link>
+        )}
       </header>
 
       {melding && (
@@ -503,7 +563,7 @@ export function RekentoolEditor(props: EditorProps) {
             <h2 className="font-bold text-foreground">Je probeert je rekentool uit</h2>
             <p className="mt-1 text-sm text-muted-foreground">Zo ziet je klant het. Testmodus: er wordt geen aanvraag verstuurd.</p>
             <Button type="button" variant="outline" className="mt-3 h-11" onClick={() => setModus("bewerken")}>
-              Terug naar bewerken
+              {gast ? "Prijzen aanpassen" : "Terug naar bewerken"}
             </Button>
           </aside>
         )}
@@ -524,9 +584,14 @@ export function RekentoolEditor(props: EditorProps) {
         </BottomSheet>
       )}
       {isMobiel && modus === "uitproberen" && (
-        <p className="shrink-0 border-t border-border bg-card px-4 py-2 text-center text-sm font-medium text-foreground">
-          Testmodus: er wordt geen aanvraag verstuurd.
-        </p>
+        <div className="flex shrink-0 flex-col gap-2 border-t border-border bg-card p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <p className="text-center text-sm font-medium text-foreground">Testmodus: er wordt geen aanvraag verstuurd.</p>
+          {gast && (
+            <Button type="button" className="h-11 w-full" onClick={() => setModus("bewerken")}>
+              Prijzen aanpassen
+            </Button>
+          )}
+        </div>
       )}
 
       {/* Dialogen */}

@@ -70,3 +70,5 @@ export const GAST_GEBEURTENISSEN = [
   "embed_gekopieerd",
 ] as const;
 export type GastGebeurtenisType = (typeof GAST_GEBEURTENISSEN)[number];
+
+export const GAST_BEWIJS_COOKIE = "kostenplan_gast_bewijs";
