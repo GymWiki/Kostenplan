@@ -321,6 +321,7 @@ export function Calculator({
       const productRegel = breakdown.productRegels.find((regel) => regel.productId === product.id);
 
       regels.push({
+        productId: product.id,
         naam: product.naam,
         type: "product",
         aantal: qty,

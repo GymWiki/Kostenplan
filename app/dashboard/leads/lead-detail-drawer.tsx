@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { X, Mail, MessageCircle, Pencil, Check, Plus, FileText } from "lucide-react";
 import { formatCurrency } from "@/app/lib/format";
@@ -35,10 +36,13 @@ export function LeadDetailDrawer({
   lead,
   onClose,
   onUpdateStatus,
+  toolBestaat,
 }: {
   lead: LeadWithNotes | null;
   onClose: () => void;
   onUpdateStatus: (leadId: string, status: LeadStatus) => void;
+  // De rekentool van deze lead bestaat nog (niet verwijderd).
+  toolBestaat: boolean;
 }) {
   // De vakman "ziet" een klantreactie door de aanvraag te openen — dooft de
   // pulserende stip op de kanban-kaart/lijstregel (zie kanban-board.tsx).
@@ -56,6 +60,10 @@ export function LeadDetailDrawer({
   });
 
   if (!lead) return null;
+
+  // "Bekijk in rekentool": opent de editor met de werkzaamheid van deze lead.
+  const eerstProductId = lead.snapshot.regels.find((r) => r.productId)?.productId;
+  const rekentoolHref = `/dashboard/tools/${lead.toolId}${eerstProductId ? `?paneel=${encodeURIComponent(`werkzaamheid:${eerstProductId}`)}` : ""}`;
 
   const mailtoHref = `mailto:${lead.email}?subject=${encodeURIComponent("Over je offerte-aanvraag")}`;
 
@@ -186,7 +194,17 @@ export function LeadDetailDrawer({
           </div>
 
           <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold text-foreground">Aanvraag</h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-foreground">Aanvraag</h3>
+              {toolBestaat && (
+                <Link
+                  href={rekentoolHref}
+                  className="inline-flex min-h-11 items-center rounded-md text-sm font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  Bekijk in rekentool
+                </Link>
+              )}
+            </div>
             <div className="flex flex-col divide-y divide-border rounded-lg border border-border tabular-nums">
               {lead.snapshot.regels.map((regel, i) => {
                 const details = [

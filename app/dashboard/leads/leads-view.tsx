@@ -279,7 +279,12 @@ export function LeadsView({
         />
       )}
 
-      <LeadDetailDrawer lead={selectedLead} onClose={() => setSelectedLeadId(null)} onUpdateStatus={updateLeadStatus} />
+      <LeadDetailDrawer
+        lead={selectedLead}
+        onClose={() => setSelectedLeadId(null)}
+        onUpdateStatus={updateLeadStatus}
+        toolBestaat={selectedLead ? (tools ?? []).some((t) => t.id === selectedLead.toolId) : false}
+      />
     </div>
   );
 }
