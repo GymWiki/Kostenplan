@@ -26,7 +26,7 @@ export default async function OnboardingKlaarPage({
   if (!tool) redirect("/onboarding/rekentool");
 
   const aantal = await prisma.product.count({ where: { toolId: tool.id } });
-  if (aantal === 0) redirect("/onboarding/werkzaamheden");
+  if (aantal === 0) redirect("/onboarding/onderdelen");
 
   // Alleen bekende preset-ids tonen — de querystring is gebruikersinvoer.
   const overIds = new Set((over ?? "").split(","));
@@ -57,7 +57,7 @@ export default async function OnboardingKlaarPage({
           <div className="flex flex-col gap-2 rounded-md border border-border bg-secondary/40 p-3 sm:p-4">
             <p className="flex items-center gap-2 text-sm font-medium text-foreground">
               <Sparkles className="h-4 w-4 shrink-0 text-primary" />
-              Meer werkzaamheden met een upgrade
+              Meer onderdelen met een upgrade
             </p>
             <p className="break-words text-sm text-muted-foreground">
               Past niet in je huidige pakket: {overPresets.map((p) => p.naam).join(", ")}.

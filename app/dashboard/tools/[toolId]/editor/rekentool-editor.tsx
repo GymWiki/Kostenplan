@@ -84,9 +84,9 @@ function useIsMobiel() {
 }
 
 const PANEEL_TITEL = (p: string, products: ProductMetRelaties[]) => {
-  if (p.startsWith("werkzaamheid:")) return products.find((x) => x.id === p.slice(13))?.naam || "Werkzaamheid";
+  if (p.startsWith("werkzaamheid:")) return products.find((x) => x.id === p.slice(13))?.naam || "Onderdeel";
   return (
-    { start: "Aan de slag", uiterlijk: "Uiterlijk", resultaat: "Resultaat", aanvraag: "Aanvraagformulier", website: "Zet op mijn website", toevoegen: "Werkzaamheid toevoegen", aangepast: "Aangepaste rekentool" } as Record<string, string>
+    { start: "Aan de slag", uiterlijk: "Uiterlijk", resultaat: "Resultaat", aanvraag: "Aanvraagformulier", website: "Zet op mijn website", toevoegen: "Onderdeel toevoegen", aangepast: "Aangepaste rekentool" } as Record<string, string>
   )[p] ?? "Aan de slag";
 };
 
@@ -157,7 +157,7 @@ export function RekentoolEditor(props: EditorProps) {
     const w: Record<string, Waarschuwing> = {};
     for (const p of producten) {
       const mats = p.materiaalCategorieen.flatMap((c) => c.materialen.filter((m) => m.actief));
-      if (mats.length === 0) w[`werkzaamheid:${p.id}`] = { soort: "blokkade", tekst: `${p.naam} heeft nog geen materiaal. Voeg een materiaal toe of verberg de werkzaamheid.` };
+      if (mats.length === 0) w[`werkzaamheid:${p.id}`] = { soort: "blokkade", tekst: `${p.naam} heeft nog geen materiaal. Voeg een materiaal toe of verberg het onderdeel.` };
       else if (mats.some((m) => m.isVoorbeeld)) w[`werkzaamheid:${p.id}`] = { soort: "voorbeeld", tekst: `${p.naam} heeft nog voorbeeldprijzen. Pas ze aan naar wat jij rekent.` };
     }
     return w;
@@ -312,7 +312,7 @@ export function RekentoolEditor(props: EditorProps) {
 
   const checklist = [
     { id: "logo", label: "Logo ingesteld", klaar: Boolean(branding.logoUrl), paneel: "uiterlijk" },
-    { id: "wz", label: "Minstens één werkzaamheid", klaar: producten.some((p) => p.actief), paneel: producten.length ? "start" : "toevoegen" },
+    { id: "wz", label: "Minstens één onderdeel", klaar: producten.some((p) => p.actief), paneel: producten.length ? "start" : "toevoegen" },
     { id: "prijzen", label: "Geen voorbeeldprijzen meer", klaar: producten.length > 0 && Object.values(waarschuwingen).every((w) => w.soort !== "voorbeeld"), paneel: "start" },
     { id: "web", label: "Op je website gezet", klaar: props.toolStatus === "GEPUBLICEERD", paneel: "website" },
   ];
@@ -512,7 +512,7 @@ export function RekentoolEditor(props: EditorProps) {
       {isMobiel && modus === "bewerken" && !sheetOpen && (
         <div className="shrink-0 border-t border-border bg-card p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button type="button" className="h-11 w-full" onClick={() => setSheetOpen(true)}>
-            Checklist en werkzaamheden
+            Checklist en onderdelen
           </Button>
         </div>
       )}
@@ -573,8 +573,8 @@ export function RekentoolEditor(props: EditorProps) {
         onClose={() => setVerwijderProduct(null)}
         onConfirm={() => void verwijderWerkzaamheid()}
         pending={bezig}
-        title="Werkzaamheid verwijderen?"
-        description="De werkzaamheid verdwijnt uit je rekentool. Dit kun je niet ongedaan maken."
+        title="Onderdeel verwijderen?"
+        description="Het onderdeel verdwijnt uit je rekentool. Dit kun je niet ongedaan maken."
       />
       <ConfirmDialog
         open={weggaan}

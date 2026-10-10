@@ -90,7 +90,7 @@ export function UseCaseSwitcher() {
 
   return (
     <div className="flex flex-col items-center gap-8">
-      <div className="flex flex-wrap justify-center gap-1.5" role="tablist" aria-label="Voorbeeld per werkzaamheid">
+      <div className="flex flex-wrap justify-center gap-1.5" role="tablist" aria-label="Voorbeeld per onderdeel">
         {USE_CASES.map((u) => (
           <button
             key={u.key}

@@ -128,7 +128,7 @@ function TarievenSheet({
   const werk = { dagdeel: "een ochtend of middag", dag: "een dag", uur: "een uur" }[stap.enkelvoud];
 
   return (
-    <Sheet open={open} onClose={onClose} title="Mijn tarieven" description="Eén keer instellen, geldt voor al je werkzaamheden.">
+    <Sheet open={open} onClose={onClose} title="Mijn tarieven" description="Eén keer instellen, geldt voor al je onderdelen.">
       <form onSubmit={opslaan} className="flex flex-col gap-4">
         {fout && (
           <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">

@@ -78,7 +78,7 @@ export function CostSettingsForm({
 
       <CostTypeCard
         title="Arbeidskosten"
-        description="De standaardtarieven voor arbeidstijd van je werkzaamheden in deze rekentool."
+        description="De standaardtarieven voor arbeidstijd van je onderdelen in deze rekentool."
         enabled={arbeidOn}
         onToggle={setArbeidOn}
         toggleName="arbeidEnabled"
@@ -103,8 +103,8 @@ export function CostSettingsForm({
           </Select>
         </Field>
         <p className="text-xs text-muted-foreground">
-          Nieuwe werkzaamheden gebruiken standaard dit tarief. Vul voor de zekerheid alle drie de
-          tarieven in — een werkzaamheid kan altijd in een andere eenheid rekenen dan hierboven gekozen.
+          Nieuwe onderdelen gebruiken standaard dit tarief. Vul voor de zekerheid alle drie de
+          tarieven in — een onderdeel kan altijd in een andere eenheid rekenen dan hierboven gekozen.
         </p>
         <div className="grid gap-4 sm:grid-cols-3">
           <AccountDefaultField
@@ -181,7 +181,7 @@ export function CostSettingsForm({
         </FieldRow>
         <p className="text-xs text-muted-foreground">
           Wijkt het bij een werkzaamheid af (bijv. zware stenen die apart vervoerd moeten worden)?
-          Stel dat per werkzaamheid in bij het bewerken ervan.
+          Stel dat per onderdeel in bij het bewerken ervan.
         </p>
         <p className="border-t border-border pt-4 text-xs text-muted-foreground">
           Geldt voor {geraaktDoorTransport} van de {productCounts.totaal} werkzaamheden — de rest heeft
@@ -211,7 +211,7 @@ export function CostSettingsForm({
           />
         </FieldRow>
         <p className="text-xs text-muted-foreground">
-          Wijkt het bij een werkzaamheid af? Stel dat per werkzaamheid in bij het bewerken ervan.
+          Wijkt het bij een onderdeel af? Stel dat per onderdeel in bij het bewerken ervan.
         </p>
         <p className="border-t border-border pt-4 text-xs text-muted-foreground">
           Geldt voor {geraaktDoorVoorrij} van de {productCounts.totaal} werkzaamheden — de rest heeft
@@ -221,7 +221,7 @@ export function CostSettingsForm({
 
       <CostTypeCard
         title="Materiaalkosten"
-        description="Kosten van de materialen die je bij een werkzaamheid instelt."
+        description="Kosten van de materialen die je bij een onderdeel instelt."
         enabled={materiaalOn}
         onToggle={setMateriaalOn}
         toggleName="materiaalEnabled"
@@ -229,7 +229,7 @@ export function CostSettingsForm({
         visibleDefault={costSettings.materiaalZichtbaar}
       >
         <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
-          De prijs per materiaal stel je in bij de werkzaamheid zelf — dat is al de volledige prijs die
+          De prijs per materiaal stel je in bij het onderdeel zelf — dat is al de volledige prijs die
           je de klant rekent, inclusief jouw marge. Geen apart opslagpercentage meer hier.
         </p>
       </CostTypeCard>
@@ -259,7 +259,7 @@ export function CostSettingsForm({
                 onChange={(e) => setBandbreedteModus(e.target.value as BandbreedteModus)}
               >
                 <option value="GEEN">Geen bandbreedte — één vast bedrag</option>
-                <option value="PER_PRODUCT">Per werkzaamheid — optellen van min/max-prijzen</option>
+                <option value="PER_PRODUCT">Per onderdeel — optellen van min/max-prijzen</option>
                 <option value="TOTAAL">Over het totaal — marge op het eindtotaal</option>
               </Select>
             </Field>

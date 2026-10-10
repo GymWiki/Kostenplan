@@ -73,7 +73,7 @@ export function RekentoolsLijst({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Rekentools</h1>
-          <p className="mt-1 text-muted-foreground">Elke rekentool heeft zijn eigen werkzaamheden, uiterlijk en link.</p>
+          <p className="mt-1 text-muted-foreground">Elke rekentool heeft zijn eigen onderdelen, uiterlijk en link.</p>
         </div>
         {nieuwKnop}
       </div>
@@ -96,7 +96,7 @@ export function RekentoolsLijst({
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <p className="font-medium text-foreground">Nog geen rekentools</p>
-            <p className="max-w-sm text-sm text-muted-foreground">Maak je eerste rekentool, kies een paar werkzaamheden en zet hem op je website.</p>
+            <p className="max-w-sm text-sm text-muted-foreground">Maak je eerste rekentool, kies een paar onderdelen en zet hem op je website.</p>
             {nieuwKnop}
           </CardContent>
         </Card>
@@ -227,7 +227,7 @@ function Kaart({ tool, magDupliceren, onVerwijderd }: { tool: RekentoolKaartData
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <Package className="h-4 w-4" aria-hidden="true" />
-            {tool.aantalWerkzaamheden} {tool.aantalWerkzaamheden === 1 ? "werkzaamheid" : "werkzaamheden"}
+            {tool.aantalWerkzaamheden} {tool.aantalWerkzaamheden === 1 ? "onderdeel" : "onderdelen"}
           </span>
           <Badge variant={tool.live ? "success" : "muted"}>{tool.live ? "Live op je website" : "Nog niet op je website"}</Badge>
         </div>
@@ -281,7 +281,7 @@ function NieuweRekentoolDialoog({ open, onClose }: { open: boolean; onClose: () 
           Hoe heet je rekentool?
         </label>
         <Input id="nieuw-naam" value={naam} maxLength={80} autoFocus placeholder="Bijv. Tuinaanleg…" onChange={(e) => setNaam(e.target.value)} aria-invalid={fout ? true : undefined} />
-        <p className="text-sm text-muted-foreground">Daarna kies je in de editor je werkzaamheden.</p>
+        <p className="text-sm text-muted-foreground">Daarna kies je in de editor je onderdelen.</p>
         {fout && (
           <p role="alert" className="text-sm font-medium text-destructive">
             {fout}

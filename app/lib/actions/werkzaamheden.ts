@@ -29,7 +29,7 @@ export type OpslaanResultaat =
 const MAX_MATERIALEN = 50;
 
 function valideerDraft(d: WerkzaamheidDraft): string | null {
-  if (d.naam.trim() === "") return "Geef de werkzaamheid een naam.";
+  if (d.naam.trim() === "") return "Geef het onderdeel een naam.";
   if (d.naam.trim().length > 120) return "De naam is te lang (maximaal 120 tekens).";
   if (d.materialen.length === 0) return "Houd minstens één materiaal over.";
   if (d.materialen.length > MAX_MATERIALEN) return "Er zijn te veel materialen.";
@@ -80,7 +80,7 @@ export async function saveWerkzaamheidAction(
       extraOpties: { select: { id: true } },
     },
   });
-  if (!product) return { ok: false, error: "Werkzaamheid niet gevonden." };
+  if (!product) return { ok: false, error: "Onderdeel niet gevonden." };
 
   const ids: Record<string, string> = {};
 
@@ -189,7 +189,7 @@ export async function createWerkzaamheidAction(
     if (aantal >= limiet) {
       return {
         ok: false,
-        error: `Je hebt de limiet van ${limiet} werkzaamheden (over al je rekentools heen) voor het Gratis-pakket bereikt. Upgrade naar Plus of Pro voor een onbeperkt aantal werkzaamheden.`,
+        error: `Je hebt de limiet van ${limiet} onderdelen (over al je rekentools heen) voor het Gratis-pakket bereikt. Upgrade naar Plus of Pro voor een onbeperkt aantal onderdelen.`,
       };
     }
   }

@@ -7,12 +7,12 @@ import { MarketingPricingTable } from "@/app/components/pricing/marketing-pricin
 export const metadata: Metadata = {
   title: "Prijzen voor Hoveniers",
   description:
-    "Bekijk de prijzen van Kostenplan: gratis starten met tot 10 werkzaamheden, of upgrade naar Plus of Pro voor onbeperkt gebruik en een leads-CRM.",
+    "Bekijk de prijzen van Kostenplan: gratis starten met tot 10 onderdelen, of upgrade naar Plus of Pro voor onbeperkt gebruik en een leads-CRM.",
   alternates: { canonical: "/prijzen" },
   openGraph: {
     title: "Prijzen voor Hoveniers · Kostenplan",
     description:
-      "Gratis starten met tot 10 werkzaamheden, of upgrade naar Plus of Pro voor onbeperkt gebruik en een leads-CRM.",
+      "Gratis starten met tot 10 onderdelen, of upgrade naar Plus of Pro voor onbeperkt gebruik en een leads-CRM.",
     url: "/prijzen",
     siteName: "Kostenplan",
     locale: "nl_NL",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Prijzen voor Hoveniers · Kostenplan",
     description:
-      "Gratis starten met tot 10 werkzaamheden, of upgrade naar Plus of Pro voor onbeperkt gebruik en een leads-CRM.",
+      "Gratis starten met tot 10 onderdelen, of upgrade naar Plus of Pro voor onbeperkt gebruik en een leads-CRM.",
     images: ["/opengraph-image"],
   },
 };

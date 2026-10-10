@@ -9,7 +9,7 @@ import { ExtraOptionsManager } from "../bewerken/extra-options-manager";
 import { HelpTip } from "@/app/components/ui/help-tip";
 import { LinkButton } from "@/app/components/ui/button";
 
-export const metadata: Metadata = { title: "Werkzaamheid bewerken (uitgebreid)" };
+export const metadata: Metadata = { title: "Onderdeel bewerken (uitgebreid)" };
 
 export default async function BewerkProductPage({
   params,
@@ -43,7 +43,7 @@ export default async function BewerkProductPage({
           <HelpTip contentKey="producten.opbouw" />
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Alle instellingen van deze werkzaamheid, inclusief de uitzonderingen die het gewone scherm niet laat zien.
+          Alle instellingen van dit onderdeel, inclusief de uitzonderingen die het gewone scherm niet laat zien.
         </p>
         <LinkButton href={`/dashboard/tools/${toolId}/producten/${id}/bewerken`} variant="outline" className="mt-3">
           Terug naar het gewone scherm

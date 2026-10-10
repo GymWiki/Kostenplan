@@ -294,7 +294,7 @@ export function PaneelAangepast({ toolId, onOmgezet }: { toolId: string; onOmgez
                 Omzetten met de prijzen hierboven?
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Je rekentool rekent daarna met werkzaamheden. Je leads blijven bewaard. Voorrijkosten en transport tellen vanaf dan per werkzaamheid mee.
+                Je rekentool rekent daarna met onderdelen. Je leads blijven bewaard. Voorrijkosten en transport tellen vanaf dan per onderdeel mee.
               </p>
               <div className="mt-3 flex gap-2">
                 <Button type="button" className="h-11" disabled={bezig} onClick={() => void omzetten()}>

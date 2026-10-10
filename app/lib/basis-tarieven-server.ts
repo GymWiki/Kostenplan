@@ -49,7 +49,7 @@ export async function slaBasisTarievenOp(
     });
     if (metProductiviteit > 0) {
       return {
-        error: `Je bestaande werkzaamheden rekenen al per ${huidigeEenheid.toLowerCase()}. Wijzig dat via Prijzen, dan pas je daar ook de productiviteit aan.`,
+        error: `Je bestaande onderdelen rekenen al per ${huidigeEenheid.toLowerCase()}. Wijzig dat via Prijzen, dan pas je daar ook de productiviteit aan.`,
       };
     }
   }

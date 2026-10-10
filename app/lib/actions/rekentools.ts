@@ -117,11 +117,11 @@ export async function kopieerWerkzaamheidAction(
     where: { id: bronProductId, tool: { companyId: company.id, deletedAt: null } },
     include: { materiaalCategorieen: { include: { materialen: true } }, extraOpties: true },
   });
-  if (!bron) return { ok: false, error: "Deze werkzaamheid bestaat niet meer." };
+  if (!bron) return { ok: false, error: "Dit onderdeel bestaat niet meer." };
 
   const limiet = PLAN_LIMITS[effectiveTier(company)].maxProductsPerCompany;
   if (limiet !== null && (await prisma.product.count({ where: { tool: { companyId: company.id } } })) >= limiet) {
-    return { ok: false, error: `Je hebt de limiet van ${limiet} werkzaamheden voor het Gratis-pakket bereikt.` };
+    return { ok: false, error: `Je hebt de limiet van ${limiet} onderdelen voor het Gratis-pakket bereikt.` };
   }
   const order = await prisma.product.count({ where: { toolId: doelToolId } });
   const kopie = await prisma.product.create({

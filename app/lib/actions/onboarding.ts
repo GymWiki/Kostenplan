@@ -117,7 +117,7 @@ export async function applyOnboardingBrandingAction(formData: FormData) {
   }
 
   revalidatePath(`/dashboard/tools/${tool.id}`);
-  redirect("/onboarding/werkzaamheden");
+  redirect("/onboarding/onderdelen");
 }
 
 export type StartpakketFormState = { error?: string } | null;
@@ -146,7 +146,7 @@ export async function createStartpakketAction(
 
   const gekozen = new Set(formData.getAll("preset").map(String));
   const presets = HOVENIER_PRESETS.filter((p) => gekozen.has(p.id));
-  if (presets.length === 0) return { error: "Kies minstens één werkzaamheid." };
+  if (presets.length === 0) return { error: "Kies minstens één onderdeel." };
 
   const tarieven = parseBasisTarievenForm(formData);
   if (!tarieven.success) return { error: "Controleer je tarieven en probeer het opnieuw." };

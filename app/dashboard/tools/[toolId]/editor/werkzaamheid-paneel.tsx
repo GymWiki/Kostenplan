@@ -174,7 +174,7 @@ export function WerkzaamheidPaneel({
         </span>
         <div className="min-w-0 flex-1">
           <label htmlFor="wz-naam" className="sr-only">
-            Naam van de werkzaamheid
+            Naam van het onderdeel
           </label>
           <Input
             id="wz-naam"
@@ -186,7 +186,7 @@ export function WerkzaamheidPaneel({
           />
         </div>
         <DropdownMenu
-          ariaLabel="Meer acties voor deze werkzaamheid"
+          ariaLabel="Meer acties voor dit onderdeel"
           items={[
             { label: "Dupliceren", icon: Copy, onSelect: dupliceer },
             { label: "Verwijderen", icon: Trash2, destructive: true, onSelect: onVerwijder },

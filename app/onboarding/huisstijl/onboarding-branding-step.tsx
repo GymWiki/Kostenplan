@@ -29,7 +29,7 @@ export function OnboardingBrandingStep() {
           Opslaan en doorgaan
           <ArrowRight className="h-4 w-4" />
         </Button>
-        <LinkButton href="/onboarding/werkzaamheden" variant="outline" size="lg" className="w-full sm:flex-1">
+        <LinkButton href="/onboarding/onderdelen" variant="outline" size="lg" className="w-full sm:flex-1">
           Overslaan, ik doe dit later
         </LinkButton>
       </form>

@@ -144,7 +144,7 @@ export default function PrijsCalculatorPage() {
             <ul className="mt-6 flex flex-col gap-4">
               {[
                 "Je basistarieven: uurtarief, voorrijkosten en gewenste materiaalmarge.",
-                "Een lijst van de werkzaamheden die je aanbiedt, met hun prijs of prijs per eenheid.",
+                "Een lijst van de onderdelen die je aanbiedt, met hun prijs of prijs per eenheid.",
                 "De vragen die bepalen welke prijs van toepassing is, bijvoorbeeld afmetingen, materiaalkeuze of extra opties.",
               ].map((tekst) => (
                 <li key={tekst} className="flex items-start gap-3">
@@ -155,7 +155,7 @@ export default function PrijsCalculatorPage() {
             </ul>
             <p className="mt-6 text-muted-foreground">
               Met alleen deze basis staat een eerste prijs calculator al binnen enkele minuten
-              live — je kunt hem daarna altijd uitbreiden met meer werkzaamheden of
+              live — je kunt hem daarna altijd uitbreiden met meer onderdelen of
               voorwaardelijke vragen.
             </p>
           </Reveal>
@@ -190,7 +190,7 @@ export default function PrijsCalculatorPage() {
                 Zet je eigen prijs calculator live
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                Gratis starten met tot 10 werkzaamheden. Binnen 5 minuten online.
+                Gratis starten met tot 10 onderdelen. Binnen 5 minuten online.
               </p>
               <div className="relative mt-8 inline-flex">
                 <span

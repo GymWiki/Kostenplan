@@ -42,7 +42,7 @@ export function StartpakketForm({
       <section className="flex flex-col gap-3" aria-labelledby="werk-heading">
         <div className="flex items-center justify-between gap-3">
           <h2 id="werk-heading" className="text-sm font-semibold text-foreground">
-            Welke werkzaamheden doe je?
+            Welke onderdelen doe je?
           </h2>
           <button
             type="button"

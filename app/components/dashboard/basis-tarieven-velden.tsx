@@ -67,7 +67,7 @@ export function BasisTarievenVelden({
         </Select>
         {eenheidVergrendeld && <input type="hidden" name="arbeidStapEenheid" value={eenheid} />}
         {eenheidVergrendeld && (
-          <p className="text-xs text-muted-foreground">Je bestaande werkzaamheden rekenen al zo; wijzigen kan via Prijzen.</p>
+          <p className="text-xs text-muted-foreground">Je bestaande onderdelen rekenen al zo; wijzigen kan via Prijzen.</p>
         )}
       </div>
       <div className="flex flex-col gap-1.5">
