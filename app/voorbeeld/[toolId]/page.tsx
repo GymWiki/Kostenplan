@@ -3,6 +3,7 @@ import { getMateriaalOptiesVoorEngineVelden, getToolCostSettings, requireActiveT
 import { prisma } from "@/app/lib/prisma";
 import { effectiveTier } from "@/app/lib/subscription";
 import { alleVeldenVanConfig, parseCalculatorConfig, publicCalculatorConfig } from "@/app/lib/calculator-engine";
+import { parseLeadFormConfig, parseResultaatConfig } from "@/app/lib/tools";
 import { VoorbeeldClient } from "./voorbeeld-client";
 
 export const metadata: Metadata = { title: "Voorbeeld", robots: { index: false, follow: false } };
@@ -48,7 +49,14 @@ export default async function VoorbeeldPage({ params }: { params: Promise<{ tool
       bedrijfsnaam={company.naam}
       email={user.email}
       subscriptionTier={effectiveTier(company)}
-      initieel={{ products, branding, costSettings }}
+      initieel={{
+        products,
+        branding,
+        costSettings,
+        toelichting: parseResultaatConfig(tool.resultaatConfig).toelichting,
+        ctaTekst: parseResultaatConfig(tool.resultaatConfig).ctaTekst,
+        vraagTelefoon: parseLeadFormConfig(tool.leadFormConfig).vraagTelefoon,
+      }}
       engine={engine}
     />
   );

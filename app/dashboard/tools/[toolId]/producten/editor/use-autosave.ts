@@ -22,8 +22,10 @@ export function useAutosave<T>(
   const bezig = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const opslaanRef = useRef(opslaan);
+  const uitgeschakeldRef = useRef(uitgeschakeld);
   useEffect(() => {
     opslaanRef.current = opslaan;
+    uitgeschakeldRef.current = uitgeschakeld;
   });
 
   const draai = useCallback(async () => {
@@ -71,6 +73,16 @@ export function useAutosave<T>(
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [status]);
+
+  // Paneel sluit (bijv. een ander onderdeel geselecteerd) met nog niet
+  // opgeslagen werk: sla dat alsnog op in plaats van het te laten vallen.
+  useEffect(() => {
+    return () => {
+      if (!uitgeschakeldRef.current && nieuwste.current !== laatstOpgeslagen.current && !bezig.current) {
+        void opslaanRef.current(nieuwste.current);
+      }
+    };
+  }, []);
 
   const opnieuw = useCallback(() => void draai(), [draai]);
 

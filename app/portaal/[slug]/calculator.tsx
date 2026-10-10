@@ -66,6 +66,11 @@ type Props = {
   // Alleen gezet door de rekentool-editor: maakt delen klikbaar. Zonder editor
   // verandert er niets aan de klant-rekentool.
   editor?: EditorHaken;
+  // Uit Tool.resultaatConfig / Tool.leadFormConfig (paneel Resultaat en
+  // Aanvraagformulier in de editor).
+  toelichting?: string | null;
+  ctaTekst?: string | null;
+  vraagTelefoon?: boolean;
 };
 
 // Moet gelijk blijven aan de Kostenplan-standaardkleuren in globals.css
@@ -115,6 +120,9 @@ export function Calculator({
   costSettings,
   products,
   editor,
+  toelichting = null,
+  ctaTekst = null,
+  vraagTelefoon = true,
 }: Props) {
   const inEditor = Boolean(editor);
   // Rechtstreeks door de klant bijgehouden hoeveelheid — alleen gebruikt voor
@@ -131,7 +139,12 @@ export function Calculator({
   const [productSjabloonInvoer, setProductSjabloonInvoer] = useState<
     Record<string, Record<string, unknown>>
   >(() => (editor && products[0] && products[0].sjabloon !== "ENKELE_HOEVEELHEID" ? { [products[0].id]: { lengte: 5, breedte: 4, diepte: 0.1 } } : {}));
-  const [materialSelections, setMaterialSelections] = useState<Record<string, string>>({});
+  const [materialSelections, setMaterialSelections] = useState<Record<string, string>>(() =>
+    // In de editor staat bij het eerste voorbeeld alvast het eerste materiaal gekozen.
+    editor && products[0]
+      ? Object.fromEntries(products[0].materiaalCategorieen.filter((c) => c.materialen[0]).map((c) => [c.id, c.materialen[0].id]))
+      : {}
+  );
   const [extraSelections, setExtraSelections] = useState<Record<string, number>>({});
 
   // Leidt voor elk niet-ENKELE_HOEVEELHEID product de hoeveelheid (voor
@@ -457,6 +470,9 @@ export function Calculator({
                   bedankTekst={bedankTekst}
                   magOfferteAanvragen={magOfferteAanvragen}
                   heeftOntbrekendeVerplichteMaterialen={heeftOntbrekendeVerplichteMaterialen}
+                  toelichting={toelichting}
+                  ctaTekst={ctaTekst}
+                  vraagTelefoon={vraagTelefoon}
                 />
               </div>
             </div>
@@ -1079,7 +1095,13 @@ function Summary({
   bedankTekst,
   magOfferteAanvragen,
   heeftOntbrekendeVerplichteMaterialen,
+  toelichting,
+  ctaTekst,
+  vraagTelefoon,
 }: {
+  toelichting: string | null;
+  ctaTekst: string | null;
+  vraagTelefoon: boolean;
   toolId: string;
   breakdown: ReturnType<typeof calculateBreakdownRange>;
   snapshot: LeadSnapshot;
@@ -1241,16 +1263,18 @@ function Summary({
                       <p className="text-xs text-destructive">{state.fieldErrors.email}</p>
                     )}
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="lead-telefoon">Telefoonnummer (optioneel)</Label>
-                    <Input
-                      id="lead-telefoon"
-                      name="telefoonnummer"
-                      type="tel"
-                      value={leadTelefoon}
-                      onChange={(e) => setLeadTelefoon(e.target.value)}
-                    />
-                  </div>
+                  {vraagTelefoon && (
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="lead-telefoon">Telefoonnummer (optioneel)</Label>
+                      <Input
+                        id="lead-telefoon"
+                        name="telefoonnummer"
+                        type="tel"
+                        value={leadTelefoon}
+                        onChange={(e) => setLeadTelefoon(e.target.value)}
+                      />
+                    </div>
+                  )}
                   {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Button
@@ -1295,7 +1319,7 @@ function Summary({
                       disabled={heeftOntbrekendeVerplichteMaterialen}
                     >
                       <Mail className="h-4 w-4" />
-                      Offerte aanvragen
+                      {ctaTekst ?? "Offerte aanvragen"}
                     </Button>
                   )}
                   <Button
@@ -1311,6 +1335,7 @@ function Summary({
                 </div>
               )}
               </Bewerkbaar>
+              {toelichting && <p className="text-sm text-muted-foreground">{toelichting}</p>}
             </>
           )}
         </CardContent>

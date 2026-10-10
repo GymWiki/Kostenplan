@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { parseLeadFormConfig, parseResultaatConfig } from "@/app/lib/tools";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { getLegacyToolForCompanySlug, getMateriaalOptiesVoorEngineVelden } from "@/app/lib/dal";
@@ -105,6 +106,9 @@ export default async function PortaalPage({
       branding={tool.branding}
       costSettings={effectieveCostSettings}
       products={tool.products}
+      toelichting={parseResultaatConfig(tool.resultaatConfig).toelichting}
+      ctaTekst={parseResultaatConfig(tool.resultaatConfig).ctaTekst}
+      vraagTelefoon={parseLeadFormConfig(tool.leadFormConfig).vraagTelefoon}
     />
   );
 }

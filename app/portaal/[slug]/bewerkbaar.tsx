@@ -96,8 +96,8 @@ export function Bewerkbaar({
       }}
       className={cn(
         "group/bewerk relative min-w-0 cursor-pointer rounded-lg outline-2 outline-offset-2 transition-[outline-color,box-shadow] focus-visible:outline-blue-600",
-        gekozen ? "outline outline-blue-600" : "outline-dashed outline-transparent hover:outline-blue-500/70",
-        sleeptOver && "outline outline-blue-600 bg-blue-500/5",
+        gekozen ? "outline-solid outline-blue-600" : "outline-dashed outline-transparent hover:outline-blue-500/70",
+        sleeptOver && "outline-solid outline-blue-600 bg-blue-500/5",
         className
       )}
     >
