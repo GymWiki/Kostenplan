@@ -97,7 +97,7 @@ Zie `AUDIT-GUIDELINES.md` (file:line, per bestand). Samenvatting van de geautoma
 ## 5. Voorstel
 
 ### Belangrijkste keuze: waar slaat een werkzaamheid op?
-Je fase 1 schrijft een functie die een werkzaamheid omzet naar onderdeel + vragen + prijsregels. Dat is padt B. Ik zie drie paden:
+Je fase 1 schrijft een functie die een werkzaamheid omzet naar onderdeel + vragen + prijsregels. Dat is pad A hieronder. Ik zie drie paden:
 
 - **A. Alles in de engine (jouw tekst).** Een werkzaamheid is een module die `OnderdeelConfig` (versie 2) genereert. Voordeel: standaard en "Aangepast" kunnen in één rekentool naast elkaar staan. Nadelen: de DRAFT/PUBLISHED-versies botsen met "wijzigingen zijn direct live" (elke autosave wordt een nieuwe versie, of we overschrijven de gepubliceerde versie waar leads naar verwijzen); tarieven staan nu als vast getal in de regels en moeten dan overal herschreven worden; de engine rekent als wizard met een stap per onderdeel in plaats van één scherm.
 - **B. Werkzaamheden blijven `Product`, de engine blijft voor bestaande "Aangepaste" tools.** Een nieuwe rekentool is altijd "Standaard" (de editor van fase 2–3 die er al staat). Bestaande engine-tools blijven werken en tonen het label "Aangepast" op **rekentool**-niveau, met een samenvatting en "Omzetten naar standaard" (met prijsverschil vooraf). Nadeel: je kunt niet binnen één rekentool standaard en aangepaste werkzaamheden mengen.
