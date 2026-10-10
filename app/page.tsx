@@ -127,8 +127,8 @@ export default function Home() {
                   className="animate-fade-in-up mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start"
                   style={{ animationDelay: "240ms" }}
                 >
-                  <LinkButton href="/registreren" size="lg">
-                    Maak gratis een rekentool
+                  <LinkButton href="/probeer" size="lg">
+                    Maak gratis je rekentool — geen account nodig
                     <ArrowRight className="h-4 w-4" />
                   </LinkButton>
                   <LinkButton href="/voorbeelden-rekentools" size="lg" variant="outline">

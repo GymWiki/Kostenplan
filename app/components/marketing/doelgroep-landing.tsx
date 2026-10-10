@@ -56,8 +56,8 @@ export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
                 </GeoAnswer>
               </div>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-                <LinkButton href="/registreren" size="lg">
-                  Start nu gratis
+                <LinkButton href="/probeer" size="lg">
+                  Maak gratis je rekentool — geen account nodig
                   <ArrowRight className="h-4 w-4" />
                 </LinkButton>
                 <LinkButton href="/prijzen" size="lg" variant="outline">
