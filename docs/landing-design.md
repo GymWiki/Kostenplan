@@ -85,3 +85,15 @@ link voor alle pakketten en met insluiten (iframe) in Pro.
 Eén tekenmoment (maatlijnen rond de demo bij het laden, CSS `stroke-dashoffset`) en
 subtiele overgangen bij interactie. Geen scroll-jacking, niets blijft verborgen tot je
 scrolt, `prefers-reduced-motion` schakelt het uit. Geen animatiebibliotheek.
+
+## Controle (fase 5)
+
+Gemeten op een lokale productiebuild met Lighthouse 12, mobiel, gesimuleerde throttling
+(3 runs): Performance 95–96 · Accessibility 100 · Best Practices 100 · SEO 100 ·
+CLS 0 · TBT 120–160 ms · **LCP 2,6 s** (kopregel; doel < 2,5 s, dus 0,1 s te hoog in
+de simulatie). Basislijn van de oude pagina: 94 / 97 / 100 / 100, LCP 2,9 s.
+Schermafbeeldingen per sectie: `docs/landing-screens/` (desktop 1440 px en mobiel 390 px).
+
+Open `TODO(Pieter)`: `app/lib/landing/testimonials.ts` (testimonials),
+`app/components/landing/landing-schema.tsx` (`sameAs`), en de voorbeeldprijzen en
+werktempo's in `app/lib/presets/hovenier.ts` (die de demo's gebruiken).

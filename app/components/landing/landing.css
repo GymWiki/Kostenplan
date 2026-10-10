@@ -23,7 +23,6 @@
 .lp h2,
 .lp h3 {
   font-family: var(--font-lp-display);
-  font-stretch: 112%;
   letter-spacing: -0.015em;
   text-wrap: balance;
 }
@@ -146,4 +145,13 @@
 }
 .lp .staal-boom {
   background: radial-gradient(circle at 50% 35%, #5c9a49 0 9px, transparent 10px), linear-gradient(#6b4a2b, #6b4a2b) 50% 100% / 4px 45% no-repeat, #e0e8d8;
+}
+
+/* Archivo Black heeft één gewicht: geen nagebootst vet. */
+.lp h1,
+.lp h2,
+.lp h3,
+.lp .font-lp-display {
+  font-weight: 400 !important;
+  font-synthesis: none;
 }

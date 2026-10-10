@@ -14,6 +14,8 @@ import type { NaarVoorbeeld, VanVoorbeeld } from "@/app/voorbeeld/[toolId]/voorb
 import type { PreviewProduct } from "@/app/lib/werkzaamheid";
 
 const STIJL = STIJLEN.groenhof;
+const DEMO_SRC = "/demo/rekentool/groenhof";
+const DEMO_TITEL = "Voorbeeld van een rekentool op de website van Groenhof Tuinen, een fictief hoveniersbedrijf";
 const geenAbonnement = () => () => {};
 const veld =
   "h-11 w-full min-w-0 rounded-none border-[1.5px] border-lp-rand bg-lp-wit px-2.5 text-base tabular-nums text-lp-inkt text-right";
@@ -35,6 +37,22 @@ export function HeroDemo() {
   const [actief, setActief] = useState(0);
   const frame = useRef<HTMLIFrameElement>(null);
   const klaar = useRef(false);
+  // De rekentool in het iframe is zwaar (eigen JavaScript). Met JavaScript laden we
+  // hem pas als de pagina klaar is, zodat de kop en de knoppen eerst snel staan;
+  // zonder JavaScript staat hetzelfde iframe in <noscript> (server-rendered, ingevuld).
+  const [bron, setBron] = useState<string | null>(null);
+  useEffect(() => {
+    const laad = () => {
+      const ri = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => void }).requestIdleCallback;
+      if (ri) ri(() => setBron(DEMO_SRC), { timeout: 1500 });
+      else window.setTimeout(() => setBron(DEMO_SRC), 300);
+    };
+    if (document.readyState === "complete") laad();
+    else {
+      window.addEventListener("load", laad, { once: true });
+      return () => window.removeEventListener("load", laad);
+    }
+  }, []);
 
   const stuur = useCallback((d: Draft) => {
     if (!klaar.current) return;
@@ -102,12 +120,19 @@ export function HeroDemo() {
         </div>
 
         <div className="relative h-[620px] border-[1.5px] border-lp-inkt bg-lp-wit">
-          <iframe
-            ref={frame}
-            src="/demo/rekentool/groenhof"
-            title="Voorbeeld van een rekentool op de website van Groenhof Tuinen, een fictief hoveniersbedrijf"
-            className={cn("h-full w-full border-0", kant === "beheer" && "invisible")}
-          />
+          {bron ? (
+            <iframe ref={frame} src={bron} title={DEMO_TITEL} className={cn("h-full w-full border-0", kant === "beheer" && "invisible")} />
+          ) : (
+            <>
+              <noscript>
+                <style>{".lp-wacht{display:none!important}"}</style>
+                <iframe src={DEMO_SRC} title={DEMO_TITEL} className="absolute inset-0 h-full w-full border-0" />
+              </noscript>
+              <div aria-hidden="true" className="lp-wacht flex h-full items-center justify-center bg-lp-wit font-lp-maat text-[11px] uppercase tracking-wider text-lp-inkt-2">
+                Rekentool wordt geladen…
+              </div>
+            </>
+          )}
           {kant === "beheer" && (
             <div className="absolute inset-0 overflow-y-auto overscroll-contain bg-lp-staal p-4 sm:p-5">
               <p className="font-lp-maat text-[11px] uppercase tracking-wider text-lp-inkt-2">Zo stel jij het in · alleen zichtbaar voor jou</p>

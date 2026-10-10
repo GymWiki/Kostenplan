@@ -49,7 +49,8 @@ export default async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isProtected = protectedPrefixes.some((prefix) => path.startsWith(prefix));
+  // Hele padsegmenten: "/voorbeeld" mag niet ook "/voorbeelden-rekentools" (publiek) beschermen.
+  const isProtected = protectedPrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
   const isAuthRoute = authRoutes.includes(path);
 
   if (isProtected && !user) {
