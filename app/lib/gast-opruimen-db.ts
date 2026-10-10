@@ -9,6 +9,10 @@ const BUCKET = "product-fotos";
 // Admin-client voor Storage en auth.users. Vereist SUPABASE_SERVICE_ROLE_KEY
 // (alleen server-side, nooit NEXT_PUBLIC). Zonder die sleutel stopt de job
 // liever met een duidelijke fout dan bestanden achter te laten.
+export function opruimenMogelijk(): boolean {
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

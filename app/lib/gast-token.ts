@@ -3,6 +3,12 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // Korte, ondertekende bewijsstukken (httpOnly cookie) voor de gast-flow:
 // bijvoorbeeld "deze browser had gast X" voor het overzetten van een voorbeeld
 // naar een bestaand account. Geen JWT-bibliotheek nodig.
+// Zonder GAST_TOKEN_SECRET is "voorbeeld toevoegen aan een bestaand account"
+// uitgeschakeld (de optie verdwijnt uit de UI); de rest van de flow werkt.
+export function gastOvernameActief(): boolean {
+  return Boolean(process.env.GAST_TOKEN_SECRET);
+}
+
 function geheim(): string {
   const g = process.env.GAST_TOKEN_SECRET;
   if (!g) throw new Error("GAST_TOKEN_SECRET ontbreekt.");
@@ -18,7 +24,7 @@ export function maakGastBewijs(data: { gastUserId: string; companyId: string }, 
 }
 
 export function controleerGastBewijs(token: string | undefined, nu = Date.now()): GastBewijs | null {
-  if (!token) return null;
+  if (!token || !gastOvernameActief()) return null;
   const [payload, sig] = token.split(".");
   if (!payload || !sig) return null;
   const verwacht = createHmac("sha256", geheim()).update(payload).digest("base64url");

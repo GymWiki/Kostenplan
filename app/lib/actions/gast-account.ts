@@ -9,7 +9,7 @@ import { getBaseUrl } from "@/app/lib/url";
 import { beperk } from "@/app/lib/rate-limit";
 import { GAST_BEWIJS_COOKIE, ipHash } from "@/app/lib/gast";
 import { logGastGebeurtenis } from "@/app/lib/gast-log";
-import { controleerGastBewijs, maakGastBewijs } from "@/app/lib/gast-token";
+import { controleerGastBewijs, gastOvernameActief, maakGastBewijs } from "@/app/lib/gast-token";
 import { canCreateTool, requireActiveCompany, requireVolledigAccount, verifySupabaseUser } from "@/app/lib/dal";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
 import { generateUniqueToolSlug } from "@/app/lib/slug";
@@ -23,6 +23,7 @@ const emailSchema = z.string().trim().toLowerCase().email("Vul een geldig e-mail
 // inloggen op een bestaand account is de gast-sessie weg, maar met dit bewijs
 // kunnen we het voorbeeld alsnog aan dat account hangen.
 async function zetGastBewijs(userId: string) {
+  if (!gastOvernameActief()) return;
   const company = await prisma.company.findFirst({ where: { createdBy: userId, gastVerlooptOp: { not: null } }, select: { id: true } });
   if (!company) return;
   const store = await cookies();
@@ -84,6 +85,7 @@ export async function koppelEmailAction(_prev: KoppelState, formData: FormData):
 // De link komt na het inloggen uit op /probeer/overnemen.
 export async function inloggenVoorOvernameAction(_prev: KoppelState, formData: FormData): Promise<KoppelState> {
   await gastUser();
+  if (!gastOvernameActief()) return { error: "Dit is nu niet beschikbaar. Log gewoon in." };
   const parsed = emailSchema.safeParse(formData.get("email"));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Vul een geldig e-mailadres in" };
   const limiet = await beperk(`gast-mail:${ipHash(await headers())}`, 5, 3600);
@@ -101,6 +103,7 @@ export async function inloggenVoorOvernameAction(_prev: KoppelState, formData: F
 
 export async function inloggenMetGoogleVoorOvernameAction() {
   await gastUser();
+  if (!gastOvernameActief()) redirect("/login");
   const baseUrl = await getBaseUrl();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({

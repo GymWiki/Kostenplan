@@ -10,8 +10,10 @@ export const dynamic = "force-dynamic";
 // Alleen voor de eigenaar (ADMIN_USER_IDS, komma-gescheiden user-ids). Voor
 // iedereen anders bestaat deze pagina niet.
 export default async function ProbeerFunnelPage() {
-  const user = await requireUser();
+  // Zonder ADMIN_USER_IDS is dit overzicht voor niemand bereikbaar.
   const toegestaan = (process.env.ADMIN_USER_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (toegestaan.length === 0) notFound();
+  const user = await requireUser();
   if (!toegestaan.includes(user.id)) notFound();
 
   const rijen = await prisma.$queryRaw<{ week: Date; bron: string; type: string; aantal: number }[]>`

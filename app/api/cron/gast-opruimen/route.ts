@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ruimGastenOp } from "@/app/lib/gast-opruimen";
-import { echteOpruimAfhankelijkheden } from "@/app/lib/gast-opruimen-db";
+import { echteOpruimAfhankelijkheden, opruimenMogelijk } from "@/app/lib/gast-opruimen-db";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -10,8 +10,18 @@ export const maxDuration = 60;
 // gebruiker). Vercel stuurt automatisch "Authorization: Bearer $CRON_SECRET".
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
+  // Zonder CRON_SECRET of SUPABASE_SERVICE_ROLE_KEY doet de job niets en
+  // logt hij dat: de rest van de app blijft gewoon werken.
+  if (!secret) {
+    console.warn("Gast-opruiming overgeslagen: CRON_SECRET ontbreekt.");
+    return NextResponse.json({ overgeslagen: true, reden: "CRON_SECRET ontbreekt" });
+  }
+  if (request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Niet toegestaan" }, { status: 401 });
+  }
+  if (!opruimenMogelijk()) {
+    console.warn("Gast-opruiming overgeslagen: SUPABASE_SERVICE_ROLE_KEY ontbreekt.");
+    return NextResponse.json({ overgeslagen: true, reden: "SUPABASE_SERVICE_ROLE_KEY ontbreekt" });
   }
   try {
     const r = await ruimGastenOp(echteOpruimAfhankelijkheden());
