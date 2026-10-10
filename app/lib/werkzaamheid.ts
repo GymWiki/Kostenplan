@@ -122,7 +122,7 @@ export type ProductMetRelaties = Product & {
 };
 
 let teller = 0;
-export const nieuweSleutel = () => `rij-${++teller}`;
+export const nieuweSleutel = () => `nieuw-${++teller}`;
 
 export function legeRij(): MateriaalRij {
   return {
@@ -141,7 +141,9 @@ const naarTekst = (n: number | null | undefined) => (n == null ? "" : String(n))
 export function draftVanProduct(product: ProductMetRelaties): WerkzaamheidDraft {
   const eerste = product.materiaalCategorieen[0];
   const materialen = (eerste?.materialen ?? []).map<MateriaalRij>((m) => ({
-    sleutel: nieuweSleutel(),
+    // Stabiel (= database-id) zodat server en client dezelfde sleutel/DOM-id
+    // renderen; alleen nieuwe regels krijgen een teller (pas bij een klik).
+    sleutel: m.id,
     id: m.id,
     naam: m.naam,
     prijs: String(m.prijs),
