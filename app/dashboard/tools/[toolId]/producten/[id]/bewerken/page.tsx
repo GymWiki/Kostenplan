@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { requireActiveTool, getProductPricingSettings } from "@/app/lib/dal";
+import { requireActiveTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { updateProductDraftAction } from "@/app/lib/actions/products";
-import { ProductForm } from "../../product-form";
-import { MaterialCategoriesManager } from "./material-categories-manager";
+import { effectiveTier } from "@/app/lib/subscription";
+import { WerkzaamheidEditor } from "../../editor/werkzaamheid-editor";
 import { ExtraOptionsManager } from "./extra-options-manager";
-import { HelpTip } from "@/app/components/ui/help-tip";
 
 export const metadata: Metadata = { title: "Werkzaamheid bewerken" };
 
-export default async function BewerkProductPage({
+export default async function BewerkWerkzaamheidPage({
   params,
 }: {
   params: Promise<{ toolId: string; id: string }>;
@@ -18,7 +16,7 @@ export default async function BewerkProductPage({
   const { toolId, id } = await params;
   const { company } = await requireActiveTool(toolId);
 
-  const [product, pricingSettings] = await Promise.all([
+  const [product, branding] = await Promise.all([
     prisma.product.findFirst({
       where: { id, toolId },
       include: {
@@ -29,44 +27,19 @@ export default async function BewerkProductPage({
         extraOpties: { orderBy: { order: "asc" } },
       },
     }),
-    getProductPricingSettings(toolId, company),
+    prisma.branding.findUnique({ where: { toolId } }),
   ]);
-
   if (!product) notFound();
 
   return (
-    <div className="flex max-w-[820px] flex-col gap-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold text-foreground">
-          Werkzaamheid bewerken
-          <HelpTip contentKey="producten.opbouw" />
-        </h1>
-        <p className="mt-1 text-muted-foreground">Pas je prijzen en materialen aan. Alles wordt vanzelf opgeslagen.</p>
-      </div>
-      <ProductForm
-        toolId={toolId}
-        // Dit scherm heeft geen submit-knop — elke wijziging slaat via
-        // autosave op (zie scheduleAutosave in product-form.tsx). Gebruik
-        // daarom de niet-doorsturende variant, anders stuurt elke autosave
-        // de gebruiker terug naar het productenoverzicht (bug).
-        action={updateProductDraftAction.bind(null, product.id)}
-        product={product}
-        pricingSettings={pricingSettings}
-        materialenSectie={
-          <MaterialCategoriesManager
-            productId={product.id}
-            productEenheid={product.eenheid}
-            categories={product.materiaalCategorieen}
-          />
-        }
-        extraOptiesSectie={
-          <ExtraOptionsManager
-            productId={product.id}
-            productEenheid={product.eenheid}
-            extraOpties={product.extraOpties}
-          />
-        }
-      />
-    </div>
+    <WerkzaamheidEditor
+      toolId={toolId}
+      product={product}
+      branding={branding}
+      subscriptionTier={effectiveTier(company)}
+      extraOptiesSectie={
+        <ExtraOptionsManager productId={product.id} productEenheid={product.eenheid} extraOpties={product.extraOpties} />
+      }
+    />
   );
 }

@@ -486,3 +486,17 @@ export async function getBasisTarievenStatus(
     eenheidVergrendeld: metProductiviteit > 0,
   };
 }
+
+// De effectieve tarieven van een tool (kolomwaarden, opgelost met de
+// bedrijfsstandaarden) voor "Mijn tarieven", het overzicht, de wizard en het
+// bewerkscherm. CostSettings wordt bij het aanmaken van een tool al gemaakt;
+// ontbreekt de rij toch, dan maken we 'm hier met de defaults.
+export async function getToolCostSettings(
+  toolId: string,
+  company: { standaardArbeidTariefUur: number; standaardVoorrijTarief: number; standaardBtwPercentage: number }
+) {
+  const cs =
+    (await prisma.costSettings.findUnique({ where: { toolId } })) ??
+    (await prisma.costSettings.create({ data: { toolId } }));
+  return resolveCostSettings(cs, company);
+}

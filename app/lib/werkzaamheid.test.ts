@@ -179,3 +179,21 @@ describe("kostenopbouw (alleen voor jou)", () => {
     expect(prijsRange(band)).toEqual({ min: 30, max: 45 });
   });
 });
+
+import { zetBandbreedte } from "./werkzaamheid";
+
+describe("bandbreedte aan en uit", () => {
+  it("maakt van een vaste prijs een bandbreedte van −10% tot +10% en weer terug", () => {
+    const aan = zetBandbreedte(draft({ materialen: [rij("A", "100")] }), true);
+    expect(aan.bandbreedte).toBe(true);
+    expect([aan.materialen[0].prijsMin, aan.materialen[0].prijsMax]).toEqual(["90", "110"]);
+    const uit = zetBandbreedte(aan, false);
+    expect(uit.bandbreedte).toBe(false);
+    expect(uit.materialen[0].prijs).toBe("100");
+  });
+
+  it("verandert niets als de stand al klopt", () => {
+    const d = draft();
+    expect(zetBandbreedte(d, false)).toBe(d);
+  });
+});

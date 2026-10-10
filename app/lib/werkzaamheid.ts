@@ -334,3 +334,27 @@ export function bouwPreviewProduct({
     extraOpties: (origineel?.extraOpties ?? []).filter((e) => e.actief),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Geavanceerd: bandbreedte aan/uit
+// ---------------------------------------------------------------------------
+
+const rond2 = (n: number) => Math.round(n * 100) / 100;
+
+// Aanzetten: elke vaste prijs wordt een bandbreedte van −10% tot +10%.
+// Uitzetten: terug naar één prijs, het midden van de bandbreedte.
+export function zetBandbreedte(d: WerkzaamheidDraft, aan: boolean): WerkzaamheidDraft {
+  if (aan === d.bandbreedte) return d;
+  return {
+    ...d,
+    bandbreedte: aan,
+    materialen: d.materialen.map((r) => {
+      if (aan) {
+        const prijs = parseGetal(r.prijs, 0);
+        return { ...r, prijsMin: String(rond2(prijs * 0.9)), prijsMax: String(rond2(prijs * 1.1)) };
+      }
+      const midden = (parseGetal(r.prijsMin, 0) + parseGetal(r.prijsMax, 0)) / 2;
+      return { ...r, prijs: String(rond2(midden)) };
+    }),
+  };
+}
