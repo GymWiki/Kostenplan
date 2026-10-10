@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireActiveCompany, requireActiveTool, canCreateTool, canPublishTool } from "@/app/lib/dal";
+import { requireActiveCompany, requireActiveTool, canCreateTool, canPublishTool, requireVolledigAccount } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import {
   toolSchema,
@@ -39,6 +39,7 @@ function limietBereiktMelding(tier: ReturnType<typeof effectiveTier>) {
 // die de company-defaults volgt (Deel 4 van de opdracht: "nieuwe tools
 // gebruiken standaard de account-defaults").
 export async function createToolAction(_prevState: ToolFormState, formData: FormData): Promise<ToolFormState> {
+  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
 
   const parsed = parseToolForm(formData);
@@ -85,6 +86,7 @@ export async function createToolFromTemplateAction(
   _prevState: TemplateToolFormState,
   formData: FormData
 ): Promise<TemplateToolFormState> {
+  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
 
   const template = calculatorTemplateById(templateId);
@@ -172,6 +174,7 @@ export async function createModulaireToolFromTemplateAction(
   _prevState: TemplateToolFormState,
   formData: FormData
 ): Promise<TemplateToolFormState> {
+  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
 
   const template = modulaireCalculatorTemplateById(templateId);
@@ -272,6 +275,7 @@ export async function createModulaireToolFromTemplateAction(
 // publicatiestatus. De kopie start altijd als CONCEPT met een eigen,
 // gegarandeerd unieke slug; de oorspronkelijke tool blijft ongewijzigd.
 export async function duplicateToolAction(formData: FormData) {
+  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const toolId = formData.get("toolId");
   if (typeof toolId !== "string") return;
@@ -448,6 +452,7 @@ export async function updateToolAction(
 // voor het publieke gedrag per status. Publiceren wordt server-side nogmaals
 // tegen de abonnementslimiet gehouden (canPublishTool), niet alleen de UI.
 export async function updateToolStatusAction(toolId: string, status: ToolStatus) {
+  await requireVolledigAccount();
   const { company, tool } = await requireActiveTool(toolId);
 
   if (status === "GEPUBLICEERD" && tool.status !== "GEPUBLICEERD") {
@@ -469,6 +474,7 @@ export async function updateToolStatusAction(toolId: string, status: ToolStatus)
 // normaal overzicht en is nergens meer publiek bereikbaar (requireActiveTool
 // en getToolForPublicRoute filteren allebei op deletedAt: null).
 export async function softDeleteToolAction(formData: FormData) {
+  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const toolId = formData.get("toolId");
   if (typeof toolId !== "string") return;
@@ -559,6 +565,7 @@ export async function updateEmbedConfigAction(
   _prevState: ToolResultaatFormState,
   formData: FormData
 ): Promise<ToolResultaatFormState> {
+  await requireVolledigAccount();
   await requireActiveTool(toolId);
 
   const parsed = toolEmbedConfigSchema.safeParse({

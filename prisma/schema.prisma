@@ -239,13 +239,19 @@ model CancellationFeedback {
 // meerdere companies (zie CompanyMember), elk met een eigen catalogus,
 // huisstijl en abonnement.
 model Company {
-  id        String  @id @default(cuid())
-  naam      String
+  id             String    @id @default(cuid())
+  naam           String
+  // Gezet voor een bedrijf van een gast (probeer-flow zonder account): tot
+  // dan bewaren we het voorbeeld. Leeg zodra de gast een account heeft
+  // gemaakt. Zie app/lib/gast.ts en de opruimjob.
+  gastVerlooptOp DateTime?
+  // Waar de gast vandaan kwam (utm-parameters, ?site=): zonder persoonsgegevens.
+  gastBron       Json?
   // Bepaalt de publieke portaal-URL (/portaal/[slug]) — ongewijzigd van
   // vorm t.o.v. vóór multi-company, alleen nu op Company i.p.v. User.
-  slug      String  @unique
-  kvkNummer String?
-  adres     String?
+  slug           String    @unique
+  kvkNummer      String?
+  adres          String?
 
   // Permanente brug voor bedrijven die zijn ontstaan uit de multi-company-
   // migratie van een bestaande, vóór-migratie User: laat de Mollie-webhook
@@ -320,6 +326,8 @@ model Company {
   analyticsEvents      AnalyticsEvent[]
   cancellationFeedback CancellationFeedback[]
   onderdeelBibliotheek OnderdeelBibliotheek[]
+
+  @@index([gastVerlooptOp])
 }
 
 // Eén rekentool — de centrale calculator-eenheid (zie Levering A). Een
@@ -899,4 +907,18 @@ model Offerte {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Funnel van de probeer-flow, zonder persoonsgegevens: `sessie` is een
+// eenrichtings-hash van de gast-user-id, geen e-mail of IP.
+model GastGebeurtenis {
+  id        String   @id @default(cuid())
+  type      String
+  sessie    String?
+  bron      String   @default("direct")
+  metSite   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@index([bron, createdAt])
 }

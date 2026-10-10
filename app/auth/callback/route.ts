@@ -9,7 +9,9 @@ import { createClient } from "@/app/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  // Alleen interne paden: anders is dit een open redirect.
+  const nextRaw = searchParams.get("next") ?? "/dashboard";
+  const next = nextRaw.startsWith("/") && !nextRaw.startsWith("//") && !nextRaw.includes("\\") ? nextRaw : "/dashboard";
 
   if (code) {
     const supabase = await createClient();

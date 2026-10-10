@@ -1,6 +1,6 @@
 "use server";
 
-import { requireUser } from "@/app/lib/dal";
+import { requireUser, requireVolledigAccount } from "@/app/lib/dal";
 import { createClient } from "@/app/lib/supabase/server";
 import { changePasswordSchema } from "@/app/lib/validation";
 
@@ -10,6 +10,7 @@ export async function updatePasswordAction(
   _prevState: AccountFormState,
   formData: FormData
 ): Promise<AccountFormState> {
+  await requireVolledigAccount();
   await requireUser();
 
   const parsed = changePasswordSchema.safeParse({ password: formData.get("password") });

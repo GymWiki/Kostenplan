@@ -5,6 +5,12 @@ import { createClient } from "@/app/lib/supabase/server";
 import { getBaseUrl } from "@/app/lib/url";
 import { registerSchema, loginSchema, requestPasswordResetSchema } from "@/app/lib/validation";
 
+// Turnstile-token uit het formulier (leeg als de controle niet aan staat).
+function captchaTokenUit(formData: FormData): string | undefined {
+  const t = formData.get("captchaToken");
+  return typeof t === "string" && t ? t : undefined;
+}
+
 export type AuthFormState = {
   error?: string;
   fieldErrors?: Record<string, string>;
@@ -33,7 +39,7 @@ export async function registerAction(
   const { email, password } = parsed.data;
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({ email, password, options: { captchaToken: captchaTokenUit(formData) } });
 
   if (error) {
     if (error.code === "user_already_exists") {
@@ -73,7 +79,7 @@ export async function loginAction(
   const { email, password } = parsed.data;
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken: captchaTokenUit(formData) } });
 
   if (error) {
     return { error: "Onjuist e-mailadres of wachtwoord" };
@@ -105,6 +111,7 @@ export async function requestPasswordResetAction(
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
     redirectTo: `${baseUrl}/auth/callback?next=/wachtwoord-resetten`,
+    captchaToken: captchaTokenUit(formData),
   });
 
   return { success: true };
