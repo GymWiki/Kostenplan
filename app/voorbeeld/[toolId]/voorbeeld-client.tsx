@@ -49,6 +49,7 @@ export function VoorbeeldClient({
   subscriptionTier,
   initieel,
   engine,
+  startModus = "bewerken",
 }: {
   toolId: string;
   bedrijfsnaam: string;
@@ -56,10 +57,12 @@ export function VoorbeeldClient({
   subscriptionTier: SubscriptionTier;
   initieel: Initieel;
   engine: { config: AnyCalculatorConfigData; materiaalOpties: React.ComponentProps<typeof EngineCalculator>["materiaalOpties"] } | null;
+  // De landingspagina toont de rekentool direct als klant (zonder bewerkranden).
+  startModus?: "bewerken" | "uitproberen";
 }) {
   const [data, setData] = useState<Initieel>(initieel);
   const [bedrijfsnaam, setBedrijfsnaam] = useState(startNaam);
-  const [modus, setModus] = useState<"bewerken" | "uitproberen">("bewerken");
+  const [modus, setModus] = useState<"bewerken" | "uitproberen">(startModus);
   const [geselecteerd, setGeselecteerd] = useState<string | null>(null);
   const [waarschuwingen, setWaarschuwingen] = useState<Record<string, Waarschuwing>>({});
 
