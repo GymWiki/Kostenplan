@@ -285,7 +285,7 @@ export function Calculator({
         .map((option) => option.naam);
 
       const extraNamen = product.extraOpties
-        .filter((extra) => (extraSelections[extra.id] ?? 0) > 0)
+        .filter((extra) => extra.altijd || (extraSelections[extra.id] ?? 0) > 0)
         .map((extra) => extra.naam);
 
       // Eigen, volledig berekend bedrag van dit product (materiaal + arbeid
@@ -533,6 +533,8 @@ export function ProductCard({
     (category) => category.materialen.length > 1
   );
   const ProductIcon = getProductIcon(product.icoon);
+  // Toeslagen (altijd) hebben geen keuze en staan dus niet in de lijst.
+  const keuzeExtras = product.extraOpties.filter((extra) => !extra.altijd);
 
   const eigenPrijs = eigenProductPrijs(product, qty, regelsBedrag, materialSelections, costSettings);
 
@@ -580,7 +582,7 @@ export function ProductCard({
           </div>
         )}
 
-        {active && (categoriesWithOptions.length > 0 || product.extraOpties.length > 0) && (
+        {active && (categoriesWithOptions.length > 0 || keuzeExtras.length > 0) && (
           <div className="flex flex-col gap-4 border-t border-border pt-4">
             {categoriesWithOptions.map((category) => {
               const hasFotos = category.materialen.some((m) => m.foto);
@@ -669,10 +671,10 @@ export function ProductCard({
               );
             })}
 
-            {product.extraOpties.length > 0 && (
+            {keuzeExtras.length > 0 && (
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-foreground">Extra opties</p>
-                {product.extraOpties.map((extra) =>
+                {keuzeExtras.map((extra) =>
                   extra.type === "PER_STUK" ? (
                     <div
                       key={extra.id}

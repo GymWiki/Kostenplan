@@ -1006,3 +1006,38 @@ describe("transport per dag", () => {
     expect(berekenProductKosten(basis).arbeid).toBeCloseTo(800, 5);
   });
 });
+
+describe("toeslag (altijd)", () => {
+  const product = (extra: { prijs: number; type: "PER_EENHEID" | "PER_STUK"; altijd?: boolean }) => ({
+    id: "p",
+    productiviteit: null,
+    arbeidTariefOverride: null,
+    transportkostenOverride: null,
+    transportMeeschalend: false,
+    voorrijkostenOverride: null,
+    voorrijMeeschalend: false,
+    materiaalCategorieen: [],
+    extraOpties: [{ id: "e", ...extra }],
+  });
+  const kosten2 = {
+    arbeidEnabled: true, arbeidStapEenheid: "DAGDEEL" as const, arbeidTariefUur: 45, arbeidTariefDagdeel: 240,
+    arbeidTariefDag: 480, arbeidAfronden: false, transportEnabled: true, transportTarief: 0, voorrijEnabled: true,
+    voorrijTarief: 0, materiaalEnabled: true, btwPercentage: 21, bandbreedteModus: "GEEN" as const,
+    bandbreedteMargeOmlaag: 10, bandbreedteMargeOmhoog: 10,
+  };
+  const bereken = (p: ReturnType<typeof product>, sel: Record<string, number> = {}) =>
+    calculateBreakdown({ products: [p], productQty: { p: 10 }, materialSelections: {}, extraSelections: sel, costSettings: kosten2 }).materiaalkosten;
+
+  it("een vaste toeslag telt altijd één keer mee, zonder keuze van de klant", () => {
+    expect(bereken(product({ prijs: 150, type: "PER_STUK", altijd: true }))).toBe(150);
+  });
+
+  it("een toeslag per eenheid telt mee met de hoeveelheid", () => {
+    expect(bereken(product({ prijs: 4, type: "PER_EENHEID", altijd: true }))).toBe(40);
+  });
+
+  it("een gewone extra telt alleen mee als de klant 'm kiest", () => {
+    expect(bereken(product({ prijs: 150, type: "PER_STUK" }))).toBe(0);
+    expect(bereken(product({ prijs: 150, type: "PER_STUK" }), { e: 2 })).toBe(300);
+  });
+});

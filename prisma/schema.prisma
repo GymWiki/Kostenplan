@@ -746,6 +746,9 @@ model ExtraOption {
   type         ExtraOptionType @default(PER_EENHEID)
   // Publieke URL van een foto in Supabase Storage. Optioneel.
   foto         String?
+  // Toeslag: telt altijd mee (niet door de klant te kiezen). Vast bedrag
+  // (PER_STUK) of per eenheid van de hoeveelheid (PER_EENHEID).
+  altijd       Boolean         @default(false)
   actief       Boolean         @default(true)
   order        Int             @default(0)
 
