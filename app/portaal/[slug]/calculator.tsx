@@ -48,7 +48,7 @@ import type {
   SubscriptionTier,
 } from "@/app/generated/prisma/client";
 
-type ProductWithDetails = Product & {
+export type ProductWithDetails = Product & {
   materiaalCategorieen: (MaterialCategory & { materialen: MaterialOption[] })[];
   extraOpties: ExtraOption[];
 };
@@ -69,6 +69,28 @@ type Props = {
 // (bijv. na een downgrade vanaf Plus/Pro).
 const STANDAARD_PRIMAIRE_KLEUR = "#15803d";
 const STANDAARD_ACHTERGRONDKLEUR = "#f7faf8";
+
+// Kleuren en lettertype van de klant-rekentool — gedeeld door de calculator
+// zelf en het live klantvoorbeeld in het dashboard (zie
+// app/components/dashboard/klant-voorbeeld.tsx), zodat die nooit uit elkaar
+// lopen. Personalisatie is een Plus/Pro-feature en wordt hier bij elke render
+// opnieuw afgedwongen.
+export function brandStijl(branding: Branding | null, subscriptionTier: SubscriptionTier) {
+  const magPersonaliseren = subscriptionTier !== "GRATIS";
+  const primaireKleur = magPersonaliseren
+    ? (branding?.primaireKleur ?? STANDAARD_PRIMAIRE_KLEUR)
+    : STANDAARD_PRIMAIRE_KLEUR;
+  const achtergrondKleur = magPersonaliseren
+    ? (branding?.achtergrondKleur ?? STANDAARD_ACHTERGRONDKLEUR)
+    : STANDAARD_ACHTERGRONDKLEUR;
+  return {
+    primaireKleur,
+    achtergrondKleur,
+    brandPrimaryForeground: accessibleTextColor(primaireKleur),
+    fontFamily: fontFamilyFor(magPersonaliseren ? (branding?.lettertype ?? "MODERN") : "MODERN"),
+    fontClasses: brandingFontVariables(),
+  };
+}
 
 // Klantvriendelijke weergave van een eenheid, alleen voor deze configurator.
 // "m¹" is vaktaal die een consument niet meteen herkent — in het
@@ -477,7 +499,7 @@ function materiaalPrijsWeergave(material: MaterialOption): Bedrag {
   return material.prijs;
 }
 
-function ProductCard({
+export function ProductCard({
   product,
   costSettings,
   qty,
@@ -762,6 +784,8 @@ function eigenProductPrijs(
     arbeidAfronden: costSettings.arbeidAfronden,
     transportBedrag,
     transportMeeschalend: product.transportMeeschalend,
+    transportPerDag: product.transportPerDag,
+    arbeidStapEenheid: costSettings.arbeidStapEenheid,
     transportEnabled: costSettings.transportEnabled,
     voorrijBedrag,
     voorrijMeeschalend: product.voorrijMeeschalend,

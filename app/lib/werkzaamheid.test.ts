@@ -143,3 +143,39 @@ describe("preview-product met de echte rekenlogica", () => {
     expect([o.prijsMin, o.prijsMax]).toEqual([30, 40]);
   });
 });
+
+import { berekenKostenOpbouw, prijsRange } from "./werkzaamheid-kosten";
+
+describe("kostenopbouw (alleen voor jou)", () => {
+  const product = bouwPreviewProduct({ toolId: "t", draft: draft() });
+  const eerste = product.materiaalCategorieen[0].materialen[0].id;
+
+  it("komt overeen met het ontwerp: € 760 + € 800 + € 45 + € 65 = € 1.670", () => {
+    const o = berekenKostenOpbouw({ product, optieId: eerste, hoeveelheid: 20, costSettings: kosten });
+    expect(o.materiaal).toBe(760);
+    expect(o.arbeid).toBeCloseTo(800, 5);
+    expect(o.arbeidstijd).toBeCloseTo(3.333, 2);
+    expect(o.arbeidTarief).toBe(240);
+    expect(o.voorrijkosten).toBe(45);
+    expect(o.transport).toBe(65);
+    expect(o.totaal).toBeCloseTo(1670, 5);
+  });
+
+  it("rekent met het gekozen materiaal", () => {
+    const tweede = product.materiaalCategorieen[0].materialen[1].id;
+    expect(berekenKostenOpbouw({ product, optieId: tweede, hoeveelheid: 20, costSettings: kosten }).materiaal).toBe(1240);
+  });
+
+  it("transport per dag telt begonnen dagen", () => {
+    const p = bouwPreviewProduct({ toolId: "t", draft: draft({ transportPerDag: true }) });
+    const o = berekenKostenOpbouw({ product: p, optieId: null, hoeveelheid: 20, costSettings: kosten });
+    expect(o.transportDagen).toBe(2);
+    expect(o.transport).toBe(130);
+  });
+
+  it("prijsrange over alle materialen", () => {
+    expect(prijsRange(product)).toEqual({ min: 38, max: 62 });
+    const band = bouwPreviewProduct({ toolId: "t", draft: draft({ bandbreedte: true, materialen: [rij("A", "0", { prijsMin: "30", prijsMax: "45" })] }) });
+    expect(prijsRange(band)).toEqual({ min: 30, max: 45 });
+  });
+});
