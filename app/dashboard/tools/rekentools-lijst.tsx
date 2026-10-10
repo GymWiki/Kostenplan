@@ -28,9 +28,9 @@ export type RekentoolKaartData = {
   toolUrl: string;
 };
 
-// Kaarten van het Rekentools-overzicht: naam, aantal werkzaamheden, status,
+// Kaarten van het Rekentools-overzicht: naam, aantal items, status,
 // leads deze maand en "Openen". Naam wijzigen, dupliceren en verwijderen
-// (met bevestiging in de pagina en "Ongedaan maken") zitten in het menu.
+// (met bevestigingsmodal en "Ongedaan maken") zitten in het menu.
 export function RekentoolsLijst({
   tools,
   magNieuweTool,
@@ -202,8 +202,16 @@ function Kaart({ tool, magDupliceren, onVerwijderd }: { tool: RekentoolKaartData
           </div>
         )}
 
-        {modus === "verwijder" && (
-          <div role="alertdialog" aria-labelledby={`verwijder-${tool.id}`} className="rounded-lg border border-destructive bg-destructive/5 p-3">
+        <Overlay
+          open={modus === "verwijder"}
+          onClose={() => {
+            if (!bezig) setModus("kaart");
+          }}
+          ariaLabelledBy={`verwijder-${tool.id}`}
+          backdropClassName="animate-modal-fade bg-black/50 backdrop-blur-sm"
+          className="flex items-center justify-center p-4"
+        >
+          <div role="alertdialog" className="animate-modal-pop relative w-full max-w-sm rounded-xl border border-destructive bg-card p-5 shadow-lg">
             <p id={`verwijder-${tool.id}`} className="font-semibold text-foreground">
               “{naam}” verwijderen?
             </p>
@@ -213,21 +221,21 @@ function Kaart({ tool, magDupliceren, onVerwijderd }: { tool: RekentoolKaartData
                 {fout}
               </p>
             )}
-            <div className="mt-3 flex gap-2">
-              <Button type="button" variant="destructive" className="h-11" disabled={bezig} onClick={() => void verwijder()}>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row-reverse">
+              <Button type="button" variant="destructive" className="h-11 w-full sm:flex-1" disabled={bezig} onClick={() => void verwijder()}>
                 {bezig ? "Verwijderen…" : "Ja, verwijderen"}
               </Button>
-              <Button type="button" variant="outline" className="h-11" onClick={() => setModus("kaart")}>
+              <Button type="button" variant="outline" className="h-11 w-full sm:flex-1" disabled={bezig} onClick={() => setModus("kaart")}>
                 Nee, laat staan
               </Button>
             </div>
           </div>
-        )}
+        </Overlay>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <Package className="h-4 w-4" aria-hidden="true" />
-            {tool.aantalWerkzaamheden} {tool.aantalWerkzaamheden === 1 ? "onderdeel" : "onderdelen"}
+            {tool.aantalWerkzaamheden} {tool.aantalWerkzaamheden === 1 ? "item" : "items"}
           </span>
           <Badge variant={tool.live ? "success" : "muted"}>{tool.live ? "Live op je website" : "Nog niet op je website"}</Badge>
         </div>
