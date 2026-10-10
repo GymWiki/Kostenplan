@@ -99,6 +99,8 @@ export function WerkzaamheidEditor({
     async (d) => {
       const payload: WerkzaamheidDraft = {
         ...d,
+        // Extra vragen beheert dit scherm via ExtraOptionsManager.
+        extras: undefined,
         materialen: d.materialen.map((r) => ({ ...r, id: r.id ?? idMap.current[r.sleutel] })),
       };
       const r = await saveWerkzaamheidAction(product.id, payload);

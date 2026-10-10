@@ -106,6 +106,17 @@ export type MateriaalRij = {
   isVoorbeeld: boolean;
 };
 
+// Extra vraag aan de klant (ja/nee met meerprijs) of toeslag (altijd van
+// toepassing): beide leven als ExtraOption.
+export type ExtraRij = {
+  sleutel: string;
+  id?: string;
+  naam: string;
+  prijs: string;
+  type: "PER_EENHEID" | "PER_STUK";
+  altijd: boolean;
+};
+
 export type WerkzaamheidDraft = {
   naam: string;
   methode: Methode | null;
@@ -114,6 +125,8 @@ export type WerkzaamheidDraft = {
   bandbreedte: boolean;
   werktempoPerMateriaal: boolean;
   materialen: MateriaalRij[];
+  // Optioneel: ontbreekt = extra's niet aanraken bij opslaan.
+  extras?: ExtraRij[];
 };
 
 export type ProductMetRelaties = Product & {
@@ -138,6 +151,10 @@ export function legeRij(): MateriaalRij {
 
 const naarTekst = (n: number | null | undefined) => (n == null ? "" : String(n));
 
+export function legeExtra(altijd: boolean): ExtraRij {
+  return { sleutel: nieuweSleutel(), naam: "", prijs: "", type: altijd ? "PER_STUK" : "PER_STUK", altijd };
+}
+
 export function draftVanProduct(product: ProductMetRelaties): WerkzaamheidDraft {
   const eerste = product.materiaalCategorieen[0];
   const materialen = (eerste?.materialen ?? []).map<MateriaalRij>((m) => ({
@@ -160,6 +177,14 @@ export function draftVanProduct(product: ProductMetRelaties): WerkzaamheidDraft 
     bandbreedte: (eerste?.materialen ?? []).some((m) => m.prijsType === "BANDBREEDTE"),
     werktempoPerMateriaal: (eerste?.materialen ?? []).some((m) => m.productiviteitOverride != null),
     materialen,
+    extras: product.extraOpties.map<ExtraRij>((e) => ({
+      sleutel: e.id,
+      id: e.id,
+      naam: e.naam,
+      prijs: String(e.prijs),
+      type: e.type,
+      altijd: e.altijd,
+    })),
   };
 }
 
@@ -219,9 +244,30 @@ export function valideerMaterialen(d: WerkzaamheidDraft): RijFout[] {
   return fouten;
 }
 
+export type ExtraFout = { sleutel: string; veld: "naam" | "prijs"; melding: string };
+
+export function valideerExtras(d: WerkzaamheidDraft): ExtraFout[] {
+  const fouten: ExtraFout[] = [];
+  for (const e of d.extras ?? []) {
+    if (e.naam.trim() === "") {
+      fouten.push({ sleutel: e.sleutel, veld: "naam", melding: e.altijd ? "Geef de toeslag een naam." : "Geef de vraag een naam." });
+    }
+    const prijs = parseGetal(e.prijs, NaN);
+    if (Number.isNaN(prijs) || prijs < 0) {
+      fouten.push({ sleutel: e.sleutel, veld: "prijs", melding: "Vul een bedrag in (0 mag ook)." });
+    }
+  }
+  return fouten;
+}
+
 // Kan opgeslagen worden? (minstens één materiaal, geen foutieve regels, naam)
 export function draftIsGeldig(d: WerkzaamheidDraft): boolean {
-  return d.naam.trim() !== "" && d.methode !== undefined && d.materialen.length > 0 && valideerMaterialen(d).length === 0;
+  return (
+    d.naam.trim() !== "" &&
+    d.materialen.length > 0 &&
+    valideerMaterialen(d).length === 0 &&
+    valideerExtras(d).length === 0
+  );
 }
 
 // Wizard stap 2 is geldig met een naam, een methode en geldige materialen.
@@ -262,6 +308,28 @@ function basisProduct(toolId: string): Product {
     createdAt: nu,
     updatedAt: nu,
   } as Product;
+}
+
+function previewExtras(draft: WerkzaamheidDraft, origineel: ProductMetRelaties | null): ExtraOption[] {
+  // Zonder extras in de draft: de bestaande (actieve) extra's ongewijzigd.
+  if (!draft.extras) return (origineel?.extraOpties ?? []).filter((e) => e.actief);
+  const oud = new Map((origineel?.extraOpties ?? []).map((e) => [e.id, e]));
+  return draft.extras.map<ExtraOption>((r, i) => {
+    const bestaand = r.id ? oud.get(r.id) : undefined;
+    return {
+      id: r.id ?? `voorbeeld-extra-${r.sleutel}`,
+      productId: origineel?.id ?? "voorbeeld-product",
+      naam: r.naam,
+      omschrijving: bestaand?.omschrijving ?? null,
+      prijs: parseGetal(r.prijs, 0),
+      type: r.type,
+      altijd: r.altijd,
+      foto: bestaand?.foto ?? null,
+      actief: bestaand?.actief ?? true,
+      order: i,
+      createdAt: bestaand?.createdAt ?? new Date(0),
+    };
+  }).filter((e) => e.actief);
 }
 
 export function bouwPreviewProduct({
@@ -333,7 +401,7 @@ export function bouwPreviewProduct({
   return {
     ...product,
     materiaalCategorieen: [categorie, ...(origineel?.materiaalCategorieen.slice(1) ?? [])],
-    extraOpties: (origineel?.extraOpties ?? []).filter((e) => e.actief),
+    extraOpties: previewExtras(draft, origineel ?? null),
   };
 }
 
