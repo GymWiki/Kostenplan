@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireActiveCompany, requireVolledigAccount } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { onboardingBrandingSchema, onboardingToolSchema } from "@/app/lib/validation";
 import { generateUniqueToolSlug } from "@/app/lib/slug";
@@ -21,7 +21,6 @@ export type OnboardingToolFormState = { error?: string; fieldErrors?: Record<str
 // hierheen vanuit de page zelf (Fase 2, P2.9): een write hoort niet
 // rechtstreeks in een Server Component te staan.
 export async function markOnboardingVoltooid(companyId: string) {
-  await requireVolledigAccount();
   await prisma.company.update({ where: { id: companyId }, data: { onboardingVoltooid: true } });
 }
 
@@ -34,7 +33,6 @@ export async function createFirstToolAction(
   _prevState: OnboardingToolFormState,
   formData: FormData
 ): Promise<OnboardingToolFormState> {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
 
   const parsed = onboardingToolSchema.safeParse({ naam: formData.get("naam") });
@@ -62,7 +60,6 @@ export async function createFirstToolAction(
 // tegelijk. De rest van Branding (contactgegevens, bedanktekst, enz.) stelt
 // de gebruiker later gewoon in op de gewone uiterlijk-pagina van de tool.
 export async function applyOnboardingBrandingAction(formData: FormData) {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
 
   // De tool die net in /onboarding/rekentool is aangemaakt — er bestaat op
@@ -134,7 +131,6 @@ export async function createStartpakketAction(
   _prevState: StartpakketFormState,
   formData: FormData
 ): Promise<StartpakketFormState> {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
 
   const tool = await prisma.tool.findFirst({

@@ -5,8 +5,7 @@ import { PRODUCT_ICONS } from "@/app/lib/icons";
 import { Ruler } from "lucide-react";
 import { Field } from "@/app/components/ui/field";
 import { Button } from "@/app/components/ui/button";
-import { createWerkzaamheidAction } from "@/app/lib/actions/werkzaamheden";
-import { kopieerWerkzaamheidAction } from "@/app/lib/actions/rekentools";
+import { useEditorRepository } from "./repository";
 import { HOVENIER_PRESETS, presetNaarDraft, type HovenierPreset } from "@/app/lib/presets";
 import type { WerkzaamheidDraft } from "@/app/lib/werkzaamheid";
 import type { ArbeidStapEenheid } from "@/app/generated/prisma/client";
@@ -39,6 +38,7 @@ export function PaneelToevoegen({
   bestaandeNamen: string[];
   onToegevoegd: (productId: string) => void;
 }) {
+  const repo = useEditorRepository();
   const [bezig, setBezig] = useState<string | null>(null);
   const [fout, setFout] = useState<string | null>(null);
   const [bronTool, setBronTool] = useState(anderen[0]?.id ?? "");
@@ -47,7 +47,7 @@ export function PaneelToevoegen({
   async function maak(sleutel: string, draft: WerkzaamheidDraft, presetId: string | null) {
     setBezig(sleutel);
     setFout(null);
-    const r = await createWerkzaamheidAction(toolId, draft, presetId);
+    const r = await repo.maakWerkzaamheid(toolId, draft, presetId);
     setBezig(null);
     if (r.ok) onToegevoegd(r.productId);
     else setFout(r.error);
@@ -56,7 +56,8 @@ export function PaneelToevoegen({
   async function kopieer(productId: string) {
     setBezig(`kopie:${productId}`);
     setFout(null);
-    const r = await kopieerWerkzaamheidAction(productId, toolId);
+    if (!repo.kopieerWerkzaamheid) return;
+    const r = await repo.kopieerWerkzaamheid(productId, toolId);
     setBezig(null);
     if (r.ok) onToegevoegd(r.productId);
     else setFout(r.error);

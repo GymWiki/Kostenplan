@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireActiveCompany, requireVolledigAccount } from "@/app/lib/dal";
+import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { recordAnalyticsEvent } from "@/app/lib/actions/analytics";
 import {
@@ -53,7 +53,7 @@ export async function createLeadAction(
   }
 
   const tool = await prisma.tool.findFirst({
-    where: { id: toolId, deletedAt: null, status: "GEPUBLICEERD", company: { gastVerlooptOp: null } },
+    where: { id: toolId, deletedAt: null, status: "GEPUBLICEERD" },
     select: {
       id: true,
       naam: true,
@@ -101,7 +101,6 @@ export async function createLeadAction(
 }
 
 export async function updateLeadStatusAction(formData: FormData) {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const leadId = formData.get("leadId");
   const parsed = leadStatusSchema.safeParse({ status: formData.get("status") });
@@ -120,7 +119,6 @@ export async function addLeadNoteAction(
   _prevState: LeadFormState,
   formData: FormData
 ): Promise<LeadFormState> {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
 
   const parsed = leadNoteSchema.safeParse({ tekst: formData.get("tekst") });
@@ -145,7 +143,6 @@ export async function updateLeadNoteAction(
   _prevState: LeadFormState,
   formData: FormData
 ): Promise<LeadFormState> {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
 
   const parsed = leadNoteSchema.safeParse({ tekst: formData.get("tekst") });
@@ -166,7 +163,6 @@ export async function updateLeadNoteAction(
 }
 
 export async function deleteLeadNoteAction(formData: FormData) {
-  await requireVolledigAccount();
   const { company } = await requireActiveCompany();
   const noteId = formData.get("noteId");
   if (typeof noteId !== "string") return;

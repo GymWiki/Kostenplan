@@ -7,15 +7,11 @@ import type { EditorProps } from "./rekentool-editor";
 
 const GELDIGE_PANELEN = ["uiterlijk", "resultaat", "aanvraag", "website", "toevoegen", "aangepast", "account"];
 
-// Alle gegevens voor de rekentool-editor. Gedeeld door /dashboard/tools/[id]
-// en de gast-variant /probeer/editor: één editor, één manier om hem te vullen.
-// Voor een gast (anonieme probeer-sessie) bestaat er geen embed-code, geen
-// publicatie en geen tweede rekentool: die gegevens worden niet eens geladen.
-export async function laadEditorProps(toolId: string, paneel: string | undefined, gast = false): Promise<EditorProps> {
+// Alle gegevens voor de rekentool-editor van een ingelogde hovenier. (De gast-
+// variant in /probeer heeft geen database en vult de editor zelf, uit de browser.)
+export async function laadEditorProps(toolId: string, paneel: string | undefined): Promise<EditorProps> {
   const { user, company, tool } = await requireActiveTool(toolId);
-  // Een gast krijgt in het voorbeeld de volle huisstijl te zien (kleuren en
-  // lettertype); na het account-maken geldt weer het gewone abonnement.
-  const tier = gast ? "PLUS" : effectiveTier(company);
+  const tier = effectiveTier(company);
 
   const [products, branding, costSettings, andereTools, magNieuweTool, magPubliceren] = await Promise.all([
     prisma.product.findMany({
@@ -30,25 +26,24 @@ export async function laadEditorProps(toolId: string, paneel: string | undefined
     // find-then-create: een gewone paginaweergave schrijft niets.
     prisma.branding.findUnique({ where: { toolId } }).then((b) => b ?? prisma.branding.create({ data: { toolId } })),
     prisma.costSettings.findUnique({ where: { toolId } }).then((c) => c ?? prisma.costSettings.create({ data: { toolId } })),
-    gast
-      ? Promise.resolve([])
-      : prisma.tool.findMany({
-          where: { companyId: company.id, deletedAt: null, id: { not: toolId } },
-          orderBy: { order: "asc" },
-          take: 50,
-          select: { id: true, naam: true, products: { orderBy: { order: "asc" }, select: { id: true, naam: true } } },
-        }),
-    gast ? Promise.resolve(false) : canCreateTool(company.id, tier),
-    gast ? Promise.resolve(false) : canPublishTool(company.id, tier),
+    prisma.tool.findMany({
+      where: { companyId: company.id, deletedAt: null, id: { not: toolId } },
+      orderBy: { order: "asc" },
+      take: 50,
+      select: { id: true, naam: true, products: { orderBy: { order: "asc" }, select: { id: true, naam: true } } },
+    }),
+    canCreateTool(company.id, tier),
+    canPublishTool(company.id, tier),
   ]);
 
   const resultaat = parseResultaatConfig(tool.resultaatConfig);
   const aanvraag = parseLeadFormConfig(tool.leadFormConfig);
   const embedConfig = parseEmbedConfig(tool.embedConfig);
-  const magEmbedden = !gast && PLAN_LIMITS[tier].embedEnabled;
-  const [toolUrl, embedCode] = gast
-    ? ["", null]
-    : await Promise.all([getToolUrl(company.slug, tool.slug), magEmbedden ? getToolEmbedCode(toolId, tool.naam, embedConfig) : Promise.resolve(null)]);
+  const magEmbedden = PLAN_LIMITS[tier].embedEnabled;
+  const [toolUrl, embedCode] = await Promise.all([
+    getToolUrl(company.slug, tool.slug),
+    magEmbedden ? getToolEmbedCode(toolId, tool.naam, embedConfig) : Promise.resolve(null),
+  ]);
 
   const startPaneel = paneel && (GELDIGE_PANELEN.includes(paneel) || paneel.startsWith("werkzaamheid:")) ? paneel : "start";
 

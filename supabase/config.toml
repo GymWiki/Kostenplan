@@ -17,20 +17,6 @@ additional_redirect_urls = [
   "https://kostenplan.nl/auth/callback",
 ]
 
-# Probeer-flow zonder account (/probeer): gasten zijn anonieme gebruikers die
-# later aan een echt account worden gekoppeld (identity linking).
-enable_anonymous_sign_ins = true
-enable_manual_linking = true
-
-# Cloudflare Turnstile voor ALLE auth-aanroepen (login, registreren, wachtwoord
-# vergeten, anonieme sessie). Pas op true zetten NADAT NEXT_PUBLIC_TURNSTILE_SITE_KEY
-# en TURNSTILE_SECRET_KEY in Vercel staan en de formulieren zijn uitgerold,
-# anders kan niemand meer inloggen.
-[auth.captcha]
-enabled = false
-provider = "turnstile"
-secret = "env(TURNSTILE_SECRET_KEY)"
-
 [auth.email]
 # Geen bevestigingsmail meer: signUp() geeft direct een sessie terug en de
 # gebruiker komt meteen in het dashboard, in plaats van eerst een link in

@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const protectedPrefixes = ["/dashboard", "/onboarding", "/voorbeeld", "/admin"];
+const protectedPrefixes = ["/dashboard", "/onboarding", "/voorbeeld", "/probeer/importeren"];
 const authRoutes = ["/login", "/registreren"];
 
 export default async function proxy(request: NextRequest) {
@@ -9,6 +9,13 @@ export default async function proxy(request: NextRequest) {
   // protected/auth-prefix hierboven raakt 'm toch), en zo blijft de pagina
   // ook renderbaar zonder Supabase-omgevingsvariabelen.
   if (request.nextUrl.pathname.startsWith("/stijlgids")) {
+    return NextResponse.next({ request });
+  }
+
+  // Het uitproberen zonder account (/probeer) werkt volledig in de browser en
+  // raakt Supabase niet. Alleen het overnemen na het inloggen vraagt een sessie.
+  const pad = request.nextUrl.pathname;
+  if ((pad === "/probeer" || pad.startsWith("/probeer/")) && !pad.startsWith("/probeer/importeren")) {
     return NextResponse.next({ request });
   }
 

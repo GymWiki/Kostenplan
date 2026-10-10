@@ -13,8 +13,6 @@ import { Switch } from "@/app/components/ui/switch";
 import { UnitInput } from "@/app/components/ui/unit-input";
 import { PRODUCT_ICONS } from "@/app/lib/icons";
 import { formatCurrency } from "@/app/lib/format";
-import { kopieerWerkzaamheidAction } from "@/app/lib/actions/rekentools";
-import { saveWerkzaamheidAction, setWerkzaamheidActiefAction } from "@/app/lib/actions/werkzaamheden";
 import {
   METHODE_OPTIES,
   STAP_WOORD,
@@ -35,6 +33,7 @@ import {
 } from "@/app/lib/werkzaamheid";
 import { berekenKostenOpbouw } from "@/app/lib/werkzaamheid-kosten";
 import { useTarieven } from "../tarieven-context";
+import { useEditorRepository } from "./repository";
 import { KostenOpbouwKaart } from "../producten/editor/kosten-opbouw-kaart";
 import { MaterialenTabel } from "../producten/editor/materialen-tabel";
 import { useAutosave, type AutosaveStatus } from "../producten/editor/use-autosave";
@@ -66,6 +65,7 @@ export function WerkzaamheidPaneel({
   onGekopieerd: (productId: string) => void;
 }) {
   const { costSettings, openTarieven } = useTarieven();
+  const repo = useEditorRepository();
   // De oorspronkelijke database-versie, vastgezet: de live voorbeeldversie die
   // we naar boven doorgeven mag nooit weer als invoer terugkomen (lus).
   const [origineel] = useState(product);
@@ -95,7 +95,7 @@ export function WerkzaamheidPaneel({
         materialen: d.materialen.map((r) => ({ ...r, id: r.id ?? idMap.current[r.sleutel] })),
         extras: d.extras?.map((e) => ({ ...e, id: e.id ?? idMap.current[e.sleutel] })),
       };
-      const r = await saveWerkzaamheidAction(product.id, payload);
+      const r = await repo.slaWerkzaamheidOp(product.id, payload);
       if (r.ok) {
         idMap.current = { ...idMap.current, ...r.ids };
         return { ok: true };
@@ -153,7 +153,7 @@ export function WerkzaamheidPaneel({
 
   async function wisselZichtbaar(aan: boolean) {
     setActief(aan);
-    const r = await setWerkzaamheidActiefAction(product.id, aan);
+    const r = await repo.zetActief(product.id, aan);
     if (!r.ok) {
       setActief(!aan);
       setFout("Wijzigen is niet gelukt.");
@@ -161,7 +161,8 @@ export function WerkzaamheidPaneel({
   }
 
   async function dupliceer() {
-    const r = await kopieerWerkzaamheidAction(product.id, toolId);
+    if (!repo.kopieerWerkzaamheid) return;
+    const r = await repo.kopieerWerkzaamheid(product.id, toolId);
     if (r.ok) onGekopieerd(r.productId);
     else setFout(r.error);
   }
@@ -188,7 +189,7 @@ export function WerkzaamheidPaneel({
         <DropdownMenu
           ariaLabel="Meer acties voor dit onderdeel"
           items={[
-            { label: "Dupliceren", icon: Copy, onSelect: dupliceer },
+            ...(repo.kopieerWerkzaamheid ? [{ label: "Dupliceren", icon: Copy, onSelect: dupliceer }] : []),
             { label: "Verwijderen", icon: Trash2, destructive: true, onSelect: onVerwijder },
           ]}
         />

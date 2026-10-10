@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
+import { veiligVolgende } from "@/app/lib/volgende";
 import { RegisterForm } from "./register-form";
 
 export const metadata: Metadata = {
@@ -10,7 +11,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/registreren" },
 };
 
-export default function RegisterPage() {
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const volgende = veiligVolgende((await searchParams).next, "") || undefined;
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
@@ -20,10 +22,10 @@ export default function RegisterPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <RegisterForm />
+        <RegisterForm volgende={volgende} />
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Heb je al een account?{" "}
-          <Link href="/login" className="font-medium text-primary hover:underline">
+          <Link href={volgende ? `/login?next=${encodeURIComponent(volgende)}` : "/login"} className="font-medium text-primary hover:underline">
             Log in
           </Link>
         </p>

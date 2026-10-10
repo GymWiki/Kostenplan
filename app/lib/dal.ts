@@ -44,49 +44,17 @@ export const verifySupabaseUser = cache(async () => {
 // e-mail/wachtwoord-gebruikers. requireActiveCompany() hieronder stuurt een
 // gebruiker zonder bedrijf daar naartoe, waar createCompanyAction een echte,
 // door de gebruiker gekozen naam aan de Company hangt.
-//
-// Gasten (probeer-flow, Supabase anonymous sign-in) hebben geen e-mailadres;
-// User.email is uniek, dus krijgen zij een tijdelijk intern adres. Zodra de
-// gast een echt adres koppelt, nemen we dat hier over.
-export const GAST_EMAIL_DOMEIN = "gast.invalid";
-
-const ensureProfile = cache(async (authUser: { id: string; email?: string; is_anonymous?: boolean }) => {
-  const gast = authUser.is_anonymous === true;
-  const email = authUser.email || (gast ? `gast-${authUser.id}@${GAST_EMAIL_DOMEIN}` : "");
-  const profiel = await prisma.user.upsert({
+const ensureProfile = cache(async (authUser: { id: string; email?: string }) => {
+  return prisma.user.upsert({
     where: { id: authUser.id },
-    create: { id: authUser.id, email },
+    create: { id: authUser.id, email: authUser.email ?? "" },
     update: {},
   });
-  if (!gast && authUser.email && profiel.email.endsWith(`@${GAST_EMAIL_DOMEIN}`)) {
-    return prisma.user.update({ where: { id: authUser.id }, data: { email: authUser.email } });
-  }
-  return profiel;
 });
 
 export async function requireUser() {
   const authUser = await verifySupabaseUser();
-  const profiel = await ensureProfile(authUser);
-  return { ...profiel, isGast: authUser.is_anonymous === true };
-}
-
-// Alles wat een gast (anonieme probeer-sessie) NIET mag: embed-code, publiceren,
-// leads, offertes, betalen, tweede rekentool/bedrijf. Elke zo'n server action
-// en pagina roept dit aan; een gast gaat terug naar het account-maken-paneel.
-// Dit is de echte afdwinging: de database zelf is alleen via Prisma bereikbaar
-// (RLS staat aan zonder policies), dus is_anonymous wordt hier gecontroleerd.
-export async function requireVolledigAccount() {
-  const authUser = await verifySupabaseUser();
-  if (authUser.is_anonymous === true) redirect("/probeer/editor?paneel=account");
-  return authUser;
-}
-
-export async function isGastSessie(): Promise<boolean> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user?.is_anonymous === true;
+  return ensureProfile(authUser);
 }
 
 // Het bedrijf waarvan de ingelogde gebruiker momenteel de data ziet, plus de
@@ -109,7 +77,7 @@ export const requireActiveCompany = cache(async () => {
   // Company — stuur ze naar de onboarding-pagina om er zelf één aan te maken
   // in plaats van automatisch iets te verzinnen op basis van hun e-mailadres.
   if (memberships.length === 0) {
-    redirect(user.isGast ? "/probeer" : "/onboarding/bedrijf");
+    redirect("/onboarding/bedrijf");
   }
 
   const cookieStore = await cookies();
@@ -126,12 +94,6 @@ export const requireActiveCompany = cache(async () => {
       where: { id: company.id },
       data: { subscriptionTier: "GRATIS", gepauzeerdTot: null },
     });
-  }
-
-  // Een gast-voorbeeld dat is verlopen (de opruimjob heeft het nog niet
-  // weggehaald): opnieuw beginnen.
-  if (user.isGast && company.gastVerlooptOp && company.gastVerlooptOp < new Date()) {
-    redirect("/probeer?verlopen=1");
   }
 
   return {
@@ -297,7 +259,7 @@ export async function getToolForPublicRoute(bedrijfsSlug: string, toolSlug: stri
     where: {
       slug: toolSlug,
       deletedAt: null,
-      company: { slug: bedrijfsSlug, gastVerlooptOp: null },
+      company: { slug: bedrijfsSlug },
     },
     include: PUBLIEKE_TOOL_INCLUDE,
   });
@@ -314,7 +276,7 @@ export async function getLegacyToolForCompanySlug(companySlug: string) {
     where: {
       status: "GEPUBLICEERD",
       deletedAt: null,
-      company: { slug: companySlug, gastVerlooptOp: null },
+      company: { slug: companySlug },
     },
     orderBy: { order: "asc" },
     include: PUBLIEKE_TOOL_INCLUDE,
@@ -330,7 +292,7 @@ export async function getLegacyToolForCompanySlug(companySlug: string) {
 // een kale 404.
 export async function getToolForEmbed(toolId: string) {
   return prisma.tool.findFirst({
-    where: { id: toolId, deletedAt: null, company: { gastVerlooptOp: null } },
+    where: { id: toolId, deletedAt: null },
     include: PUBLIEKE_TOOL_INCLUDE,
   });
 }

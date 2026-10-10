@@ -3,13 +3,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/server";
 import { getBaseUrl } from "@/app/lib/url";
+import { veiligVolgende } from "@/app/lib/volgende";
 import { registerSchema, loginSchema, requestPasswordResetSchema } from "@/app/lib/validation";
-
-// Turnstile-token uit het formulier (leeg als de controle niet aan staat).
-function captchaTokenUit(formData: FormData): string | undefined {
-  const t = formData.get("captchaToken");
-  return typeof t === "string" && t ? t : undefined;
-}
 
 export type AuthFormState = {
   error?: string;
@@ -39,7 +34,7 @@ export async function registerAction(
   const { email, password } = parsed.data;
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({ email, password, options: { captchaToken: captchaTokenUit(formData) } });
+  const { data, error } = await supabase.auth.signUp({ email, password });
 
   if (error) {
     if (error.code === "user_already_exists") {
@@ -55,7 +50,7 @@ export async function registerAction(
   // Geen Company hier — /onboarding/bedrijf (via requireActiveCompany() in
   // dal.ts) vraagt die zodra de gebruiker voor het eerst een dashboardpagina
   // bezoekt, hetzelfde pad als na Google-login.
-  redirect("/dashboard");
+  redirect(veiligVolgende(formData.get("next")));
 }
 
 export async function loginAction(
@@ -79,13 +74,13 @@ export async function loginAction(
   const { email, password } = parsed.data;
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken: captchaTokenUit(formData) } });
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     return { error: "Onjuist e-mailadres of wachtwoord" };
   }
 
-  redirect("/dashboard");
+  redirect(veiligVolgende(formData.get("next")));
 }
 
 // Stuurt (indien het adres bestaat) een reset-link naar het opgegeven
@@ -111,7 +106,6 @@ export async function requestPasswordResetAction(
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
     redirectTo: `${baseUrl}/auth/callback?next=/wachtwoord-resetten`,
-    captchaToken: captchaTokenUit(formData),
   });
 
   return { success: true };
@@ -128,12 +122,13 @@ export async function logoutAction() {
 // dan nog geen Company — requireActiveCompany() (zie dal.ts) stuurt de
 // gebruiker naar /onboarding/bedrijf zodra die voor het eerst een
 // dashboardpagina bezoekt, zodat ze zelf een bedrijfsnaam kiezen.
-export async function signInWithGoogleAction() {
+export async function signInWithGoogleAction(formData?: FormData) {
   const baseUrl = await getBaseUrl();
+  const volgende = veiligVolgende(formData?.get("next"), "");
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: `${baseUrl}/auth/callback` },
+    options: { redirectTo: `${baseUrl}/auth/callback${volgende ? `?next=${encodeURIComponent(volgende)}` : ""}` },
   });
 
   if (error || !data.url) {

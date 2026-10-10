@@ -10,11 +10,9 @@ import { presetById } from "@/app/lib/presets";
 import {
   methodeNaarInstelling,
   methodeVanProduct,
-  valideerExtras,
-  valideerMaterialen,
-  type MateriaalRij,
   type WerkzaamheidDraft,
 } from "@/app/lib/werkzaamheid";
+import { productCreateData, rijData, valideerDraft } from "@/app/lib/werkzaamheid-db";
 import type { Prisma } from "@/app/generated/prisma/client";
 
 // Server actions voor het nieuwe bewerkscherm en de aanmaak-wizard. De UI
@@ -25,41 +23,6 @@ import type { Prisma } from "@/app/generated/prisma/client";
 export type OpslaanResultaat =
   | { ok: true; ids: Record<string, string> }
   | { ok: false; error: string };
-
-const MAX_MATERIALEN = 50;
-
-function valideerDraft(d: WerkzaamheidDraft): string | null {
-  if (d.naam.trim() === "") return "Geef het onderdeel een naam.";
-  if (d.naam.trim().length > 120) return "De naam is te lang (maximaal 120 tekens).";
-  if (d.materialen.length === 0) return "Houd minstens één materiaal over.";
-  if (d.materialen.length > MAX_MATERIALEN) return "Er zijn te veel materialen.";
-  const fouten = valideerMaterialen(d);
-  if (fouten.length > 0) return fouten[0].melding;
-  const extraFouten = valideerExtras(d);
-  if (extraFouten.length > 0) return extraFouten[0].melding;
-  if ((d.extras?.length ?? 0) > 50) return "Er zijn te veel extra's.";
-  const tempo = parseGetal(d.productiviteit, 0);
-  if (d.productiviteit.trim() !== "" && (!(tempo >= 0) || Number.isNaN(parseGetal(d.productiviteit, NaN)))) {
-    return "Vul bij arbeid een getal in.";
-  }
-  return null;
-}
-
-function rijData(d: WerkzaamheidDraft, r: MateriaalRij) {
-  const min = parseGetal(r.prijsMin, 0);
-  const max = parseGetal(r.prijsMax, 0);
-  const tempo = parseGetal(r.productiviteitOverride, 0);
-  return {
-    naam: r.naam.trim(),
-    prijs: d.bandbreedte ? min : parseGetal(r.prijs, 0),
-    prijsType: d.bandbreedte ? ("BANDBREEDTE" as const) : ("VAST" as const),
-    prijsMin: d.bandbreedte ? min : null,
-    prijsMax: d.bandbreedte ? max : null,
-    // Werktempo per materiaal uit = eigen tempo's weg (bewuste keuze van de hovenier).
-    productiviteitOverride: d.werktempoPerMateriaal && tempo > 0 ? tempo : null,
-    isVoorbeeld: r.isVoorbeeld,
-  };
-}
 
 // Autosave van het bewerkscherm. Bewust GEEN revalidatePath: dat zou de
 // aanroepende pagina na elke wijziging opnieuw laten renderen (skeleton-
@@ -195,43 +158,10 @@ export async function createWerkzaamheidAction(
   }
 
   const preset = presetId ? presetById(presetId) : undefined;
-  const instelling = methodeNaarInstelling(draft.methode);
-  const tempo = parseGetal(draft.productiviteit, 0);
   const order = await prisma.product.count({ where: { toolId } });
 
   const product = await prisma.product.create({
-    data: {
-      toolId,
-      naam: draft.naam.trim(),
-      omschrijving: preset?.uitleg ?? null,
-      icoon: preset?.icoon ?? null,
-      eenheid: instelling.eenheid,
-      sjabloon: instelling.sjabloon,
-      sjabloonConfig: instelling.sjabloonConfig as Prisma.InputJsonValue,
-      productiviteit: tempo > 0 ? tempo : null,
-      transportPerDag: draft.transportPerDag,
-      actief: true,
-      order,
-      extraOpties: {
-        create: (draft.extras ?? []).map((e, i) => ({
-          naam: e.naam.trim(),
-          prijs: parseGetal(e.prijs, 0),
-          type: e.type,
-          altijd: e.altijd,
-          order: i,
-        })),
-      },
-      materiaalCategorieen: {
-        create: [
-          {
-            naam: "Materiaal",
-            verplicht: true,
-            order: 0,
-            materialen: { create: draft.materialen.map((r, i) => ({ ...rijData(draft, r), order: i })) },
-          },
-        ],
-      },
-    },
+    data: productCreateData(toolId, draft, preset, order),
     select: { id: true, naam: true },
   });
 

@@ -37,9 +37,10 @@ function SubmitButton() {
   );
 }
 
-export function GoogleSignInButton() {
+export function GoogleSignInButton({ volgende }: { volgende?: string }) {
   return (
     <form action={signInWithGoogleAction}>
+      {volgende && <input type="hidden" name="next" value={volgende} />}
       <SubmitButton />
     </form>
   );
