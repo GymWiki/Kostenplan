@@ -76,7 +76,7 @@ function MaterialPrijsVeld({
             <DecimalInput
               id={`${idPrefix}-prijsMin`}
               name="prijsMin"
-              placeholder="Min"
+              placeholder="Min…"
               value={prijsMin}
               onChange={(e) => setPrijsMin(e.target.value)}
               required
@@ -90,7 +90,7 @@ function MaterialPrijsVeld({
             <DecimalInput
               id={`${idPrefix}-prijsMax`}
               name="prijsMax"
-              placeholder="Max"
+              placeholder="Max…"
               value={prijsMax}
               onChange={(e) => setPrijsMax(e.target.value)}
               required
@@ -134,7 +134,7 @@ export function MaterialCategoriesManager({
       <div>
         <h2 className="font-semibold text-foreground">Materiaalcategorieën</h2>
         <p className="text-sm text-muted-foreground">
-          Onderdelen van deze werkzaamheid waarvoor de klant één materiaal kiest, bijv.
+          Delen van deze werkzaamheid waarvoor de klant één materiaal kiest, bijv.
           &ldquo;Kleur&rdquo; of &ldquo;Materiaalsoort&rdquo;.
         </p>
       </div>
@@ -169,7 +169,7 @@ function NewCategoryForm({ productId }: { productId: string }) {
     <form action={formAction} className="flex flex-col gap-2">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
         <div className="flex-1">
-          <Input name="naam" placeholder="Naam van nieuwe materiaalcategorie" required />
+          <Input name="naam" aria-label="Naam van de materiaalgroep" placeholder="Naam van nieuwe materiaalcategorie…" required />
           {state?.error && <p className="mt-1.5 text-sm text-destructive">{state.error}</p>}
         </div>
         <Button type="submit" disabled={pending} className="shrink-0">
@@ -215,7 +215,7 @@ function CategoryCard({
           <div>
             <form action={handleRename} className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <Input name="naam" defaultValue={category.naam} required autoFocus />
+                <Input name="naam" aria-label="Naam van de materiaalgroep" defaultValue={category.naam} required />
                 <Button type="submit" variant="secondary" size="icon" disabled={pending} aria-label="Opslaan">
                   <Check className="h-4 w-4" />
                 </Button>
@@ -343,7 +343,7 @@ function MaterialRow({
                 <DecimalInput
                   id={`stapgrootte-${material.id}`}
                   name="stapgrootte"
-                  placeholder="bijv. 1.8"
+                  placeholder="bijv. 1.8…"
                   defaultValue={material.stapgrootte ?? ""}
                   className="pr-10"
                 />
@@ -360,7 +360,7 @@ function MaterialRow({
               <DecimalInput
                 id={`productiviteit-${material.id}`}
                 name="productiviteitOverride"
-                placeholder="Bijv. 8"
+                placeholder="Bijv. 8…"
                 defaultValue={material.productiviteitOverride ?? ""}
               />
               <p className="text-xs text-muted-foreground">
@@ -489,7 +489,7 @@ function NewMaterialForm({
     <form action={formAction} className="flex flex-col gap-3 pt-1">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="new-material-naam">Naam</Label>
-        <Input id="new-material-naam" name="naam" placeholder="Bijv. Standaardkleur" required />
+        <Input id="new-material-naam" name="naam" placeholder="Bijv. Standaardkleur…" required />
       </div>
       <MaterialPrijsVeld idPrefix="new-material" />
       <AdvancedSettings label="Geavanceerd">
@@ -499,7 +499,7 @@ function NewMaterialForm({
             <DecimalInput
               id="new-material-stapgrootte"
               name="stapgrootte"
-              placeholder="bijv. 1.8"
+              placeholder="bijv. 1.8…"
               className="pr-10"
             />
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -512,7 +512,7 @@ function NewMaterialForm({
           <DecimalInput
             id="new-material-productiviteit"
             name="productiviteitOverride"
-            placeholder="Bijv. 8"
+            placeholder="Bijv. 8…"
           />
           <p className="text-xs text-muted-foreground">
             Legt dit materiaal trager of sneller dan gemiddeld? Leeg laat de productiviteit van het

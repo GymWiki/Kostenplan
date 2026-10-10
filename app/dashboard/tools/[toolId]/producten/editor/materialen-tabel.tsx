@@ -87,7 +87,7 @@ export function MaterialenTabel({
                   <Input
                     id={`${id}-naam`}
                     value={r.naam}
-                    placeholder="Bijv. Grenen schermen"
+                    placeholder="Bijv. Grenen schermen…"
                     autoFocus={focusSleutel === r.sleutel}
                     aria-invalid={naamFout ? true : undefined}
                     onChange={(e) => {
@@ -159,7 +159,7 @@ export function MaterialenTabel({
                   <UnitInput
                     id={`${id}-tempo`}
                     suffix={tempoSuffix}
-                    placeholder="Zelfde als standaard"
+                    placeholder="Zelfde als standaard…"
                     value={r.productiviteitOverride}
                     aria-invalid={tempoFout ? true : undefined}
                     onChange={(e) => {

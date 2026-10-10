@@ -20,18 +20,20 @@ export function ProductOptiesEditor({
       {opties.map((optie, i) => (
         <div key={optie.id ?? i} className="flex gap-2">
           <Input
+            aria-label="Naam van de optie"
             value={optie.naam}
             onChange={(e) => {
               const nieuw = [...opties];
               nieuw[i] = { ...optie, naam: e.target.value };
               onChange(nieuw);
             }}
-            placeholder="Bijv. Douglas"
+            placeholder="Bijv. Douglas…"
             className="flex-1"
           />
           <div className="relative w-32 shrink-0">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
             <DecimalInput
+              aria-label="Prijs van de optie"
               value={optie.prijs === 0 ? "" : String(optie.prijs)}
               onChange={(e) => {
                 const nieuw = [...opties];

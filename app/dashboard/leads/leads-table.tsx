@@ -60,8 +60,8 @@ export function LeadsTable({
           value={zoek}
           onChange={(e) => setZoek(e.target.value)}
           placeholder="Zoek op naam of e-mail…"
-          aria-label="Zoek in aanvragen"
-          className="h-10 w-full rounded-md border border-input bg-card pl-9 pr-3 text-base text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring sm:text-sm"
+          aria-label="Zoek in leads"
+          className="h-11 w-full rounded-md border border-input bg-card pl-9 pr-3 text-base text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring sm:text-sm"
         />
       </div>
 

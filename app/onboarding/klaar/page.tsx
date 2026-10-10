@@ -45,7 +45,7 @@ export default async function OnboardingKlaarPage({
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row-reverse">
-          <LinkButton href={`/dashboard/tools/${tool.id}/producten`} size="lg" className="w-full sm:flex-1">
+          <LinkButton href={`/dashboard/tools/${tool.id}`} size="lg" className="w-full sm:flex-1">
             Prijzen nalopen
           </LinkButton>
           <LinkButton href="/dashboard" variant="outline" size="lg" className="w-full sm:flex-1">

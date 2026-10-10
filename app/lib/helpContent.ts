@@ -76,12 +76,12 @@ export const helpContent = {
     statusKolommen: {
       title: "Statuskolommen",
       description:
-        "Sleep een aanvraag naar een andere kolom om de status bij te werken. Zo houd je in één oogopslag bij waar elke lead in het proces zit.",
+        "Sleep een lead naar een andere kolom om de status bij te werken. Zo houd je in één oogopslag bij waar elke lead in het proces zit.",
     },
     pipelineWaarde: {
       title: "Pipeline waarde",
       description:
-        "De som van de geschatte waarde van alle openstaande aanvragen. Geeft een indicatie van hoeveel omzet er nog in behandeling is.",
+        "De som van de geschatte waarde van alle openstaande leads. Geeft een indicatie van hoeveel omzet er nog in behandeling is.",
     },
   },
   dashboard: {

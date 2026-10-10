@@ -316,7 +316,7 @@ function RegelFormModal({
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="regel-label">Naam</Label>
-          <Input id="regel-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Bijv. Materiaal" />
+          <Input id="regel-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Bijv. Materiaal…" />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -374,7 +374,7 @@ function RegelFormModal({
               {prijsBron === "vast" ? (
                 <Bedragveld label="" waarde={prijsPerEenheid} onChange={setPrijsPerEenheid} />
               ) : (
-                <Select value={prijsPerEenheidVariabele} onChange={(e) => setPrijsPerEenheidVariabele(e.target.value)}>
+                <Select aria-label="Materiaalkeuze" value={prijsPerEenheidVariabele} onChange={(e) => setPrijsPerEenheidVariabele(e.target.value)}>
                   <option value="" disabled>
                     Kies een materiaalkeuze
                   </option>
@@ -390,7 +390,7 @@ function RegelFormModal({
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="regel-eenheid">Eenheid</Label>
-              <Input id="regel-eenheid" value={eenheid} onChange={(e) => setEenheid(e.target.value)} placeholder="Bijv. meter, m², uur" />
+              <Input id="regel-eenheid" value={eenheid} onChange={(e) => setEenheid(e.target.value)} placeholder="Bijv. meter, m², uur…" />
             </div>
           </>
         )}
@@ -419,7 +419,7 @@ function RegelFormModal({
               </label>
             </div>
             <div className="relative">
-              <DecimalInput value={kortingWaarde} onChange={(e) => setKortingWaarde(e.target.value)} className={kortingType === "percentage" ? "pr-8" : "pl-7"} />
+              <DecimalInput aria-label="Korting" value={kortingWaarde} onChange={(e) => setKortingWaarde(e.target.value)} className={kortingType === "percentage" ? "pr-8" : "pl-7"} />
               {kortingType === "percentage" ? (
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
               ) : (
@@ -443,7 +443,7 @@ function RegelFormModal({
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="regel-staffel-eenheid">Eenheid</Label>
-              <Input id="regel-staffel-eenheid" value={eenheid} onChange={(e) => setEenheid(e.target.value)} placeholder="Bijv. meter" />
+              <Input id="regel-staffel-eenheid" value={eenheid} onChange={(e) => setEenheid(e.target.value)} placeholder="Bijv. meter…" />
             </div>
             <div className="flex flex-col gap-2">
               <span className="flex items-center gap-1.5">
@@ -454,17 +454,19 @@ function RegelFormModal({
                 <div key={i} className="flex items-center gap-2 text-sm">
                   <span className="w-16 shrink-0 text-muted-foreground">t/m</span>
                   <Input
+                    aria-label="Tot en met"
                     value={schijf.tot}
                     onChange={(e) => {
                       const nieuw = [...schijven];
                       nieuw[i] = { ...schijf, tot: e.target.value };
                       setSchijven(nieuw);
                     }}
-                    placeholder="onbeperkt"
+                    placeholder="onbeperkt…"
                     className="w-24"
                   />
                   <span className="shrink-0 text-muted-foreground">à €</span>
                   <DecimalInput
+                    aria-label="Prijs per eenheid"
                     value={schijf.prijsPerEenheid}
                     onChange={(e) => {
                       const nieuw = [...schijven];

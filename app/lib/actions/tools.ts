@@ -401,6 +401,7 @@ export async function duplicateToolAction(formData: FormData) {
               omschrijving: extra.omschrijving,
               prijs: extra.prijs,
               type: extra.type,
+              altijd: extra.altijd,
               foto: extra.foto,
               actief: extra.actief,
               order: extra.order,

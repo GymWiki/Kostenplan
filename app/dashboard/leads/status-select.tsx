@@ -17,6 +17,7 @@ export function StatusSelect({
 }) {
   return (
     <Select
+      aria-label="Status van de lead"
       defaultValue={status}
       className={className}
       onChange={(e) => onStatusChange(leadId, e.target.value as LeadStatus)}

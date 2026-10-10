@@ -96,7 +96,7 @@ function NewExtraOptionForm({
     <form action={formAction} className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="new-extra-naam">Naam</Label>
-        <Input id="new-extra-naam" name="naam" placeholder="Bijv. Metalen tussenbekleding" required />
+        <Input id="new-extra-naam" name="naam" placeholder="Bijv. Metalen tussenbekleding…" required />
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="flex flex-col gap-1.5">
@@ -105,7 +105,7 @@ function NewExtraOptionForm({
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
               €
             </span>
-            <DecimalInput id="new-extra-prijs" name="prijs" placeholder="0" className="pl-7" />
+            <DecimalInput id="new-extra-prijs" name="prijs" placeholder="0…" className="pl-7" />
           </div>
         </div>
         <div className="flex flex-col gap-1.5">
@@ -193,9 +193,10 @@ function ExtraOptionRow({
           </div>
           <input type="hidden" name="actief" value={String(option.actief)} />
           <Textarea
+            aria-label="Omschrijving"
             name="omschrijving"
             defaultValue={option.omschrijving ?? ""}
-            placeholder="Omschrijving (optioneel)"
+            placeholder="Omschrijving (optioneel)…"
           />
           <PhotoInput currentUrl={option.foto} />
           <div className="flex justify-end gap-2">

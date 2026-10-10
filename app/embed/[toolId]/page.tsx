@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { parseLeadFormConfig, parseResultaatConfig } from "@/app/lib/tools";
 import { notFound } from "next/navigation";
 import { getToolForEmbed, getMateriaalOptiesVoorEngineVelden } from "@/app/lib/dal";
 import { resolveCostSettings } from "@/app/lib/tools";
@@ -73,6 +74,9 @@ export default async function EmbedPage({
       branding={tool.branding}
       costSettings={effectieveCostSettings}
       products={tool.products}
+      toelichting={parseResultaatConfig(tool.resultaatConfig).toelichting}
+      ctaTekst={parseResultaatConfig(tool.resultaatConfig).ctaTekst}
+      vraagTelefoon={parseLeadFormConfig(tool.leadFormConfig).vraagTelefoon}
     />
   );
 }

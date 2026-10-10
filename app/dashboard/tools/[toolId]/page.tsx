@@ -1,125 +1,89 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Eye, Package, Euro, Palette, Target, ClipboardList, Rocket, Code2 } from "lucide-react";
-import { requireActiveTool, getToolOverzichtStats } from "@/app/lib/dal";
-import { getToolUrl } from "@/app/lib/url";
-import { getToolAnalyticsSummary } from "@/app/lib/analytics";
-import { Card, CardContent } from "@/app/components/ui/card";
-import { LinkButton } from "@/app/components/ui/button";
-import { CopyButton } from "@/app/components/dashboard/copy-link";
-import { RecenteAanvragen } from "@/app/components/dashboard/recente-aanvragen";
+import { canCreateTool, canPublishTool, requireActiveTool } from "@/app/lib/dal";
+import { prisma } from "@/app/lib/prisma";
+import { getToolEmbedCode, getToolUrl } from "@/app/lib/url";
+import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
+import { parseEmbedConfig, parseLeadFormConfig, parseResultaatConfig } from "@/app/lib/tools";
+import { RekentoolEditor } from "./editor/rekentool-editor";
 
-export const metadata: Metadata = { title: "Overzicht" };
+export const metadata: Metadata = { title: "Rekentool bewerken" };
 
-const KWARTIER_LINKS = [
-  { segment: "producten", label: "Werkzaamheden", icon: Package, beschrijving: "Wat je klant kan kiezen" },
-  { segment: "prijzen", label: "Prijzen", icon: Euro, beschrijving: "Arbeid, transport, voorrijkosten, btw" },
-  { segment: "uiterlijk", label: "Uiterlijk", icon: Palette, beschrijving: "Logo, kleuren en teksten" },
-  { segment: "resultaat", label: "Resultaat", icon: Target, beschrijving: "Prijsweergave en call-to-action" },
-  { segment: "aanvraagformulier", label: "Aanvraagformulier", icon: ClipboardList, beschrijving: "Welke gegevens je vraagt" },
-  { segment: "embed", label: "Embed", icon: Code2, beschrijving: "Insluiten op je eigen website" },
-] as const;
-
-export default async function ToolOverzichtPage({
+// De rekentool-editor: één scherm waarin de hovenier zijn rekentool ziet zoals
+// de klant en elk onderdeel aanpast door erop te klikken. Vervangt de oude
+// tool-navigatie (Overzicht, Calculator, Bouwer, Werkzaamheden, Prijzen,
+// Uiterlijk, Resultaat, Aanvraagformulier, Publiceren, Embed, Instellingen).
+export default async function RekentoolEditorPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ toolId: string }>;
+  searchParams: Promise<{ paneel?: string }>;
 }) {
   const { toolId } = await params;
-  const { company, tool } = await requireActiveTool(toolId);
+  const { paneel } = await searchParams;
+  const { user, company, tool } = await requireActiveTool(toolId);
+  const tier = effectiveTier(company);
 
-  const [{ productenCount, leadsCount, recenteLeads }, analytics] = await Promise.all([
-    getToolOverzichtStats(toolId),
-    getToolAnalyticsSummary(toolId),
+  const [products, branding, costSettings, andereTools, magNieuweTool, magPubliceren] = await Promise.all([
+    prisma.product.findMany({
+      where: { toolId },
+      orderBy: { order: "asc" },
+      take: 200,
+      include: {
+        materiaalCategorieen: { orderBy: { order: "asc" }, include: { materialen: { orderBy: { order: "asc" } } } },
+        extraOpties: { orderBy: { order: "asc" } },
+      },
+    }),
+    // find-then-create: een gewone paginaweergave schrijft niets.
+    prisma.branding.findUnique({ where: { toolId } }).then((b) => b ?? prisma.branding.create({ data: { toolId } })),
+    prisma.costSettings.findUnique({ where: { toolId } }).then((c) => c ?? prisma.costSettings.create({ data: { toolId } })),
+    prisma.tool.findMany({
+      where: { companyId: company.id, deletedAt: null, id: { not: toolId } },
+      orderBy: { order: "asc" },
+      take: 50,
+      select: { id: true, naam: true, products: { orderBy: { order: "asc" }, select: { id: true, naam: true } } },
+    }),
+    canCreateTool(company.id, tier),
+    canPublishTool(company.id, tier),
   ]);
-  const toolUrl = await getToolUrl(company.slug, tool.slug);
+
+  const resultaat = parseResultaatConfig(tool.resultaatConfig);
+  const aanvraag = parseLeadFormConfig(tool.leadFormConfig);
+  const embedConfig = parseEmbedConfig(tool.embedConfig);
+  const magEmbedden = PLAN_LIMITS[tier].embedEnabled;
+  const [toolUrl, embedCode] = await Promise.all([
+    getToolUrl(company.slug, tool.slug),
+    magEmbedden ? getToolEmbedCode(toolId, tool.naam, embedConfig) : Promise.resolve(null),
+  ]);
+
+  const isAangepast = tool.activeCalculatorConfigId != null;
+  const geldigePanelen = ["uiterlijk", "resultaat", "aanvraag", "website", "toevoegen", "aangepast"];
+  const startPaneel =
+    paneel && (geldigePanelen.includes(paneel) || paneel.startsWith("werkzaamheid:")) ? paneel : "start";
 
   return (
-    <div className="flex flex-col gap-6">
-      {tool.status === "GEPUBLICEERD" ? (
-        <Card>
-          <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground">Publieke link</p>
-              <p className="truncate text-sm text-muted-foreground">{toolUrl}</p>
-            </div>
-            <div className="flex shrink-0 gap-2">
-              <CopyButton text={toolUrl} />
-              <LinkButton href={toolUrl} target="_blank" variant="secondary">
-                <Eye className="h-4 w-4" />
-                Bekijken
-              </LinkButton>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="border-warning/30 bg-warning/5">
-          <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                {tool.status === "CONCEPT" ? "Deze rekentool is nog niet gepubliceerd" : "Deze rekentool is gepauzeerd"}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Klanten kunnen &lsquo;m nog niet zien. Publiceer om de link en embed te activeren.
-              </p>
-            </div>
-            <LinkButton href={`/dashboard/tools/${toolId}/publiceren`} className="shrink-0">
-              <Rocket className="h-4 w-4" />
-              Publiceren
-            </LinkButton>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
-        <StatCard label="Werkzaamheden" value={productenCount} />
-        <StatCard label="Aanvragen" value={leadsCount} />
-        <StatCard label="Bezoeken" value={analytics.bezoeken} />
-        <StatCard
-          label="Conversie"
-          value={analytics.conversieRatio === null ? "—" : `${analytics.conversieRatio}%`}
-        />
-      </div>
-
-      {/* UX-audit punt 5: vult de ruimte die hier op brede schermen anders
-          leeg bleef tussen de statistiekkaarten en "Snel naar" hieronder. */}
-      <RecenteAanvragen
-        aanvragen={recenteLeads}
-        toonTool={false}
-        bekijkAlleHref={`/dashboard/leads?tool=${toolId}&weergave=lijst`}
-      />
-
-      <div>
-        <h2 className="mb-3 text-sm font-medium text-muted-foreground">Snel naar</h2>
-        <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
-          {KWARTIER_LINKS.map((item) => (
-            <Link key={item.segment} href={`/dashboard/tools/${toolId}/${item.segment}`}>
-              <Card className="h-full transition-colors hover:border-primary/40">
-                <CardContent className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <item.icon className="h-4.5 w-4.5" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-medium text-foreground">{item.label}</p>
-                    <p className="truncate text-xs text-muted-foreground">{item.beschrijving}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string | number }) {
-  return (
-    <Card>
-      <CardContent className="flex flex-col gap-1">
-        <p className="text-xl font-semibold text-foreground">{value}</p>
-        <p className="text-sm text-muted-foreground">{label}</p>
-      </CardContent>
-    </Card>
+    <RekentoolEditor
+      toolId={toolId}
+      toolNaam={tool.naam}
+      toolStatus={tool.status}
+      isAangepast={isAangepast}
+      products={products}
+      branding={branding}
+      tier={tier}
+      email={user.email}
+      resultaat={{
+        arbeidZichtbaar: costSettings.arbeidZichtbaar,
+        materiaalZichtbaar: costSettings.materiaalZichtbaar,
+        transportZichtbaar: costSettings.transportZichtbaar,
+        voorrijZichtbaar: costSettings.voorrijZichtbaar,
+        toelichting: resultaat.toelichting ?? "",
+        ctaTekst: resultaat.ctaTekst ?? "",
+      }}
+      aanvraag={{ vraagTelefoon: aanvraag.vraagTelefoon, bedankTekst: branding.bedankTekst }}
+      website={{ toolUrl, embedCode, embedConfig, magEmbedden, magPubliceren, limiet: PLAN_LIMITS[tier].maxActiveTools }}
+      anderen={andereTools.map((t) => ({ id: t.id, naam: t.naam, werkzaamheden: t.products }))}
+      magNieuweTool={magNieuweTool}
+      startPaneel={startPaneel}
+    />
   );
 }

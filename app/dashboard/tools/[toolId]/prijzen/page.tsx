@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { requireActiveTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { CostSettingsForm } from "./cost-settings-form";
 
-export const metadata: Metadata = { title: "Prijzen" };
+export const metadata: Metadata = { title: "Prijsinstellingen" };
 
 export default async function PrijzenPage({
   params,
@@ -28,11 +30,17 @@ export default async function PrijzenPage({
   return (
     <div className="flex max-w-[820px] flex-col gap-6">
       <div>
+        <Link
+          href={`/dashboard/tools/${toolId}`}
+          className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-foreground hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Terug naar je rekentool
+        </Link>
         <h1 className="text-2xl font-semibold text-foreground">
-          Prijzen
+          Btw en andere prijsinstellingen
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Bepaal welke kostenposten meetellen in deze rekentool en welke tarieven je hanteert.
+          Bepaal welke kostenposten meetellen in deze rekentool, de btw en hoe de prijs wordt getoond. Je tarieven pas je aan in je profiel.
         </p>
       </div>
       <CostSettingsForm

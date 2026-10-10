@@ -60,7 +60,7 @@ export function RecenteAanvragen({
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-4">
-        <CardTitle>Recente aanvragen</CardTitle>
+        <CardTitle>Recente leads</CardTitle>
         {aanvragen.length > 0 && (
           <Link
             href={bekijkAlleHref}
@@ -77,7 +77,7 @@ export function RecenteAanvragen({
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground">
               <Inbox className="h-5 w-5" aria-hidden="true" />
             </span>
-            <p className="text-sm text-muted-foreground">Hier verschijnen aanvragen zodra klanten je rekentool invullen.</p>
+            <p className="text-sm text-muted-foreground">Hier verschijnen leads zodra klanten je rekentool invullen.</p>
           </div>
         ) : (
           <ul className="flex flex-col divide-y divide-border">

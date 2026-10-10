@@ -20,6 +20,9 @@ export type LeadSnapshotLine = {
   // gevuld voor tools die het modulaire Onderdelensysteem gebruiken.
   // Ontbreekt voor v1/System-A-tools (ongewijzigd gedrag).
   onderdeel?: string;
+  // Welke werkzaamheid (Product) deze regel opleverde — voor "Bekijk in
+  // rekentool" bij een lead. Ontbreekt bij oudere leads en bij Aangepaste tools.
+  productId?: string;
 };
 
 // Vorm van Lead.snapshot (Json). Gebouwd client-side in de publieke

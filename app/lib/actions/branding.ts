@@ -113,6 +113,7 @@ export async function updateBrandingAction(
   });
 
   revalidatePath(`/dashboard/tools/${toolId}/uiterlijk`);
+  revalidatePath(`/dashboard/tools/${toolId}`);
   revalidatePath(`/t/${company.slug}/${tool.slug}`);
   revalidatePath(`/portaal/${company.slug}`);
 

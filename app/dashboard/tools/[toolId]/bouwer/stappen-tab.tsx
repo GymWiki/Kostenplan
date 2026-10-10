@@ -79,7 +79,7 @@ export function StappenTab({
         <Card key={stap.id}>
           <CardContent className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-              <Input value={stap.titel} onChange={(e) => updateTitel(stap.id, e.target.value)} className="flex-1" />
+              <Input aria-label="Titel van de stap" value={stap.titel} onChange={(e) => updateTitel(stap.id, e.target.value)} className="flex-1" />
               <Button type="button" variant="ghost" size="icon" onClick={() => verplaats(i, -1)} disabled={i === 0} aria-label="Omhoog">
                 <ArrowUp className="h-4 w-4" />
               </Button>
@@ -116,9 +116,10 @@ export function StappenTab({
 
       <div className="flex gap-2">
         <Input
+          aria-label="Naam van de nieuwe stap"
           value={nieuweStapTitel}
           onChange={(e) => setNieuweStapTitel(e.target.value)}
-          placeholder="Naam van de nieuwe stap, bijv. 'Afmetingen'"
+          placeholder="Naam van de nieuwe stap, bijv. 'Afmetingen'…"
           onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), voegStapToe())}
         />
         <Button type="button" variant="secondary" onClick={voegStapToe}>

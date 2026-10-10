@@ -82,6 +82,7 @@ export function OverrideVeld({
           €
         </span>
         <DecimalInput
+          aria-label="Bedrag"
           name={wijktAf ? name : undefined}
           value={waarde}
           onChange={(e) => onWaardeChange(e.target.value)}

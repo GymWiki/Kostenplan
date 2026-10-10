@@ -164,8 +164,8 @@ export function LeadsView({
 
         <ProFeatureLock
           size="lg"
-          title="Offerte-aanvragen ontvangen?"
-          description="Vanaf Plus verschijnt elke offerte-aanvraag die een klant via jouw klantenportaal indient direct hier, inclusief contactgegevens en prijsindicatie. Upgrade naar Plus of Pro om leads binnen te laten komen."
+          title="Leads ontvangen?"
+          description="Vanaf Plus verschijnt elke lead die een klant via je rekentool achterlaat direct hier, inclusief contactgegevens en prijsindicatie. Upgrade naar Plus of Pro om leads binnen te laten komen."
           ctaLabel="Upgrade naar Plus of Pro"
         />
       </div>
@@ -236,10 +236,10 @@ export function LeadsView({
           icon={TrendingUp}
           label="Pipeline waarde"
           value={formatCurrency(pipelineWaarde)}
-          hint="Actieve aanvragen"
+          hint="Actieve leads"
           help="leads.pipelineWaarde"
         />
-        <KpiCard icon={Users} label="Actieve aanvragen" value={String(actieveCount)} />
+        <KpiCard icon={Users} label="Actieve leads" value={String(actieveCount)} />
         <KpiCard icon={Trophy} label="Gewonnen" value={String(gewonnenCount)} />
         <KpiCard
           icon={Target}
@@ -255,11 +255,11 @@ export function LeadsView({
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Users className="h-6 w-6" />
             </span>
-            <p className="font-medium text-foreground">Nog geen aanvragen</p>
+            <p className="font-medium text-foreground">Nog geen leads</p>
             <p className="max-w-sm text-sm text-muted-foreground">
               {toolFilter === "alle"
                 ? "Zodra een bezoeker via je rekentool een offerte aanvraagt, verschijnt die hier."
-                : "Deze rekentool heeft nog geen aanvragen."}
+                : "Deze rekentool heeft nog geen leads."}
             </p>
           </CardContent>
         </Card>
@@ -279,7 +279,12 @@ export function LeadsView({
         />
       )}
 
-      <LeadDetailDrawer lead={selectedLead} onClose={() => setSelectedLeadId(null)} onUpdateStatus={updateLeadStatus} />
+      <LeadDetailDrawer
+        lead={selectedLead}
+        onClose={() => setSelectedLeadId(null)}
+        onUpdateStatus={updateLeadStatus}
+        toolBestaat={selectedLead ? (tools ?? []).some((t) => t.id === selectedLead.toolId) : false}
+      />
     </div>
   );
 }

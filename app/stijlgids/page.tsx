@@ -137,6 +137,7 @@ function maakProducten(): (Product & {
           prijs: 145,
           type: "PER_STUK",
           foto: null,
+          altijd: false,
           actief: true,
           order: 0,
           createdAt: NU,

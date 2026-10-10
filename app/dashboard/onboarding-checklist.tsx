@@ -55,7 +55,7 @@ export function OnboardingChecklist({
 
         <div className="h-2 w-full overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuenow={percentage} aria-valuemin={0} aria-valuemax={100}>
           <div
-            className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+            className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
             style={{ width: `${percentage}%` }}
           />
         </div>

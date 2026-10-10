@@ -2,6 +2,9 @@ import { Plus } from "lucide-react";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { LinkButton } from "@/app/components/ui/button";
 import { HelpTip } from "@/app/components/ui/help-tip";
+import { AbonnementView } from "@/app/dashboard/abonnement/abonnement-view";
+import { TarievenSectie } from "./tarieven-sectie";
+import { UiterlijkOverzicht, type BrandingRegel } from "./uiterlijk-overzicht";
 import { AccountForm } from "./account-form";
 import { CompanyCard } from "./company-card";
 import { effectiveTier, isBetaaldTier, PRIJZEN } from "@/app/lib/subscription";
@@ -12,10 +15,16 @@ export function ProfielView({
   email,
   activeCompanyId,
   companies,
+  abonnement,
+  tarieven,
+  branding,
 }: {
   email: string;
   activeCompanyId: string;
   companies: Company[];
+  abonnement: React.ComponentProps<typeof AbonnementView>;
+  tarieven: React.ComponentProps<typeof TarievenSectie>["start"];
+  branding: BrandingRegel[];
 }) {
   // Alleen echt betaalde, actief lopende abonnementen tellen mee — een
   // handmatige overrideTier kost de gebruiker niets, en GEEN/CANCELED/
@@ -80,6 +89,21 @@ export function ProfielView({
             />
           ))}
         </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 id="tarieven" className="scroll-mt-20 text-lg font-semibold text-foreground">Tarieven</h2>
+        <p className="-mt-2 text-sm text-muted-foreground">Eén keer instellen, geldt voor al je rekentools.</p>
+        <TarievenSectie start={tarieven} />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 id="uiterlijk" className="scroll-mt-20 text-lg font-semibold text-foreground">Uiterlijk van je rekentools</h2>
+        <UiterlijkOverzicht regels={branding} />
+      </section>
+
+      <section>
+        <AbonnementView {...abonnement} />
       </section>
     </div>
   );

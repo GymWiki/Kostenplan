@@ -325,7 +325,7 @@ function DemoCalculatorCard({
 
               <div
                 className={cn(
-                  "grid overflow-hidden transition-all duration-500 ease-out",
+                  "grid overflow-hidden transition-[grid-template-rows,opacity] duration-500 ease-out",
                   showCta ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
                 )}
               >

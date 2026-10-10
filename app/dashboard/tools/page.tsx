@@ -1,148 +1,50 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Wrench, Package, Users, Pencil, ExternalLink } from "lucide-react";
 import { requireActiveCompany, canCreateTool, listToolsVoorCompany } from "@/app/lib/dal";
+import { prisma } from "@/app/lib/prisma";
 import { getToolUrl } from "@/app/lib/url";
-import { TOOL_STATUS_LABELS } from "@/app/lib/tools";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
-import { getProductIcon } from "@/app/lib/icons";
-import { Badge } from "@/app/components/ui/badge";
-import { Button, LinkButton } from "@/app/components/ui/button";
-import { Card, CardContent } from "@/app/components/ui/card";
-import { DeleteButton } from "@/app/components/dashboard/delete-button";
-import { DuplicateButton } from "@/app/components/dashboard/duplicate-button";
-import { CopyButton } from "@/app/components/dashboard/copy-link";
-import { duplicateToolAction, softDeleteToolAction } from "@/app/lib/actions/tools";
-import { NieuweRekentoolKnop } from "./nieuwe-rekentool-knop";
+import { RekentoolsLijst } from "./rekentools-lijst";
 
 export const metadata: Metadata = { title: "Rekentools" };
 
-const STATUS_BADGE_VARIANT = {
-  CONCEPT: "muted",
-  GEPUBLICEERD: "success",
-  GEPAUZEERD: "warning",
-} as const;
-
-const dateFormatter = new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "short", year: "numeric" });
-
-export default async function ToolsOverzichtPage() {
+export default async function ToolsOverzichtPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ verwijderd?: string; naam?: string }>;
+}) {
   const { company } = await requireActiveCompany();
+  const { verwijderd, naam } = await searchParams;
   const tier = effectiveTier(company);
 
   const tools = await listToolsVoorCompany(company.id);
+  const beginVanMaand = new Date();
+  beginVanMaand.setDate(1);
+  beginVanMaand.setHours(0, 0, 0, 0);
 
-  const [magNieuweTool, toolUrls] = await Promise.all([
+  const [magNieuweTool, toolUrls, leadsPerTool] = await Promise.all([
     canCreateTool(company.id, tier),
     Promise.all(tools.map((tool) => getToolUrl(company.slug, tool.slug))),
+    prisma.lead.groupBy({
+      by: ["toolId"],
+      where: { companyId: company.id, createdAt: { gte: beginVanMaand } },
+      _count: { _all: true },
+    }),
   ]);
+  const perTool = new Map(leadsPerTool.map((r) => [r.toolId, r._count._all]));
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Mijn rekentools</h1>
-          <p className="mt-1 text-muted-foreground">
-            Elke rekentool heeft zijn eigen werkzaamheden, prijzen, huisstijl en publieke link.
-          </p>
-        </div>
-        <NieuweRekentoolKnop
-          atLimit={!magNieuweTool}
-          limiet={PLAN_LIMITS[tier].maxActiveTools}
-        />
-      </div>
-
-      {tools.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Wrench className="h-6 w-6" />
-            </span>
-            <div>
-              <p className="font-medium text-foreground">Nog geen rekentools</p>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                Maak je eerste rekentool om klanten direct een prijsindicatie te kunnen geven.
-              </p>
-            </div>
-            <NieuweRekentoolKnop atLimit={!magNieuweTool} limiet={PLAN_LIMITS[tier].maxActiveTools} variant="secondary" />
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]">
-          {tools.map((tool, i) => {
-            const ToolIcon = getProductIcon(tool.icoon);
-            const toolUrl = toolUrls[i];
-            return (
-              <Card key={tool.id} className="relative flex h-full flex-col overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_32px_-16px_rgba(15,23,42,0.22)]">
-                <Link href={`/dashboard/tools/${tool.id}`} className="absolute inset-0" aria-label={`${tool.naam} bewerken`} />
-                <CardContent className="relative flex flex-1 flex-col gap-4">
-                  <div className="flex flex-wrap items-start gap-2">
-                    <div className="flex min-w-20 flex-[1_1_9rem] items-center gap-2.5">
-                      {ToolIcon && (
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                          <ToolIcon className="h-4.5 w-4.5" />
-                        </span>
-                      )}
-                      <span className="break-words font-medium text-foreground">{tool.naam}</span>
-                    </div>
-                    <Badge variant={STATUS_BADGE_VARIANT[tool.status]} className="shrink-0">
-                      {TOOL_STATUS_LABELS[tool.status]}
-                    </Badge>
-                  </div>
-
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <Package className="h-3.5 w-3.5" />
-                      {tool._count.products} werkzaamhe{tool._count.products === 1 ? "id" : "den"}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Users className="h-3.5 w-3.5" />
-                      {tool._count.leads} aanvra{tool._count.leads === 1 ? "ag" : "gen"}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-muted-foreground">
-                    Laatst bijgewerkt op {dateFormatter.format(tool.updatedAt)}
-                  </p>
-
-                  <div className="mt-auto flex flex-wrap items-center gap-1.5 border-t border-border pt-3">
-                    <LinkButton href={`/dashboard/tools/${tool.id}`} variant="secondary" size="sm">
-                      <Pencil className="h-3.5 w-3.5" />
-                      Bewerken
-                    </LinkButton>
-                    {tool.status === "GEPUBLICEERD" ? (
-                      <LinkButton href={toolUrl} target="_blank" variant="ghost" size="sm">
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        Bekijken
-                      </LinkButton>
-                    ) : (
-                      <Button type="button" variant="ghost" size="sm" disabled>
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        Bekijken
-                      </Button>
-                    )}
-                    {tool.status === "GEPUBLICEERD" && (
-                      <CopyButton text={toolUrl} label="Delen" className="h-8 px-3 text-sm" />
-                    )}
-                    <DuplicateButton action={duplicateToolAction} toolId={tool.id} disabled={!magNieuweTool} />
-                    <LinkButton href={`/dashboard/tools/${tool.id}/instellingen`} variant="ghost" size="sm">
-                      Instellingen
-                    </LinkButton>
-                    <div className="ml-auto">
-                      <DeleteButton
-                        action={softDeleteToolAction}
-                        id={tool.id}
-                        idField="toolId"
-                        confirmTitle={`"${tool.naam}" verwijderen?`}
-                        confirmMessage="De openbare link en embed werken hierna niet meer. Leads en offertes van deze tool blijven bewaard."
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    <RekentoolsLijst
+      tools={tools.map((t, i) => ({
+        id: t.id,
+        naam: t.naam,
+        live: t.status === "GEPUBLICEERD",
+        aantalWerkzaamheden: t._count.products,
+        leadsDezeMaand: perTool.get(t.id) ?? 0,
+        toolUrl: toolUrls[i],
+      }))}
+      magNieuweTool={magNieuweTool}
+      limiet={PLAN_LIMITS[tier].maxActiveTools}
+      verwijderd={verwijderd && naam ? { id: verwijderd, naam } : null}
+    />
   );
 }

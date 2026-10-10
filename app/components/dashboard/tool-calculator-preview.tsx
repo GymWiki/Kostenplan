@@ -1,4 +1,5 @@
 import { prisma } from "@/app/lib/prisma";
+import { parseLeadFormConfig, parseResultaatConfig } from "@/app/lib/tools";
 import { resolveCostSettings } from "@/app/lib/tools";
 import { effectiveTier } from "@/app/lib/subscription";
 import { Calculator } from "@/app/portaal/[slug]/calculator";
@@ -38,6 +39,9 @@ export async function ToolCalculatorPreview({ company, tool }: { company: Compan
       branding={branding}
       costSettings={resolveCostSettings(costSettings, company)}
       products={products}
+      toelichting={parseResultaatConfig(tool.resultaatConfig).toelichting}
+      ctaTekst={parseResultaatConfig(tool.resultaatConfig).ctaTekst}
+      vraagTelefoon={parseLeadFormConfig(tool.leadFormConfig).vraagTelefoon}
     />
   );
 }

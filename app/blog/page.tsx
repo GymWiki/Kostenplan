@@ -79,7 +79,7 @@ export default function BlogPage() {
                 <Reveal key={post.slug} delay={i * 60}>
                   <Link
                     href={`/blog/${post.slug}`}
-                    className="group flex flex-col gap-2 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
+                    className="group flex flex-col gap-2 rounded-xl border border-border bg-card p-5 shadow-sm transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div>
                       <p className="text-xs text-muted-foreground">

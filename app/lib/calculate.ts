@@ -62,6 +62,8 @@ export type CalcMaterialCategory = {
 export type CalcExtraOption = {
   id: string;
   prijs: number;
+  // Toeslag: telt altijd mee, zonder keuze van de klant.
+  altijd?: boolean;
   type: "PER_EENHEID" | "PER_STUK";
 };
 
@@ -328,7 +330,7 @@ export function calculateBreakdown({
     let productMateriaalkosten = materiaalCategorieenTotaal;
 
     for (const extra of product.extraOpties) {
-      const aantal = extraSelections[extra.id] ?? 0;
+      const aantal = extra.altijd ? 1 : (extraSelections[extra.id] ?? 0);
       if (aantal <= 0) continue;
       productMateriaalkosten += (extra.type === "PER_STUK" ? aantal : qty) * extra.prijs;
     }

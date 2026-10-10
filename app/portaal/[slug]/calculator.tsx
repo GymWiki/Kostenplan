@@ -31,11 +31,13 @@ import { DecimalInput, Input, Label, Select } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { ThemeToggle } from "@/app/components/ui/theme-toggle";
 import { getProductIcon } from "@/app/lib/icons";
+import { voorbeeldHoeveelheidVoor as voorbeeldHoeveelheid } from "@/app/lib/werkzaamheid";
 import { unitLabel } from "@/app/lib/units";
 import { cn } from "@/app/lib/cn";
 import { fontFamilyFor, brandingFontVariables } from "@/app/lib/fonts";
 import { accessibleTextColor } from "@/app/lib/color";
 import { createLeadAction, type LeadFormState } from "@/app/lib/actions/leads";
+import { Bewerkbaar, EditorProvider, WerkzaamheidToevoegen, useEditorHaak, type EditorHaken } from "./bewerkbaar";
 import { recordPublicAnalyticsEventAction } from "@/app/lib/actions/analytics";
 import type { LeadSnapshot, LeadSnapshotLine } from "@/app/lib/leads";
 import type {
@@ -61,6 +63,14 @@ type Props = {
   branding: Branding | null;
   costSettings: CostSettings;
   products: ProductWithDetails[];
+  // Alleen gezet door de rekentool-editor: maakt delen klikbaar. Zonder editor
+  // verandert er niets aan de klant-rekentool.
+  editor?: EditorHaken;
+  // Uit Tool.resultaatConfig / Tool.leadFormConfig (paneel Resultaat en
+  // Aanvraagformulier in de editor).
+  toelichting?: string | null;
+  ctaTekst?: string | null;
+  vraagTelefoon?: boolean;
 };
 
 // Moet gelijk blijven aan de Kostenplan-standaardkleuren in globals.css
@@ -109,18 +119,32 @@ export function Calculator({
   branding,
   costSettings,
   products,
+  editor,
+  toelichting = null,
+  ctaTekst = null,
+  vraagTelefoon = true,
 }: Props) {
+  const inEditor = Boolean(editor);
   // Rechtstreeks door de klant bijgehouden hoeveelheid — alleen gebruikt voor
   // sjabloon ENKELE_HOEVEELHEID (de QuantityStepper). Voor de andere
   // sjablonen (Afmetingen/Ruimtes/Artikelregels) wordt de hoeveelheid
   // afgeleid uit productSjabloonInvoer hieronder, zie effectiveProductQty.
-  const [productQty, setProductQty] = useState<Record<string, number>>({});
+  const [productQty, setProductQty] = useState<Record<string, number>>(() =>
+    editor && products[0] && products[0].sjabloon === "ENKELE_HOEVEELHEID"
+      ? { [products[0].id]: voorbeeldHoeveelheid(products[0].eenheid) }
+      : {}
+  );
   // Ruwe klantinvoer per sjabloon-veld (bijv. lengte/breedte, of de
   // ruimtes/artikelregels-lijst) — zie sjablonen.ts's klantVelden().
   const [productSjabloonInvoer, setProductSjabloonInvoer] = useState<
     Record<string, Record<string, unknown>>
-  >({});
-  const [materialSelections, setMaterialSelections] = useState<Record<string, string>>({});
+  >(() => (editor && products[0] && products[0].sjabloon !== "ENKELE_HOEVEELHEID" ? { [products[0].id]: { lengte: 5, breedte: 4, diepte: 0.1 } } : {}));
+  const [materialSelections, setMaterialSelections] = useState<Record<string, string>>(() =>
+    // In de editor staat bij het eerste voorbeeld alvast het eerste materiaal gekozen.
+    editor && products[0]
+      ? Object.fromEntries(products[0].materiaalCategorieen.filter((c) => c.materialen[0]).map((c) => [c.id, c.materialen[0].id]))
+      : {}
+  );
   const [extraSelections, setExtraSelections] = useState<Record<string, number>>({});
 
   // Leidt voor elk niet-ENKELE_HOEVEELHEID product de hoeveelheid (voor
@@ -213,7 +237,7 @@ export function Calculator({
   // een paginabezoek.
   const visitRecorded = useRef(false);
   useEffect(() => {
-    if (visitRecorded.current) return;
+    if (visitRecorded.current || inEditor) return;
     visitRecorded.current = true;
     void recordPublicAnalyticsEventAction(toolId, "VISIT");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -255,6 +279,7 @@ export function Calculator({
   const startRecorded = useRef(false);
   const completeRecorded = useRef(false);
   useEffect(() => {
+    if (inEditor) return;
     if (!startRecorded.current && breakdown.heeftSelectie) {
       startRecorded.current = true;
       void recordPublicAnalyticsEventAction(toolId, "START");
@@ -263,7 +288,7 @@ export function Calculator({
       completeRecorded.current = true;
       void recordPublicAnalyticsEventAction(toolId, "COMPLETE");
     }
-  }, [toolId, breakdown, heeftOntbrekendeVerplichteMaterialen]);
+  }, [toolId, breakdown, heeftOntbrekendeVerplichteMaterialen, inEditor]);
 
   // Bevroren "wat had de klant aangevinkt" voor de leads-CRM (zie
   // app/lib/leads.ts) — meegestuurd bij "Offerte aanvragen" zodat de vakman
@@ -285,7 +310,7 @@ export function Calculator({
         .map((option) => option.naam);
 
       const extraNamen = product.extraOpties
-        .filter((extra) => (extraSelections[extra.id] ?? 0) > 0)
+        .filter((extra) => extra.altijd || (extraSelections[extra.id] ?? 0) > 0)
         .map((extra) => extra.naam);
 
       // Eigen, volledig berekend bedrag van dit product (materiaal + arbeid
@@ -296,6 +321,7 @@ export function Calculator({
       const productRegel = breakdown.productRegels.find((regel) => regel.productId === product.id);
 
       regels.push({
+        productId: product.id,
         naam: product.naam,
         type: "product",
         aantal: qty,
@@ -321,6 +347,7 @@ export function Calculator({
   const isEmpty = products.length === 0;
 
   return (
+    <EditorProvider haak={editor}>
     <div
       data-portal-shell
       className={cn("flex min-h-screen flex-col", brandingFontVariables())}
@@ -333,6 +360,7 @@ export function Calculator({
         } as React.CSSProperties
       }
     >
+      <Bewerkbaar doel="uiterlijk" label="Uiterlijk" className="rounded-none">
       <header
         className="border-b border-border"
         style={{ backgroundColor: "var(--brand-primary)" }}
@@ -363,6 +391,7 @@ export function Calculator({
           </span>
         </div>
       </header>
+      </Bewerkbaar>
 
       {contactPositie === "BOVENAAN" && heeftContact && (
         <ContactBalk telefoonnummer={contact.telefoonnummer} email={contact.email} />
@@ -373,11 +402,13 @@ export function Calculator({
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
               Deze calculator is nog niet ingericht. Neem contact op met {bedrijfsnaam} voor een offerte.
+              <div className="mt-4"><WerkzaamheidToevoegen /></div>
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px]">
             <div className="flex flex-col gap-8 lg:order-1">
+              <Bewerkbaar doel="uiterlijk-tekst" label="Introtekst">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">
                   Stel je project samen
@@ -387,6 +418,7 @@ export function Calculator({
                     "Geef bij de werkzaamheden de gewenste hoeveelheid op. Je ziet direct een schatting van de kosten hiernaast."}
                 </p>
               </div>
+              </Bewerkbaar>
 
               {products.length > 0 && (
                 <section className="flex flex-col gap-3">
@@ -395,6 +427,7 @@ export function Calculator({
                   </h3>
                   <div className="flex flex-col gap-3">
                     {products.map((product) => (
+                      <Bewerkbaar key={product.id} doel={`werkzaamheid:${product.id}`} label={product.naam} verplaatsbaar>
                       <ProductCard
                         key={product.id}
                         product={product}
@@ -420,7 +453,9 @@ export function Calculator({
                           setExtraSelections((prev) => ({ ...prev, [extraOptionId]: aantal }))
                         }
                       />
+                      </Bewerkbaar>
                     ))}
+                    <WerkzaamheidToevoegen />
                   </div>
                 </section>
               )}
@@ -436,6 +471,9 @@ export function Calculator({
                   bedankTekst={bedankTekst}
                   magOfferteAanvragen={magOfferteAanvragen}
                   heeftOntbrekendeVerplichteMaterialen={heeftOntbrekendeVerplichteMaterialen}
+                  toelichting={toelichting}
+                  ctaTekst={ctaTekst}
+                  vraagTelefoon={vraagTelefoon}
                 />
               </div>
             </div>
@@ -459,6 +497,7 @@ export function Calculator({
         )}
       </footer>
     </div>
+    </EditorProvider>
   );
 }
 
@@ -533,6 +572,8 @@ export function ProductCard({
     (category) => category.materialen.length > 1
   );
   const ProductIcon = getProductIcon(product.icoon);
+  // Toeslagen (altijd) hebben geen keuze en staan dus niet in de lijst.
+  const keuzeExtras = product.extraOpties.filter((extra) => !extra.altijd);
 
   const eigenPrijs = eigenProductPrijs(product, qty, regelsBedrag, materialSelections, costSettings);
 
@@ -580,7 +621,7 @@ export function ProductCard({
           </div>
         )}
 
-        {active && (categoriesWithOptions.length > 0 || product.extraOpties.length > 0) && (
+        {active && (categoriesWithOptions.length > 0 || keuzeExtras.length > 0) && (
           <div className="flex flex-col gap-4 border-t border-border pt-4">
             {categoriesWithOptions.map((category) => {
               const hasFotos = category.materialen.some((m) => m.foto);
@@ -669,10 +710,10 @@ export function ProductCard({
               );
             })}
 
-            {product.extraOpties.length > 0 && (
+            {keuzeExtras.length > 0 && (
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-foreground">Extra opties</p>
-                {product.extraOpties.map((extra) =>
+                {keuzeExtras.map((extra) =>
                   extra.type === "PER_STUK" ? (
                     <div
                       key={extra.id}
@@ -1055,7 +1096,13 @@ function Summary({
   bedankTekst,
   magOfferteAanvragen,
   heeftOntbrekendeVerplichteMaterialen,
+  toelichting,
+  ctaTekst,
+  vraagTelefoon,
 }: {
+  toelichting: string | null;
+  ctaTekst: string | null;
+  vraagTelefoon: boolean;
   toolId: string;
   breakdown: ReturnType<typeof calculateBreakdownRange>;
   snapshot: LeadSnapshot;
@@ -1065,6 +1112,7 @@ function Summary({
   heeftOntbrekendeVerplichteMaterialen: boolean;
 }) {
   const [formOpen, setFormOpen] = useState(false);
+  const testmodus = useEditorHaak() !== null;
   const action = createLeadAction.bind(null, toolId);
   const [state, formAction, pending] = useActionState<LeadFormState, FormData>(action, null);
   // Los bijgehouden (niet defaultValue): React reset uncontrolled velden na
@@ -1102,6 +1150,7 @@ function Summary({
 
   return (
     <>
+      <Bewerkbaar doel="resultaat" label="Resultaat">
       <Card className="border-[var(--brand-primary)]/30">
         <CardContent className="flex flex-col gap-4">
           <h3 className="font-semibold text-foreground">Jouw kostenraming</h3>
@@ -1178,8 +1227,14 @@ function Summary({
                 </p>
               )}
 
+              <Bewerkbaar doel="aanvraag" label="Aanvraagformulier">
               {formOpen ? (
-                <form action={formAction} noValidate className="flex flex-col gap-3">
+                <form
+                  action={formAction}
+                  onSubmit={testmodus ? (e) => e.preventDefault() : undefined}
+                  noValidate
+                  className="flex flex-col gap-3"
+                >
                   <input type="hidden" name="snapshot" value={JSON.stringify(snapshot)} />
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="lead-naam">Naam</Label>
@@ -1209,16 +1264,18 @@ function Summary({
                       <p className="text-xs text-destructive">{state.fieldErrors.email}</p>
                     )}
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="lead-telefoon">Telefoonnummer (optioneel)</Label>
-                    <Input
-                      id="lead-telefoon"
-                      name="telefoonnummer"
-                      type="tel"
-                      value={leadTelefoon}
-                      onChange={(e) => setLeadTelefoon(e.target.value)}
-                    />
-                  </div>
+                  {vraagTelefoon && (
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="lead-telefoon">Telefoonnummer (optioneel)</Label>
+                      <Input
+                        id="lead-telefoon"
+                        name="telefoonnummer"
+                        type="tel"
+                        value={leadTelefoon}
+                        onChange={(e) => setLeadTelefoon(e.target.value)}
+                      />
+                    </div>
+                  )}
                   {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Button
@@ -1236,12 +1293,17 @@ function Summary({
                       variant="primary"
                       size="lg"
                       className="w-full border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90 sm:flex-1"
-                      disabled={pending}
+                      disabled={pending || testmodus}
                     >
                       <Mail className="h-4 w-4" />
                       {pending ? "Versturen…" : "Versturen"}
                     </Button>
                   </div>
+                  {testmodus && (
+                    <p role="status" className="text-sm font-medium text-foreground">
+                      Testmodus: er wordt geen aanvraag verstuurd.
+                    </p>
+                  )}
                 </form>
               ) : (
                 <div className="flex flex-col gap-2 print:hidden sm:flex-row">
@@ -1258,7 +1320,7 @@ function Summary({
                       disabled={heeftOntbrekendeVerplichteMaterialen}
                     >
                       <Mail className="h-4 w-4" />
-                      Offerte aanvragen
+                      {ctaTekst ?? "Offerte aanvragen"}
                     </Button>
                   )}
                   <Button
@@ -1273,10 +1335,13 @@ function Summary({
                   </Button>
                 </div>
               )}
+              </Bewerkbaar>
+              {toelichting && <p className="text-sm text-muted-foreground">{toelichting}</p>}
             </>
           )}
         </CardContent>
       </Card>
+      </Bewerkbaar>
     </>
   );
 }

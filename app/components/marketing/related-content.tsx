@@ -16,7 +16,7 @@ export function RelatedContent({ titel, links }: { titel: string; links: Related
           <Link
             key={link.href}
             href={link.href}
-            className="group flex flex-col gap-1.5 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+            className="group flex flex-col gap-1.5 rounded-xl border border-border bg-card p-5 shadow-sm transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-md"
           >
             <span className="font-semibold text-foreground">{link.title}</span>
             <span className="text-sm text-muted-foreground">{link.description}</span>

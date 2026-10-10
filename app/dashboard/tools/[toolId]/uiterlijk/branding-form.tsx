@@ -160,7 +160,7 @@ export function BrandingForm({
             <Input
               id="customTitel"
               name="customTitel"
-              placeholder="Bereken uw project met {bedrijfsnaam}"
+              placeholder="Bereken uw project met {bedrijfsnaam}…"
               value={customTitel}
               onChange={(e) => setCustomTitel(e.target.value)}
             />
@@ -175,7 +175,7 @@ export function BrandingForm({
             <Textarea
               id="welkomstTekst"
               name="welkomstTekst"
-              placeholder="Fijn dat u een offerte overweegt! Stel hieronder uw project samen."
+              placeholder="Fijn dat u een offerte overweegt! Stel hieronder uw project samen.…"
               value={welkomstTekst}
               onChange={(e) => setWelkomstTekst(e.target.value)}
             />
@@ -229,9 +229,10 @@ export function BrandingForm({
             {toonTelefoonnummer && (
               <Input
                 name="telefoonnummer"
+                aria-label="Telefoonnummer"
                 type="tel"
                 autoComplete="tel"
-                placeholder="06 12345678"
+                placeholder="06 12345678…"
                 defaultValue={branding.telefoonnummer ?? ""}
               />
             )}
@@ -260,7 +261,7 @@ export function BrandingForm({
             <Textarea
               id="offerteIntroTekst"
               name="offerteIntroTekst"
-              placeholder="Bedankt voor uw aanvraag! Hierbij onze offerte."
+              placeholder="Bedankt voor uw aanvraag! Hierbij onze offerte.…"
               defaultValue={branding.offerteIntroTekst ?? ""}
               rows={3}
             />
@@ -270,7 +271,7 @@ export function BrandingForm({
             <Textarea
               id="offerteVoorwaardenTekst"
               name="offerteVoorwaardenTekst"
-              placeholder="Prijzen zijn inclusief btw. Deze offerte is vrijblijvend."
+              placeholder="Prijzen zijn inclusief btw. Deze offerte is vrijblijvend.…"
               defaultValue={branding.offerteVoorwaardenTekst ?? ""}
               rows={3}
             />
@@ -280,9 +281,10 @@ export function BrandingForm({
             <Input
               id="offerteGeldigheidsdagen"
               name="offerteGeldigheidsdagen"
-              type="number"
-              min={1}
-              max={365}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={3}
               defaultValue={branding.offerteGeldigheidsdagen}
               className="max-w-32"
             />

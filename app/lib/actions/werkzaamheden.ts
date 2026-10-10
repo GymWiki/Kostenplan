@@ -10,6 +10,7 @@ import { presetById } from "@/app/lib/presets";
 import {
   methodeNaarInstelling,
   methodeVanProduct,
+  valideerExtras,
   valideerMaterialen,
   type MateriaalRij,
   type WerkzaamheidDraft,
@@ -34,6 +35,9 @@ function valideerDraft(d: WerkzaamheidDraft): string | null {
   if (d.materialen.length > MAX_MATERIALEN) return "Er zijn te veel materialen.";
   const fouten = valideerMaterialen(d);
   if (fouten.length > 0) return fouten[0].melding;
+  const extraFouten = valideerExtras(d);
+  if (extraFouten.length > 0) return extraFouten[0].melding;
+  if ((d.extras?.length ?? 0) > 50) return "Er zijn te veel extra's.";
   const tempo = parseGetal(d.productiviteit, 0);
   if (d.productiviteit.trim() !== "" && (!(tempo >= 0) || Number.isNaN(parseGetal(d.productiviteit, NaN)))) {
     return "Vul bij arbeid een getal in.";
@@ -71,7 +75,10 @@ export async function saveWerkzaamheidAction(
 
   const product = await prisma.product.findFirst({
     where: { id: productId, tool: { companyId: company.id } },
-    include: { materiaalCategorieen: { orderBy: { order: "asc" }, include: { materialen: true } } },
+    include: {
+      materiaalCategorieen: { orderBy: { order: "asc" }, include: { materialen: true } },
+      extraOpties: { select: { id: true } },
+    },
   });
   if (!product) return { ok: false, error: "Werkzaamheid niet gevonden." };
 
@@ -125,6 +132,24 @@ export async function saveWerkzaamheidAction(
           select: { id: true },
         });
         ids[r.sleutel] = gemaakt.id;
+      }
+    }
+
+    // Extra vragen en toeslagen: alleen als de draft ze meestuurt.
+    if (draft.extras) {
+      const bestaandeExtras = new Set(product.extraOpties.map((e) => e.id));
+      const behoudenExtras = new Set(draft.extras.map((e) => e.id).filter((id): id is string => !!id && bestaandeExtras.has(id)));
+      const wegExtras = [...bestaandeExtras].filter((id) => !behoudenExtras.has(id));
+      if (wegExtras.length > 0) await tx.extraOption.deleteMany({ where: { id: { in: wegExtras }, productId: product.id } });
+      for (const [i, e] of draft.extras.entries()) {
+        const data = { naam: e.naam.trim(), prijs: parseGetal(e.prijs, 0), type: e.type, altijd: e.altijd, order: i };
+        if (e.id && bestaandeExtras.has(e.id)) {
+          await tx.extraOption.update({ where: { id: e.id }, data });
+          ids[e.sleutel] = e.id;
+        } else {
+          const gemaakt = await tx.extraOption.create({ data: { ...data, productId: product.id }, select: { id: true } });
+          ids[e.sleutel] = gemaakt.id;
+        }
       }
     }
 
@@ -187,6 +212,15 @@ export async function createWerkzaamheidAction(
       transportPerDag: draft.transportPerDag,
       actief: true,
       order,
+      extraOpties: {
+        create: (draft.extras ?? []).map((e, i) => ({
+          naam: e.naam.trim(),
+          prijs: parseGetal(e.prijs, 0),
+          type: e.type,
+          altijd: e.altijd,
+          order: i,
+        })),
+      },
       materiaalCategorieen: {
         create: [
           {

@@ -367,9 +367,10 @@ export function OfferteEditor({
                 <div key={regel.id} className="flex flex-col gap-2 rounded-lg border border-border p-3">
                   <div className="flex items-start gap-2">
                     <Input
+                      aria-label="Omschrijving"
                       value={regel.omschrijving}
                       onChange={(e) => updateRegel(regel.id, { omschrijving: e.target.value })}
-                      placeholder="Omschrijving"
+                      placeholder="Omschrijving…"
                       className="flex-1"
                     />
                     <div className="flex shrink-0 flex-col">
@@ -405,6 +406,7 @@ export function OfferteEditor({
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Aantal</Label>
                       <DecimalInput
+                        aria-label="Aantal"
                         value={regel.aantal}
                         onChange={(e) => updateRegel(regel.id, { aantal: e.target.value })}
                       />
@@ -412,6 +414,7 @@ export function OfferteEditor({
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Eenheid</Label>
                       <Input
+                        aria-label="Eenheid"
                         value={regel.eenheid}
                         onChange={(e) => updateRegel(regel.id, { eenheid: e.target.value })}
                       />
@@ -419,6 +422,7 @@ export function OfferteEditor({
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Prijs p/eenheid</Label>
                       <DecimalInput
+                        aria-label="Prijs per eenheid"
                         value={regel.prijsPerEenheid}
                         onChange={(e) => updateRegel(regel.id, { prijsPerEenheid: e.target.value })}
                       />

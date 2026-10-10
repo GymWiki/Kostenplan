@@ -9,7 +9,7 @@ export function Bedragveld({ label, waarde, onChange }: { label: string; waarde:
       {label && <Label>{label}</Label>}
       <div className="relative">
         <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
-        <DecimalInput value={waarde} onChange={(e) => onChange(e.target.value)} className="pl-7" />
+        <DecimalInput aria-label="Bedrag" value={waarde} onChange={(e) => onChange(e.target.value)} className="pl-7" />
       </div>
     </div>
   );
