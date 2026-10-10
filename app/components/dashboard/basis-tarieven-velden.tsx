@@ -30,7 +30,7 @@ export function BasisTarievenVelden({
 }) {
   const d = BASIS_TARIEVEN_DEFAULTS;
   const [eenheid, setEenheid] = useState<ArbeidStapEenheid>(
-    eenheidVergrendeld ? start.arbeidStapEenheid ?? "UUR" : start.arbeidStapEenheid && start.arbeidStapEenheid !== "UUR" ? start.arbeidStapEenheid : "DAG"
+    eenheidVergrendeld ? start.arbeidStapEenheid ?? "UUR" : start.arbeidStapEenheid && start.arbeidStapEenheid !== "UUR" ? start.arbeidStapEenheid : "DAGDEEL"
   );
   const [tarieven, setTarieven] = useState({
     UUR: String(start.arbeidTariefUur ?? d.arbeidTariefUur),
@@ -61,8 +61,8 @@ export function BasisTarievenVelden({
           disabled={eenheidVergrendeld}
           onChange={(e) => setEenheid(e.target.value as ArbeidStapEenheid)}
         >
+          <option value="DAGDEEL">Per dagdeel (ochtend of middag)</option>
           <option value="DAG">Per dag</option>
-          <option value="DAGDEEL">Per dagdeel</option>
           <option value="UUR">Per uur</option>
         </Select>
         {eenheidVergrendeld && <input type="hidden" name="arbeidStapEenheid" value={eenheid} />}

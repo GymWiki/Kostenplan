@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { requireActiveTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { costSettingsSchema } from "@/app/lib/validation";
-import { parseBasisTarievenForm, slaBasisTarievenOp, type BasisTarieven } from "@/app/lib/basis-tarieven-server";
 
 export type CostSettingsFormState = {
   error?: string;
@@ -82,35 +81,4 @@ export async function updateCostSettingsAction(
   revalidatePath(`/portaal/${company.slug}`);
 
   return { success: true };
-}
-
-// Wizard stap 3: de eenmalige "basistarieven"-vraag. Slaat op als algemene
-// instelling — voor uurtarief en voorrijkosten is dat de bedrijfsbrede
-// default (Company.standaard*), voor de rest bestaat alleen een
-// tool-instelling. Alles gaat ook in CostSettings van deze tool, zodat de
-// tool direct rekent met wat de hovenier hier invult.
-export type BasisTarievenState =
-  | { error?: string; opgeslagen?: BasisTarieven }
-  | null;
-
-export async function saveBasisTarievenAction(
-  toolId: string,
-  _prevState: BasisTarievenState,
-  formData: FormData
-): Promise<BasisTarievenState> {
-  const { company, tool } = await requireActiveTool(toolId);
-
-  const parsed = parseBasisTarievenForm(formData);
-  if (!parsed.success) {
-    return { error: "Controleer de ingevulde bedragen en probeer het opnieuw." };
-  }
-
-  const result = await slaBasisTarievenOp(company.id, toolId, parsed.data);
-  if ("error" in result) return { error: result.error };
-
-  revalidatePath(`/dashboard/tools/${toolId}/prijzen`);
-  revalidatePath(`/t/${company.slug}/${tool.slug}`);
-  revalidatePath(`/portaal/${company.slug}`);
-
-  return { opgeslagen: result.opgeslagen };
 }

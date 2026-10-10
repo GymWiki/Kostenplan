@@ -5,9 +5,9 @@ import { HOVENIER_PRESETS } from "./hovenier";
 import { presetById, productiviteitVoorStapEenheid, REKENMETHODE_SJABLOON } from "./index";
 
 describe("hovenier-presets", () => {
-  it("bevat de 8 afgesproken werkzaamheden met unieke ids", () => {
-    expect(HOVENIER_PRESETS).toHaveLength(8);
-    expect(new Set(HOVENIER_PRESETS.map((p) => p.id)).size).toBe(8);
+  it("bevat de afgesproken werkzaamheden met unieke ids", () => {
+    expect(HOVENIER_PRESETS).toHaveLength(9);
+    expect(new Set(HOVENIER_PRESETS.map((p) => p.id)).size).toBe(9);
   });
 
   it.each(HOVENIER_PRESETS)("$id is compleet en geldig", (p) => {
@@ -67,5 +67,27 @@ describe("startpakket en productlimiet", () => {
   it("past alle presets binnen de gratis productlimiet", async () => {
     const { GRATIS_CATALOGUS_LIMIET } = await import("@/app/lib/subscription");
     expect(HOVENIER_PRESETS.length).toBeLessThanOrEqual(GRATIS_CATALOGUS_LIMIET);
+  });
+});
+
+describe("presetNaarDraft", () => {
+  it("maakt van een preset een draft met voorbeeldprijzen en het tempo van de gekozen eenheid", async () => {
+    const { presetNaarDraft } = await import("./index");
+    const d = presetNaarDraft(presetById("bestrating")!, "DAGDEEL");
+    expect(d.naam).toBe("Bestrating / terras");
+    expect(d.methode).toBe("LENGTE_BREEDTE");
+    expect(d.productiviteit).toBe("10");
+    expect(d.materialen.every((m) => m.isVoorbeeld)).toBe(true);
+    expect(d.materialen[0].prijs).toBe("45");
+  });
+
+  it("'Iets anders' begint leeg", async () => {
+    const { presetNaarDraft, EIGEN_WERKZAAMHEID } = await import("./index");
+    const d = presetNaarDraft(EIGEN_WERKZAAMHEID, "DAGDEEL");
+    expect(d.naam).toBe("");
+    expect(d.methode).toBeNull();
+    expect(d.productiviteit).toBe("");
+    expect(d.materialen).toHaveLength(1);
+    expect(d.materialen[0].isVoorbeeld).toBe(false);
   });
 });

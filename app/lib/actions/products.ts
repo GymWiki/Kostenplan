@@ -2,10 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getArbeidStapEenheid, requireActiveCompany, requireActiveTool } from "@/app/lib/dal";
+import { requireActiveCompany, requireActiveTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { materialOptionSchema, productSchema } from "@/app/lib/validation";
-import { EIGEN_WERKZAAMHEID, presetById, presetNaarProductFormData } from "@/app/lib/presets";
+import { productSchema } from "@/app/lib/validation";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
 import type { Prisma } from "@/app/generated/prisma/client";
 
@@ -139,116 +138,6 @@ export async function createProductDraftAction(
   if (!result.success) return result.state;
   revalidateToolPaths(toolId, company.slug, tool.slug);
   return { productId: result.productId, materiaalOptieId: result.materiaalOptieId };
-}
-
-// Wizard stap 1: maakt een werkzaamheid aan uit een hovenier-preset, met de
-// materialen uit de preset (voorbeeldprijzen, de hovenier past ze in stap 2
-// aan). Productiviteit wordt pas in stap 3 gezet, nadat de basistarieven (en
-// dus de arbeidseenheid) vaststaan.
-export type PresetWizardMateriaal = { id: string; naam: string; prijs: number };
-export type PresetWizardState =
-  | { error?: string; productId?: string; materialen?: PresetWizardMateriaal[] }
-  | null;
-
-export async function createProductFromPresetAction(
-  toolId: string,
-  presetId: string,
-  eigenNaam?: string
-): Promise<PresetWizardState> {
-  const { company, tool } = await requireActiveTool(toolId);
-
-  const preset = presetId === EIGEN_WERKZAAMHEID.id ? EIGEN_WERKZAAMHEID : presetById(presetId);
-  if (!preset) return { error: "Onbekende werkzaamheid." };
-  const naam = preset.id === "eigen" ? (eigenNaam ?? "").trim() : preset.naam;
-  if (naam === "") return { error: "Vul een naam in." };
-
-  const stapEenheid = await getArbeidStapEenheid(toolId);
-  const fd = presetNaarProductFormData(preset, stapEenheid, { naam, productiviteit: null });
-  const result = await createProduct(company, toolId, fd);
-  if (!result.success) {
-    return { error: result.state?.error ?? Object.values(result.state?.fieldErrors ?? {})[0] };
-  }
-
-  // createProduct maakt één categorie met één lege "Standaard"-optie; die
-  // wordt de eerste preset-regel, de rest komt erbij.
-  const [eerste, ...rest] = preset.materialen;
-  const categorie = await prisma.materialCategory.findFirstOrThrow({
-    where: { productId: result.productId },
-    select: { id: true },
-  });
-  await prisma.$transaction([
-    prisma.materialOption.update({
-      where: { id: result.materiaalOptieId },
-      data: { naam: eerste.naam, prijs: eerste.prijs },
-    }),
-    prisma.materialOption.createMany({
-      data: rest.map((m, i) => ({ materialCategoryId: categorie.id, naam: m.naam, prijs: m.prijs, order: i + 1 })),
-    }),
-  ]);
-
-  revalidateToolPaths(toolId, company.slug, tool.slug);
-  const materialen = await prisma.materialOption.findMany({
-    where: { materialCategoryId: categorie.id },
-    orderBy: { order: "asc" },
-    select: { id: true, naam: true, prijs: true },
-  });
-  return { productId: result.productId, materialen };
-}
-
-// Wizard stap 2: zet de materiaallijst van de enige categorie gelijk aan wat
-// de hovenier op het scherm heeft (bijwerken, toevoegen, verwijderen). Minstens
-// één materiaal blijft over — een werkzaamheid zonder materiaalregel kan de
-// klant niet kiezen.
-export async function saveWizardMaterialsAction(
-  productId: string,
-  items: { id?: string; naam: string; prijs: string }[]
-): Promise<PresetWizardState> {
-  const { company } = await requireActiveCompany();
-
-  const categorie = await prisma.materialCategory.findFirst({
-    where: { productId, product: { tool: { companyId: company.id } } },
-    orderBy: { order: "asc" },
-    select: { id: true, materialen: { select: { id: true } } },
-  });
-  if (!categorie) return { error: "Werkzaamheid niet gevonden." };
-  if (items.length === 0) return { error: "Houd minstens één materiaal over." };
-
-  const geparsed = [];
-  for (const item of items) {
-    const parsed = materialOptionSchema.safeParse({
-      naam: item.naam,
-      prijs: item.prijs,
-      prijsType: "VAST",
-      actief: true,
-    });
-    if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Ongeldige invoer" };
-    geparsed.push({ id: item.id, data: parsed.data });
-  }
-
-  const bestaandeIds = new Set(categorie.materialen.map((m) => m.id));
-  const behouden = new Set(geparsed.map((g) => g.id).filter((id): id is string => !!id && bestaandeIds.has(id)));
-  const teVerwijderen = [...bestaandeIds].filter((id) => !behouden.has(id));
-
-  await prisma.$transaction([
-    prisma.materialOption.deleteMany({ where: { id: { in: teVerwijderen }, materialCategoryId: categorie.id } }),
-    ...geparsed.map((g, i) =>
-      g.id && bestaandeIds.has(g.id)
-        ? prisma.materialOption.update({
-            where: { id: g.id },
-            data: { naam: g.data.naam, prijs: g.data.prijs, order: i },
-          })
-        : prisma.materialOption.create({
-            data: { ...g.data, materialCategoryId: categorie.id, order: i },
-          })
-    ),
-  ]);
-
-  const materialen = await prisma.materialOption.findMany({
-    where: { materialCategoryId: categorie.id },
-    orderBy: { order: "asc" },
-    select: { id: true, naam: true, prijs: true },
-  });
-  return { productId, materialen };
 }
 
 type SaveProductResult = { success: true } | { success: false; state: ProductFormState };

@@ -134,6 +134,24 @@ export const HOVENIER_PRESETS: HovenierPreset[] = [
     uitleg: "Afgraven, ophogen en grond of puin afvoeren, per m².",
   },
   {
+    id: "boom-planten",
+    naam: "Boom planten",
+    icoon: "TreeDeciduous",
+    rekenmethode: "stuks",
+    eenheid: "stuks",
+    // TODO(Pieter): echte materiaalprijzen per boom invullen
+    materialen: [
+      { naam: "Boom 200 cm", prijs: 120 },
+      { naam: "Boom 300 cm", prijs: 220 },
+      { naam: "Meerstammige boom", prijs: 350 },
+    ],
+    // TODO(Pieter): echte productiviteit (bomen per dag) invullen
+    productiviteitPerDag: 8,
+    productiviteitVraag: "Hoeveel bomen plant je per dag?",
+    voorbeeldHoeveelheid: 3,
+    uitleg: "Bomen leveren en planten, berekend per stuk.",
+  },
+  {
     id: "tuinonderhoud",
     naam: "Tuinonderhoud",
     icoon: "Scissors",

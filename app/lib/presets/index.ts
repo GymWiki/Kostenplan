@@ -2,6 +2,7 @@ import type { ArbeidStapEenheid, ProductSjabloon } from "@/app/generated/prisma/
 import { DAGDELEN_PER_DAG, UREN_PER_DAG } from "@/app/lib/calculate";
 import { HOVENIER_PRESETS } from "./hovenier";
 import type { HovenierPreset, Rekenmethode } from "./types";
+import type { Methode, WerkzaamheidDraft } from "@/app/lib/werkzaamheid";
 
 export { HOVENIER_PRESETS, VOORBEELD_LABEL } from "./hovenier";
 export type { HovenierPreset, PresetMateriaal, Rekenmethode } from "./types";
@@ -89,4 +90,36 @@ export function verdeelOverRuimte<T>(items: T[], ruimte: number | null): { aanma
   if (ruimte === null) return { aanmaken: items, over: [] };
   const n = Math.max(0, ruimte);
   return { aanmaken: items.slice(0, n), over: items.slice(n) };
+}
+
+const REKENMETHODE_NAAR_METHODE: Record<Rekenmethode, Methode> = {
+  m2: "M2",
+  "strekkende-meter": "METER",
+  "lengte-breedte": "LENGTE_BREEDTE",
+  stuks: "STUK",
+};
+
+// Startpunt van de wizard: de preset als WerkzaamheidDraft, met voorbeeldprijzen
+// (isVoorbeeld) en het werktempo omgerekend naar de arbeidseenheid van de
+// hovenier. "Iets anders" (eigen) begint leeg.
+export function presetNaarDraft(preset: HovenierPreset, stapEenheid: ArbeidStapEenheid): WerkzaamheidDraft {
+  const eigen = preset.id === EIGEN_WERKZAAMHEID.id;
+  const tempo = eigen ? 0 : productiviteitVoorStapEenheid(preset, stapEenheid);
+  return {
+    naam: eigen ? "" : preset.naam,
+    methode: eigen ? null : REKENMETHODE_NAAR_METHODE[preset.rekenmethode],
+    productiviteit: tempo > 0 ? String(tempo) : "",
+    transportPerDag: false,
+    bandbreedte: false,
+    werktempoPerMateriaal: false,
+    materialen: preset.materialen.map((m, i) => ({
+      sleutel: `preset-${i}`,
+      naam: eigen ? "" : m.naam,
+      prijs: eigen ? "" : String(m.prijs),
+      prijsMin: eigen ? "" : String(m.prijs),
+      prijsMax: eigen ? "" : String(m.prijs),
+      productiviteitOverride: "",
+      isVoorbeeld: !eigen,
+    })),
+  };
 }

@@ -179,7 +179,7 @@ export async function createStartpakketAction(
                 naam: "Materiaal",
                 verplicht: true,
                 order: 0,
-                materialen: { create: preset.materialen.map((m, j) => ({ naam: m.naam, prijs: m.prijs, order: j })) },
+                materialen: { create: preset.materialen.map((m, j) => ({ naam: m.naam, prijs: m.prijs, order: j, isVoorbeeld: true })) },
               },
             ],
           },
