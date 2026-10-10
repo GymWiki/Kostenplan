@@ -45,12 +45,15 @@ export function MaterialenTabel({
   // Een gewijzigde prijs is niet langer een voorbeeldprijs.
   const prijsPatch = (patch: Partial<MateriaalRij>): Partial<MateriaalRij> => ({ ...patch, isVoorbeeld: false });
 
+  // Naam krijgt de ruimte, de prijs is net breed genoeg voor "€ 1.250", de
+  // prullenbak houdt zijn vaste maat. Kop en rijen delen dezelfde kolommen,
+  // dus de titels staan altijd boven hun veld.
   const kolommen = cn(
-    "sm:grid sm:items-start sm:gap-3",
-    bandbreedte && werktempo && "sm:grid-cols-[minmax(0,1fr)_minmax(0,9rem)_minmax(0,9rem)_minmax(0,9rem)_2.75rem]",
-    bandbreedte && !werktempo && "sm:grid-cols-[minmax(0,1fr)_minmax(0,9rem)_minmax(0,9rem)_2.75rem]",
-    !bandbreedte && werktempo && "sm:grid-cols-[minmax(0,1fr)_minmax(0,10rem)_minmax(0,11rem)_2.75rem]",
-    !bandbreedte && !werktempo && "sm:grid-cols-[minmax(0,1fr)_minmax(0,11rem)_2.75rem]"
+    "sm:grid sm:items-start sm:gap-2",
+    bandbreedte && werktempo && "sm:grid-cols-[minmax(0,1fr)_5rem_5rem_7rem_2.75rem]",
+    bandbreedte && !werktempo && "sm:grid-cols-[minmax(0,1fr)_5rem_5rem_2.75rem]",
+    !bandbreedte && werktempo && "sm:grid-cols-[minmax(0,1fr)_5rem_7rem_2.75rem]",
+    !bandbreedte && !werktempo && "sm:grid-cols-[minmax(0,1fr)_5rem_2.75rem]"
   );
 
   const kop = "text-xs font-bold uppercase tracking-wide text-muted-foreground";
@@ -61,8 +64,8 @@ export function MaterialenTabel({
         <span className={kop}>Materiaal</span>
         {bandbreedte ? (
           <>
-            <span className={kop}>Laagste prijs</span>
-            <span className={kop}>Hoogste prijs</span>
+            <span className={kop}>Van</span>
+            <span className={kop}>Tot</span>
           </>
         ) : (
           <span className={kop}>Jouw prijs</span>
@@ -215,7 +218,7 @@ function PrijsVeld({
   return (
     <div className="relative min-w-0">
       <label htmlFor={id} className="mb-1 block text-xs font-bold text-muted-foreground sm:sr-only">
-        {label}
+        {label} ({suffix})
       </label>
       <div className="relative">
         {voorbeeld && (
@@ -226,8 +229,8 @@ function PrijsVeld({
         <UnitInput
           id={id}
           prefix="€"
-          suffix={suffix}
           value={waarde}
+          inputClassName="pl-7 pr-2"
           aria-invalid={ongeldig ? true : undefined}
           onChange={(e) => onChange(e.target.value)}
         />
