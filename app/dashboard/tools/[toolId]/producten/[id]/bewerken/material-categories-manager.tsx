@@ -1,5 +1,6 @@
 "use client";
 
+import { AdvancedSettings } from "../../../bouwer/advanced-settings";
 import { useActionState, useState, useTransition } from "react";
 import { Pencil, X, Check, Plus } from "lucide-react";
 import {
@@ -324,16 +325,20 @@ function MaterialRow({
               autoFocus
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <MaterialPrijsVeld
-              idPrefix={`prijs-${material.id}`}
-              defaultPrijsType={material.prijsType}
-              defaultPrijs={material.prijs}
-              defaultPrijsMin={material.prijsMin}
-              defaultPrijsMax={material.prijsMax}
-            />
+          <MaterialPrijsVeld
+            idPrefix={`prijs-${material.id}`}
+            defaultPrijsType={material.prijsType}
+            defaultPrijs={material.prijs}
+            defaultPrijsMin={material.prijsMin}
+            defaultPrijsMax={material.prijsMax}
+          />
+          <input type="hidden" name="actief" value={String(material.actief)} />
+          <AdvancedSettings
+            label="Geavanceerd"
+            defaultOpen={material.stapgrootte != null || material.productiviteitOverride != null}
+          >
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor={`stapgrootte-${material.id}`}>Stapgrootte</Label>
+              <Label htmlFor={`stapgrootte-${material.id}`}>Stapgrootte (optioneel)</Label>
               <div className="relative">
                 <DecimalInput
                   id={`stapgrootte-${material.id}`}
@@ -346,25 +351,24 @@ function MaterialRow({
                   {unitLabel(productEenheid)}
                 </span>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Wordt verkocht per veelvoud van deze hoeveelheid.
+              </p>
             </div>
-          </div>
-          <input type="hidden" name="actief" value={String(material.actief)} />
-          <p className="text-xs text-muted-foreground">
-            Stapgrootte (optioneel): wordt verkocht per veelvoud van deze hoeveelheid.
-          </p>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor={`productiviteit-${material.id}`}>Eigen productiviteit (optioneel)</Label>
-            <DecimalInput
-              id={`productiviteit-${material.id}`}
-              name="productiviteitOverride"
-              placeholder="Bijv. 8"
-              defaultValue={material.productiviteitOverride ?? ""}
-            />
-            <p className="text-xs text-muted-foreground">
-              Legt dit materiaal trager of sneller dan gemiddeld? Vul hier een eigen productiviteit
-              in — leeg laat de productiviteit van het product gelden.
-            </p>
-          </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`productiviteit-${material.id}`}>Eigen productiviteit (optioneel)</Label>
+              <DecimalInput
+                id={`productiviteit-${material.id}`}
+                name="productiviteitOverride"
+                placeholder="Bijv. 8"
+                defaultValue={material.productiviteitOverride ?? ""}
+              />
+              <p className="text-xs text-muted-foreground">
+                Legt dit materiaal trager of sneller dan gemiddeld? Vul hier een eigen productiviteit
+                in — leeg laat de productiviteit van het werk gelden.
+              </p>
+            </div>
+          </AdvancedSettings>
           <PhotoInput currentUrl={material.foto} />
           <div className="flex justify-end gap-2">
             <Button
@@ -487,10 +491,10 @@ function NewMaterialForm({
         <Label htmlFor="new-material-naam">Naam</Label>
         <Input id="new-material-naam" name="naam" placeholder="Bijv. Standaardkleur" required />
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <MaterialPrijsVeld idPrefix="new-material" />
+      <MaterialPrijsVeld idPrefix="new-material" />
+      <AdvancedSettings label="Geavanceerd">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="new-material-stapgrootte">Stapgrootte</Label>
+          <Label htmlFor="new-material-stapgrootte">Stapgrootte (optioneel)</Label>
           <div className="relative">
             <DecimalInput
               id="new-material-stapgrootte"
@@ -503,19 +507,19 @@ function NewMaterialForm({
             </span>
           </div>
         </div>
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="new-material-productiviteit">Eigen productiviteit (optioneel)</Label>
-        <DecimalInput
-          id="new-material-productiviteit"
-          name="productiviteitOverride"
-          placeholder="Bijv. 8"
-        />
-        <p className="text-xs text-muted-foreground">
-          Legt dit materiaal trager of sneller dan gemiddeld? Leeg laat de productiviteit van het
-          product gelden.
-        </p>
-      </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="new-material-productiviteit">Eigen productiviteit (optioneel)</Label>
+          <DecimalInput
+            id="new-material-productiviteit"
+            name="productiviteitOverride"
+            placeholder="Bijv. 8"
+          />
+          <p className="text-xs text-muted-foreground">
+            Legt dit materiaal trager of sneller dan gemiddeld? Leeg laat de productiviteit van het
+            werk gelden.
+          </p>
+        </div>
+      </AdvancedSettings>
       <input type="hidden" name="actief" value="on" />
       <PhotoInput />
       {state?.error && <p className="text-sm text-destructive">{state.error}</p>}

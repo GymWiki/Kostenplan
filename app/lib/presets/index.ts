@@ -34,20 +34,52 @@ export function productiviteitVoorStapEenheid(
   return Math.round(preset.productiviteitPerDag * factor * 100) / 100;
 }
 
-// Formulierwaarden voor createProductDraftAction/updateProductDraftAction
-// (zelfde velden als de huidige wizard — zie bouwProductFormData).
-export function presetNaarProductFormData(
+// "Eigen werkzaamheid": de uitweg voor alles wat niet in de presets staat.
+// Zelfde mechanisme als een preset, maar met een lege (naamloze) start.
+export const EIGEN_WERKZAAMHEID: HovenierPreset = {
+  id: "eigen",
+  naam: "Eigen werkzaamheid",
+  icoon: "Shovel",
+  rekenmethode: "m2",
+  eenheid: "m2",
+  materialen: [{ naam: "Materiaal", prijs: 0 }],
+  productiviteitPerDag: 0,
+  productiviteitVraag: "Hoeveel m² doe je per dag?",
+  voorbeeldHoeveelheid: 20,
+  uitleg: "Iets anders? Stel je eigen werkzaamheid in.",
+};
+
+// De wizardvraag staat in de preset "per dag"; hier in de eenheid waarin de
+// hovenier zijn arbeid rekent.
+export function productiviteitVraagVoor(
   preset: HovenierPreset,
   stapEenheid: ArbeidStapEenheid
+): string {
+  const woord = stapEenheid === "DAG" ? "dag" : stapEenheid === "DAGDEEL" ? "dagdeel" : "uur";
+  return preset.productiviteitVraag.replace(/per dag\?$/, `per ${woord}?`);
+}
+
+// Formulierwaarden voor createProductDraftAction/updateProductDraftAction
+// (zelfde velden als de huidige wizard — zie bouwProductFormData).
+// `productiviteit`: undefined = de standaard van de preset, null = geen
+// arbeidstijd (veld weglaten).
+export function presetNaarProductFormData(
+  preset: HovenierPreset,
+  stapEenheid: ArbeidStapEenheid,
+  opties: { naam?: string; productiviteit?: number | null } = {}
 ): FormData {
   const fd = new FormData();
-  fd.set("naam", preset.naam);
+  fd.set("naam", opties.naam ?? preset.naam);
   fd.set("eenheid", preset.eenheid);
   fd.set("sjabloon", REKENMETHODE_SJABLOON[preset.rekenmethode]);
   fd.set("sjabloonConfig", JSON.stringify({}));
-  fd.set("productiviteit", String(productiviteitVoorStapEenheid(preset, stapEenheid)));
+  const productiviteit =
+    opties.productiviteit === undefined
+      ? productiviteitVoorStapEenheid(preset, stapEenheid)
+      : opties.productiviteit;
+  if (productiviteit != null && productiviteit > 0) fd.set("productiviteit", String(productiviteit));
   fd.set("icoon", preset.icoon);
-  fd.set("omschrijving", preset.uitleg);
+  fd.set("omschrijving", preset.id === "eigen" ? "" : preset.uitleg);
   fd.set("actief", "on");
   return fd;
 }

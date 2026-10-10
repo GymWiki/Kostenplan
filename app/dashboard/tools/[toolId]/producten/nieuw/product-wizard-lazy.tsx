@@ -2,10 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import type { WizardPricingSettings } from "./product-wizard";
+import type { WizardBasisStatus, WizardPricingSettings } from "./product-wizard";
 
-// Performance-audit (Fase 2, P2.6): het product-wizardscherm (4 stappen,
-// ~540 regels) laadt bij elk bezoek aan .../producten/nieuw, ook vóórdat de
+// Performance-audit (Fase 2, P2.6): het product-wizardscherm (3 stappen) laadt bij elk bezoek aan .../producten/nieuw, ook vóórdat de
 // vakman de eerste stap invult. `nieuw/page.tsx` is een Server Component —
 // `ssr: false` mag daar niet direct, vandaar deze losse client-wrapper
 // (zelfde patroon als calculator-bouwer-lazy.tsx).
@@ -19,6 +18,6 @@ const ProductWizardImpl = dynamic(() => import("./product-wizard").then((mod) =>
   ),
 });
 
-export function ProductWizardLazy(props: { toolId: string; pricingSettings: WizardPricingSettings }) {
+export function ProductWizardLazy(props: { toolId: string; pricingSettings: WizardPricingSettings; basisStatus: WizardBasisStatus }) {
   return <ProductWizardImpl {...props} />;
 }

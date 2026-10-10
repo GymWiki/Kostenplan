@@ -34,3 +34,22 @@ describe("hovenier-presets", () => {
     expect(productiviteitVoorStapEenheid(p, "UUR")).toBe(2.5);
   });
 });
+
+describe("wizard-hulpfuncties", () => {
+  it("past de productiviteitsvraag aan op de arbeidseenheid", async () => {
+    const { productiviteitVraagVoor } = await import("./index");
+    const p = presetById("bestrating")!;
+    expect(productiviteitVraagVoor(p, "DAG")).toBe("Hoeveel m² leg je per dag?");
+    expect(productiviteitVraagVoor(p, "DAGDEEL")).toBe("Hoeveel m² leg je per dagdeel?");
+    expect(productiviteitVraagVoor(p, "UUR")).toBe("Hoeveel m² leg je per uur?");
+  });
+
+  it("herkent ongewijzigde basistarieven", async () => {
+    const { zijnBasisTarievenNogDefault, BASIS_TARIEVEN_DEFAULTS: d } = await import("./basis-tarieven");
+    const company = { standaardArbeidTariefUur: 45, standaardVoorrijTarief: 35 };
+    const cs = { arbeidStapEenheid: "UUR", ...d };
+    expect(zijnBasisTarievenNogDefault(cs, company)).toBe(true);
+    expect(zijnBasisTarievenNogDefault({ ...cs, arbeidStapEenheid: "DAG" }, company)).toBe(false);
+    expect(zijnBasisTarievenNogDefault({ ...cs, transportTarief: 50 }, company)).toBe(false);
+  });
+});

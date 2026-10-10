@@ -7,6 +7,7 @@ import { createClient } from "@/app/lib/supabase/server";
 import { prisma } from "@/app/lib/prisma";
 import { resolveActiveMembership } from "@/app/lib/active-company";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
+import { zijnBasisTarievenNogDefault } from "@/app/lib/presets/basis-tarieven";
 import { resolveCostSettings, type AccountDefaults } from "@/app/lib/tools";
 import { legeModulaireCalculatorConfig } from "@/app/lib/calculator-engine";
 import type { Prisma } from "@/app/generated/prisma/client";
@@ -455,4 +456,33 @@ export async function getLeadsPageData(companyId: string) {
     }),
   ]);
   return { rawLeads, tools };
+}
+
+// Wizard (stap 3): moet de hovenier zijn basistarieven nog eenmalig invullen,
+// en mag hij de arbeidseenheid nog wisselen? Wisselen herinterpreteert de
+// productiviteit van bestaande werkzaamheden (5 m² per uur != 5 m² per dag),
+// dus zodra er al een werkzaamheid met productiviteit bestaat blijft de
+// eenheid vastgezet.
+export async function getBasisTarievenStatus(
+  toolId: string,
+  company: { standaardArbeidTariefUur: number; standaardVoorrijTarief: number }
+) {
+  const [cs, metProductiviteit] = await Promise.all([
+    prisma.costSettings.findUnique({
+      where: { toolId },
+      select: {
+        arbeidStapEenheid: true,
+        arbeidTariefUur: true,
+        arbeidTariefDagdeel: true,
+        arbeidTariefDag: true,
+        voorrijTarief: true,
+        transportTarief: true,
+      },
+    }),
+    prisma.product.count({ where: { toolId, productiviteit: { not: null } } }),
+  ]);
+  return {
+    nogInstellen: zijnBasisTarievenNogDefault(cs, company),
+    eenheidVergrendeld: metProductiviteit > 0,
+  };
 }

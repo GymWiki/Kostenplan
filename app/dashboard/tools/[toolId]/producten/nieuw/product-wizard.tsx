@@ -1,206 +1,186 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Plus, Trash2 } from "lucide-react";
 import { Button, LinkButton } from "@/app/components/ui/button";
-import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
-import { DecimalInput, Input, Label } from "@/app/components/ui/input";
-import { SjabloonPicker } from "../velden/sjabloon-picker";
-import { VeldenRenderer, VeldInputEnkel } from "../velden/veld-form";
-import { OverrideVeld, KostenUitsplitsing } from "../velden/kosten-blok";
+import { DecimalInput, Input, Label, Select } from "@/app/components/ui/input";
+import { KostenUitsplitsing } from "../velden/kosten-blok";
+import type { PricingSettings } from "../product-form";
 import {
-  createProductDraftAction,
+  createProductFromPresetAction,
+  saveWizardMaterialsAction,
   updateProductDraftAction,
-  type CreateProductDraftState,
-  type ProductFormState,
+  type PresetWizardMateriaal,
 } from "@/app/lib/actions/products";
-import { updateMaterialOptionAction } from "@/app/lib/actions/material-options";
+import { saveBasisTarievenAction, type BasisTarievenState } from "@/app/lib/actions/cost-settings";
 import { arbeidTariefVoorStapEenheid, type MateriaalRegel } from "@/app/lib/calculate";
-import {
-  berekenHoeveelheidVoorSjabloon,
-  coerceVeldWaarden,
-  hoeveelheidUitResultaat,
-  instelVeldenVoorSjabloon,
-  klantVeldenVoorSjabloon,
-  parseGetal,
-  standaardConfigVoorSjabloon,
-  standaardKlantInvoerVoorSjabloon,
-  vasteEenheidVoorSjabloon,
-} from "@/app/lib/sjablonen";
 import { arbeidEenheidEnkelvoud } from "@/app/lib/arbeid";
+import { PRODUCT_ICONS } from "@/app/lib/icons";
+import { cn } from "@/app/lib/cn";
+import { parseGetal } from "@/app/lib/sjablonen";
 import { unitLabel } from "@/app/lib/units";
-import type { ArbeidStapEenheid, ProductSjabloon } from "@/app/generated/prisma/client";
+import { BASIS_TARIEVEN_DEFAULTS } from "@/app/lib/presets/basis-tarieven";
+import {
+  EIGEN_WERKZAAMHEID,
+  HOVENIER_PRESETS,
+  VOORBEELD_LABEL,
+  presetNaarProductFormData,
+  productiviteitVoorStapEenheid,
+  productiviteitVraagVoor,
+  type HovenierPreset,
+} from "@/app/lib/presets";
+import type { ArbeidStapEenheid } from "@/app/generated/prisma/client";
+
+export type WizardPricingSettings = PricingSettings;
+export type WizardBasisStatus = { nogInstellen: boolean; eenheidVergrendeld: boolean };
 
 const STAPPEN = [
-  { nummer: 1, titel: "Wat voor werk is dit?" },
-  { nummer: 2, titel: "Hoe reken je dit af?" },
-  { nummer: 3, titel: "Wat kost het?" },
-  { nummer: 4, titel: "Klaar" },
+  { nummer: 1, titel: "Werkzaamheid" },
+  { nummer: 2, titel: "Materialen" },
+  { nummer: 3, titel: "Productiviteit" },
 ] as const;
 
-export type WizardPricingSettings = {
-  arbeidStapEenheid: ArbeidStapEenheid;
-  arbeidTariefUur: number;
-  arbeidTariefDagdeel: number;
-  arbeidTariefDag: number;
-  transportTarief: number;
-  voorrijTarief: number;
-};
+type MateriaalRij = { sleutel: string; id?: string; naam: string; prijs: string };
 
-// Strikte 4-stappen wizard voor een nieuw product — na stap 3 is het product
-// al bruikbaar in de calculator. Toeslagen en materiaalkeuzes staan hier
-// bewust niet in; die stel je pas in bij het volledige bewerkscherm. Elke
-// stap slaat meteen op (createProductDraftAction / updateProductDraftAction,
-// geen redirect) zodat er nooit onopgeslagen werk verloren kan gaan.
+let rijTeller = 0;
+const nieuweSleutel = () => `rij-${++rijTeller}`;
+
+function naarRijen(materialen: PresetWizardMateriaal[]): MateriaalRij[] {
+  return materialen.map((m) => ({ sleutel: nieuweSleutel(), id: m.id, naam: m.naam, prijs: String(m.prijs) }));
+}
+
+// Wizard in 3 stappen: werkzaamheid kiezen → materialen & prijzen →
+// productiviteit met live rekenvoorbeeld. Elke stap slaat meteen op, dus er
+// gaat nooit werk verloren. Uurtarief/voorrij/transport komen uit de
+// algemene kosteninstellingen (zie BasisTarievenKaart voor de eenmalige vraag).
 export function ProductWizard({
   toolId,
   pricingSettings,
+  basisStatus,
 }: {
   toolId: string;
   pricingSettings: WizardPricingSettings;
+  basisStatus: WizardBasisStatus;
 }) {
   const [stap, setStap] = useState(1);
+  const [klaar, setKlaar] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>();
 
+  const [gekozen, setGekozen] = useState<HovenierPreset | null>(null);
+  const [eigenNaam, setEigenNaam] = useState("");
   const [productId, setProductId] = useState<string | null>(null);
-  const [materiaalOptieId, setMateriaalOptieId] = useState<string | null>(null);
-  const [naam, setNaam] = useState("");
-  const [sjabloon, setSjabloon] = useState<ProductSjabloon>("ENKELE_HOEVEELHEID");
-  const [pendingSjabloon, setPendingSjabloon] = useState<ProductSjabloon | null>(null);
-  const [sjabloonConfigRaw, setSjabloonConfigRaw] = useState<Record<string, unknown>>({});
-  const [voorbeeldInvoer, setVoorbeeldInvoer] = useState<Record<string, unknown>>({});
+  const [rijen, setRijen] = useState<MateriaalRij[]>([]);
 
-  const companyArbeidTarief = arbeidTariefVoorStapEenheid(pricingSettings, pricingSettings.arbeidStapEenheid);
-  const [materiaalPrijs, setMateriaalPrijs] = useState("0");
+  const [settings, setSettings] = useState(pricingSettings);
+  const [basisNogNodig, setBasisNogNodig] = useState(basisStatus.nogInstellen);
+  const stapEenheid = settings.arbeidStapEenheid;
+
   const [productiviteit, setProductiviteit] = useState("");
-  const [arbeidTarief, setArbeidTarief] = useState(String(companyArbeidTarief));
-  const [arbeidWijktAf, setArbeidWijktAf] = useState(false);
-  const [transportBedrag, setTransportBedrag] = useState(String(pricingSettings.transportTarief));
-  const [transportWijktAf, setTransportWijktAf] = useState(false);
-  const [transportMeeschalend, setTransportMeeschalend] = useState(false);
-  const [voorrijBedrag, setVoorrijBedrag] = useState(String(pricingSettings.voorrijTarief));
-  const [voorrijWijktAf, setVoorrijWijktAf] = useState(false);
-  const [voorrijMeeschalend, setVoorrijMeeschalend] = useState(false);
+  const [voorbeeldHoeveelheid, setVoorbeeldHoeveelheid] = useState("20");
+  const [voorbeeldMateriaal, setVoorbeeldMateriaal] = useState(0);
 
-  const instelVelden = instelVeldenVoorSjabloon(sjabloon);
-  const sjabloonConfig = coerceVeldWaarden(instelVelden, sjabloonConfigRaw);
-  const vasteEenheid = vasteEenheidVoorSjabloon(sjabloon, sjabloonConfig);
-  const eenheid = vasteEenheid ?? "m1";
-  const isArtikelregels = sjabloon === "ARTIKELREGELS";
-  const isEnkel = sjabloon === "ENKELE_HOEVEELHEID";
-  const klantVelden = isEnkel ? [] : klantVeldenVoorSjabloon(sjabloon, sjabloonConfig);
+  const naam = gekozen?.id === "eigen" ? eigenNaam.trim() : gekozen?.naam ?? "";
+  const eenheid = gekozen?.eenheid ?? "m2";
 
-  const voorbeeldHoeveelheid = isEnkel
-    ? parseGetal(voorbeeldInvoer.hoeveelheid, 20)
-    : hoeveelheidUitResultaat(
-        berekenHoeveelheidVoorSjabloon(sjabloon, sjabloonConfig, coerceVeldWaarden(klantVelden, voorbeeldInvoer))
+  function kies(preset: HovenierPreset) {
+    setGekozen(preset);
+    setError(undefined);
+  }
+
+  function volgendeVanuitStap1() {
+    if (!gekozen) {
+      setError("Kies eerst een werkzaamheid.");
+      return;
+    }
+    if (gekozen.id === "eigen" && eigenNaam.trim() === "") {
+      setError("Geef je werkzaamheid een naam.");
+      return;
+    }
+    setError(undefined);
+    startTransition(async () => {
+      const result = await createProductFromPresetAction(toolId, gekozen.id, eigenNaam);
+      if (result?.error || !result?.productId) {
+        setError(result?.error ?? "Aanmaken is niet gelukt. Probeer het opnieuw.");
+        return;
+      }
+      setProductId(result.productId);
+      setRijen(naarRijen(result.materialen ?? []));
+      setProductiviteit(String(productiviteitVoorStapEenheid(gekozen, stapEenheid) || ""));
+      setVoorbeeldHoeveelheid(String(gekozen.voorbeeldHoeveelheid));
+      setStap(2);
+    });
+  }
+
+  function volgendeVanuitStap2() {
+    if (!productId) return;
+    setError(undefined);
+    startTransition(async () => {
+      const result = await saveWizardMaterialsAction(
+        productId,
+        rijen.map((r) => ({ id: r.id, naam: r.naam, prijs: r.prijs }))
       );
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      setRijen(naarRijen(result?.materialen ?? []));
+      setVoorbeeldMateriaal(0);
+      setStap(3);
+    });
+  }
 
-  // De wizard maakt altijd precies 1 materiaalcategorie aan (zie stap 1) —
-  // dus één regel, met de live-getypte prijs. Extra categorieën stel je pas
-  // in het bewerkscherm in, waar het voorbeeld al zijn materiaalregels toont.
-  const materiaalPrijsGetal = parseGetal(materiaalPrijs, 0);
+  function opslaanEnKlaar() {
+    if (!productId || !gekozen) return;
+    setError(undefined);
+    const getal = parseGetal(productiviteit, 0);
+    const fd = presetNaarProductFormData(gekozen, stapEenheid, {
+      naam,
+      productiviteit: getal > 0 ? getal : null,
+    });
+    startTransition(async () => {
+      const result = await updateProductDraftAction(productId, null, fd);
+      const foutmelding = result?.error ?? (result?.fieldErrors ? Object.values(result.fieldErrors)[0] : undefined);
+      if (foutmelding) {
+        setError(foutmelding);
+        return;
+      }
+      setKlaar(true);
+    });
+  }
+
+  function opnieuw() {
+    setStap(1);
+    setKlaar(false);
+    setGekozen(null);
+    setEigenNaam("");
+    setProductId(null);
+    setRijen([]);
+    setError(undefined);
+  }
+
+  // Live rekenvoorbeeld — dezelfde berekening als de echte klantprijs
+  // (KostenUitsplitsing → berekenProductKosten), met de gekozen
+  // voorbeeldhoeveelheid en het eerste (of gekozen) materiaal.
+  const hoeveelheid = parseGetal(voorbeeldHoeveelheid, 0);
+  const rij = rijen[Math.min(voorbeeldMateriaal, rijen.length - 1)];
+  const prijsGetal = rij ? parseGetal(rij.prijs, 0) : 0;
   const materiaalRegels: MateriaalRegel[] = [
     {
       categorieId: "primair",
       categorieNaam: "Materiaal",
-      optieId: materiaalOptieId ?? "",
-      optieNaam: "Standaard",
-      hoeveelheid: voorbeeldHoeveelheid,
-      prijsPerEenheid: materiaalPrijsGetal,
-      bedrag: voorbeeldHoeveelheid * materiaalPrijsGetal,
+      optieId: rij?.id ?? "",
+      optieNaam: rij?.naam ?? "Materiaal",
+      hoeveelheid,
+      prijsPerEenheid: prijsGetal,
+      bedrag: hoeveelheid * prijsGetal,
     },
   ];
-
-  function bouwProductFormData() {
-    const fd = new FormData();
-    fd.set("naam", naam);
-    fd.set("eenheid", eenheid);
-    fd.set("sjabloon", sjabloon);
-    fd.set("sjabloonConfig", JSON.stringify(sjabloonConfig));
-    if (productiviteit.trim() !== "") fd.set("productiviteit", productiviteit);
-    if (arbeidWijktAf) fd.set("arbeidTariefOverride", arbeidTarief);
-    if (transportWijktAf) fd.set("transportkostenOverride", transportBedrag);
-    if (transportMeeschalend) fd.set("transportMeeschalend", "on");
-    if (voorrijWijktAf) fd.set("voorrijkostenOverride", voorrijBedrag);
-    if (voorrijMeeschalend) fd.set("voorrijMeeschalend", "on");
-    fd.set("actief", "on");
-    return fd;
-  }
-
-  function eersteFoutmelding(result: ProductFormState | CreateProductDraftState) {
-    return result?.error ?? (result?.fieldErrors ? Object.values(result.fieldErrors)[0] : undefined);
-  }
-
-  function volgendeVanuitStap1() {
-    if (naam.trim() === "") {
-      setError("Vul een naam in.");
-      return;
-    }
-    setError(undefined);
-    startTransition(async () => {
-      const result = await createProductDraftAction(toolId, null, bouwProductFormData());
-      const foutmelding = eersteFoutmelding(result);
-      if (foutmelding) {
-        setError(foutmelding);
-        return;
-      }
-      if (result?.productId) {
-        setProductId(result.productId);
-        setMateriaalOptieId(result.materiaalOptieId ?? null);
-        setStap(2);
-      }
-    });
-  }
-
-  function opslaanEnNaarStap(volgendeStap: number) {
-    if (!productId) return;
-    setError(undefined);
-    startTransition(async () => {
-      const result = await updateProductDraftAction(productId, null, bouwProductFormData());
-      const foutmelding = eersteFoutmelding(result);
-      if (foutmelding) {
-        setError(foutmelding);
-        return;
-      }
-
-      if (materiaalOptieId && !isArtikelregels) {
-        const materiaalFd = new FormData();
-        materiaalFd.set("naam", "Standaard");
-        materiaalFd.set("prijsType", "VAST");
-        materiaalFd.set("prijs", materiaalPrijs);
-        materiaalFd.set("actief", "on");
-        const materiaalResult = await updateMaterialOptionAction(materiaalOptieId, null, materiaalFd);
-        if (materiaalResult?.error) {
-          setError(materiaalResult.error);
-          return;
-        }
-      }
-
-      setStap(volgendeStap);
-    });
-  }
-
-  function handleKiesSjabloon(nieuw: ProductSjabloon) {
-    if (nieuw === sjabloon) return;
-    if (instelVeldenVoorSjabloon(sjabloon).length > 0 && Object.keys(sjabloonConfigRaw).length > 0) {
-      setPendingSjabloon(nieuw);
-      return;
-    }
-    voerSjabloonwisselUit(nieuw);
-  }
-
-  function voerSjabloonwisselUit(nieuw: ProductSjabloon) {
-    const nieuweConfig = standaardConfigVoorSjabloon(nieuw);
-    setSjabloon(nieuw);
-    setSjabloonConfigRaw(nieuweConfig);
-    setVoorbeeldInvoer(standaardKlantInvoerVoorSjabloon(nieuw, nieuweConfig));
-  }
+  const productiviteitGetal = parseGetal(productiviteit, 0);
 
   return (
     <div className="flex flex-col gap-6">
-      <StapIndicator huidigeStap={stap} />
+      {!klaar && <StapIndicator huidigeStap={stap} />}
 
       {error && (
         <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive" aria-live="polite">
@@ -208,302 +188,389 @@ export function ProductWizard({
         </p>
       )}
 
-      {stap === 1 && (
+      {!klaar && stap === 1 && (
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="wizard-naam">Naam van het product</Label>
-            <Input
-              id="wizard-naam"
-              placeholder="Bijv. Terras aanleggen"
-              value={naam}
-              onChange={(e) => setNaam(e.target.value)}
-              autoFocus
-            />
-            <p className="text-xs text-muted-foreground">
-              Alles hieronder (hoe je afrekent, de prijs) kun je later altijd aanpassen.
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Wat voor werk wil je laten berekenen?</h2>
+            <p className="text-sm text-muted-foreground">
+              Kies een werkzaamheid. Prijzen en snelheid pas je in de volgende stappen aan.
             </p>
           </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
+            {[...HOVENIER_PRESETS, EIGEN_WERKZAAMHEID].map((preset) => (
+              <PresetKaart
+                key={preset.id}
+                preset={preset}
+                geselecteerd={gekozen?.id === preset.id}
+                onKies={() => kies(preset)}
+              />
+            ))}
+          </div>
+          {gekozen?.id === "eigen" && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="wizard-eigen-naam">Naam van de werkzaamheid</Label>
+              <Input
+                id="wizard-eigen-naam"
+                placeholder="Bijv. Tuinverlichting"
+                value={eigenNaam}
+                onChange={(e) => setEigenNaam(e.target.value)}
+                autoFocus
+              />
+            </div>
+          )}
           <div className="flex justify-end">
-            <Button onClick={volgendeVanuitStap1} disabled={pending}>
+            <Button onClick={volgendeVanuitStap1} disabled={pending || !gekozen} className="w-full sm:w-auto">
               {pending ? "Even geduld…" : "Volgende"}
-              <ArrowRight className="h-4 w-4" />
+              {!pending && <ArrowRight className="h-4 w-4" />}
             </Button>
           </div>
         </div>
       )}
 
-      {stap === 2 && (
+      {!klaar && stap === 2 && gekozen && (
         <div className="flex flex-col gap-4">
           <div>
+            <h2 className="text-lg font-semibold text-foreground">Materialen & prijzen</h2>
             <p className="text-sm text-muted-foreground">
-              Kies hoe de klant bij <strong>{naam}</strong> tot een hoeveelheid komt. Dit kun je
-              later altijd aanpassen.
+              Wat vraag je per {unitLabel(eenheid)}? Pas de prijzen aan, haal materialen weg of voeg er een toe.
             </p>
+            {gekozen.id !== "eigen" && <VoorbeeldLabel />}
           </div>
-          <SjabloonPicker waarde={sjabloon} onKiesSjabloon={handleKiesSjabloon} />
-          {instelVelden.length > 0 && (
-            <VeldenRenderer
-              velden={instelVelden}
-              waarden={sjabloonConfigRaw}
-              onChange={(key, waarde) => setSjabloonConfigRaw((prev) => ({ ...prev, [key]: waarde }))}
-              idPrefix="wizard-instel"
-            />
-          )}
+          <div className="flex flex-col gap-3">
+            {rijen.map((r) => (
+              <div key={r.sleutel} className="flex flex-col gap-2 rounded-md border border-border p-3 sm:flex-row sm:items-end">
+                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                  <Label htmlFor={`naam-${r.sleutel}`}>Materiaal</Label>
+                  <Input
+                    id={`naam-${r.sleutel}`}
+                    value={r.naam}
+                    onChange={(e) =>
+                      setRijen((prev) => prev.map((x) => (x.sleutel === r.sleutel ? { ...x, naam: e.target.value } : x)))
+                    }
+                  />
+                </div>
+                <div className="flex items-end gap-2">
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:w-40 sm:flex-none">
+                    <Label htmlFor={`prijs-${r.sleutel}`}>Prijs per {unitLabel(eenheid)}</Label>
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                        €
+                      </span>
+                      <DecimalInput
+                        id={`prijs-${r.sleutel}`}
+                        value={r.prijs}
+                        onChange={(e) =>
+                          setRijen((prev) => prev.map((x) => (x.sleutel === r.sleutel ? { ...x, prijs: e.target.value } : x)))
+                        }
+                        className="pl-7"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    aria-label={`${r.naam || "Materiaal"} verwijderen`}
+                    onClick={() => setRijen((prev) => prev.filter((x) => x.sleutel !== r.sleutel))}
+                    className="h-11 w-11 shrink-0 px-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setRijen((prev) => [...prev, { sleutel: nieuweSleutel(), naam: "", prijs: "0" }])}
+              className="w-full sm:w-fit"
+            >
+              <Plus className="h-4 w-4" />
+              Materiaal toevoegen
+            </Button>
+          </div>
           <WizardNavigatie
             pending={pending}
-            onTerug={() => setStap(1)}
-            onVolgende={() => opslaanEnNaarStap(3)}
+            onVolgende={volgendeVanuitStap2}
+            onOverslaan={() => {
+              setError(undefined);
+              setStap(3);
+            }}
           />
         </div>
       )}
 
-      {stap === 3 && (
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Voorbeeld
-            </p>
-            {isEnkel ? (
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="wizard-voorbeeld-hoeveelheid">Hoeveelheid ({unitLabel(eenheid)})</Label>
-                <VeldInputEnkel
-                  id="wizard-voorbeeld-hoeveelheid"
-                  veld={{ key: "hoeveelheid", soort: "getal", label: "Hoeveelheid" }}
-                  waarde={voorbeeldInvoer.hoeveelheid ?? "20"}
-                  onChange={(w) => setVoorbeeldInvoer((prev) => ({ ...prev, hoeveelheid: w }))}
-                />
-              </div>
-            ) : (
-              klantVelden.length > 0 && (
-                <VeldenRenderer
-                  velden={klantVelden}
-                  waarden={voorbeeldInvoer}
-                  onChange={(key, waarde) => setVoorbeeldInvoer((prev) => ({ ...prev, [key]: waarde }))}
-                  idPrefix="wizard-voorbeeld"
-                />
-              )
-            )}
-          </div>
-
-          {isArtikelregels ? (
-            <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
-              Bij Artikelregels stel je per artikeltype een eigen prijs in — dat deed je hierboven
-              bij Hoeveelheid.
-            </p>
+      {!klaar && stap === 3 && gekozen && (
+        <div className="flex flex-col gap-5">
+          {basisNogNodig ? (
+            <BasisTarievenKaart
+              toolId={toolId}
+              eenheidVergrendeld={basisStatus.eenheidVergrendeld}
+              huidigeEenheid={stapEenheid}
+              onOpgeslagen={(o) => {
+                setSettings((s) => ({ ...s, ...o }));
+                setProductiviteit(String(productiviteitVoorStapEenheid(gekozen, o.arbeidStapEenheid) || ""));
+                setBasisNogNodig(false);
+              }}
+            />
           ) : (
             <>
-              <div className="flex flex-col gap-2 border-t border-border pt-4">
-                <p className="text-sm font-medium text-foreground">1. Materiaalkosten</p>
-                <Label htmlFor="wizard-materiaalprijs">Wat vraag je per {unitLabel(eenheid)}?</Label>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                    €
-                  </span>
-                  <DecimalInput
-                    id="wizard-materiaalprijs"
-                    placeholder="Bijv. 28"
-                    value={materiaalPrijs}
-                    onChange={(e) => setMateriaalPrijs(e.target.value)}
-                    className="pl-7"
-                    autoFocus
-                  />
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <h2 className="text-lg font-semibold text-foreground">Hoe snel werk je?</h2>
+                <Label htmlFor="wizard-productiviteit">{productiviteitVraagVoor(gekozen, stapEenheid)}</Label>
+                <DecimalInput
+                  id="wizard-productiviteit"
+                  placeholder="Bijv. 20"
+                  value={productiviteit}
+                  onChange={(e) => setProductiviteit(e.target.value)}
+                  autoFocus
+                />
                 <p className="text-xs text-muted-foreground">
-                  Dit is wat je de klant rekent voor het materiaal — inclusief jouw marge.
+                  Laat leeg als dit werk geen arbeidstijd kost. Je rekent per {arbeidEenheidEnkelvoud(stapEenheid)}; dat
+                  kun je wijzigen bij Prijzen.
                 </p>
+                {gekozen.id !== "eigen" && <VoorbeeldLabel />}
               </div>
 
-              <div className="flex flex-col gap-3 border-t border-border pt-4">
-                <p className="text-sm font-medium text-foreground">2. Arbeidskosten</p>
-                <OverrideVeld
-                  titel="Tarief"
-                  name="arbeidTariefOverride"
-                  companyWaarde={companyArbeidTarief}
-                  companyWaardeTekst={`per ${arbeidEenheidEnkelvoud(pricingSettings.arbeidStapEenheid)}`}
-                  defaultOverrideValue={null}
-                  instellingenHref={`/dashboard/tools/${toolId}/prijzen`}
-                  waarde={arbeidTarief}
-                  onWaardeChange={setArbeidTarief}
-                  onWijktAfChange={setArbeidWijktAf}
-                />
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="wizard-productiviteit">
-                    Hoeveel {unitLabel(eenheid)} zet je per{" "}
-                    {arbeidEenheidEnkelvoud(pricingSettings.arbeidStapEenheid)}?
-                  </Label>
-                  <DecimalInput
-                    id="wizard-productiviteit"
-                    placeholder="Bijv. 5"
-                    value={productiviteit}
-                    onChange={(e) => setProductiviteit(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Laat leeg als dit product geen arbeidstijd kost.
-                  </p>
+              <div className="flex flex-col gap-3 rounded-md border border-border p-3 sm:p-4">
+                <p className="text-sm font-medium text-foreground">Zo ziet een klantprijs eruit</p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="wizard-voorbeeld-hoeveelheid">Klant vult in ({unitLabel(eenheid)})</Label>
+                    <DecimalInput
+                      id="wizard-voorbeeld-hoeveelheid"
+                      value={voorbeeldHoeveelheid}
+                      onChange={(e) => setVoorbeeldHoeveelheid(e.target.value)}
+                    />
+                  </div>
+                  {rijen.length > 1 && (
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="wizard-voorbeeld-materiaal">Klant kiest</Label>
+                      <Select
+                        id="wizard-voorbeeld-materiaal"
+                        value={String(Math.min(voorbeeldMateriaal, rijen.length - 1))}
+                        onChange={(e) => setVoorbeeldMateriaal(Number(e.target.value))}
+                      >
+                        {rijen.map((r, i) => (
+                          <option key={r.sleutel} value={i}>
+                            {r.naam}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              <div className="flex flex-col gap-3 border-t border-border pt-4">
-                <p className="text-sm font-medium text-foreground">3. Transportkosten</p>
-                <OverrideVeld
-                  titel="Transportkosten"
-                  name="transportkostenOverride"
-                  companyWaarde={pricingSettings.transportTarief}
-                  companyWaardeTekst="per project"
-                  defaultOverrideValue={null}
-                  instellingenHref={`/dashboard/tools/${toolId}/prijzen`}
-                  waarde={transportBedrag}
-                  onWaardeChange={setTransportBedrag}
-                  onWijktAfChange={setTransportWijktAf}
-                />
-                <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={transportMeeschalend}
-                    onChange={(e) => setTransportMeeschalend(e.target.checked)}
-                    className="h-4 w-4 rounded border-input accent-primary"
-                  />
-                  Schaalt mee met de hoeveelheid (in plaats van een vaste post per project)
-                </label>
-              </div>
-
-              <div className="flex flex-col gap-3 border-t border-border pt-4">
-                <p className="text-sm font-medium text-foreground">4. Voorrijkosten</p>
-                <OverrideVeld
-                  titel="Voorrijkosten"
-                  name="voorrijkostenOverride"
-                  companyWaarde={pricingSettings.voorrijTarief}
-                  companyWaardeTekst="per project"
-                  defaultOverrideValue={null}
-                  instellingenHref={`/dashboard/tools/${toolId}/prijzen`}
-                  waarde={voorrijBedrag}
-                  onWaardeChange={setVoorrijBedrag}
-                  onWijktAfChange={setVoorrijWijktAf}
-                />
-                <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={voorrijMeeschalend}
-                    onChange={(e) => setVoorrijMeeschalend(e.target.checked)}
-                    className="h-4 w-4 rounded border-input accent-primary"
-                  />
-                  Schaalt mee met de hoeveelheid (in plaats van een vaste post per project)
-                </label>
-              </div>
-
-              <div className="border-t border-border pt-4">
                 <KostenUitsplitsing
                   naam={naam}
-                  hoeveelheid={voorbeeldHoeveelheid}
+                  hoeveelheid={hoeveelheid}
                   eenheid={eenheid}
                   materiaalRegels={materiaalRegels}
-                  materiaalEnabled
-                  productiviteit={parseGetal(productiviteit, 0) > 0 ? parseGetal(productiviteit, 0) : null}
-                  arbeidTarief={parseGetal(arbeidTarief, 0)}
-                  arbeidEnabled
-                  arbeidAfronden={false}
-                  transportBedrag={parseGetal(transportBedrag, 0)}
-                  transportMeeschalend={transportMeeschalend}
-                  transportEnabled
-                  voorrijBedrag={parseGetal(voorrijBedrag, 0)}
-                  voorrijMeeschalend={voorrijMeeschalend}
-                  voorrijEnabled
+                  materiaalEnabled={settings.materiaalEnabled}
+                  productiviteit={productiviteitGetal > 0 ? productiviteitGetal : null}
+                  arbeidTarief={arbeidTariefVoorStapEenheid(settings, stapEenheid)}
+                  arbeidEnabled={settings.arbeidEnabled}
+                  arbeidAfronden={settings.arbeidAfronden}
+                  transportBedrag={settings.transportTarief}
+                  transportMeeschalend={false}
+                  transportEnabled={settings.transportEnabled}
+                  voorrijBedrag={settings.voorrijTarief}
+                  voorrijMeeschalend={false}
+                  voorrijEnabled={settings.voorrijEnabled}
                 />
+              </div>
+
+              <div className="flex justify-between gap-2">
+                <Button type="button" variant="outline" onClick={() => setStap(2)} disabled={pending}>
+                  <ArrowLeft className="h-4 w-4" />
+                  Terug
+                </Button>
+                <Button type="button" onClick={opslaanEnKlaar} disabled={pending}>
+                  {pending ? "Even geduld…" : "Opslaan en klaar"}
+                </Button>
               </div>
             </>
           )}
-
-          <WizardNavigatie
-            pending={pending}
-            onTerug={() => setStap(2)}
-            onVolgende={() => opslaanEnNaarStap(4)}
-            volgendeLabel="Opslaan en klaar"
-          />
         </div>
       )}
 
-      {stap === 4 && productId && (
+      {klaar && productId && (
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3 rounded-md border border-primary/30 bg-primary/5 p-4">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
               <Check className="h-5 w-5" />
             </span>
-            <div>
-              <p className="font-medium text-foreground">{naam} staat live</p>
-              <p className="text-sm text-muted-foreground">
-                Klanten kunnen dit product nu al kiezen in je calculator.
-              </p>
+            <div className="min-w-0">
+              <p className="font-medium text-foreground">{naam} staat klaar</p>
+              <p className="text-sm text-muted-foreground">Klanten kunnen dit nu kiezen in je rekentool.</p>
             </div>
           </div>
-
-          {!isArtikelregels && (
-            <KostenUitsplitsing
-              naam={naam}
-              hoeveelheid={voorbeeldHoeveelheid}
-              eenheid={eenheid}
-              materiaalRegels={materiaalRegels}
-              materiaalEnabled
-              productiviteit={parseGetal(productiviteit, 0) > 0 ? parseGetal(productiviteit, 0) : null}
-              arbeidTarief={parseGetal(arbeidTarief, 0)}
-              arbeidEnabled
-              arbeidAfronden={false}
-              transportBedrag={parseGetal(transportBedrag, 0)}
-              transportMeeschalend={transportMeeschalend}
-              transportEnabled
-              voorrijBedrag={parseGetal(voorrijBedrag, 0)}
-              voorrijMeeschalend={voorrijMeeschalend}
-              voorrijEnabled
-            />
-          )}
-
-          <p className="text-sm text-muted-foreground">
-            Wil je nog toeslagen of extra materiaalkeuzes toevoegen? Dat kan in het bewerkscherm.
-          </p>
-
-          <div className="flex flex-wrap justify-end gap-2">
-            <LinkButton href={`/dashboard/tools/${toolId}/producten`} variant="outline">
-              Terug naar producten
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+            <Button type="button" variant="outline" onClick={opnieuw} className="w-full sm:w-auto">
+              Nog een werkzaamheid
+            </Button>
+            <LinkButton href={`/dashboard/tools/${toolId}/producten`} variant="outline" className="w-full sm:w-auto">
+              Naar mijn werkzaamheden
             </LinkButton>
-            <LinkButton href={`/dashboard/tools/${toolId}/producten/${productId}/bewerken`}>
-              Naar bewerkscherm
+            <LinkButton
+              href={`/dashboard/tools/${toolId}/producten/${productId}/bewerken`}
+              className="w-full sm:w-auto"
+            >
+              Verder aanpassen
             </LinkButton>
           </div>
         </div>
       )}
-
-      <ConfirmDialog
-        open={pendingSjabloon != null}
-        onClose={() => setPendingSjabloon(null)}
-        onConfirm={() => {
-          if (pendingSjabloon) voerSjabloonwisselUit(pendingSjabloon);
-          setPendingSjabloon(null);
-        }}
-        title="Wissel je van sjabloon?"
-        description="Je huidige instellingen hierboven gaan dan verloren."
-      />
     </div>
+  );
+}
+
+function VoorbeeldLabel() {
+  return (
+    <p className="mt-1.5 inline-block rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-500/20 dark:text-amber-200">
+      {VOORBEELD_LABEL}
+    </p>
+  );
+}
+
+function PresetKaart({
+  preset,
+  geselecteerd,
+  onKies,
+}: {
+  preset: HovenierPreset;
+  geselecteerd: boolean;
+  onKies: () => void;
+}) {
+  const Icon = PRODUCT_ICONS[preset.icoon];
+  return (
+    <button
+      type="button"
+      onClick={onKies}
+      aria-pressed={geselecteerd}
+      className={cn(
+        "flex min-w-0 flex-col items-start gap-2 rounded-lg border p-3 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        geselecteerd ? "border-primary bg-primary/5" : "border-border hover:bg-secondary"
+      )}
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+        {Icon && <Icon className="h-5 w-5" />}
+      </span>
+      <span className="break-words text-sm font-medium leading-tight text-foreground">{preset.naam}</span>
+      <span className="break-words text-xs text-muted-foreground">{preset.uitleg}</span>
+    </button>
   );
 }
 
 function WizardNavigatie({
   pending,
-  onTerug,
   onVolgende,
-  volgendeLabel = "Volgende",
+  onOverslaan,
 }: {
   pending: boolean;
-  onTerug: () => void;
   onVolgende: () => void;
-  volgendeLabel?: string;
+  onOverslaan: () => void;
 }) {
   return (
-    <div className="flex justify-between gap-2">
-      <Button type="button" variant="outline" onClick={onTerug} disabled={pending}>
-        <ArrowLeft className="h-4 w-4" />
-        Terug
+    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <Button type="button" variant="ghost" onClick={onOverslaan} disabled={pending}>
+        Overslaan
       </Button>
       <Button type="button" onClick={onVolgende} disabled={pending}>
-        {pending ? "Even geduld…" : volgendeLabel}
+        {pending ? "Even geduld…" : "Volgende"}
+        {!pending && <ArrowRight className="h-4 w-4" />}
+      </Button>
+    </div>
+  );
+}
+
+// Eenmalige vraag: hoe reken je arbeid, en wat zijn je vaste tarieven. Alleen
+// zichtbaar zolang de kosteninstellingen nog op de standaardwaarden staan.
+function BasisTarievenKaart({
+  toolId,
+  eenheidVergrendeld,
+  huidigeEenheid,
+  onOpgeslagen,
+}: {
+  toolId: string;
+  eenheidVergrendeld: boolean;
+  huidigeEenheid: ArbeidStapEenheid;
+  onOpgeslagen: (o: NonNullable<NonNullable<BasisTarievenState>["opgeslagen"]>) => void;
+}) {
+  const [eenheid, setEenheid] = useState<ArbeidStapEenheid>(eenheidVergrendeld ? huidigeEenheid : "DAG");
+  const [tarieven, setTarieven] = useState({
+    UUR: String(BASIS_TARIEVEN_DEFAULTS.arbeidTariefUur),
+    DAGDEEL: String(BASIS_TARIEVEN_DEFAULTS.arbeidTariefDagdeel),
+    DAG: String(BASIS_TARIEVEN_DEFAULTS.arbeidTariefDag),
+  });
+  const [voorrij, setVoorrij] = useState(String(BASIS_TARIEVEN_DEFAULTS.voorrijTarief));
+  const [transport, setTransport] = useState(String(BASIS_TARIEVEN_DEFAULTS.transportTarief));
+  const [error, setError] = useState<string | undefined>();
+  const [pending, startTransition] = useTransition();
+
+  function opslaan() {
+    setError(undefined);
+    const fd = new FormData();
+    fd.set("arbeidStapEenheid", eenheid);
+    fd.set("arbeidTarief", tarieven[eenheid]);
+    fd.set("voorrijTarief", voorrij);
+    fd.set("transportTarief", transport);
+    startTransition(async () => {
+      const result = await saveBasisTarievenAction(toolId, null, fd);
+      if (result?.opgeslagen) onOpgeslagen(result.opgeslagen);
+      else setError(result?.error ?? "Opslaan is niet gelukt.");
+    });
+  }
+
+  const euroVeld = (id: string, waarde: string, set: (v: string) => void) => (
+    <div className="relative">
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
+      <DecimalInput id={id} value={waarde} onChange={(e) => set(e.target.value)} className="pl-7" />
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-4 rounded-md border border-primary/30 bg-primary/5 p-3 sm:p-4">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">Eerst even je vaste tarieven</h2>
+        <p className="text-sm text-muted-foreground">
+          Dit vraag ik één keer. Het geldt voor al je werkzaamheden en je kunt het altijd wijzigen bij Prijzen.
+        </p>
+        <VoorbeeldLabel />
+      </div>
+      {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="basis-eenheid">Hoe bereken je je arbeid?</Label>
+        <Select
+          id="basis-eenheid"
+          value={eenheid}
+          disabled={eenheidVergrendeld}
+          onChange={(e) => setEenheid(e.target.value as ArbeidStapEenheid)}
+        >
+          <option value="DAG">Per dag</option>
+          <option value="DAGDEEL">Per dagdeel</option>
+          <option value="UUR">Per uur</option>
+        </Select>
+        {eenheidVergrendeld && (
+          <p className="text-xs text-muted-foreground">
+            Je bestaande werkzaamheden rekenen al zo; wijzigen kan via Prijzen.
+          </p>
+        )}
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="basis-tarief">Tarief per {arbeidEenheidEnkelvoud(eenheid)}</Label>
+        {euroVeld("basis-tarief", tarieven[eenheid], (v) => setTarieven((t) => ({ ...t, [eenheid]: v })))}
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="basis-voorrij">Voorrijkosten per project</Label>
+          {euroVeld("basis-voorrij", voorrij, setVoorrij)}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="basis-transport">Transportkosten per project</Label>
+          {euroVeld("basis-transport", transport, setTransport)}
+        </div>
+      </div>
+      <Button type="button" onClick={opslaan} disabled={pending} className="w-full sm:w-fit">
+        {pending ? "Opslaan…" : "Opslaan en verder"}
         {!pending && <ArrowRight className="h-4 w-4" />}
       </Button>
     </div>
@@ -512,30 +579,20 @@ function WizardNavigatie({
 
 function StapIndicator({ huidigeStap }: { huidigeStap: number }) {
   return (
-    <div className="flex items-center gap-2">
-      {STAPPEN.map((s, i) => (
-        <div key={s.nummer} className="flex flex-1 items-center gap-2">
-          <div className="flex flex-1 flex-col gap-1" aria-current={s.nummer === huidigeStap ? "step" : undefined}>
-            <div
-              className={
-                s.nummer <= huidigeStap
-                  ? "h-1.5 rounded-full bg-primary"
-                  : "h-1.5 rounded-full bg-border"
-              }
-            />
-            <p
-              className={
-                s.nummer === huidigeStap
-                  ? "text-xs font-medium text-foreground"
-                  : "text-xs text-muted-foreground"
-              }
-            >
-              {s.nummer}. {s.titel}
-            </p>
-          </div>
-          {i < STAPPEN.length - 1 && <span className="sr-only">,</span>}
-        </div>
+    <ol className="grid grid-cols-3 gap-2">
+      {STAPPEN.map((s) => (
+        <li key={s.nummer} className="flex min-w-0 flex-col gap-1" aria-current={s.nummer === huidigeStap ? "step" : undefined}>
+          <div className={s.nummer <= huidigeStap ? "h-1.5 rounded-full bg-primary" : "h-1.5 rounded-full bg-border"} />
+          <p
+            className={cn(
+              "break-words text-xs leading-tight",
+              s.nummer === huidigeStap ? "font-medium text-foreground" : "text-muted-foreground"
+            )}
+          >
+            {s.nummer}. {s.titel}
+          </p>
+        </li>
       ))}
-    </div>
+    </ol>
   );
 }
