@@ -45,7 +45,7 @@ import {
 } from "@/app/lib/werkzaamheid";
 import { berekenKostenOpbouw } from "@/app/lib/werkzaamheid-kosten";
 import type { Branding, SubscriptionTier } from "@/app/generated/prisma/client";
-import { useTarieven } from "../../tarieven-context";
+import { TarievenKnop, useTarieven } from "../../tarieven-context";
 import { KlantVoorbeeld, useKlantVoorbeeld } from "./klant-voorbeeld";
 import { KostenOpbouwKaart } from "./kosten-opbouw-kaart";
 import { MaterialenTabel } from "./materialen-tabel";
@@ -176,9 +176,10 @@ export function WerkzaamheidEditor({
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
           <Icoon className="h-6 w-6" />
         </span>
-        <h1 className="min-w-0 break-words text-3xl font-bold leading-tight text-foreground">
+        <h1 className="min-w-0 flex-1 break-words text-3xl font-bold leading-tight text-foreground">
           {draft.naam.trim() || "Werkzaamheid"}
         </h1>
+        <TarievenKnop compact className="shrink-0" />
       </div>
 
       <nav

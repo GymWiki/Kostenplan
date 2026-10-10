@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 import { useRouter } from "next/navigation";
 import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
+import { cn } from "@/app/lib/cn";
 import { Field } from "@/app/components/ui/field";
 import { Sheet } from "@/app/components/ui/sheet";
 import { UnitInput } from "@/app/components/ui/unit-input";
@@ -72,12 +73,18 @@ export function TarievenProvider({
   );
 }
 
-export function TarievenKnop({ className }: { className?: string }) {
+export function TarievenKnop({ className, compact = false }: { className?: string; compact?: boolean }) {
   const { openTarieven } = useTarieven();
   return (
-    <Button type="button" variant="outline" onClick={openTarieven} className={className}>
+    <Button
+      type="button"
+      variant="outline"
+      onClick={openTarieven}
+      aria-label="Mijn tarieven"
+      className={cn("h-11 border-[1.5px] border-input", compact && "w-11 px-0 sm:w-auto sm:px-4", className)}
+    >
       <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-      Mijn tarieven
+      <span className={cn(compact && "sr-only sm:not-sr-only")}>Mijn tarieven</span>
     </Button>
   );
 }

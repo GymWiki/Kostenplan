@@ -3,11 +3,13 @@ import { AlertTriangle, ChevronRight, Ruler } from "lucide-react";
 import { LinkButton } from "@/app/components/ui/button";
 import { PRODUCT_ICONS } from "@/app/lib/icons";
 import { cn } from "@/app/lib/cn";
-import { formatCurrency } from "@/app/lib/format";
 import { kortEenheid, methodeLabel, methodeVanProduct, type ProductMetRelaties } from "@/app/lib/werkzaamheid";
 import type { KostenOpbouw } from "@/app/lib/werkzaamheid-kosten";
 import { ZichtbaarheidSwitch } from "./zichtbaarheid-switch";
 
+// Overzichtsbedragen zonder onnodige decimalen: € 38 – € 62, € 1.670.
+const euro = (n: number) =>
+  new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
 const getal = (n: number) => new Intl.NumberFormat("nl-NL", { maximumFractionDigits: 1 }).format(n);
 
 // Overzichtskaart van één werkzaamheid: icoon, naam, rekenmethode, prijsrange,
@@ -65,7 +67,7 @@ export function WerkzaamheidKaart({
           <dd className="break-words text-sm font-bold text-foreground">
             {range ? (
               <>
-                {range.min === range.max ? formatCurrency(range.min) : `${formatCurrency(range.min)} – ${formatCurrency(range.max)}`}
+                {range.min === range.max ? euro(range.min) : `${euro(range.min)} – ${euro(range.max)}`}
                 <span className="font-normal text-muted-foreground"> / {eenheid}</span>
               </>
             ) : (
@@ -77,7 +79,7 @@ export function WerkzaamheidKaart({
           <dt className="text-sm text-muted-foreground">
             {getal(opbouw.hoeveelheid)} {eenheid} kost
           </dt>
-          <dd className="text-sm font-bold text-foreground">{formatCurrency(opbouw.totaal)}</dd>
+          <dd className="text-sm font-bold text-foreground">{euro(opbouw.totaal)}</dd>
         </div>
       </dl>
 

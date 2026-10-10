@@ -29,7 +29,7 @@ import {
 } from "@/app/lib/werkzaamheid";
 import { berekenKostenOpbouw } from "@/app/lib/werkzaamheid-kosten";
 import type { Branding, SubscriptionTier } from "@/app/generated/prisma/client";
-import { useTarieven } from "../../tarieven-context";
+import { TarievenKnop, useTarieven } from "../../tarieven-context";
 import { KlantVoorbeeld, useKlantVoorbeeld } from "../editor/klant-voorbeeld";
 import { KostenOpbouwKaart } from "../editor/kosten-opbouw-kaart";
 import { MaterialenTabel } from "../editor/materialen-tabel";
@@ -154,7 +154,10 @@ export function WerkzaamheidWizard({
           <X className="h-4 w-4" aria-hidden="true" />
           Annuleren
         </Link>
-        <p className="text-sm font-semibold text-muted-foreground">Stap {stap} van 3</p>
+        <div className="flex items-center gap-3">
+          <p className="text-sm font-semibold text-muted-foreground">Stap {stap} van 3</p>
+          <TarievenKnop compact />
+        </div>
       </div>
 
       <ol className="grid grid-cols-3 gap-2">
