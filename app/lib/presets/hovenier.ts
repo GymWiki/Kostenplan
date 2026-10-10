@@ -100,7 +100,7 @@ export const HOVENIER_PRESETS: HovenierPreset[] = [
   },
   {
     id: "haag-beplanting",
-    naam: "Haag / beplanting",
+    naam: "Haag planten",
     icoon: "Shrub",
     rekenmethode: "strekkende-meter",
     eenheid: "m1",
