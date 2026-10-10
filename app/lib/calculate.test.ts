@@ -966,3 +966,43 @@ describe("migratie: gelijkblijvende uitkomst voor bestaande producten", () => {
     expect(result.transportkosten).toBe(25);
   });
 });
+
+describe("transport per dag", () => {
+  const basis = {
+    materiaalkosten: 0,
+    materiaalEnabled: true,
+    hoeveelheid: 20,
+    productiviteit: 6,
+    arbeidTarief: 240,
+    arbeidEnabled: true,
+    arbeidAfronden: false,
+    transportBedrag: 65,
+    transportMeeschalend: false,
+    transportEnabled: true,
+    voorrijBedrag: 45,
+    voorrijMeeschalend: false,
+    voorrijEnabled: true,
+    arbeidStapEenheid: "DAGDEEL" as const,
+  };
+
+  it("telt transport één keer per klus als de optie uit staat (bestaand gedrag)", () => {
+    expect(berekenProductKosten(basis).transport).toBe(65);
+  });
+
+  it("telt transport per begonnen dag: 20 m / 6 per dagdeel = 3,33 dagdeel = 2 dagen", () => {
+    expect(berekenProductKosten({ ...basis, transportPerDag: true }).transport).toBe(130);
+  });
+
+  it("rekent in dagen als de arbeidseenheid dag is", () => {
+    const k = berekenProductKosten({ ...basis, transportPerDag: true, arbeidStapEenheid: "DAG", productiviteit: 5 });
+    expect(k.transport).toBe(65 * 4);
+  });
+
+  it("valt terug op één keer zonder arbeidstijd", () => {
+    expect(berekenProductKosten({ ...basis, transportPerDag: true, productiviteit: null }).transport).toBe(65);
+  });
+
+  it("rekent het voorbeeld uit het ontwerp: 20 m, 6/dagdeel, €240 → arbeid €800", () => {
+    expect(berekenProductKosten(basis).arbeid).toBeCloseTo(800, 5);
+  });
+});

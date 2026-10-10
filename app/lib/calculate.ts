@@ -22,6 +22,17 @@ export type CalcCostSettings = {
   bandbreedteMargeOmhoog: number;
 };
 
+// Omrekening van arbeidseenheden naar werkdagen (voor transport per dag en de
+// preset-productiviteit). TODO(Pieter): bevestig 1 dag = 2 dagdelen = 8 uur.
+export const DAGDELEN_PER_DAG = 2;
+export const UREN_PER_DAG = 8;
+
+export function dagenVoorArbeidstijd(arbeidstijd: number, stapEenheid: ArbeidStapEenheid): number {
+  if (stapEenheid === "DAGDEEL") return arbeidstijd / DAGDELEN_PER_DAG;
+  if (stapEenheid === "UUR") return arbeidstijd / UREN_PER_DAG;
+  return arbeidstijd;
+}
+
 export type PrijsType = "VAST" | "BANDBREEDTE";
 export type BandbreedteModus = "GEEN" | "PER_PRODUCT" | "TOTAAL";
 
@@ -62,6 +73,7 @@ export type CalcProduct = {
   arbeidTariefOverride: number | null;
   transportkostenOverride: number | null;
   transportMeeschalend: boolean;
+  transportPerDag?: boolean;
   voorrijkostenOverride: number | null;
   voorrijMeeschalend: boolean;
   materiaalCategorieen: CalcMaterialCategory[];
@@ -215,6 +227,8 @@ export function berekenProductKosten({
   arbeidAfronden,
   transportBedrag,
   transportMeeschalend,
+  transportPerDag = false,
+  arbeidStapEenheid = "UUR",
   transportEnabled,
   voorrijBedrag,
   voorrijMeeschalend,
@@ -229,6 +243,11 @@ export function berekenProductKosten({
   arbeidAfronden: boolean;
   transportBedrag: number;
   transportMeeschalend: boolean;
+  // Transport per (begonnen) werkdag i.p.v. één keer per project; wint van
+  // transportMeeschalend. `arbeidStapEenheid` zegt in welke eenheid
+  // `productiviteit` staat.
+  transportPerDag?: boolean;
+  arbeidStapEenheid?: ArbeidStapEenheid;
   transportEnabled: boolean;
   voorrijBedrag: number;
   voorrijMeeschalend: boolean;
@@ -237,15 +256,23 @@ export function berekenProductKosten({
   const materiaal = materiaalEnabled ? materiaalkosten : 0;
 
   let arbeid = 0;
+  let arbeidstijd = 0;
   if (arbeidEnabled && productiviteit != null && productiviteit > 0) {
-    const arbeidstijd = hoeveelheid / productiviteit;
+    arbeidstijd = hoeveelheid / productiviteit;
     arbeid = (arbeidAfronden ? ceilStep(arbeidstijd) : arbeidstijd) * arbeidTarief;
   }
 
+  // Transport per dag: elke begonnen werkdag telt, minimaal één dag zodra er
+  // arbeid is. Zonder arbeidstijd (geen productiviteit) valt het terug op één
+  // keer per project.
+  const transportDagen =
+    arbeidstijd > 0 ? Math.max(1, ceilStep(dagenVoorArbeidstijd(arbeidstijd, arbeidStapEenheid))) : 1;
   const transport = transportEnabled
-    ? transportMeeschalend
-      ? hoeveelheid * transportBedrag
-      : transportBedrag
+    ? transportPerDag
+      ? transportDagen * transportBedrag
+      : transportMeeschalend
+        ? hoeveelheid * transportBedrag
+        : transportBedrag
     : 0;
   const voorrijkosten = voorrijEnabled
     ? voorrijMeeschalend
@@ -326,6 +353,8 @@ export function calculateBreakdown({
       arbeidAfronden: costSettings.arbeidAfronden,
       transportBedrag,
       transportMeeschalend: product.transportMeeschalend,
+      transportPerDag: product.transportPerDag ?? false,
+      arbeidStapEenheid: costSettings.arbeidStapEenheid,
       transportEnabled: costSettings.transportEnabled,
       voorrijBedrag,
       voorrijMeeschalend: product.voorrijMeeschalend,

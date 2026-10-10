@@ -1,4 +1,5 @@
 import type { ArbeidStapEenheid, ProductSjabloon } from "@/app/generated/prisma/client";
+import { DAGDELEN_PER_DAG, UREN_PER_DAG } from "@/app/lib/calculate";
 import { HOVENIER_PRESETS } from "./hovenier";
 import type { HovenierPreset, Rekenmethode } from "./types";
 
@@ -18,9 +19,6 @@ export function presetById(id: string): HovenierPreset | undefined {
   return HOVENIER_PRESETS.find((p) => p.id === id);
 }
 
-// TODO(Pieter): bevestig deze omrekening (1 dag = 2 dagdelen = 8 uur).
-const DAGDELEN_PER_DAG = 2;
-const UREN_PER_DAG = 8;
 
 // Presets staan "per dag"; de hovenier kiest zelf in de kosteninstellingen
 // of hij in uur/dagdeel/dag rekent (CostSettings.arbeidStapEenheid). Dit
