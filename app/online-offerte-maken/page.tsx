@@ -44,7 +44,7 @@ const FAQS = [
   {
     vraag: "Kan een klant de offerte online accepteren of afwijzen?",
     antwoord:
-      "Ja. Via de persoonlijke offertelink kan de klant de offerte digitaal accepteren of afwijzen. De status daarvan is voor de vakman direct zichtbaar in het leads-overzicht, zonder dat daar een telefoontje of e-mail voor nodig is.",
+      "Ja. Via de persoonlijke offertelink kan de klant de offerte digitaal accepteren of afwijzen. De status daarvan is voor de hovenier direct zichtbaar in het leads-overzicht, zonder dat daar een telefoontje of e-mail voor nodig is.",
   },
   {
     vraag: "Kan ik een offerte nog aanpassen voordat ik hem verstuur?",

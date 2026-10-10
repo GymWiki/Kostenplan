@@ -6,8 +6,12 @@ import { requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { onboardingBrandingSchema, onboardingToolSchema } from "@/app/lib/validation";
 import { generateUniqueToolSlug } from "@/app/lib/slug";
+import type { Prisma } from "@/app/generated/prisma/client";
 import { isOwnStorageUrl } from "@/app/lib/storage";
-import { effectiveTier } from "@/app/lib/subscription";
+import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
+import { parseBasisTarievenForm, slaBasisTarievenOp } from "@/app/lib/basis-tarieven-server";
+import { standaardConfigVoorSjabloon } from "@/app/lib/sjablonen";
+import { HOVENIER_PRESETS, REKENMETHODE_SJABLOON, productiviteitVoorStapEenheid, verdeelOverRuimte } from "@/app/lib/presets";
 
 export type OnboardingToolFormState = { error?: string; fieldErrors?: Record<string, string> } | null;
 
@@ -113,8 +117,78 @@ export async function applyOnboardingBrandingAction(formData: FormData) {
   }
 
   revalidatePath(`/dashboard/tools/${tool.id}`);
-  // Rechtstreeks naar de productenpagina van de nieuwe tool — dat is in
-  // Levering A de "eerste calculator configureren"-stap uit de opdracht,
-  // zonder daar een aparte wizardpagina voor te bouwen.
-  redirect(`/dashboard/tools/${tool.id}/producten`);
+  redirect("/onboarding/werkzaamheden");
+}
+
+export type StartpakketFormState = { error?: string } | null;
+
+// /onboarding/werkzaamheden: de gekozen hovenier-presets worden in één keer
+// als werkzaamheden (Product) aangemaakt, met de standaardwaarden uit de
+// preset, samen met de eenmalige basistarieven. Past het aantal niet binnen
+// de productlimiet van het abonnement, dan worden de eerste N aangemaakt en
+// geeft de volgende pagina de rest terug als upgrade-suggestie (?over=).
+export async function createStartpakketAction(
+  _prevState: StartpakketFormState,
+  formData: FormData
+): Promise<StartpakketFormState> {
+  const { company } = await requireActiveCompany();
+
+  const tool = await prisma.tool.findFirst({
+    where: { companyId: company.id, deletedAt: null },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  if (!tool) redirect("/onboarding/rekentool");
+
+  // Dubbel versturen of terugknop: er staat al een startpakket, niets
+  // nogmaals aanmaken.
+  if ((await prisma.product.count({ where: { toolId: tool.id } })) > 0) redirect("/onboarding/klaar");
+
+  const gekozen = new Set(formData.getAll("preset").map(String));
+  const presets = HOVENIER_PRESETS.filter((p) => gekozen.has(p.id));
+  if (presets.length === 0) return { error: "Kies minstens één werkzaamheid." };
+
+  const tarieven = parseBasisTarievenForm(formData);
+  if (!tarieven.success) return { error: "Controleer je tarieven en probeer het opnieuw." };
+  const opgeslagen = await slaBasisTarievenOp(company.id, tool.id, tarieven.data);
+  if ("error" in opgeslagen) return { error: opgeslagen.error };
+  const stapEenheid = tarieven.data.arbeidStapEenheid;
+
+  const limiet = PLAN_LIMITS[effectiveTier(company)].maxProductsPerCompany;
+  const bestaand = await prisma.product.count({ where: { tool: { companyId: company.id } } });
+  const { aanmaken, over } = verdeelOverRuimte(presets, limiet === null ? null : limiet - bestaand);
+
+  await prisma.$transaction(
+    aanmaken.map((preset, i) => {
+      const sjabloon = REKENMETHODE_SJABLOON[preset.rekenmethode];
+      return prisma.product.create({
+        data: {
+          toolId: tool.id,
+          naam: preset.naam,
+          omschrijving: preset.uitleg,
+          eenheid: preset.eenheid,
+          sjabloon,
+          sjabloonConfig: standaardConfigVoorSjabloon(sjabloon) as Prisma.InputJsonValue,
+          productiviteit: productiviteitVoorStapEenheid(preset, stapEenheid),
+          icoon: preset.icoon,
+          actief: true,
+          order: i,
+          materiaalCategorieen: {
+            create: [
+              {
+                naam: "Materiaal",
+                verplicht: true,
+                order: 0,
+                materialen: { create: preset.materialen.map((m, j) => ({ naam: m.naam, prijs: m.prijs, order: j, isVoorbeeld: true })) },
+              },
+            ],
+          },
+        },
+      });
+    })
+  );
+
+  revalidatePath(`/dashboard/tools/${tool.id}`);
+  revalidatePath(`/dashboard/tools/${tool.id}/producten`);
+  redirect(over.length > 0 ? `/onboarding/klaar?over=${over.map((p) => p.id).join(",")}` : "/onboarding/klaar");
 }

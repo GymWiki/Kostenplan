@@ -78,7 +78,7 @@ export function CostSettingsForm({
 
       <CostTypeCard
         title="Arbeidskosten"
-        description="De standaardtarieven voor arbeidstijd van producten in deze tool."
+        description="De standaardtarieven voor arbeidstijd van je werkzaamheden in deze rekentool."
         enabled={arbeidOn}
         onToggle={setArbeidOn}
         toggleName="arbeidEnabled"
@@ -103,8 +103,8 @@ export function CostSettingsForm({
           </Select>
         </Field>
         <p className="text-xs text-muted-foreground">
-          Nieuwe producten gebruiken standaard dit tarief. Vul voor de zekerheid alle drie de
-          tarieven in — een product kan altijd in een andere eenheid rekenen dan hierboven gekozen.
+          Nieuwe werkzaamheden gebruiken standaard dit tarief. Vul voor de zekerheid alle drie de
+          tarieven in — een werkzaamheid kan altijd in een andere eenheid rekenen dan hierboven gekozen.
         </p>
         <div className="grid gap-4 sm:grid-cols-3">
           <AccountDefaultField
@@ -150,13 +150,13 @@ export function CostSettingsForm({
             Arbeidstijd afronden op hele {arbeidEenheidMeervoud(arbeidStapEenheid)}
             <span className="block font-normal text-muted-foreground">
               Standaard reken je continu door (bijv. 1,2 {arbeidEenheidMeervoud(arbeidStapEenheid)}
-              ). Zet dit aan om per product altijd naar boven af te ronden op hele{" "}
+              ). Zet dit aan om per werkzaamheid altijd naar boven af te ronden op hele{" "}
               {arbeidEenheidMeervoud(arbeidStapEenheid)}.
             </span>
           </span>
         </label>
         <p className="border-t border-border pt-4 text-xs text-muted-foreground">
-          Geldt voor {geraaktDoorArbeid} van de {productCounts.totaal} producten — de rest heeft een
+          Geldt voor {geraaktDoorArbeid} van de {productCounts.totaal} werkzaamheden — de rest heeft een
           eigen arbeidstarief.
         </p>
       </CostTypeCard>
@@ -180,11 +180,11 @@ export function CostSettingsForm({
           </Field>
         </FieldRow>
         <p className="text-xs text-muted-foreground">
-          Wijkt het bij een product af (bijv. zware materialen die apart vervoerd moeten worden)?
-          Stel dat per product in bij het bewerken van dat product.
+          Wijkt het bij een werkzaamheid af (bijv. zware stenen die apart vervoerd moeten worden)?
+          Stel dat per werkzaamheid in bij het bewerken ervan.
         </p>
         <p className="border-t border-border pt-4 text-xs text-muted-foreground">
-          Geldt voor {geraaktDoorTransport} van de {productCounts.totaal} producten — de rest heeft
+          Geldt voor {geraaktDoorTransport} van de {productCounts.totaal} werkzaamheden — de rest heeft
           een eigen transportbedrag.
         </p>
       </CostTypeCard>
@@ -211,17 +211,17 @@ export function CostSettingsForm({
           />
         </FieldRow>
         <p className="text-xs text-muted-foreground">
-          Wijkt het bij een product af? Stel dat per product in bij het bewerken van dat product.
+          Wijkt het bij een werkzaamheid af? Stel dat per werkzaamheid in bij het bewerken ervan.
         </p>
         <p className="border-t border-border pt-4 text-xs text-muted-foreground">
-          Geldt voor {geraaktDoorVoorrij} van de {productCounts.totaal} producten — de rest heeft
+          Geldt voor {geraaktDoorVoorrij} van de {productCounts.totaal} werkzaamheden — de rest heeft
           een eigen voorrijbedrag.
         </p>
       </CostTypeCard>
 
       <CostTypeCard
         title="Materiaalkosten"
-        description="Kosten van de materialen die je bij een product instelt."
+        description="Kosten van de materialen die je bij een werkzaamheid instelt."
         enabled={materiaalOn}
         onToggle={setMateriaalOn}
         toggleName="materiaalEnabled"
@@ -229,7 +229,7 @@ export function CostSettingsForm({
         visibleDefault={costSettings.materiaalZichtbaar}
       >
         <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
-          De prijs per materiaal stel je in bij het product zelf — dat is al de volledige prijs die
+          De prijs per materiaal stel je in bij de werkzaamheid zelf — dat is al de volledige prijs die
           je de klant rekent, inclusief jouw marge. Geen apart opslagpercentage meer hier.
         </p>
       </CostTypeCard>
@@ -259,14 +259,14 @@ export function CostSettingsForm({
                 onChange={(e) => setBandbreedteModus(e.target.value as BandbreedteModus)}
               >
                 <option value="GEEN">Geen bandbreedte — één vast bedrag</option>
-                <option value="PER_PRODUCT">Per product — optellen van min/max-prijzen</option>
+                <option value="PER_PRODUCT">Per werkzaamheid — optellen van min/max-prijzen</option>
                 <option value="TOTAAL">Over het totaal — marge op het eindtotaal</option>
               </Select>
             </Field>
           </FieldRow>
           {bandbreedteModus === "PER_PRODUCT" && (
             <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
-              Producten met een bandbreedte-prijs (in te stellen bij het product zelf) tellen mee
+              Werkzaamheden met een bandbreedte-prijs (in te stellen bij de werkzaamheid zelf) tellen mee
               als bandbreedte. Items met een vaste prijs tellen in beide scenario&apos;s hetzelfde
               mee.
             </p>

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { permanentRedirect } from "next/navigation";
+import { isZichtbareDoelgroep } from "@/app/lib/trade-config";
 import { DoelgroepLanding } from "@/app/components/marketing/doelgroep-landing";
 import { getDoelgroep } from "@/app/lib/doelgroepen";
 
@@ -26,5 +28,7 @@ export const metadata: Metadata = {
 };
 
 export default function StratenmakersPage() {
+  // Kostenplan is er alleen nog voor hoveniers: oude vakgebied-pagina\'s sturen door.
+  if (!isZichtbareDoelgroep(doelgroep.slug)) permanentRedirect("/voor/hoveniers");
   return <DoelgroepLanding doelgroep={doelgroep} />;
 }

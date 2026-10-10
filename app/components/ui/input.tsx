@@ -4,16 +4,19 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/app/lib/cn";
 
+// Gedeelde stijl voor alle tekstvelden (Input, DecimalInput, Select, Textarea):
+// rand 1.5px in de aparte invoerrandkleur (>= 3:1 tegen de achtergrond), hoogte
+// 44px en 16px tekst (onder 16px zoomt iOS Safari in), duidelijke focusring.
+const veldBasis =
+  "flex w-full rounded-md border-[1.5px] border-input bg-card px-3 text-base text-foreground placeholder:text-muted-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/35 disabled:opacity-60 aria-[invalid=true]:border-destructive";
+
 export function Input({
   className,
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
-      className={cn(
-        "flex h-11 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
-        className
-      )}
+      className={cn(veldBasis, "h-11", className)}
       {...props}
     />
   );
@@ -36,10 +39,7 @@ export function DecimalInput({
       type="text"
       inputMode="decimal"
       autoComplete="off"
-      className={cn(
-        "flex h-11 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
-        className
-      )}
+      className={cn(veldBasis, "h-11", className)}
       {...props}
     />
   );
@@ -55,10 +55,7 @@ export function PasswordInput({
     <div className="relative">
       <input
         type={visible ? "text" : "password"}
-        className={cn(
-          "flex h-11 w-full rounded-md border border-input bg-card px-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
-          className
-        )}
+        className={cn(veldBasis, "h-11 pr-11", className)}
         {...props}
       />
       <button
@@ -79,10 +76,7 @@ export function Textarea({
 }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
-      className={cn(
-        "flex min-h-20 w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
-        className
-      )}
+      className={cn(veldBasis, "min-h-20 py-2", className)}
       {...props}
     />
   );
@@ -94,7 +88,7 @@ export function Label({
 }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
-      className={cn("text-sm font-medium text-foreground", className)}
+      className={cn("text-sm font-semibold text-foreground", className)}
       {...props}
     />
   );
@@ -106,10 +100,7 @@ export function Select({
 }: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
-      className={cn(
-        "flex h-11 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
-        className
-      )}
+      className={cn(veldBasis, "h-11", className)}
       {...props}
     />
   );

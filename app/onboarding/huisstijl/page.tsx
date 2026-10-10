@@ -15,7 +15,7 @@ export default async function OnboardingHuisstijlPage() {
   return (
     <div className="flex min-h-screen flex-col items-center bg-background px-4 py-12">
       <BrandHeader />
-      <OnboardingStepIndicator step={3} total={3} />
+      <OnboardingStepIndicator step={2} total={4} />
       <div className="w-full max-w-2xl">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-semibold text-foreground">

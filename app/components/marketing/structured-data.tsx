@@ -21,12 +21,12 @@ export function StructuredData() {
         operatingSystem: "Web",
         url: "https://www.kostenplan.nl",
         description:
-          "Platform waarmee vakmensen een online rekentool voor hun website bouwen: klanten berekenen zelf een prijsindicatie, aanvragen komen binnen in een leads-CRM.",
+          "Platform waarmee hoveniers een online rekentool voor hun website bouwen: klanten berekenen zelf een prijsindicatie, aanvragen komen binnen in een leads-CRM.",
         offers: {
           "@type": "Offer",
           price: "0",
           priceCurrency: "EUR",
-          description: "Gratis pakket met tot 10 producten",
+          description: "Gratis pakket met tot 10 werkzaamheden",
         },
       },
     ],

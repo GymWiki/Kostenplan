@@ -90,7 +90,7 @@ function bouwConfig(): CalculatorConfigData {
 export const bestratingTemplate: CalculatorTemplate = {
   id: "bestrating",
   naam: "Bestrating",
-  categorie: "Stratenmaker",
+  categorie: "Hovenier",
   beschrijving: "Oppervlakte, materiaalkeuze en veelgevraagde extra's zoals verwijderen en opsluitbanden.",
   watHetBerekent: "Een prijsindicatie op basis van oppervlakte, gekozen bestrating en extra werkzaamheden.",
   resterendWerk: "Vul je eigen materiaalprijzen in bij de bestratingskeuze — de rest werkt direct.",

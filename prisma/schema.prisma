@@ -631,6 +631,10 @@ model Product {
   // Telt transport één keer mee per project (uit, standaard) in plaats van
   // vermenigvuldigd met de hoeveelheid (aan).
   transportMeeschalend    Boolean @default(false)
+  // Telt transport per (begonnen) werkdag in plaats van één keer per project:
+  // transportbedrag × aantal dagen arbeid. Uit = één keer per klus (standaard).
+  // Zie berekenProductKosten() in app/lib/calculate.ts.
+  transportPerDag         Boolean @default(false)
 
   // Kostenopbouw, blok 4 (voorrijkosten) — zelfde opzet als transport
   // hierboven.
@@ -716,6 +720,9 @@ model MaterialOption {
   // Publieke URL van een foto in Supabase Storage. Optioneel.
   foto                   String?
   actief                 Boolean   @default(true)
+  // Voorbeeldprijs uit een preset (wizard/onboarding): de hovenier heeft deze
+  // prijs nog niet zelf bevestigd. Wordt false zodra de prijs wordt gewijzigd.
+  isVoorbeeld            Boolean   @default(false)
   order                  Int       @default(0)
 
   createdAt DateTime @default(now())

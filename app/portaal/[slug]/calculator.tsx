@@ -48,7 +48,7 @@ import type {
   SubscriptionTier,
 } from "@/app/generated/prisma/client";
 
-type ProductWithDetails = Product & {
+export type ProductWithDetails = Product & {
   materiaalCategorieen: (MaterialCategory & { materialen: MaterialOption[] })[];
   extraOpties: ExtraOption[];
 };
@@ -69,6 +69,28 @@ type Props = {
 // (bijv. na een downgrade vanaf Plus/Pro).
 const STANDAARD_PRIMAIRE_KLEUR = "#15803d";
 const STANDAARD_ACHTERGRONDKLEUR = "#f7faf8";
+
+// Kleuren en lettertype van de klant-rekentool — gedeeld door de calculator
+// zelf en het live klantvoorbeeld in het dashboard (zie
+// app/components/dashboard/klant-voorbeeld.tsx), zodat die nooit uit elkaar
+// lopen. Personalisatie is een Plus/Pro-feature en wordt hier bij elke render
+// opnieuw afgedwongen.
+export function brandStijl(branding: Branding | null, subscriptionTier: SubscriptionTier) {
+  const magPersonaliseren = subscriptionTier !== "GRATIS";
+  const primaireKleur = magPersonaliseren
+    ? (branding?.primaireKleur ?? STANDAARD_PRIMAIRE_KLEUR)
+    : STANDAARD_PRIMAIRE_KLEUR;
+  const achtergrondKleur = magPersonaliseren
+    ? (branding?.achtergrondKleur ?? STANDAARD_ACHTERGRONDKLEUR)
+    : STANDAARD_ACHTERGRONDKLEUR;
+  return {
+    primaireKleur,
+    achtergrondKleur,
+    brandPrimaryForeground: accessibleTextColor(primaireKleur),
+    fontFamily: fontFamilyFor(magPersonaliseren ? (branding?.lettertype ?? "MODERN") : "MODERN"),
+    fontClasses: brandingFontVariables(),
+  };
+}
 
 // Klantvriendelijke weergave van een eenheid, alleen voor deze configurator.
 // "m¹" is vaktaal die een consument niet meteen herkent — in het
@@ -362,14 +384,14 @@ export function Calculator({
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {welkomstTekst ??
-                    "Geef bij producten de gewenste hoeveelheid op. Je ziet direct een schatting van de kosten hiernaast."}
+                    "Geef bij de werkzaamheden de gewenste hoeveelheid op. Je ziet direct een schatting van de kosten hiernaast."}
                 </p>
               </div>
 
               {products.length > 0 && (
                 <section className="flex flex-col gap-3">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Producten
+                    Werkzaamheden
                   </h3>
                   <div className="flex flex-col gap-3">
                     {products.map((product) => (
@@ -477,7 +499,7 @@ function materiaalPrijsWeergave(material: MaterialOption): Bedrag {
   return material.prijs;
 }
 
-function ProductCard({
+export function ProductCard({
   product,
   costSettings,
   qty,
@@ -762,6 +784,8 @@ function eigenProductPrijs(
     arbeidAfronden: costSettings.arbeidAfronden,
     transportBedrag,
     transportMeeschalend: product.transportMeeschalend,
+    transportPerDag: product.transportPerDag,
+    arbeidStapEenheid: costSettings.arbeidStapEenheid,
     transportEnabled: costSettings.transportEnabled,
     voorrijBedrag,
     voorrijMeeschalend: product.voorrijMeeschalend,
@@ -1084,7 +1108,7 @@ function Summary({
 
           {!breakdown.heeftSelectie ? (
             <p className="text-sm text-muted-foreground">
-              Selecteer producten om een schatting te zien.
+              Kies een werkzaamheid om een schatting te zien.
             </p>
           ) : state?.success ? (
             <p className="rounded-lg bg-[var(--brand-primary)]/10 px-3 py-3 text-sm text-foreground">
@@ -1149,7 +1173,7 @@ function Summary({
               </div>
               {heeftOntbrekendeVerplichteMaterialen && (
                 <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning">
-                  Kies bij elk product een verplicht materiaal om een volledige prijsindicatie te
+                  Kies bij elke werkzaamheid een verplicht materiaal om een volledige prijsindicatie te
                   zien{magOfferteAanvragen ? " en een offerte te kunnen aanvragen" : ""}.
                 </p>
               )}

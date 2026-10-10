@@ -6,7 +6,7 @@ import { LegalSection } from "@/app/components/marketing/legal-section";
 export const metadata: Metadata = {
   title: "Algemene Voorwaarden",
   description:
-    "Lees de algemene voorwaarden van Kostenplan, de offertecalculator voor hoveniers en andere vakmensen.",
+    "Lees de algemene voorwaarden van Kostenplan, de rekentool voor hoveniers.",
   alternates: { canonical: "/algemene-voorwaarden" },
 };
 
@@ -36,7 +36,7 @@ export default function AlgemeneVoorwaardenPage() {
           <LegalSection title="2. De Dienst (SaaS)">
             <p>
               Kostenplan biedt een online rekentool en lead-kwalificatiesysteem waarmee
-              vakmensen prijsindicaties kunnen geven aan hun potentiële klanten. Kostenplan
+              hoveniers prijsindicaties kunnen geven aan hun potentiële klanten. Kostenplan
               spant zich in om de applicatie 24/7 beschikbaar te houden, maar garandeert geen
               ononderbroken beschikbaarheid. Onderhoud en updates kunnen leiden tot tijdelijke
               onbeschikbaarheid.
@@ -57,7 +57,7 @@ export default function AlgemeneVoorwaardenPage() {
             <p>
               Kostenplan levert uitsluitend de software om berekeningen en lead-generatie te
               faciliteren. Kostenplan is nimmer partij bij overeenkomsten die voortvloeien uit
-              het gebruik van de tool tussen de gebruiker (de vakman) en diens eindklant.
+              het gebruik van de tool tussen de gebruiker (de hovenier) en diens eindklant.
             </p>
             <p>
               Kostenplan is niet aansprakelijk voor de juistheid van de prijsindicaties,

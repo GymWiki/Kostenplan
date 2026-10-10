@@ -40,7 +40,7 @@ const TOOL_NAV_GROUPS: { titel: string; items: ToolNavItem[] }[] = [
       // app/dashboard/tools/[toolId]/bouwer/page.tsx voor de branch. Altijd
       // zichtbaar, ook vóórdat een tool de engine gebruikt.
       { segment: "bouwer", label: "Bouwer", icon: Wand2 },
-      { segment: "producten", label: "Producten", icon: Package },
+      { segment: "producten", label: "Werkzaamheden", icon: Package },
       { segment: "prijzen", label: "Prijzen", icon: Euro },
       { segment: "uiterlijk", label: "Uiterlijk", icon: Palette },
       { segment: "resultaat", label: "Resultaat", icon: Target },

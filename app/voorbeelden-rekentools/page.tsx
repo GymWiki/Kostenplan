@@ -11,7 +11,7 @@ import { WebsiteCalculatorMockup, type MockupVeld } from "@/app/components/marke
 
 const TITLE = "Voorbeelden van rekentools voor websites";
 const DESCRIPTION =
-  "Bekijk voorbeelden van rekentools voor hoveniers, bouwbedrijven, schuttingbedrijven, kozijnenbedrijven en andere vakmensen.";
+  "Bekijk voorbeelden van rekentools voor hoveniers: tuinaanleg, schutting, bestrating en kunstgras.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -90,29 +90,9 @@ const VOORBEELDEN: Voorbeeld[] = [
     linkLabel: "Bekijk de rekentool voor schuttingbedrijven",
   },
   {
-    siteUrl: "vandijkkozijnen.nl",
-    bedrijfsnaam: "Van Dijk Kozijnen",
-    branche: "Kozijnenbedrijf",
-    productTitel: "Bereken de prijs van je nieuwe kozijnen",
-    velden: [
-      { label: "Aantal kozijnen", waarde: "6" },
-      { label: "Type kozijn", waarde: "Draai-kiep" },
-      { label: "Materiaal", waarde: "Kunststof" },
-      { label: "Glas", waarde: "HR++" },
-      { label: "Montage", waarde: "Inclusief" },
-    ],
-    resultaatLabel: "Indicatie vanaf",
-    resultaatWaarde: "€ 7.850",
-    cta: "Ontvang mijn prijs",
-    tekst:
-      "Van Dijk Kozijnen rekent per kozijn op basis van afmetingen, materiaal en glassoort — een bezoeker die aan het oriënteren is, weet zo al vóór het eerste contact welke orde van grootte hij mag verwachten.",
-    linkHref: "/voor/kozijnen",
-    linkLabel: "Bekijk de rekentool voor kozijnenbedrijven",
-  },
-  {
     siteUrl: "bestratingpro.nl",
     bedrijfsnaam: "Bestrating Pro",
-    branche: "Stratenmaker",
+    branche: "Hovenier",
     productTitel: "Bereken de kosten van je bestrating",
     velden: [
       { label: "Aantal m²", waarde: "60 m²" },
@@ -126,8 +106,8 @@ const VOORBEELDEN: Voorbeeld[] = [
     cta: "Offerte aanvragen",
     tekst:
       "Bestrating Pro toont grondwerk en opsluitbanden als losse regels binnen dezelfde berekening, zodat de klant precies ziet waaruit de prijs is opgebouwd in plaats van alleen een totaalbedrag.",
-    linkHref: "/voor/stratenmakers",
-    linkLabel: "Bekijk de rekentool voor stratenmakers",
+    linkHref: "/voor/hoveniers",
+    linkLabel: "Bekijk de rekentool voor hoveniers",
   },
 ];
 
@@ -224,7 +204,7 @@ export default function VoorbeeldenRekentoolsPage() {
                 Maak jouw eigen rekentool
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                Binnen 5 minuten online, met je eerste 10 producten. Helemaal gratis te starten.
+                Binnen 5 minuten online, met je eerste 10 werkzaamheden. Helemaal gratis te starten.
               </p>
               <div className="relative mt-8 inline-flex">
                 <span

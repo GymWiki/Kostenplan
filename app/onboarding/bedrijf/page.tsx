@@ -26,13 +26,13 @@ export default async function OnboardingBedrijfPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
       <BrandHeader />
-      <OnboardingStepIndicator step={1} total={3} />
+      <OnboardingStepIndicator step={1} total={4} />
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle as="h1" className="text-xl">
             Welkom!
           </CardTitle>
-          <CardDescription>Nog één stap: maak je eerste bedrijf aan om te starten.</CardDescription>
+          <CardDescription>Maak je bedrijf aan. Binnen 2 minuten staat je rekentool klaar.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5 border-b border-border pb-4">

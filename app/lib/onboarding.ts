@@ -29,14 +29,14 @@ export function bouwOnboardingStappen({
     {
       key: "eersteRekentool",
       titel: "Maak je eerste rekentool",
-      beschrijving: "Geef 'm een naam — je richt de rest zo in.",
+      beschrijving: "Geef je rekentool een naam — je richt de rest zo in.",
       href: "/dashboard/tools/nieuw",
       voltooid: heeftRekentool,
     },
     {
       key: "catalogus",
-      titel: "Voeg je eerste product toe",
-      beschrijving: "Zo kunnen klanten direct een prijsindicatie berekenen.",
+      titel: "Zet je eerste werkzaamheid klaar",
+      beschrijving: "Bijvoorbeeld een schutting of bestrating — zo kunnen klanten direct een prijsindicatie berekenen.",
       href: `${eersteToolHref}/producten`,
       voltooid: heeftCatalogusItem,
     },

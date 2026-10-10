@@ -9,7 +9,7 @@ import { Breadcrumbs } from "@/app/components/marketing/breadcrumbs";
 import { GeoAnswer } from "@/app/components/marketing/geo-answer";
 import { FaqSection } from "@/app/components/marketing/faq-section";
 import { RelatedContent } from "@/app/components/marketing/related-content";
-import { DOELGROEPEN, type Doelgroep } from "@/app/lib/doelgroepen";
+import { ZICHTBARE_DOELGROEPEN, type Doelgroep } from "@/app/lib/doelgroepen";
 import { alleContent } from "@/app/lib/content";
 
 // Gedeelde template voor de doelgroep-landingspagina's onder /voor/[slug].
@@ -17,7 +17,7 @@ import { alleContent } from "@/app/lib/content";
 // app/lib/doelgroepen.ts) en krijgt daarmee een unieke URL, title en H1,
 // terwijl de opmaak en de onderlinge cross-links hier centraal blijven.
 export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
-  const andereDoelgroepen = DOELGROEPEN.filter((d) => d.slug !== doelgroep.slug);
+  const andereDoelgroepen = ZICHTBARE_DOELGROEPEN.filter((d) => d.slug !== doelgroep.slug);
   const features = alleContent("features");
   const kennisbank = alleContent("kennisbank").slice(0, 2);
 
@@ -26,7 +26,7 @@ export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
       <SiteHeader />
       <Breadcrumbs
         items={[
-          { label: "Voor vakmensen", href: "/voor" },
+          { label: "Voor hoveniers", href: "/voor/hoveniers" },
           { label: `Voor ${doelgroep.naamMeervoud}`, href: `/voor/${doelgroep.slug}` },
         ]}
       />
@@ -127,8 +127,8 @@ export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
           </div>
         </section>
 
-        {/* ANDERE DOELGROEPEN */}
-        <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+        {/* ANDERE DOELGROEPEN — alleen als er meer dan één doelgroep actief is */}
+        {andereDoelgroepen.length > 0 && <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
           <Reveal className="mx-auto max-w-2xl text-center">
             <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
               Ook een rekentool voor andere vakmensen
@@ -161,7 +161,7 @@ export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
               </Reveal>
             ))}
           </div>
-        </section>
+        </section>}
 
         {/* FINAL CTA */}
         <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
@@ -174,7 +174,7 @@ export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
                 Test het zelf. Binnen 5 minuten online.
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                Voeg je 10 populairste producten toe en deel je rekentool direct
+                Zet je populairste werkzaamheden klaar en deel je rekentool direct
                 met je klanten. Helemaal gratis.
               </p>
               <div className="relative mt-8 inline-flex">

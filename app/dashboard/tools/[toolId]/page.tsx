@@ -12,7 +12,7 @@ import { RecenteAanvragen } from "@/app/components/dashboard/recente-aanvragen";
 export const metadata: Metadata = { title: "Overzicht" };
 
 const KWARTIER_LINKS = [
-  { segment: "producten", label: "Producten", icon: Package, beschrijving: "Wat je klant kan kiezen" },
+  { segment: "producten", label: "Werkzaamheden", icon: Package, beschrijving: "Wat je klant kan kiezen" },
   { segment: "prijzen", label: "Prijzen", icon: Euro, beschrijving: "Arbeid, transport, voorrijkosten, btw" },
   { segment: "uiterlijk", label: "Uiterlijk", icon: Palette, beschrijving: "Logo, kleuren en teksten" },
   { segment: "resultaat", label: "Resultaat", icon: Target, beschrijving: "Prijsweergave en call-to-action" },
@@ -72,7 +72,7 @@ export default async function ToolOverzichtPage({
       )}
 
       <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
-        <StatCard label="Producten" value={productenCount} />
+        <StatCard label="Werkzaamheden" value={productenCount} />
         <StatCard label="Aanvragen" value={leadsCount} />
         <StatCard label="Bezoeken" value={analytics.bezoeken} />
         <StatCard

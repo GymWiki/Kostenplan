@@ -10,7 +10,7 @@ import { alleContent } from "@/app/lib/content";
 
 const TITLE = "Blog";
 const DESCRIPTION =
-  "Verhalen, inzichten en updates over rekentools, offertes en het werk van vakmensen.";
+  "Verhalen, inzichten en updates over rekentools, offertes en het werk van hoveniers.";
 
 export const metadata: Metadata = {
   title: TITLE,

@@ -15,7 +15,7 @@ export function Breadcrumbs({ items, className }: { items: Kruimel[]; className?
         const laatste = i === items.length - 1;
         return (
           <span key={i} className="flex items-center gap-1.5">
-            {i > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" aria-hidden="true" />}
+            {i > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />}
             {item.href && !laatste ? (
               <Link href={item.href} className="text-muted-foreground transition-colors hover:text-foreground">
                 {item.label}

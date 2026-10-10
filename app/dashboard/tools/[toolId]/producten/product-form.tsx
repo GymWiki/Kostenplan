@@ -6,6 +6,7 @@ import { LinkButton } from "@/app/components/ui/button";
 import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import { DecimalInput, Input, Label, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
+import { AdvancedSettings } from "../bouwer/advanced-settings";
 import { IconPicker } from "@/app/components/ui/icon-picker";
 import { SjabloonPicker } from "./velden/sjabloon-picker";
 import { VeldenRenderer, VeldInputEnkel } from "./velden/veld-form";
@@ -92,7 +93,7 @@ function ProductFormSectieNav() {
 
   return (
     <nav
-      aria-label="Secties in dit product"
+      aria-label="Secties in deze werkzaamheid"
       className="sticky top-16 z-20 -mx-1 flex gap-1 overflow-x-auto border-b border-border bg-background/95 px-1 py-2 backdrop-blur"
     >
       {SECTIE_ANKERS.map((sectie) => (
@@ -202,6 +203,16 @@ export function ProductForm({
   );
   const [voorrijMeeschalend, setVoorrijMeeschalend] = useState(product?.voorrijMeeschalend ?? false);
 
+  // "Geavanceerd" staat standaard dicht, behalve als dit werk al iets uit die
+  // sectie gebruikt — zo blijft bestaande configuratie altijd zichtbaar.
+  const geavanceerdStandaardOpen =
+    (product?.sjabloon ?? "ENKELE_HOEVEELHEID") !== "ENKELE_HOEVEELHEID" ||
+    product?.arbeidTariefOverride != null ||
+    product?.transportkostenOverride != null ||
+    product?.voorrijkostenOverride != null ||
+    Boolean(product?.transportMeeschalend) ||
+    Boolean(product?.voorrijMeeschalend);
+
   const instelVelden = instelVeldenVoorSjabloon(sjabloon);
   const sjabloonConfig = coerceVeldWaarden(instelVelden, sjabloonConfigRaw);
   const vasteEenheid = vasteEenheidVoorSjabloon(sjabloon, sjabloonConfig);
@@ -254,6 +265,28 @@ export function ProductForm({
     scheduleAutosave();
   }
 
+  const sjabloonSectie = (
+      <div className="flex flex-col gap-4">
+        <div>
+          <p className="text-sm font-medium text-foreground">Hoe reken je dit af?</p>
+          <p className="text-xs text-muted-foreground">
+            Kies hoe de klant tot een hoeveelheid komt. Dit kun je later altijd aanpassen.
+          </p>
+        </div>
+
+        <SjabloonPicker waarde={sjabloon} onKiesSjabloon={handleKiesSjabloon} />
+
+        {instelVelden.length > 0 && (
+          <VeldenRenderer
+            velden={instelVelden}
+            waarden={sjabloonConfigRaw}
+            onChange={(key, waarde) => setSjabloonConfigRaw((prev) => ({ ...prev, [key]: waarde }))}
+            idPrefix="instel"
+          />
+        )}
+      </div>
+  );
+
   return (
     <div className="flex flex-col gap-8">
       <ProductFormSectieNav />
@@ -264,6 +297,8 @@ export function ProductForm({
         onChange={scheduleAutosave}
         className="flex flex-col gap-5"
       >
+      <input type="hidden" name="sjabloon" value={sjabloon} />
+      <input type="hidden" name="sjabloonConfig" value={JSON.stringify(sjabloonConfig)} />
       {state?.error && (
         <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive" aria-live="polite">
           {state.error}
@@ -271,11 +306,11 @@ export function ProductForm({
       )}
 
       <div id="sectie-basis" className="scroll-mt-28 flex flex-col gap-1.5">
-        <Label htmlFor="naam">Naam van het product</Label>
+        <Label htmlFor="naam">Naam van de werkzaamheid</Label>
         <Input
           id="naam"
           name="naam"
-          placeholder="Bijv. Vloertegels"
+          placeholder="Bijv. Terras aanleggen"
           value={naam}
           onChange={(e) => setNaam(e.target.value)}
           required
@@ -344,7 +379,7 @@ export function ProductForm({
             />
           )}
           <p className="text-xs text-muted-foreground">
-            De hoeveelheid die de klant opgeeft, bijv. m² beplanting of uur timmerwerk.
+            De hoeveelheid die de klant opgeeft, bijv. m² bestrating of strekkende meter haag.
           </p>
         </div>
       )}
@@ -352,7 +387,7 @@ export function ProductForm({
       <div className="flex flex-col gap-1.5">
         <Label>Btw</Label>
         <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
-          {pricingSettings.btwPercentage}% — geldt voor alle producten van deze tool, in te stellen bij{" "}
+          {pricingSettings.btwPercentage}% — geldt voor alle werkzaamheden van deze rekentool, in te stellen bij{" "}
           <Link href={`/dashboard/tools/${toolId}/prijzen`} className="underline hover:text-foreground">
             Prijzen
           </Link>
@@ -360,35 +395,34 @@ export function ProductForm({
         </p>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-md border border-border p-4">
+      <div className="flex flex-col gap-1.5">
+        <p className="text-sm font-medium text-foreground">Icoon</p>
+        <IconPicker name="icoon" defaultValue={product?.icoon} onChange={scheduleAutosave} />
+      </div>
+
+      <div className="flex items-center gap-3 rounded-md border border-border p-3">
+        <Switch name="actief" defaultChecked={product?.actief ?? true} />
         <div>
-          <p className="text-sm font-medium text-foreground">Hoe reken je dit af?</p>
-          <p className="text-xs text-muted-foreground">
-            Kies hoe de klant tot een hoeveelheid komt. Dit kun je later altijd aanpassen.
+          <p className="text-sm font-medium text-foreground">Actief</p>
+          <p className="text-sm text-muted-foreground">
+            Alleen actieve werkzaamheden zijn zichtbaar voor je klanten.
           </p>
         </div>
-
-        <SjabloonPicker waarde={sjabloon} onKiesSjabloon={handleKiesSjabloon} />
-        <input type="hidden" name="sjabloon" value={sjabloon} />
-        <input type="hidden" name="sjabloonConfig" value={JSON.stringify(sjabloonConfig)} />
-
-        {instelVelden.length > 0 && (
-          <VeldenRenderer
-            velden={instelVelden}
-            waarden={sjabloonConfigRaw}
-            onChange={(key, waarde) => setSjabloonConfigRaw((prev) => ({ ...prev, [key]: waarde }))}
-            idPrefix="instel"
-          />
-        )}
       </div>
+
 
       <div id="sectie-kosten" className="scroll-mt-28 flex flex-col gap-4 rounded-md border border-border p-4">
         <p className="text-sm font-medium text-foreground">Kosten</p>
 
         {isArtikelregels ? (
           <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
-            Artikelregels heeft per artikeltype een eigen prijs, ingesteld bij Hoeveelheid hierboven.
+            Artikelregels heeft per artikeltype een eigen prijs, ingesteld bij Geavanceerd hieronder.
           </p>
+        ) : null}
+        {isArtikelregels ? (
+          <AdvancedSettings label="Geavanceerd" defaultOpen>
+            {sjabloonSectie}
+          </AdvancedSettings>
         ) : (
           <>
             <div className="flex flex-col gap-3">
@@ -418,7 +452,7 @@ export function ProductForm({
             </div>
 
             <div className="flex flex-col gap-2 border-t border-border pt-4">
-              <p className="text-sm font-medium text-foreground">1. Materiaalkosten</p>
+              <p className="text-sm font-medium text-foreground">Materiaal</p>
               <MateriaalkostenVeld
                 eenheid={effectieveEenheid}
                 primaireCategorie={primaireCategorie}
@@ -428,7 +462,34 @@ export function ProductForm({
             </div>
 
             <div className="flex flex-col gap-3 border-t border-border pt-4">
-              <p className="text-sm font-medium text-foreground">2. Arbeidskosten</p>
+              <p className="text-sm font-medium text-foreground">Arbeid</p>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="productiviteit">
+                  Hoeveel {unitLabel(effectieveEenheid)} doe je per{" "}
+                  {arbeidEenheidEnkelvoud(pricingSettings.arbeidStapEenheid)}?
+                </Label>
+                <DecimalInput
+                  id="productiviteit"
+                  name="productiviteit"
+                  placeholder="Bijv. 5"
+                  value={productiviteit}
+                  onChange={(e) => setProductiviteit(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Laat leeg als dit werk geen arbeidstijd kost.
+                </p>
+              </div>
+            </div>
+
+            <AdvancedSettings label="Geavanceerd" defaultOpen={geavanceerdStandaardOpen}>
+              <p className="text-xs text-muted-foreground">
+                Niet nodig om te starten. Hier stel je uitzonderingen in voor alleen dit werk.
+                Afwijkende productiviteit, stapgrootte en bandbreedte per materiaal vind je bij elk materiaal hieronder.
+              </p>
+{sjabloonSectie}
+
+              <div className="flex flex-col gap-3">
+              <p className="text-sm font-medium text-foreground">Eigen arbeidstarief</p>
               <OverrideVeld
                 titel="Tarief"
                 name="arbeidTariefOverride"
@@ -440,26 +501,9 @@ export function ProductForm({
                 onWaardeChange={setArbeidTarief}
                 error={state?.fieldErrors?.arbeidTariefOverride}
               />
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="productiviteit">
-                  Hoeveel {unitLabel(effectieveEenheid)} zet je per{" "}
-                  {arbeidEenheidEnkelvoud(pricingSettings.arbeidStapEenheid)}?
-                </Label>
-                <DecimalInput
-                  id="productiviteit"
-                  name="productiviteit"
-                  placeholder="Bijv. 5"
-                  value={productiviteit}
-                  onChange={(e) => setProductiviteit(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Laat leeg als dit product geen arbeidstijd kost.
-                </p>
               </div>
-            </div>
-
             <div className="flex flex-col gap-3 border-t border-border pt-4">
-              <p className="text-sm font-medium text-foreground">3. Transportkosten</p>
+              <p className="text-sm font-medium text-foreground">Transportkosten</p>
               <OverrideVeld
                 titel="Transportkosten"
                 name="transportkostenOverride"
@@ -484,7 +528,7 @@ export function ProductForm({
             </div>
 
             <div className="flex flex-col gap-3 border-t border-border pt-4">
-              <p className="text-sm font-medium text-foreground">4. Voorrijkosten</p>
+              <p className="text-sm font-medium text-foreground">Voorrijkosten</p>
               <OverrideVeld
                 titel="Voorrijkosten"
                 name="voorrijkostenOverride"
@@ -507,6 +551,8 @@ export function ProductForm({
                 Schaalt mee met de hoeveelheid (in plaats van een vaste post per project)
               </label>
             </div>
+
+            </AdvancedSettings>
 
             <div className="border-t border-border pt-4">
               <KostenUitsplitsing
@@ -531,25 +577,10 @@ export function ProductForm({
         )}
       </div>
 
-      <div id="sectie-materialen" className="scroll-mt-28 flex flex-col gap-1.5">
-        <p className="text-sm font-medium text-foreground">Icoon</p>
-        <IconPicker name="icoon" defaultValue={product?.icoon} onChange={scheduleAutosave} />
-      </div>
-
-      <div className="flex items-center gap-3 rounded-md border border-border p-3">
-        <Switch name="actief" defaultChecked={product?.actief ?? true} />
-        <div>
-          <p className="text-sm font-medium text-foreground">Actief</p>
-          <p className="text-sm text-muted-foreground">
-            Alleen actieve producten zijn zichtbaar in het klantenportaal.
-          </p>
-        </div>
-      </div>
-
       </form>
 
       {materialenSectie && (
-        <div className="flex flex-col gap-4 rounded-md border border-border p-4">{materialenSectie}</div>
+        <div id="sectie-materialen" className="scroll-mt-28 flex flex-col gap-4 rounded-md border border-border p-4">{materialenSectie}</div>
       )}
 
       {extraOptiesSectie && (
@@ -561,7 +592,7 @@ export function ProductForm({
           {pending ? "Bezig met opslaan…" : "Wijzigingen worden automatisch opgeslagen"}
         </span>
         <LinkButton href={`/dashboard/tools/${toolId}/producten`} variant="outline" className="shadow-lg">
-          Terug naar producten
+          Terug naar werkzaamheden
         </LinkButton>
       </div>
 

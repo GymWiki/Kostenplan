@@ -83,7 +83,7 @@ export type EnkeleHoeveelheidInvoer = { hoeveelheid: number };
 const enkeleHoeveelheid = {
   id: "ENKELE_HOEVEELHEID" as const,
   label: "Eén hoeveelheid",
-  voorbeeldenTekst: "timmerwerk, snoeiwerk — alles met een vaste eenheidsprijs",
+  voorbeeldenTekst: "haag, graszoden, tuinonderhoud — alles met een vaste prijs per eenheid",
   instelVelden: [] as SjabloonVeld[],
   standaardConfig: {} as EnkeleHoeveelheidConfig,
   // Config-parameter genegeerd — zelfde signatuur als de andere sjablonen
@@ -111,7 +111,7 @@ export type AfmetingenInvoer = { lengte: number; breedte: number; diepte: number
 const afmetingen = {
   id: "AFMETINGEN" as const,
   label: "Lengte × breedte",
-  voorbeeldenTekst: "bestrating, gazon, vloeren",
+  voorbeeldenTekst: "terras, gazon, kunstgras",
   instelVelden: [
     { key: "metDiepte", soort: "janee", label: "Ook diepte meenemen (m³ in plaats van m²)", standaardWaarde: false },
   ] as SjabloonVeld[],
@@ -169,7 +169,7 @@ function ruimteOppervlak(config: RuimtesConfig, ruimte: RuimteRegel): number {
 const ruimtes = {
   id: "RUIMTES" as const,
   label: "Per ruimte",
-  voorbeeldenTekst: "schilderwerk, stucwerk, vloerverwarming",
+  voorbeeldenTekst: "meerdere tuinzones of vakken, elk apart gemeten",
   instelVelden: [
     { key: "telVloerMee", soort: "janee", label: "Vloeroppervlak meetellen", standaardWaarde: false },
     { key: "telPlafondMee", soort: "janee", label: "Plafondoppervlak meetellen", standaardWaarde: false },
@@ -196,7 +196,7 @@ const ruimtes = {
       label: "Ruimtes",
       toevoegLabel: "Ruimte toevoegen",
       kolommen: [
-        { key: "naam", soort: "tekst", label: "Naam", placeholder: "Bijv. Woonkamer" },
+        { key: "naam", soort: "tekst", label: "Naam", placeholder: "Bijv. Voortuin" },
         { key: "lengte", soort: "getal", label: "Lengte", eenheid: "meter", min: 0 },
         { key: "breedte", soort: "getal", label: "Breedte", eenheid: "meter", min: 0 },
         { key: "hoogte", soort: "getal", label: "Hoogte", eenheid: "meter", min: 0 },
@@ -241,7 +241,7 @@ export type ArtikelregelsInvoer = { regels: ArtikelRegel[] };
 const artikelregels = {
   id: "ARTIKELREGELS" as const,
   label: "Per stuk",
-  voorbeeldenTekst: "kozijnen, kastjes, ramen",
+  voorbeeldenTekst: "poorten, tuinhuisjes, lichtpunten — per stuk geprijsd",
   instelVelden: [
     {
       key: "artikelTypes",
@@ -249,7 +249,7 @@ const artikelregels = {
       label: "Artikeltypes",
       toevoegLabel: "Artikeltype toevoegen",
       kolommen: [
-        { key: "naam", soort: "tekst", label: "Naam", placeholder: "Bijv. Draaikiepraam" },
+        { key: "naam", soort: "tekst", label: "Naam", placeholder: "Bijv. Tuinpoort" },
         { key: "prijsPerEenheid", soort: "getal", label: "Prijs", eenheid: "€", min: 0 },
         {
           key: "berekening",

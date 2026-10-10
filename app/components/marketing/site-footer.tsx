@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import { Logo } from "@/app/components/ui/logo";
-import { DOELGROEPEN } from "@/app/lib/doelgroepen";
+import { ZICHTBARE_DOELGROEPEN } from "@/app/lib/doelgroepen";
 import { alleContent } from "@/app/lib/content";
 
 const snelleLinks = [
@@ -33,8 +33,7 @@ export function SiteFooter() {
     { href: "/features", label: "Alle functionaliteiten" },
   ];
   const doelgroepLinks = [
-    ...DOELGROEPEN.map((d) => ({ href: `/voor/${d.slug}`, label: `Voor ${d.naamMeervoud}` })),
-    { href: "/voor", label: "Alle vakgebieden" },
+    ...ZICHTBARE_DOELGROEPEN.map((d) => ({ href: `/voor/${d.slug}`, label: `Voor ${d.naamMeervoud}` })),
   ];
 
   return (
@@ -73,7 +72,7 @@ export function SiteFooter() {
 
           <FooterColumn title="Product" links={productLinks} />
           <FooterColumn title="Functionaliteiten" links={featureLinks} />
-          <FooterColumn title="Voor wie" links={doelgroepLinks} />
+          <FooterColumn title="Voor hoveniers" links={doelgroepLinks} />
           <FooterColumn title="Snelle links" links={snelleLinks} />
           <FooterColumn title="Juridisch" links={juridischeLinks} />
         </div>

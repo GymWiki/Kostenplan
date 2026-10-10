@@ -15,7 +15,7 @@ const HOMEPAGE_FAQS: Faq[] = [
   {
     vraag: "Kan ik zelf een rekentool maken zonder programmeerkennis?",
     antwoord:
-      "Ja. Je kiest een sjabloon voor jouw vakgebied of begint helemaal vanaf 0, en stelt daarna via een visuele bouwer je eigen vragen, prijzen en voorwaarden in — zonder code of technische kennis.",
+      "Ja. Je vinkt aan welke werkzaamheden je doet, zoals schutting of bestrating, of begint helemaal vanaf 0, en stelt daarna via een visuele bouwer je eigen vragen, prijzen en voorwaarden in — zonder code of technische kennis.",
   },
   {
     vraag: "Kan ik de rekentool op mijn eigen website plaatsen?",
@@ -25,7 +25,7 @@ const HOMEPAGE_FAQS: Faq[] = [
   {
     vraag: "Hoe voeg ik mijn eigen prijzen en tarieven toe?",
     antwoord:
-      "Na het aanmaken van je account stel je eenmalig je kosteninstellingen in (uurtarief, voorrijkosten, materiaalmarge en btw). Daarna voeg je je eigen producten met hun prijzen toe. De rekentool berekent automatisch een prijsindicatie op basis van jouw tarieven — nooit die van iemand anders.",
+      "Na het aanmaken van je account stel je eenmalig je kosteninstellingen in (uurtarief, voorrijkosten, materiaalmarge en btw). Daarna loop je de voorbeeldprijzen van je werkzaamheden na en pas je ze aan. De rekentool berekent automatisch een prijsindicatie op basis van jouw tarieven — nooit die van iemand anders.",
   },
   {
     vraag: "Wat gebeurt er nadat een klant een offerte aanvraagt via mijn rekentool?",
@@ -35,7 +35,7 @@ const HOMEPAGE_FAQS: Faq[] = [
   {
     vraag: "Is er een gratis pakket of een proefperiode nodig?",
     antwoord:
-      "Je gebruikt Kostenplan volledig gratis met tot 10 producten, zonder tijdslimiet en zonder creditcard. Wil je onbeperkt producten, je eigen huisstijl of het leads-overzicht? Dan upgrade je naar Plus of Pro.",
+      "Je gebruikt Kostenplan volledig gratis met tot 10 werkzaamheden, zonder tijdslimiet en zonder creditcard. Wil je een onbeperkt aantal werkzaamheden, je eigen huisstijl of het leads-overzicht? Dan upgrade je naar Plus of Pro.",
   },
 ];
 

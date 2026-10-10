@@ -25,7 +25,7 @@ export function CompanyForm({ cancelHref = "/dashboard" }: { cancelHref?: string
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="naam">Bedrijfsnaam</Label>
-        <Input id="naam" name="naam" placeholder="Bijv. Jansen Klussenbedrijf" required autoFocus />
+        <Input id="naam" name="naam" placeholder="Bijv. Jansen Hoveniersbedrijf" required autoFocus />
         {state?.fieldErrors?.naam && (
           <p className="text-sm text-destructive">{state.fieldErrors.naam}</p>
         )}
