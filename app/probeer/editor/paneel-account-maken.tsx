@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { TurnstileVeld } from "@/app/components/auth/turnstile-veld";
 import { Button } from "@/app/components/ui/button";
@@ -17,7 +18,7 @@ import {
 // Account maken zonder de editor te verlaten: Google, of e-mail met een link.
 // Je voorbeeld blijft precies zoals het is. Bestaat het adres of Google-account
 // al, dan kies je zelf wat er met het voorbeeld gebeurt.
-export function PaneelAccountMaken({ googleBestaat, googleFout }: { googleBestaat: boolean; googleFout: boolean }) {
+export function PaneelAccountMaken({ googleBestaat, googleFout, overnameMogelijk }: { googleBestaat: boolean; googleFout: boolean; overnameMogelijk: boolean }) {
   const [emailState, emailAction, emailBezig] = useActionState<KoppelState, FormData>(koppelEmailAction, null);
   const [bestaandState, bestaandAction, bestaandBezig] = useActionState<KoppelState, FormData>(inloggenVoorOvernameAction, null);
   const [later, setLater] = useState(false);
@@ -36,7 +37,17 @@ export function PaneelAccountMaken({ googleBestaat, googleFout }: { googleBestaa
         </p>
       )}
 
-      {bestaat ? (
+      {bestaat && !overnameMogelijk ? (
+        <section aria-labelledby="bestaat-titel" className="flex flex-col gap-3 rounded-lg border border-border p-3">
+          <h3 id="bestaat-titel" className="font-bold text-foreground">
+            Dit account bestaat al
+          </h3>
+          <p className="text-sm text-muted-foreground">Log in op je bestaande account. Dit voorbeeld kunnen we dan niet meenemen.</p>
+          <Link href="/login" className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary-hover">
+            Inloggen
+          </Link>
+        </section>
+      ) : bestaat ? (
         <section aria-labelledby="bestaat-titel" className="flex flex-col gap-3 rounded-lg border border-border p-3">
           <h3 id="bestaat-titel" className="font-bold text-foreground">
             Dit account bestaat al

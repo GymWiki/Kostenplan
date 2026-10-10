@@ -1,7 +1,9 @@
+// Optionele variabelen: zonder Upstash val ik terug op het geheugen.
 // Eenvoudige limiet per sleutel (bijv. "gast-start:<ip-hash>"). Met Upstash
 // Redis (Vercel Marketplace → KV) als UPSTASH_REDIS_REST_URL en
 // UPSTASH_REDIS_REST_TOKEN gezet zijn; anders in het geheugen van de
 // serverless-instantie (werkt in dev en is een zachte rem, geen harde limiet).
+let waarschuwingGegeven = false;
 const geheugen = new Map<string, { telling: number; tot: number }>();
 
 export type LimietUitslag = { toegestaan: boolean; resterend: number };
@@ -31,6 +33,10 @@ export async function beperk(sleutel: string, max: number, vensterSeconden: numb
     }
   }
 
+  if (!waarschuwingGegeven) {
+    waarschuwingGegeven = true;
+    console.warn("Rate limit: UPSTASH_REDIS_REST_URL/TOKEN ontbreken; limieten gelden per serverless-instantie (zachte rem).");
+  }
   const nu = Date.now();
   const rij = geheugen.get(sleutel);
   if (!rij || rij.tot <= nu) {
@@ -43,4 +49,5 @@ export async function beperk(sleutel: string, max: number, vensterSeconden: numb
 
 export function resetGeheugenLimieten() {
   geheugen.clear();
+  waarschuwingGegeven = false;
 }

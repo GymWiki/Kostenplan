@@ -6,6 +6,7 @@ import { prisma } from "@/app/lib/prisma";
 import { RekentoolEditor } from "@/app/dashboard/tools/[toolId]/editor/rekentool-editor";
 import { laadEditorProps } from "@/app/dashboard/tools/[toolId]/editor/laad-editor";
 import { TarievenProvider } from "@/app/dashboard/tools/[toolId]/tarieven-context";
+import { gastOvernameActief } from "@/app/lib/gast-token";
 import { PaneelAccountMaken } from "./paneel-account-maken";
 
 export const metadata: Metadata = { title: "Je rekentool", robots: { index: false, follow: false } };
@@ -45,7 +46,7 @@ export default async function GastEditorPage({
         gast={{
           verlooptOpTekst: `Je voorbeeld blijft ${dagenOver} ${dagenOver === 1 ? "dag" : "dagen"} bewaard.`,
           logoMislukt: sp.logo === "mislukt",
-          accountPaneel: <PaneelAccountMaken googleBestaat={sp.bestaat === "google"} googleFout={sp.fout === "google"} />,
+          accountPaneel: <PaneelAccountMaken googleBestaat={sp.bestaat === "google"} googleFout={sp.fout === "google"} overnameMogelijk={gastOvernameActief()} />,
         }}
       />
     </TarievenProvider>

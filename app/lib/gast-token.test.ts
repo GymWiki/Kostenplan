@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { controleerGastBewijs, maakGastBewijs } from "./gast-token";
+import { controleerGastBewijs, gastOvernameActief, maakGastBewijs } from "./gast-token";
 
 beforeAll(() => {
   process.env.GAST_TOKEN_SECRET = "test-geheim";
@@ -18,5 +18,16 @@ describe("gast-bewijs", () => {
     expect(controleerGastBewijs(`${vals}.${s}`, 1)).toBeNull();
     expect(controleerGastBewijs(`${p}.xxx`, 1)).toBeNull();
     expect(controleerGastBewijs(undefined)).toBeNull();
+  });
+});
+
+describe("zonder GAST_TOKEN_SECRET", () => {
+  it("is overname uitgeschakeld en crasht niets", () => {
+    const oud = process.env.GAST_TOKEN_SECRET;
+    delete process.env.GAST_TOKEN_SECRET;
+    expect(gastOvernameActief()).toBe(false);
+    expect(controleerGastBewijs("a.b")).toBeNull();
+    process.env.GAST_TOKEN_SECRET = oud;
+    expect(gastOvernameActief()).toBe(true);
   });
 });

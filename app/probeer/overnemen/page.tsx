@@ -4,13 +4,14 @@ import { redirect } from "next/navigation";
 import { requireVolledigAccount } from "@/app/lib/dal";
 import { adminFontClasses } from "@/app/lib/admin-fonts";
 import { GAST_BEWIJS_COOKIE } from "@/app/lib/gast";
-import { controleerGastBewijs } from "@/app/lib/gast-token";
+import { controleerGastBewijs, gastOvernameActief } from "@/app/lib/gast-token";
 import { OvernameFormulier } from "./overname-formulier";
 
 export const metadata: Metadata = { title: "Voorbeeld toevoegen", robots: { index: false, follow: false } };
 
 export default async function OvernemenPage() {
   await requireVolledigAccount();
+  if (!gastOvernameActief()) redirect("/dashboard");
   const bewijs = controleerGastBewijs((await cookies()).get(GAST_BEWIJS_COOKIE)?.value);
   if (!bewijs) redirect("/dashboard");
   return (
