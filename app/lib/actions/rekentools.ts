@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireActiveCompany, requireActiveTool } from "@/app/lib/dal";
+import { canCreateTool, requireActiveCompany, requireActiveTool } from "@/app/lib/dal";
+import { generateUniqueToolSlug } from "@/app/lib/slug";
 import { prisma } from "@/app/lib/prisma";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
 import type { Prisma } from "@/app/generated/prisma/client";
@@ -180,4 +181,32 @@ export async function kopieerWerkzaamheidAction(
   });
   ververs(doelToolId, company, tool.slug);
   return { ok: true, productId: kopie.id };
+}
+
+// "+ Nieuwe rekentool": alleen een naam, daarna direct de editor in (met de
+// presetkiezer open). Volgt de bedrijfstarieven en begint als concept.
+export async function maakRekentoolAction(naam: string): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  const { company } = await requireActiveCompany();
+  const schoon = naam.trim();
+  if (schoon.length < 2) return { ok: false, error: "Geef je rekentool een naam van minstens 2 tekens." };
+  if (schoon.length > 80) return { ok: false, error: "Die naam is te lang (maximaal 80 tekens)." };
+  const tier = effectiveTier(company);
+  if (!(await canCreateTool(company.id, tier))) {
+    const limiet = PLAN_LIMITS[tier].maxActiveTools;
+    return { ok: false, error: `Je hebt de limiet van ${limiet} rekentool${limiet === 1 ? "" : "s"} voor je huidige pakket bereikt. Upgrade om meer rekentools te maken.` };
+  }
+  const slug = await generateUniqueToolSlug(company.id, schoon);
+  const order = await prisma.tool.count({ where: { companyId: company.id } });
+  // Tarieven gelden voor al je rekentools: neem ze over van de eerste.
+  const bestaand = await prisma.costSettings.findFirst({
+    where: { tool: { companyId: company.id, deletedAt: null } },
+    orderBy: { tool: { order: "asc" } },
+    select: { arbeidStapEenheid: true, arbeidTariefUur: true, arbeidTariefDagdeel: true, arbeidTariefDag: true, voorrijTarief: true, transportTarief: true },
+  });
+  const tool = await prisma.tool.create({
+    data: { companyId: company.id, naam: schoon, icoon: "", slug, order, costSettings: { create: bestaand ?? {} }, branding: { create: {} } },
+    select: { id: true },
+  });
+  revalidatePath("/dashboard/tools");
+  return { ok: true, id: tool.id };
 }

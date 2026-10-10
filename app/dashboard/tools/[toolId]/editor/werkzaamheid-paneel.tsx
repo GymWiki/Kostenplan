@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { Clock, Copy, Layers, Plus, Ruler, Trash2, Truck, X } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { DropdownMenu } from "@/app/components/ui/dropdown-menu";
@@ -215,7 +216,11 @@ export function WerkzaamheidPaneel({
           />
           {draft.methode === null && (
             <p className="rounded-md bg-muted px-3 py-2 text-sm text-foreground">
-              Deze werkzaamheid rekent op een eigen manier. Die instelling blijft zoals ze is.
+              Deze werkzaamheid rekent op een eigen manier. Die instelling blijft zoals ze is. Wijzigen kan in de{" "}
+              <Link href={`/dashboard/tools/${toolId}/producten/${product.id}/uitgebreid`} className="font-semibold underline">
+                uitgebreide weergave
+              </Link>
+              .
             </p>
           )}
         </Field>

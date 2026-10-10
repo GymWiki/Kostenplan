@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
-import { Blocks } from "lucide-react";
+import { redirect } from "next/navigation";
 import { requireActiveTool, requireDraftCalculatorConfig, getMateriaalOptiesVoorEngineVelden, getOnderdeelBibliotheekVoorCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { parseCalculatorConfig, alleVeldenVanConfig } from "@/app/lib/calculator-engine";
 import { resolveCostSettings } from "@/app/lib/tools";
 import { effectiveTier } from "@/app/lib/subscription";
-import { Card, CardContent } from "@/app/components/ui/card";
-import { LinkButton } from "@/app/components/ui/button";
 import { CalculatorBouwerLazy } from "./calculator-bouwer-lazy";
 import { OnderdelenBouwerLazy } from "./onderdelen-bouwer-lazy";
 
@@ -33,7 +31,7 @@ export default async function CalculatorBouwerPage({
   const productCount = await prisma.product.count({ where: { toolId } });
 
   if (productCount > 0 && tool.activeCalculatorConfigId == null) {
-    return <BouwerNietInGebruikMelding toolId={toolId} />;
+    redirect(`/dashboard/tools/${toolId}`);
   }
 
   const { company, draft } = await requireDraftCalculatorConfig(toolId);
@@ -89,28 +87,5 @@ export default async function CalculatorBouwerPage({
       btwPercentage={btwPercentage}
       materiaalOpties={materiaalOpties}
     />
-  );
-}
-
-function BouwerNietInGebruikMelding({ toolId }: { toolId: string }) {
-  return (
-    <Card className="mx-auto max-w-lg">
-      <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-          <Blocks className="h-5 w-5" />
-        </span>
-        <div>
-          <p className="font-medium text-foreground">Deze rekentool is opgebouwd met Werkzaamheden</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Bouwer is een ouder, vragen-gebaseerd systeem dat deze tool niet gebruikt — je prijzen,
-            vragen en berekeningen beheer je hier via Werkzaamheden. Er is dus niets om hier in te
-            richten.
-          </p>
-        </div>
-        <LinkButton href={`/dashboard/tools/${toolId}/producten`} size="sm" className="mt-1">
-          Naar Werkzaamheden
-        </LinkButton>
-      </CardContent>
-    </Card>
   );
 }

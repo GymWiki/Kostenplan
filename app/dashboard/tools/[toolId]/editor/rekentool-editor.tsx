@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Copy, Globe, Monitor, Pencil, Play, Smartphone, Trash2, X } from "lucide-react";
+import { ArrowLeft, Copy, Globe, Monitor, Pencil, Play, Settings2, Smartphone, Trash2, X } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
 import { BottomSheet } from "@/app/components/ui/bottom-sheet";
 import { Button } from "@/app/components/ui/button";
@@ -301,6 +301,7 @@ export function RekentoolEditor(props: EditorProps) {
         void duplicateToolAction(fd);
       },
     },
+    { label: "Btw en andere prijsinstellingen", icon: Settings2, onSelect: () => router.push(`/dashboard/tools/${toolId}/prijzen`) },
     { label: "Verwijderen", icon: Trash2, destructive: true, onSelect: () => setVerwijderTool(true) },
   ];
   const mobielMenu = [
@@ -327,6 +328,16 @@ export function RekentoolEditor(props: EditorProps) {
           className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-1 text-sm font-semibold text-foreground hover:underline"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Alle onderdelen
+        </button>
+      )}
+      {paneel === "start" && isAangepast && (
+        <button
+          type="button"
+          onClick={() => setPaneel("aangepast")}
+          className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-example bg-example/15 px-3 py-2 text-left text-sm font-semibold text-foreground"
+        >
+          Deze rekentool is op maat gebouwd (Aangepast)
+          <span className="underline">Bekijken</span>
         </button>
       )}
       {paneel === "start" && (
