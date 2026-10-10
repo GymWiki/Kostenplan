@@ -26,7 +26,7 @@ export function StructuredData() {
           "@type": "Offer",
           price: "0",
           priceCurrency: "EUR",
-          description: "Gratis pakket met tot 10 werkzaamheden",
+          description: "Gratis pakket met tot 10 onderdelen",
         },
       },
     ],

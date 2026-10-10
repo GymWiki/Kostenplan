@@ -37,7 +37,7 @@ export function productiviteitVoorStapEenheid(
 // Zelfde mechanisme als een preset, maar met een lege (naamloze) start.
 export const EIGEN_WERKZAAMHEID: HovenierPreset = {
   id: "eigen",
-  naam: "Eigen werkzaamheid",
+  naam: "Eigen onderdeel",
   icoon: "Shovel",
   rekenmethode: "m2",
   eenheid: "m2",
@@ -45,7 +45,7 @@ export const EIGEN_WERKZAAMHEID: HovenierPreset = {
   productiviteitPerDag: 0,
   productiviteitVraag: "Hoeveel m² doe je per dag?",
   voorbeeldHoeveelheid: 20,
-  uitleg: "Iets anders? Stel je eigen werkzaamheid in.",
+  uitleg: "Iets anders? Stel je eigen onderdeel in.",
 };
 
 // De wizardvraag staat in de preset "per dag"; hier in de eenheid waarin de

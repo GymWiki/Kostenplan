@@ -204,7 +204,7 @@ export default function VoorbeeldenRekentoolsPage() {
                 Maak jouw eigen rekentool
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                Binnen 5 minuten online, met je eerste 10 werkzaamheden. Helemaal gratis te starten.
+                Binnen 5 minuten online, met je eerste 10 onderdelen. Helemaal gratis te starten.
               </p>
               <div className="relative mt-8 inline-flex">
                 <span

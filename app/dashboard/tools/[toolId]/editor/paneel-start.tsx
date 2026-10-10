@@ -68,10 +68,10 @@ export function PaneelStart({
 
       <section aria-labelledby="wz-lijst-titel">
         <h2 id="wz-lijst-titel" className="mb-2 text-sm font-bold text-foreground">
-          Je werkzaamheden
+          Je onderdelen
         </h2>
         {werkzaamheden.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nog geen werkzaamheden. Voeg je eerste toe, bijvoorbeeld bestrating of een schutting.</p>
+          <p className="text-sm text-muted-foreground">Nog geen onderdelen. Voeg je eerste toe, bijvoorbeeld bestrating of een schutting.</p>
         ) : (
           <ul className="flex flex-col gap-1.5">
             {werkzaamheden.map((w, i) => (
@@ -115,7 +115,7 @@ export function PaneelStart({
           onClick={onToevoegen}
           className="mt-3 flex min-h-11 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-input px-4 text-sm font-semibold text-foreground hover:bg-secondary"
         >
-          + Werkzaamheid toevoegen
+          + Onderdeel toevoegen
         </button>
       </section>
     </div>

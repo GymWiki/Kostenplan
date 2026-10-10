@@ -16,9 +16,9 @@ export const helpContent = {
   },
   producten: {
     opbouw: {
-      title: "Opbouw van een werkzaamheid",
+      title: "Opbouw van een onderdeel",
       description:
-        "De prijs van een werkzaamheid wordt berekend uit vier blokken: materiaalkosten, arbeidskosten, transportkosten en voorrijkosten. Je vult per blok in wat je normaal rekent — de rekentool telt dit automatisch bij elkaar op tot een totaalprijs voor de klant.",
+        "De prijs van een onderdeel wordt berekend uit vier blokken: materiaalkosten, arbeidskosten, transportkosten en voorrijkosten. Je vult per blok in wat je normaal rekent — de rekentool telt dit automatisch bij elkaar op tot een totaalprijs voor de klant.",
     },
     materiaalBandbreedte: {
       title: "Bandbreedte in plaats van vaste prijs",
@@ -28,7 +28,7 @@ export const helpContent = {
     extraOptieType: {
       title: "Per eenheid of per stuk",
       description:
-        "“Per eenheid” schaalt automatisch mee met de hoeveelheid van de werkzaamheid. “Per stuk” heeft een eigen, los aantal dat de klant apart invult.",
+        "“Per eenheid” schaalt automatisch mee met de hoeveelheid van het onderdeel. “Per stuk” heeft een eigen, los aantal dat de klant apart invult.",
     },
   },
   kosteninstellingen: {
@@ -50,7 +50,7 @@ export const helpContent = {
     btw: {
       title: "BTW-percentage",
       description:
-        "Het percentage dat wordt opgeteld bovenop je totaalprijs. Dit geldt voor alle werkzaamheden in je rekentool.",
+        "Het percentage dat wordt opgeteld bovenop je totaalprijs. Dit geldt voor alle onderdelen in je rekentool.",
     },
   },
   abonnement: {
@@ -69,7 +69,7 @@ export const helpContent = {
     multiCompany: {
       title: "Meerdere bedrijven",
       description:
-        "Je kunt meerdere bedrijven beheren met één account. Wissel tussen bedrijven via de bedrijvenknop bovenin — elk bedrijf heeft zijn eigen werkzaamheden, branding en instellingen.",
+        "Je kunt meerdere bedrijven beheren met één account. Wissel tussen bedrijven via de bedrijvenknop bovenin — elk bedrijf heeft zijn eigen onderdelen, branding en instellingen.",
     },
   },
   leads: {
@@ -88,7 +88,7 @@ export const helpContent = {
     companySwitcher: {
       title: "Bedrijf wisselen",
       description:
-        "Klik hier om te wisselen tussen de bedrijven die aan jouw account gekoppeld zijn. Elk bedrijf heeft zijn eigen werkzaamheden, branding en instellingen.",
+        "Klik hier om te wisselen tussen de bedrijven die aan jouw account gekoppeld zijn. Elk bedrijf heeft zijn eigen onderdelen, branding en instellingen.",
     },
   },
 } as const satisfies HelpTree;

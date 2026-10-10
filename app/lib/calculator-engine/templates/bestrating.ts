@@ -73,7 +73,7 @@ function bouwConfig(): CalculatorConfigData {
     ],
     stappen: [
       { id: "afmetingen", titel: "Afmetingen & materiaal", veldIds: [AFMETING_VELD_ID, TYPE_BESTRATING_VELD_ID] },
-      { id: "extras", titel: "Extra werkzaamheden", veldIds: ["oudeBestratingVerwijderen", "ondergrondVoorbereiden", "opsluitbanden"] },
+      { id: "extras", titel: "Extra onderdelen", veldIds: ["oudeBestratingVerwijderen", "ondergrondVoorbereiden", "opsluitbanden"] },
     ],
     resultaatInstellingen: {
       weergave: "RANGE",
@@ -92,7 +92,7 @@ export const bestratingTemplate: CalculatorTemplate = {
   naam: "Bestrating",
   categorie: "Hovenier",
   beschrijving: "Oppervlakte, materiaalkeuze en veelgevraagde extra's zoals verwijderen en opsluitbanden.",
-  watHetBerekent: "Een prijsindicatie op basis van oppervlakte, gekozen bestrating en extra werkzaamheden.",
+  watHetBerekent: "Een prijsindicatie op basis van oppervlakte, gekozen bestrating en extra onderdelen.",
   resterendWerk: "Vul je eigen materiaalprijzen in bij de bestratingskeuze — de rest werkt direct.",
   icoon: "Grid3x3",
   calculatorType: "OPPERVLAKTE",

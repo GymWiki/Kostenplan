@@ -35,7 +35,7 @@ export function bouwOnboardingStappen({
     },
     {
       key: "catalogus",
-      titel: "Zet je eerste werkzaamheid klaar",
+      titel: "Zet je eerste onderdeel klaar",
       beschrijving: "Bijvoorbeeld een schutting of bestrating — zo kunnen klanten direct een prijsindicatie berekenen.",
       href: `${eersteToolHref}?paneel=toevoegen`,
       voltooid: heeftCatalogusItem,

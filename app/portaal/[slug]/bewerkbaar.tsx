@@ -174,7 +174,7 @@ export function WerkzaamheidToevoegen() {
       onClick={haak.onToevoegen}
       className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-blue-500/60 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-500/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
     >
-      + Werkzaamheid toevoegen
+      + Onderdeel toevoegen
     </button>
   );
 }

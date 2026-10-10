@@ -285,7 +285,7 @@ export function KostenUitsplitsing({
   return (
     <div className="flex flex-col gap-3 rounded-md border border-dashed border-primary/40 bg-primary/5 p-4">
       <p className="text-sm font-medium text-foreground">
-        {naam || "Deze werkzaamheid"} van {hoeveelheid} {unitLabel(eenheid)}
+        {naam || "Dit onderdeel"} van {hoeveelheid} {unitLabel(eenheid)}
       </p>
       <div className="flex flex-col gap-1 text-sm tabular-nums">
         {regels.map((regel, index) => (

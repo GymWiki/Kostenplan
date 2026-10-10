@@ -14,7 +14,7 @@ import type { ArbeidStapEenheid } from "@/app/generated/prisma/client";
 export type AndereRekentool = { id: string; naam: string; werkzaamheden: { id: string; naam: string }[] };
 
 const IETS_ANDERS: WerkzaamheidDraft = {
-  naam: "Nieuwe werkzaamheid",
+  naam: "Nieuwe onderdeel",
   methode: "M2",
   productiviteit: "",
   transportPerDag: false,
@@ -65,7 +65,7 @@ export function PaneelToevoegen({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h2 className="text-lg font-bold text-foreground">Werkzaamheid toevoegen</h2>
+        <h2 className="text-lg font-bold text-foreground">Onderdeel toevoegen</h2>
         <p className="text-sm text-muted-foreground">Kies een startpunt. De prijzen zijn voorbeelden die je daarna zelf aanpast.</p>
       </div>
       {fout && (
@@ -125,7 +125,7 @@ export function PaneelToevoegen({
             </select>
           </Field>
           {gekozenTool && gekozenTool.werkzaamheden.length === 0 && (
-            <p className="text-sm text-muted-foreground">Deze rekentool heeft nog geen werkzaamheden.</p>
+            <p className="text-sm text-muted-foreground">Deze rekentool heeft nog geen onderdelen.</p>
           )}
           <ul className="flex flex-col gap-1.5">
             {gekozenTool?.werkzaamheden.map((w) => (

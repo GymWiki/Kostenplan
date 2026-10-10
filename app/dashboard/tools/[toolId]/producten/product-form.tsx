@@ -93,7 +93,7 @@ function ProductFormSectieNav() {
 
   return (
     <nav
-      aria-label="Secties in deze werkzaamheid"
+      aria-label="Secties in dit onderdeel"
       className="sticky top-16 z-20 -mx-1 flex gap-1 overflow-x-auto border-b border-border bg-background/95 px-1 py-2 backdrop-blur"
     >
       {SECTIE_ANKERS.map((sectie) => (
@@ -306,7 +306,7 @@ export function ProductForm({
       )}
 
       <div id="sectie-basis" className="scroll-mt-28 flex flex-col gap-1.5">
-        <Label htmlFor="naam">Naam van de werkzaamheid</Label>
+        <Label htmlFor="naam">Naam van het onderdeel</Label>
         <Input
           id="naam"
           name="naam"
@@ -405,7 +405,7 @@ export function ProductForm({
         <div>
           <p className="text-sm font-medium text-foreground">Actief</p>
           <p className="text-sm text-muted-foreground">
-            Alleen actieve werkzaamheden zijn zichtbaar voor je klanten.
+            Alleen actieve onderdelen zijn zichtbaar voor je klanten.
           </p>
         </div>
       </div>
@@ -592,7 +592,7 @@ export function ProductForm({
           {pending ? "Bezig met opslaan…" : "Wijzigingen worden automatisch opgeslagen"}
         </span>
         <LinkButton href={`/dashboard/tools/${toolId}/producten`} variant="outline" className="shadow-lg">
-          Terug naar werkzaamheden
+          Terug naar onderdelen
         </LinkButton>
       </div>
 

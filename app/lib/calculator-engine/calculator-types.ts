@@ -49,8 +49,8 @@ const product: CalculatorTypeDefinitie = {
 
 const werkzaamheden: CalculatorTypeDefinitie = {
   id: "WERKZAAMHEDEN",
-  label: "Werkzaamheden",
-  beschrijving: "Een prijs op basis van gewerkte tijd, met optionele extra werkzaamheden.",
+  label: "Onderdelen",
+  beschrijving: "Een prijs op basis van gewerkte tijd, met optionele extra onderdelen.",
   voorbeeldenTekst: "timmerwerk, klussen, onderhoud",
   aanbevolenVeldsoorten: ["NUMMER", "JA_NEE", "DROPDOWN"],
 };

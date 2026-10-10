@@ -255,7 +255,7 @@ export default function RekentoolOpEigenWebsitePage() {
                 Bouw je rekentool en plaats hem vandaag nog
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                Gratis starten met tot 10 werkzaamheden, geen creditcard nodig.
+                Gratis starten met tot 10 onderdelen, geen creditcard nodig.
               </p>
               <div className="relative mt-8 inline-flex">
                 <span

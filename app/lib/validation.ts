@@ -317,7 +317,7 @@ const leadSnapshotLineSchema = z.object({
 // prijsindicatie die de vakman zelf te zien krijgt in zijn eigen CRM) — ziet
 // alleen toe op de VORM van de data, niet op herberekening server-side.
 export const leadSnapshotSchema = z.object({
-  regels: z.array(leadSnapshotLineSchema).min(1, "Selecteer minimaal één werkzaamheid"),
+  regels: z.array(leadSnapshotLineSchema).min(1, "Selecteer minimaal één onderdeel"),
   arbeidskosten: z.number(),
   materiaalkosten: z.number(),
   transportkosten: z.number(),

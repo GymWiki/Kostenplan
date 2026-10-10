@@ -415,7 +415,7 @@ export function Calculator({
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {welkomstTekst ??
-                    "Geef bij de werkzaamheden de gewenste hoeveelheid op. Je ziet direct een schatting van de kosten hiernaast."}
+                    "Geef bij de onderdelen de gewenste hoeveelheid op. Je ziet direct een schatting van de kosten hiernaast."}
                 </p>
               </div>
               </Bewerkbaar>
@@ -423,7 +423,7 @@ export function Calculator({
               {products.length > 0 && (
                 <section className="flex flex-col gap-3">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Werkzaamheden
+                    Onderdelen
                   </h3>
                   <div className="flex flex-col gap-3">
                     {products.map((product) => (
@@ -1157,7 +1157,7 @@ function Summary({
 
           {!breakdown.heeftSelectie ? (
             <p className="text-sm text-muted-foreground">
-              Kies een werkzaamheid om een schatting te zien.
+              Kies een onderdeel om een schatting te zien.
             </p>
           ) : state?.success ? (
             <p className="rounded-lg bg-[var(--brand-primary)]/10 px-3 py-3 text-sm text-foreground">
@@ -1222,7 +1222,7 @@ function Summary({
               </div>
               {heeftOntbrekendeVerplichteMaterialen && (
                 <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning">
-                  Kies bij elke werkzaamheid een verplicht materiaal om een volledige prijsindicatie te
+                  Kies bij elke onderdeel een verplicht materiaal om een volledige prijsindicatie te
                   zien{magOfferteAanvragen ? " en een offerte te kunnen aanvragen" : ""}.
                 </p>
               )}

@@ -27,7 +27,7 @@ export async function createMaterialCategoryAction(
     select: { id: true, toolId: true },
   });
   if (!product) {
-    return { error: "Werkzaamheid niet gevonden" };
+    return { error: "Onderdeel niet gevonden" };
   }
 
   const count = await prisma.materialCategory.count({ where: { productId } });

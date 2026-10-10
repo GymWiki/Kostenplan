@@ -76,7 +76,7 @@ export function werkzaamheidNaarOnderdeel(
   { metVasteKosten = false }: { metVasteKosten?: boolean } = {}
 ): { onderdeel: OnderdeelConfig; beperkingen: string[] } {
   const { draft } = w;
-  if (!draft.methode) throw new Error("Een werkzaamheid zonder rekenmethode past niet in het standaardmodel.");
+  if (!draft.methode) throw new Error("Een onderdeel zonder rekenmethode past niet in het standaardmodel.");
   const eenheid = kortEenheid(methodeNaarInstelling(draft.methode).eenheid);
   const Q = hoeveelheidVariabele(w);
   const beperkingen: string[] = [];

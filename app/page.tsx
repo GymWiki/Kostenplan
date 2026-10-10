@@ -202,7 +202,7 @@ export default function Home() {
                 <StapCard
                   nummer={1}
                   icon={LayoutTemplate}
-                  titel="Kies je werkzaamheden"
+                  titel="Kies je onderdelen"
                   tekst="Vink aan wat je doet, zoals schutting, bestrating of kunstgras. Je rekentool staat in 2 minuten klaar."
                 />
               </Reveal>

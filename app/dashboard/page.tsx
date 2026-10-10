@@ -51,7 +51,7 @@ export default async function DashboardPage() {
 
       <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
         <StatCard icon={Wrench} label="Rekentools" value={toolsCount} href="/dashboard/tools" />
-        <StatCard icon={Package} label="Werkzaamheden (alle rekentools)" value={productsCount} href="/dashboard/tools" />
+        <StatCard icon={Package} label="Onderdelen (alle rekentools)" value={productsCount} href="/dashboard/tools" />
         <StatCard
           icon={Users}
           label="Leads"
@@ -76,7 +76,7 @@ export default async function DashboardPage() {
             <div>
               <p className="font-semibold text-foreground">Mijn rekentools</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Elke rekentool heeft zijn eigen werkzaamheden, prijzen, huisstijl en publieke link — beheer ze
+                Elke rekentool heeft zijn eigen onderdelen, prijzen, huisstijl en publieke link — beheer ze
                 allemaal op één plek.
               </p>
             </div>

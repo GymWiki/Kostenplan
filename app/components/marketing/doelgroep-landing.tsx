@@ -174,7 +174,7 @@ export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
                 Test het zelf. Binnen 5 minuten online.
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                Zet je populairste werkzaamheden klaar en deel je rekentool direct
+                Zet je populairste onderdelen klaar en deel je rekentool direct
                 met je klanten. Helemaal gratis.
               </p>
               <div className="relative mt-8 inline-flex">

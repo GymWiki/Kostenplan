@@ -60,9 +60,9 @@ const FAQS = [
       "Ja. Je stelt zelf in welke vragen worden gesteld — bijvoorbeeld afmetingen, materiaalkeuze of extra opties — en welke prijsregel bij elk antwoord hoort. Je kunt vragen ook voorwaardelijk maken, zodat bijvoorbeeld een vraag over een poort alleen verschijnt wanneer daar bij een eerdere vraag voor gekozen is.",
   },
   {
-    vraag: "Kan ik verschillende werkzaamheden en prijzen instellen?",
+    vraag: "Kan ik verschillende onderdelen en prijzen instellen?",
     antwoord:
-      "Ja. Je kunt meerdere werkzaamheden combineren binnen één rekentool — bijvoorbeeld bestrating, een schutting en kunstgras samen in een tuinaanleg-calculator — elk met een eigen prijsopbouw op basis van jouw tarieven.",
+      "Ja. Je kunt meerdere onderdelen combineren binnen één rekentool — bijvoorbeeld bestrating, een schutting en kunstgras samen in een tuinaanleg-calculator — elk met een eigen prijsopbouw op basis van jouw tarieven.",
   },
   {
     vraag: "Vervangt een offerte calculator mijn offerteprogramma?",

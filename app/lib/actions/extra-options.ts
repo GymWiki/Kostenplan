@@ -64,7 +64,7 @@ export async function createExtraOptionAction(
     select: { id: true, toolId: true },
   });
   if (!product) {
-    return { error: "Werkzaamheid niet gevonden" };
+    return { error: "Onderdeel niet gevonden" };
   }
 
   const fotoResult = await resolveFoto(company.id, formData, null);
