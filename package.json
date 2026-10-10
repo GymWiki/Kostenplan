@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:branding-extract": "tsx scripts/test-branding-extract.ts",
+    "audit:onderdelen": "tsx scripts/audit-onderdelen.ts",
     "postinstall": "prisma generate",
     "db:deploy": "prisma migrate deploy",
     "vercel-build": "prisma migrate deploy && next build"

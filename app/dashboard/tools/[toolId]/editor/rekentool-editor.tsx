@@ -388,7 +388,7 @@ export function RekentoolEditor(props: EditorProps) {
           limiet={website.limiet}
         />
       )}
-      {paneel === "aangepast" && <PaneelAangepast toolId={toolId} />}
+      {paneel === "aangepast" && <PaneelAangepast toolId={toolId} onOmgezet={() => window.location.assign(`/dashboard/tools/${toolId}`)} />}
     </div>
   );
 

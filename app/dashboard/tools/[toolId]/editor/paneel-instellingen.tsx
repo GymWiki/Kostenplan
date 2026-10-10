@@ -5,11 +5,14 @@ import { ExternalLink } from "lucide-react";
 import { CopyButton } from "@/app/components/dashboard/copy-link";
 import { ProFeatureLock } from "@/app/components/dashboard/pro-feature-lock";
 import { Badge } from "@/app/components/ui/badge";
-import { LinkButton } from "@/app/components/ui/button";
+import { Button, LinkButton } from "@/app/components/ui/button";
 import { Field } from "@/app/components/ui/field";
 import { Input, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { slaAanvraagPaneelOpAction, slaResultaatPaneelOpAction } from "@/app/lib/actions/rekentools";
+import { bekijkOmzettingAction, zetOmNaarStandaardblokkenAction } from "@/app/lib/actions/omzetten";
+import { formatCurrency } from "@/app/lib/format";
+import type { RekentoolAnalyse } from "@/app/lib/rekentool-analyse";
 import { PublicerenActions } from "../publiceren/publiceren-actions";
 import { EmbedSettingsForm } from "../embed/embed-settings-form";
 import { EmbedTutorialTabs } from "../embed/embed-tutorial-tabs";
@@ -202,15 +205,112 @@ export function PaneelWebsite({
   );
 }
 
-export function PaneelAangepast({ toolId }: { toolId: string }) {
+export function PaneelAangepast({ toolId, onOmgezet }: { toolId: string; onOmgezet: () => void }) {
+  const [analyse, setAnalyse] = useState<RekentoolAnalyse | "laden">("laden");
+  const [bevestig, setBevestig] = useState(false);
+  const [bezig, setBezig] = useState(false);
+  const [fout, setFout] = useState<string | null>(null);
+
+  useEffect(() => {
+    let weg = false;
+    void bekijkOmzettingAction(toolId).then((a) => {
+      if (!weg) setAnalyse(a);
+    });
+    return () => {
+      weg = true;
+    };
+  }, [toolId]);
+
+  async function omzetten() {
+    setBezig(true);
+    setFout(null);
+    const r = await zetOmNaarStandaardblokkenAction(toolId);
+    setBezig(false);
+    if (r.ok) onOmgezet();
+    else setFout(r.error);
+  }
+
+  const lijst = analyse !== "laden" && analyse.soort === "ANALYSE" ? analyse.onderdelen : [];
+  const kanAlles = lijst.length > 0 && lijst.every((o) => o.classificatie.soort === "STANDAARD" || o.classificatie.kanOmzetten);
+
   return (
     <div className="flex flex-col gap-4">
-      <Kop titel="Aangepaste rekentool" uitleg="Deze rekentool is op maat gebouwd en rekent op zijn eigen manier." />
-      <p className="rounded-md bg-muted px-3 py-2 text-sm text-foreground">
-        Hij blijft precies zo rekenen als nu. Wil je werkzaamheden met materialen en werktempo zoals in je andere rekentools? Maak dan een nieuwe rekentool of voeg
-        werkzaamheden toe in een bestaande.
-      </p>
-      <LinkButton href={`/dashboard/tools/${toolId}/bouwer`} variant="outline" className="h-11 self-start">
+      <Kop titel="Aangepast" uitleg="Deze rekentool is op maat gebouwd en rekent op zijn eigen manier. Hij blijft precies zo rekenen." />
+
+      {analyse === "laden" && <p className="text-sm text-muted-foreground">Even kijken wat erin zit…</p>}
+      {analyse !== "laden" && analyse.soort === "NIET_OMZETBAAR" && <p className="rounded-md bg-muted px-3 py-2 text-sm text-foreground">{analyse.reden}</p>}
+
+      {lijst.map((o) => (
+        <section key={o.onderdeelId} className="rounded-xl border border-border bg-card p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="min-w-0 flex-1 font-bold text-foreground">{o.naam}</h3>
+            <Badge variant={o.classificatie.soort === "STANDAARD" ? "success" : "warning"}>
+              {o.classificatie.soort === "STANDAARD" ? "Past in standaardblokken" : "Aangepast"}
+            </Badge>
+          </div>
+          {o.classificatie.soort === "AANGEPAST" && (
+            <>
+              <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground">
+                {o.classificatie.samenvatting.map((r) => (
+                  <li key={r}>{r}</li>
+                ))}
+              </ul>
+              {o.classificatie.kanOmzetten ? (
+                <div className="mt-3">
+                  <p className="text-sm font-semibold text-foreground">Zo verandert de prijs bij omzetten</p>
+                  <ul className="mt-1 flex flex-col gap-1 text-sm tabular-nums">
+                    {o.classificatie.verschillen.map((v) => (
+                      <li key={v.beschrijving} className="flex flex-wrap justify-between gap-x-3">
+                        <span className="min-w-0 text-muted-foreground">{v.beschrijving}</span>
+                        <span className="text-foreground">
+                          {formatCurrency(v.oud)} → <strong>{formatCurrency(v.nieuw)}</strong>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-muted-foreground">Dit deel heeft een eigen opzet en kan niet worden omgezet.</p>
+              )}
+            </>
+          )}
+        </section>
+      ))}
+
+      {lijst.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {fout && (
+            <p role="alert" className="text-sm font-medium text-destructive">
+              {fout}
+            </p>
+          )}
+          {!bevestig ? (
+            <Button type="button" variant="outline" className="h-11 self-start" disabled={!kanAlles} onClick={() => setBevestig(true)}>
+              Omzetten naar standaardblokken
+            </Button>
+          ) : (
+            <div role="alertdialog" aria-labelledby="omzet-titel" className="rounded-lg border border-border p-3">
+              <p id="omzet-titel" className="font-semibold text-foreground">
+                Omzetten met de prijzen hierboven?
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Je rekentool rekent daarna met werkzaamheden. Je leads blijven bewaard. Voorrijkosten en transport tellen vanaf dan per werkzaamheid mee.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <Button type="button" className="h-11" disabled={bezig} onClick={() => void omzetten()}>
+                  {bezig ? "Omzetten…" : "Ja, omzetten"}
+                </Button>
+                <Button type="button" variant="outline" className="h-11" onClick={() => setBevestig(false)}>
+                  Nee, laat zo
+                </Button>
+              </div>
+            </div>
+          )}
+          {!kanAlles && <p className="text-sm text-muted-foreground">Omzetten kan pas als alle delen in de standaardblokken passen.</p>}
+        </div>
+      )}
+
+      <LinkButton href={`/dashboard/tools/${toolId}/bouwer`} variant="ghost" className="h-11 self-start">
         Op maat bewerken
       </LinkButton>
     </div>
