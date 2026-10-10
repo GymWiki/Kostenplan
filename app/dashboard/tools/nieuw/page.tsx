@@ -4,6 +4,7 @@ import { CALCULATOR_TEMPLATES } from "@/app/lib/calculator-engine/templates";
 import { MODULAIRE_CALCULATOR_TEMPLATES } from "@/app/lib/calculator-engine/templates-modulair";
 import { onderdeelTemplateById } from "@/app/lib/calculator-engine/templates-onderdeel";
 import { Breadcrumbs } from "@/app/components/dashboard/breadcrumbs";
+import { isZichtbaarSjabloon } from "@/app/lib/trade-config";
 import { StartpuntKiezer } from "./startpunt-kiezer";
 
 export const metadata: Metadata = { title: "Nieuwe rekentool" };
@@ -11,7 +12,7 @@ export const metadata: Metadata = { title: "Nieuwe rekentool" };
 export default async function NieuweToolPage() {
   await requireActiveCompany();
 
-  const vlakkeTemplates = CALCULATOR_TEMPLATES.map(({ id, naam, categorie, beschrijving, watHetBerekent, resterendWerk, icoon }) => ({
+  const vlakkeTemplates = CALCULATOR_TEMPLATES.filter((t) => isZichtbaarSjabloon(t.categorie)).map(({ id, naam, categorie, beschrijving, watHetBerekent, resterendWerk, icoon }) => ({
     id,
     soort: "vlak" as const,
     naam,
@@ -22,7 +23,7 @@ export default async function NieuweToolPage() {
     icoon,
   }));
 
-  const modulaireTemplates = MODULAIRE_CALCULATOR_TEMPLATES.map((t) => ({
+  const modulaireTemplates = MODULAIRE_CALCULATOR_TEMPLATES.filter((t) => isZichtbaarSjabloon(t.categorie)).map((t) => ({
     id: t.id,
     soort: "modulair" as const,
     naam: t.naam,
