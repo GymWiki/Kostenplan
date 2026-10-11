@@ -4,8 +4,7 @@ import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import { Reveal } from "@/app/components/ui/reveal";
-import { SiteHeader } from "@/app/components/marketing/site-header";
-import { SiteFooter } from "@/app/components/marketing/site-footer";
+import { MarketingShell } from "@/app/components/landing/marketing-shell";
 import { Breadcrumbs } from "@/app/components/marketing/breadcrumbs";
 import { GeoAnswer } from "@/app/components/marketing/geo-answer";
 import { FaqSection } from "@/app/components/marketing/faq-section";
@@ -74,8 +73,7 @@ export default function RekentoolTemplatesPage() {
   }));
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <SiteHeader />
+    <MarketingShell>
       <Breadcrumbs items={[{ label: "Rekentool templates", href: "/rekentool-templates" }]} />
 
       <main id="main-content" className="flex-1">
@@ -232,8 +230,6 @@ export default function RekentoolTemplatesPage() {
           </Reveal>
         </section>
       </main>
-
-      <SiteFooter />
-    </div>
+    </MarketingShell>
   );
 }

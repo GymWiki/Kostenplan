@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import "./landing.css";
 
 // Eén variabele grotesk voor koppen en tekst (Geist), Geist Mono voor maatlabels en
 // getallen in tekeningen. Twee bestanden in plaats van drie. Zie docs/landing-design.md.

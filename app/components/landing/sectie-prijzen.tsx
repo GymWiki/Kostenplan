@@ -6,16 +6,17 @@ import { PRIJZEN } from "@/app/lib/subscription";
 // Sectie 9: vergelijkingstabel met een maand/jaar-schakelaar die zonder
 // JavaScript werkt (twee radioknoppen + CSS :has). Prijzen en limieten komen
 // uit app/lib/subscription.ts, dezelfde bron als de betaling.
-export function SectiePrijzen() {
+export function SectiePrijzen({ hoofdkop = false }: { hoofdkop?: boolean }) {
+  const Kop = hoofdkop ? "h1" : "h2";
   return (
     <section id="prijzen" aria-labelledby="h-prijzen" className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
       <div className="group/prijs">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <Positie nr="09" label="Prijzen" />
-            <h2 id="h-prijzen" className="mt-4 text-4xl font-semibold leading-[1.02] sm:text-5xl">
+            <Kop id="h-prijzen" className="mt-4 text-4xl font-semibold leading-[1.02] sm:text-5xl">
               Wat Kostenplan kost
-            </h2>
+            </Kop>
             <p className="mt-3 text-base text-lp-inkt-2">
               Laatst bijgewerkt: <time dateTime={LAATST_BIJGEWERKT.iso}>{LAATST_BIJGEWERKT.tekst}</time>. Maandelijks opzegbaar.
             </p>

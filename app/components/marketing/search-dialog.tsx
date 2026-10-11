@@ -23,7 +23,7 @@ export function SearchDialog() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Doorzoek de kennisbank"
-        className="flex h-10 items-center gap-2 rounded-md border border-border bg-secondary/40 px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        className="flex h-10 w-10 items-center justify-center gap-2 rounded-full border border-border bg-secondary/40 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:w-auto sm:px-4"
       >
         <Search className="h-4 w-4" />
         <span className="hidden sm:inline">Zoeken…</span>

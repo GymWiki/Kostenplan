@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { Logo } from "@/app/components/ui/logo";
 import { LinkButton } from "@/app/components/ui/button";
+import { lpFontClasses } from "@/app/components/landing/fonts";
 
 // Vangt elke notFound()/onbekende route af die geen eigen not-found.tsx
 // heeft — met name /portaal/[slug] met een onbekende slug, de drukste
@@ -10,7 +11,7 @@ import { LinkButton } from "@/app/components/ui/button";
 // bewust generieke Kostenplan-branding i.p.v. tenant-specifiek.
 export default function NotFound() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-4 py-12 text-center">
+    <div data-lp className={`lp ${lpFontClasses} lp-licht flex min-h-screen flex-col items-center justify-center gap-6 px-4 py-12 text-center`}>
       <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-foreground">
         <Logo />
         Kostenplan
@@ -27,7 +28,7 @@ export default function NotFound() {
           </p>
         </div>
       </div>
-      <LinkButton href="/" variant="secondary">
+      <LinkButton href="/" className="rounded-full">
         Naar de homepage
       </LinkButton>
     </div>

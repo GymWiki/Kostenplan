@@ -200,3 +200,8 @@
 .lp input[type="range"]:hover::-webkit-slider-thumb {
   transform: scale(1.08);
 }
+
+/* Hergebruikte app-componenten (kaarten, knoppen, velden) krijgen binnen de landingsstijl zachtere hoeken. */
+.lp .rounded-xl.border.bg-card {
+  border-radius: 1.5rem;
+}

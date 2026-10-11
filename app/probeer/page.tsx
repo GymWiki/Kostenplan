@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { SiteHeader } from "@/app/components/marketing/site-header";
-import { SiteFooter } from "@/app/components/marketing/site-footer";
+import { MarketingShell } from "@/app/components/landing/marketing-shell";
 import { normaliseerSite } from "@/app/lib/site";
 import { ProbeerFormulier } from "./probeer-formulier";
 
@@ -26,8 +25,7 @@ export default async function ProbeerPage({ searchParams }: { searchParams: Prom
   const p = await searchParams;
   const site = normaliseerSite(eerste(p.site));
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <SiteHeader />
+    <MarketingShell>
       <main id="main-content" className="mx-auto w-full max-w-2xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
         <h1 className="text-3xl font-bold leading-tight text-foreground sm:text-4xl">Maak gratis je rekentool</h1>
         <p className="mt-3 text-lg text-muted-foreground">Je ziet hem meteen zoals je klant hem ziet. Geen account nodig.</p>
@@ -35,7 +33,6 @@ export default async function ProbeerPage({ searchParams }: { searchParams: Prom
           <ProbeerFormulier siteStart={site} />
         </div>
       </main>
-      <SiteFooter />
-    </div>
+    </MarketingShell>
   );
 }

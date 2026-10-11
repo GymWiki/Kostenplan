@@ -19,6 +19,7 @@ import { SectieVertrouwen } from "@/app/components/landing/sectie-vertrouwen";
 import { SectiePrijzen } from "@/app/components/landing/sectie-prijzen";
 import { SectieVragen } from "@/app/components/landing/sectie-vragen";
 import { SectieAfsluiter } from "@/app/components/landing/sectie-afsluiter";
+import { GoogleDataSection } from "@/app/components/marketing/google-data-section";
 import { DEFINITIE, KOPREGEL, WEBSITEBOUWERS } from "@/app/lib/landing/feiten";
 
 const TITLE = "Prijscalculator voor hoveniers | Kostenplan";
@@ -46,7 +47,7 @@ const link = "font-semibold underline decoration-lp-bos-700 decoration-2 underli
 
 export default function Home() {
   return (
-    <div className={`lp ${lpFontClasses} flex min-h-screen flex-col`}>
+    <div data-lp className={`lp ${lpFontClasses} flex min-h-screen flex-col`}>
       <LandingSchema />
       <LpHeader />
 
@@ -153,6 +154,9 @@ export default function Home() {
 
         {/* 11 · AFSLUITER */}
         <SectieAfsluiter />
+
+        {/* Uitleg over Google-gegevens (vereist voor de Google OAuth-verificatie van "Inloggen met Google") */}
+        <GoogleDataSection />
       </main>
 
       <LpFooter />
