@@ -1,8 +1,10 @@
+import { after } from "next/server";
 import { canCreateTool, canPublishTool, requireActiveTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { getToolEmbedCode, getToolUrl } from "@/app/lib/url";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
 import { parseEmbedConfig, parseLeadFormConfig, parseResultaatConfig } from "@/app/lib/tools";
+import { blobGeconfigureerd } from "@/app/lib/snapshot/opslag";
 import type { EditorProps } from "./rekentool-editor";
 
 const GELDIGE_PANELEN = ["uiterlijk", "resultaat", "aanvraag", "website", "toevoegen", "aangepast", "account"];
@@ -45,6 +47,15 @@ export async function laadEditorProps(toolId: string, paneel: string | undefined
     magEmbedden ? getToolEmbedCode(toolId, tool.naam, embedConfig) : Promise.resolve(null),
   ]);
 
+  // Liep een eerdere publicatie vast (bijv. opslag even onbereikbaar)? Dan
+  // proberen we het nu stilletjes opnieuw, zonder dat de editor erop wacht.
+  if (tool.snapshotVuil && blobGeconfigureerd()) {
+    after(async () => {
+      const { publiceerMetHerhaling } = await import("@/app/lib/snapshot/publiceer");
+      await publiceerMetHerhaling(toolId);
+    });
+  }
+
   const startPaneel = paneel && (GELDIGE_PANELEN.includes(paneel) || paneel.startsWith("werkzaamheid:")) ? paneel : "start";
 
   return {
@@ -69,5 +80,6 @@ export async function laadEditorProps(toolId: string, paneel: string | undefined
     anderen: andereTools.map((t) => ({ id: t.id, naam: t.naam, werkzaamheden: t.products })),
     magNieuweTool,
     startPaneel,
+    publicatie: { actief: blobGeconfigureerd(), vuil: tool.snapshotVuil, fout: tool.snapshotFout },
   };
 }

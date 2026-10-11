@@ -15,6 +15,11 @@ export default async function proxy(request: NextRequest) {
   // Het uitproberen zonder account (/probeer) werkt volledig in de browser en
   // raakt Supabase niet. Alleen het overnemen na het inloggen vraagt een sessie.
   const pad = request.nextUrl.pathname;
+  // De embed op de website van een hovenier raakt geen sessie en mag dus nooit
+  // op Supabase Auth wachten.
+  if (pad.startsWith("/embed/")) {
+    return NextResponse.next({ request });
+  }
   if (pad.startsWith("/demo/") || ((pad === "/probeer" || pad.startsWith("/probeer/")) && !pad.startsWith("/probeer/importeren"))) {
     return NextResponse.next({ request });
   }

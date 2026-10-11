@@ -46,8 +46,8 @@ is een bevroren kopie van die configuratie voldoende om te kunnen rekenen.
 
 1. Client: `Calculator` → `useActionState(createLeadAction)`.
 2. Server action `createLeadAction` (`app/lib/actions/leads.ts`): valideert
-   (zod), haalt de tool op (database), berekent de prijs **opnieuw op de
-   server** uit de database-instellingen, schrijft `Lead` + snapshot.
+   (zod), haalt de tool op (database) en schrijft `Lead` + de door de client
+   meegestuurde prijs-snapshot (de server rekent niet opnieuw na).
 3. Opslag: tabel `Lead` (Postgres/Supabase).
 4. E-mail: bestaat niet. De hovenier ziet de lead in het dashboard.
 
@@ -79,3 +79,45 @@ is een bevroren kopie van die configuratie voldoende om te kunnen rekenen.
 4. **Vercel Blob** is nieuw; zonder `BLOB_READ_WRITE_TOKEN` valt publiceren
    terug op "niet gepubliceerd" en de embed op de database (het huidige
    gedrag), zodat niets stukgaat.
+
+## Fase 1 — Gepubliceerde snapshot (database-onafhankelijke embed)
+
+Wat is er gebouwd:
+
+- `app/lib/snapshot/` — type (`RekentoolSnapshot`), pure bouwfunctie
+  (`bouw.ts`, getest), opslag (`opslag.ts`), publicatie (`publiceer.ts`) en
+  planning (`plan.ts`).
+- Het snapshot-bestand bevat alles om te rekenen en te tonen: producten,
+  materialen, prijzen, tarieven (al samengevoegd met de accountstandaarden),
+  thema, teksten en alleen de contactgegevens die de hovenier zelf op de
+  rekentool toont. Geen bedrijfs-id, geen betaalgegevens, geen
+  rij-tijdstempels; het inlog-e-mailadres staat er alleen in als "toon
+  e-mailadres" aanstaat. De ids van producten/materialen blijven staan: de
+  rekentool gebruikt ze als sleutel.
+- Opslag in Vercel Blob (publiek, CDN):
+  - `s/<toolId>/v<versie>.json` — onveranderlijk, `max-age` 1 jaar.
+  - `s/<toolId>/latest.json` — stabiele verwijzing, `max-age` 60 s.
+  Eerst het versiebestand, dan pas `latest`.
+- Wanneer wordt er gepubliceerd? Elke schrijfactie via Prisma op Tool,
+  Branding, CostSettings, Product, MaterialCategory, MaterialOption,
+  ExtraOption, CalculatorConfig of (relevante velden van) Company plant een
+  publicatie **na het antwoord** aan de hovenier (`after()`), met 400 ms demping
+  en drie pogingen met oplopende wachttijd. Dit zit als Prisma-extensie in
+  `app/lib/prisma.ts`, zodat geen enkele bestaande actie kan worden vergeten.
+  Opslaan faalt of wacht dus nooit op publiceren.
+- Mislukt het publiceren, dan staat `Tool.snapshotVuil` aan. De editor toont dan
+  "Nog niet gepubliceerd" met "Opnieuw proberen"; openen van de editor en de
+  dagelijkse controle proberen het ook stilletjes opnieuw.
+- Inhoud ongewijzigd (zelfde hash) = niet opnieuw schrijven.
+- `/embed/<toolId>` leest uitsluitend de snapshot (Blob, anders de
+  Cloudflare-spiegel). Alleen als er nog geen snapshot is, valt de pagina terug
+  op de database (en publiceert dan meteen). De pagina is 60 s gecachet
+  (`revalidate`) en wordt bij elke publicatie direct ververst.
+- `proxy.ts` slaat `/embed/*` over: de embed wacht niet meer op Supabase Auth.
+- Backfill: `GET /api/cron/snapshots` (met `Authorization: Bearer $CRON_SECRET`)
+  publiceert maximaal 20 tools zonder snapshot of met fout per aanroep; de
+  migratie zet bestaande tools op "vuil". Vercel Cron draait dit dagelijks
+  (`vercel.json`) en roep het na de uitrol handmatig aan tot `resterend: 0`.
+
+Zonder `BLOB_READ_WRITE_TOKEN` gebeurt er niets nieuws: de embed leest uit de
+database zoals voorheen.

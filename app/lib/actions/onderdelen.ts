@@ -37,7 +37,7 @@ import type { Prisma } from "@/app/generated/prisma/client";
 // zelfde `findFirst`-met-relatie-in-de-where-idioom als
 // upsertProductKeuzeOptiesAction in calculator-config.ts.
 async function kloonProductKeuzeVelden(
-  tx: Prisma.TransactionClient,
+  tx: Pick<typeof prisma, "product" | "materialCategory" | "materialOption">,
   toolId: string,
   companyId: string,
   velden: CalculatorField[]
