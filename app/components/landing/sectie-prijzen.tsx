@@ -87,7 +87,7 @@ export function SectiePrijzen() {
               <td />
               {PAKKETTEN.map((p) => (
                 <td key={p.id} className={`px-1.5 py-4 sm:px-4 ${p.id === "PLUS" ? "bg-lp-bos-100" : ""}`}>
-                  <CtaLink href={p.id === "GRATIS" ? "/probeer" : "/registreren"} bron="prijzen" actie="pakket-kiezen" pakket={p.id} stijl={p.id === "PLUS" ? "oker" : "lijn"} className="min-h-11 w-full px-1 text-sm sm:text-base">
+                  <CtaLink href={p.id === "GRATIS" ? "/probeer" : "/registreren"} bron="prijzen" actie="pakket-kiezen" pakket={p.id} stijl={p.id === "PLUS" ? "primair" : "lijn"} className="min-h-11 w-full px-1 text-sm sm:text-base">
                     {p.id === "GRATIS" ? "Begin" : "Kies"}
                     <span className="sr-only"> met {p.naam}</span>
                   </CtaLink>
@@ -102,7 +102,7 @@ export function SectiePrijzen() {
           Jaarlijks: Plus {eur(PRIJZEN.PLUS.JAARLIJKS)} per jaar, Pro {eur(PRIJZEN.PRO.JAARLIJKS)} per jaar. Je kunt altijd eerst een voorbeeld bouwen; je kiest pas later een pakket.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4 border-t border-lp-lijn pt-8">
-          <CtaLink href="/probeer" bron="prijzen" stijl="oker" className="w-full sm:w-auto">
+          <CtaLink href="/probeer" bron="prijzen" stijl="primair" className="w-full sm:w-auto">
             Begin gratis, zonder account
           </CtaLink>
           <p className="text-base text-lp-inkt-2">Je bouwt eerst een voorbeeld. Een account maak je pas als je het wilt bewaren.</p>

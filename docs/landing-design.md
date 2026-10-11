@@ -107,3 +107,10 @@ Alleen de vormgeving is vernieuwd; alle teksten zijn gelijk gebleven.
 - **Labels:** sectielabels zijn kleine genummerde bolletjes in gewone letters, geen hoofdletter-eyebrows.
 - **Beweging:** hero-onderdelen schuiven rustig binnen; scroll-onthulling (`lp-onthul`) werkt alleen waar de browser `animation-timeline: view()` kent en laat de inhoud anders gewoon staan.
 - **Bewust niet overgenomen uit de taste-skill:** foto's en stockbeeld (jouw regel: geen foto's), em-dashes in de teksten (inhoud blijft ongewijzigd), dark mode (licht thema volstaat), de ene donkere telefoonband blijft (jouw opdracht voor sectie 6).
+
+## Kleurcorrectie: groen is het merk
+
+Kritische blik: de pagina las als crème met oker; groen zat vooral in donkere vlakken en oker (messing-familie) droeg de hoofdknoppen. Voor hoveniers moet groen het merk zijn.
+- **Groen domineert:** bosgroen `#1f6b3e`/`#17512f` voor hoofdknoppen, schakelaars en de afsluiterband; neutralen zijn nu groen getint (`#f3f7f2`, `#e8efe6`, `#dfe9e4`) in plaats van warm crème.
+- **Oker is alleen nog accent:** de knop op de groene afsluiterband, kleine labels ("Nieuw", "voorbeeld"), de schuifregelaar. Linkonderstrepingen en positienummers zijn groen.
+- Contrast opnieuw berekend: wit op `#1f6b3e` 6,5 · inkt-2 op papier 7,5 · inkt op oker 6,1 · papier op bos-950 14,0.

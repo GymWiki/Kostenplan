@@ -8,7 +8,7 @@ import { cn } from "@/app/lib/cn";
 
 // "Jouw website" → /probeer?site=…. Werkt ook zonder JavaScript (gewoon een
 // GET-formulier; /probeer normaliseert zelf). Met JavaScript valideren we eerst.
-export function WebsiteInvoer({ bron, op = "licht", className }: { bron: KlikBron; op?: "licht" | "oker"; className?: string }) {
+export function WebsiteInvoer({ bron, op = "licht", className }: { bron: KlikBron; op?: "licht" | "groen"; className?: string }) {
   const router = useRouter();
   const id = useId();
   const [waarde, setWaarde] = useState("");
@@ -26,7 +26,7 @@ export function WebsiteInvoer({ bron, op = "licht", className }: { bron: KlikBro
 
   return (
     <form action="/probeer" method="get" onSubmit={verstuur} noValidate className={cn("flex flex-col gap-2", className)}>
-      <label htmlFor={id} className="text-sm font-semibold text-lp-inkt">
+      <label htmlFor={id} className={cn("text-sm font-semibold", op === "groen" ? "text-white" : "text-lp-inkt")}>
         Jouw website
       </label>
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -49,13 +49,13 @@ export function WebsiteInvoer({ bron, op = "licht", className }: { bron: KlikBro
           type="submit"
           className={cn(
             "h-12 cursor-pointer whitespace-nowrap rounded-full transition-[background-color,transform] duration-200 active:scale-[0.98] motion-reduce:transition-none border px-6 text-base font-semibold",
-            "border-lp-bos-900 bg-lp-bos-900 text-white hover:bg-lp-bos-950"
+            op === "groen" ? "border-transparent bg-lp-oker text-lp-inkt hover:bg-lp-oker-licht" : "border-lp-bos-800 bg-lp-bos-800 text-white hover:bg-lp-bos-900"
           )}
         >
           Haal mijn logo en kleuren op
         </button>
       </div>
-      <p id={`${id}-hulp`} role={fout ? "alert" : undefined} className={cn("text-sm", fout ? "font-semibold text-red-800" : op === "oker" ? "text-lp-inkt" : "text-lp-inkt-2")}>
+      <p id={`${id}-hulp`} role={fout ? "alert" : undefined} className={cn("text-sm", fout ? "font-semibold text-red-800" : op === "groen" ? "text-lp-bos-100" : "text-lp-inkt-2")}>
         {fout ?? "Je logo en kleuren komen er dan al in te staan. Geen account nodig."}
       </p>
     </form>

@@ -141,7 +141,7 @@ export function SectieZoWerktHet() {
               <p className="mt-3 max-w-md text-lg text-lp-inkt-2">{s.tekst}</p>
               {s.nr === "03" && (
                 <p className="mt-4">
-                  <Link href="/rekentool-op-eigen-website" className="font-semibold underline decoration-lp-oker decoration-2 underline-offset-4">
+                  <Link href="/rekentool-op-eigen-website" className="font-semibold underline decoration-lp-bos-700 decoration-2 underline-offset-4">
                     Rekentool op je eigen website zetten
                   </Link>
                 </p>

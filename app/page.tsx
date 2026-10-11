@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: ["/api/og/landing"] },
 };
 
-const link = "font-semibold underline decoration-lp-oker decoration-2 underline-offset-4";
+const link = "font-semibold underline decoration-lp-bos-700 decoration-2 underline-offset-4";
 
 export default function Home() {
   return (
