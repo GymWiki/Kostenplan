@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { maakLead } from "@/app/lib/lead-aanmaken";
 import { planLeadMail } from "@/app/lib/mail/plan-lead-mail";
+import { planReserveIngest } from "@/app/lib/reserve-ingest";
 
 export const maxDuration = 30;
 
@@ -40,6 +41,8 @@ export async function POST(request: Request) {
       );
     }
     if (!uitslag.dubbel) planLeadMail(uitslag.leadId);
+    // De app werkt: dit is een goed moment om aanvragen uit de reserve binnen te halen.
+    planReserveIngest();
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("[lead] opslaan mislukt, bezoeker probeert opnieuw", e instanceof Error ? e.message : e);

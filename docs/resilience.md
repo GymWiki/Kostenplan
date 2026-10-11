@@ -207,3 +207,102 @@ Server:
   (zoals voorheen) en blijft alles gewoon in de database.
 - Bestaande leads krijgen in de migratie `mailVerzondOp = createdAt`, zodat er
   niets nagestuurd wordt.
+
+## Fase 4 — Niveau 2: Cloudflare-reserve (optioneel)
+
+Zonder onderstaande instellingen werkt alles op niveau 1 en doet niets hiervan
+iets. De code staat in `cloudflare/reserve/` (één Worker + één R2-bucket).
+
+**Wat de reserve doet**
+
+| Route (Worker) | Wat |
+|---|---|
+| `GET /s/<toolId>/latest.json` en `/v<n>.json` | kopie van de gepubliceerde rekentool (de app leest hieruit als Blob niet antwoordt) |
+| `GET /kp/v1.js` | kopie van het laadscript (reserve-bron van het inline script) |
+| `PUT /mirror/<toolId>` | de app zet hier bij elke publicatie een kopie neer (token vereist) |
+| `POST /lead` | reserve-ingang voor aanvragen: zelfde controles als de app (`app/lib/lead-validatie.ts`, test bewaakt dat het niet soepeler is), limiet 10 per minuut per IP, sleutel = idempotent, max. 64 KB |
+| `GET /ingest`, `POST /ingest/ack` | de app haalt wachtende aanvragen op en bevestigt ze pas na opslaan |
+
+De app neemt reserve-aanvragen op via `maakLead()` (idempotente sleutel, dus nooit
+dubbel), bij elke geslaagde aanvraag via `/api/embed/lead`, bij het openen van
+Leads, in de dagelijkse cron en handmatig via `GET /api/cron/ingest`. Elke
+opname staat als `[reserve] …` in de serverlogs.
+
+**Instellen (eenmalig), stap voor stap**
+
+1. Cloudflare-dashboard → **R2 Object Storage** → *Create bucket* → naam
+   `kostenplan-reserve`.
+2. (Optioneel, voor de limiet per IP) **Storage & Databases → KV** → *Create a
+   namespace* `LIMIET`; zet het id in `cloudflare/reserve/wrangler.toml`
+   (blok `[[kv_namespaces]]` ontcommentariëren).
+3. Lokaal: `npx wrangler login`, dan `npm run cf:deploy` (kopieert eerst de
+   laadscripts in de Worker en deployt).
+4. Cloudflare-dashboard → **Workers & Pages → kostenplan-reserve → Settings →
+   Variables and Secrets** → *Add* (type **Secret**):
+   - `MIRROR_TOKEN` = een lange willekeurige tekst
+   - `INGEST_TOKEN` = een andere lange willekeurige tekst
+5. Noteer de Worker-URL (bijv. `https://kostenplan-reserve.<account>.workers.dev`,
+   of koppel een eigen domein onder **Settings → Domains & Routes**).
+6. Vercel-dashboard → project → **Settings → Environment Variables** (Production):
+
+   | Naam | Waarde |
+   |---|---|
+   | `SNAPSHOT_MIRROR_URL` | Worker-URL (zonder `/` aan het eind) |
+   | `CF_MIRROR_WRITE_URL` | dezelfde Worker-URL |
+   | `CF_MIRROR_TOKEN` | gelijk aan `MIRROR_TOKEN` in Cloudflare |
+   | `CF_INGEST_TOKEN` | gelijk aan `INGEST_TOKEN` in Cloudflare |
+   | `NEXT_PUBLIC_EMBED_RESERVE_URL` | Worker-URL (reserve-bron voor het laadscript in nieuwe embedcodes) |
+   | `NEXT_PUBLIC_LEAD_RESERVE_URL` | Worker-URL + `/lead` |
+
+   Daarna opnieuw deployen. Vervolgens `GET /api/cron/snapshots` laten draaien
+   (zie Fase 1) of in de editor iets opslaan: de kopieën worden dan ook
+   gespiegeld.
+7. Na een nieuwe versie van het laadscript (`public/kp/v2.js`): `npm run cf:deploy`.
+
+**Dagelijkse controle** (`vercel.json` → `/api/cron/snapshots`, 04:17 UTC):
+vergelijkt per gepubliceerde rekentool de `inhoudHash` in Blob met die in de
+spiegel, publiceert wat achterloopt of mislukt was, verstuurt openstaande
+mails en haalt reserve-aanvragen op. Bij een verschil of fout: `[alarm]` in de
+logs en — als `ALERT_WEBHOOK_URL` is ingesteld — een bericht naar Slack/
+Discord/Better Stack. Elke publicatie spiegelt bovendien meteen; mislukt dat,
+dan staat de reden in `Tool.snapshotFout`.
+
+## Fase 5 — Monitoring
+
+`GET /api/health` (publiek, `no-store`, geen details):
+
+```json
+{ "ok": true, "db": "ok", "opslag": "ok", "mail": "niet ingesteld" }
+```
+
+- `?check=db`, `?check=opslag`, `?check=mail` geven één onderdeel terug en
+  antwoorden **503** zodra dat onderdeel `fout` is. Zonder `check`: 503 als één
+  van de drie `fout` is. "niet ingesteld" telt niet als fout.
+- `opslag` controleert de Blob-API én de publieke CDN (HEAD op een bestaand
+  snapshot-bestand); `mail` raadpleegt het Brevo-account.
+
+**Monitors instellen (UptimeRobot of Better Stack)**
+
+Maak deze monitors aan (interval 1–5 minuten, type *HTTP(s)*, verwacht status 200):
+
+| Naam | URL | Opmerking |
+|---|---|---|
+| Database | `https://<app>/api/health?check=db` | belangrijkste: bij uitval blijft de rekentool werken, maar nieuwe aanvragen niet |
+| Opslag | `https://<app>/api/health?check=opslag` | |
+| Mail | `https://<app>/api/health?check=mail` | |
+| Rekentool in iframe | `https://<app>/embed/<toolId-van-een-testrekentool>` | zoekwoord-check op "Jouw kostenraming" of "Bereken" |
+| Testpagina met embedcode | een eigen pagina met de volledige embedcode van een testrekentool | zoekwoord-check op `kostenplan-embed`; controleert ook het laadscript |
+| Laadscript | `https://<app>/kp/v1.js` | |
+| Reserve (niveau 2) | `https://<worker>/health` | |
+
+**Telefoonmelding**: UptimeRobot → *My Settings → Alert Contacts → Add* →
+type *Mobile push* (app) of *SMS/Voice* (betaald); Better Stack →
+*On-call → Escalation policy* → bel/push naar je telefoon. Koppel die
+contactpersoon aan alle monitors hierboven. Stel *"alert after 2 failed checks"*
+in om valse meldingen te beperken.
+
+**Serverlogs** (Vercel → Logs; filter op deze voorvoegsels):
+`[snapshot]` publicatiefouten, `[embed]` snapshot via spiegel/database,
+`[lead]` opslaan mislukt (bezoeker probeert opnieuw), `[lead-mail]` mail
+opnieuw ingepland, `[reserve]` aanvraag uit de reserve opgenomen, `[alarm]`
+dagelijkse controle.

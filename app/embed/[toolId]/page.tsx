@@ -60,8 +60,10 @@ export default async function EmbedPage({ params }: { params: Promise<{ toolId: 
 
   const uitSnapshot = blobGeconfigureerd() || process.env.SNAPSHOT_MIRROR_URL ? await leesSnapshot(toolId) : null;
   let snapshot: RekentoolSnapshot | null = uitSnapshot?.snapshot ?? null;
+  if (uitSnapshot?.bron === "spiegel") console.warn("[embed] snapshot uit de Cloudflare-spiegel", { toolId });
 
   if (!snapshot) {
+    if (blobGeconfigureerd()) console.warn("[embed] geen snapshot bereikbaar, uit de database gelezen", { toolId });
     const uitDb = await snapshotUitDatabase(toolId);
     if (uitDb === "bestaat-niet") notFound();
     snapshot = uitDb;

@@ -1,0 +1,17 @@
+# Kostenplan-reserve (Cloudflare Worker). Zie docs/resilience.md voor de stappen.
+name = "kostenplan-reserve"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# R2-bucket voor kopieën van de rekentool en wachtende aanvragen.
+[[r2_buckets]]
+binding = "SNAPSHOTS"
+bucket_name = "kostenplan-reserve"
+
+# KV voor de limiet per IP-adres. Vul na `wrangler kv namespace create LIMIET`
+# het id hieronder in (of haal dit blok weg: dan is er geen limiet).
+# [[kv_namespaces]]
+# binding = "LIMIET"
+# id = "<id uit wrangler kv namespace create>"
+
+# Geheimen (niet hier!): `wrangler secret put MIRROR_TOKEN` en `wrangler secret put INGEST_TOKEN`.

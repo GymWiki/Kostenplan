@@ -21,3 +21,17 @@ export function planLeadMail(leadId: string): void {
     void werk();
   }
 }
+
+// Alleen de wachtrij (geen specifieke lead), hooguit eens per minuut per instantie.
+let laatste = 0;
+export function planLeadMailWachtrij(): void {
+  if (!mailGeconfigureerd() || Date.now() - laatste < 60_000) return;
+  laatste = Date.now();
+  try {
+    after(async () => {
+      await verwerkMailWachtrij(5);
+    });
+  } catch {
+    // buiten een request: niets te doen
+  }
+}

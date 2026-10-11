@@ -39,6 +39,9 @@ export async function GET(request: Request) {
   const { verwerkMailWachtrij } = await import("@/app/lib/mail/lead-mail");
   const mail = await verwerkMailWachtrij(25);
 
+  const { haalReserveLeadsOp } = await import("@/app/lib/reserve-ingest");
+  const reserve = await haalReserveLeadsOp();
+
   const { controleerSpiegel } = await import("@/app/lib/snapshot/spiegel-controle");
   const spiegel = await controleerSpiegel();
 
@@ -48,5 +51,5 @@ export async function GET(request: Request) {
       `Dagelijkse controle van de rekentool-kopieën: ${fouten.length} publicatiefout(en), ${spiegel.verschillen.length} verschil(len) met de reservekopie. ${[...fouten, ...spiegel.verschillen].slice(0, 5).join(" | ")}`
     );
   }
-  return NextResponse.json({ ok: fouten.length === 0 && spiegel.ok, gelukt, resterend, fouten, spiegel, mail });
+  return NextResponse.json({ ok: fouten.length === 0 && spiegel.ok, gelukt, resterend, fouten, spiegel, mail, reserve });
 }
