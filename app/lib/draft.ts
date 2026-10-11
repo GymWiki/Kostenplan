@@ -1,5 +1,8 @@
 import { z } from "zod";
 import { parseGetal } from "@/app/lib/sjablonen";
+import { nieuweId } from "@/app/lib/draft-id";
+
+export { nieuweId };
 
 // Het concept van een gast ("voorbeeld"): alles wat de hovenier in /probeer
 // maakt, in dezelfde vorm als de editor al gebruikt (WerkzaamheidDraft per
@@ -110,11 +113,6 @@ export type Draft = z.infer<typeof draftSchema>;
 export type DraftWerkzaamheid = Draft["calculator"]["werkzaamheden"][number];
 
 // Lettertypes: moet overeenkomen met Lettertype in prisma/schema.prisma.
-export function nieuweId(): string {
-  const c = globalThis.crypto;
-  return c?.randomUUID ? c.randomUUID() : `d${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
-}
-
 export function isVerlopen(d: { updatedAt: number }, nu = Date.now()): boolean {
   return nu - d.updatedAt > DRAFT_MAX_LEEFTIJD_MS;
 }
