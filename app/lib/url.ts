@@ -1,5 +1,7 @@
 import "server-only";
 import { headers } from "next/headers";
+import { bouwEmbedCode, bouwIframeCode } from "@/app/lib/embed-code";
+import { snapshotBasisUrl } from "@/app/lib/snapshot/opslag";
 
 // Statische site-URL voor Metadata-exports (bijv. metadataBase in
 // app/layout.tsx) — die worden op moduleniveau geëvalueerd, dus zonder
@@ -37,14 +39,6 @@ export async function getToolUrl(bedrijfsSlug: string, toolSlug: string) {
   return `${baseUrl}/t/${bedrijfsSlug}/${toolSlug}`;
 }
 
-function escapeHtmlAttribute(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
 // Insluitcode voor één specifieke tool (zie Deel 26/28 van de opdracht) —
 // laadt uitsluitend via /embed/[toolId], nooit via een company/bedrijfsslug,
 // zodat de code van Tool A nooit per ongeluk Tool B van hetzelfde bedrijf
@@ -54,43 +48,35 @@ function escapeHtmlAttribute(value: string) {
 export async function getToolEmbedCode(
   toolId: string,
   toolNaam: string,
-  embedConfig: import("@/app/lib/tools").ToolEmbedConfig
+  embedConfig: import("@/app/lib/tools").ToolEmbedConfig,
+  contact: import("@/app/lib/embed-code").EmbedContact = { naam: toolNaam }
 ) {
-  const baseUrl = await getBaseUrl();
-  const embedUrl = `${baseUrl}/embed/${toolId}`;
-  const iframeId = `kostenplan-${toolId}`;
-  const title = escapeHtmlAttribute(`Rekentool ${toolNaam}`);
+  return bouwEmbedCode(await embedOpties(toolId, toolNaam, embedConfig, contact));
+}
 
-  const breedteStyle = embedConfig.breedte === "VAST" ? `${embedConfig.vasteBreedtePx}px` : "100%";
-  const border = embedConfig.toonBorder ? "1px solid #e2e8f0" : "0";
-  const style = [
-    `width: ${breedteStyle}`,
-    `min-height: ${embedConfig.minimaleHoogtePx}px`,
-    `border: ${border}`,
-    `border-radius: ${embedConfig.radiusPx}px`,
-    embedConfig.transparanteAchtergrond ? "background: transparent" : null,
-  ]
-    .filter(Boolean)
-    .join("; ");
+// Alternatief zonder laadscript (alleen een iframe met contactkaart als terugval).
+export async function getToolIframeCode(
+  toolId: string,
+  toolNaam: string,
+  embedConfig: import("@/app/lib/tools").ToolEmbedConfig,
+  contact: import("@/app/lib/embed-code").EmbedContact = { naam: toolNaam }
+) {
+  return bouwIframeCode(await embedOpties(toolId, toolNaam, embedConfig, contact));
+}
 
-  return `<iframe
-  id="${iframeId}"
-  src="${embedUrl}"
-  title="${title}"
-  style="${style};"
-  height="${embedConfig.minimaleHoogtePx}"
-  loading="lazy"
-  allowtransparency="${embedConfig.transparanteAchtergrond ? "true" : "false"}"
-></iframe>
-<script>
-  (function () {
-    window.addEventListener("message", function (event) {
-      if (event.origin !== ${JSON.stringify(baseUrl)}) return;
-      var data = event.data;
-      if (!data || data.type !== "kostenplan:resize" || data.toolId !== ${JSON.stringify(toolId)}) return;
-      var iframe = document.getElementById(${JSON.stringify(iframeId)});
-      if (iframe) iframe.style.height = Math.max(data.height, ${embedConfig.minimaleHoogtePx}) + "px";
-    });
-  })();
-</script>`;
+async function embedOpties(
+  toolId: string,
+  toolNaam: string,
+  embedConfig: import("@/app/lib/tools").ToolEmbedConfig,
+  contact: import("@/app/lib/embed-code").EmbedContact
+) {
+  return {
+    toolId,
+    toolNaam,
+    baseUrl: await getBaseUrl(),
+    reserveUrl: process.env.NEXT_PUBLIC_EMBED_RESERVE_URL || null,
+    snapshotUrl: snapshotBasisUrl(),
+    embedConfig,
+    contact,
+  };
 }

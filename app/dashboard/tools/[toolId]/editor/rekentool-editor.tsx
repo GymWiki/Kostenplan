@@ -53,6 +53,8 @@ export type EditorProps = {
   website: {
     toolUrl: string;
     embedCode: string | null;
+    iframeCode?: string | null;
+    heeftContact?: boolean;
     embedConfig: ToolEmbedConfig;
     magEmbedden: boolean;
     magPubliceren: boolean;
@@ -414,6 +416,8 @@ export function RekentoolEditor(props: EditorProps) {
           status={props.toolStatus}
           toolUrl={website.toolUrl}
           embedCode={website.embedCode}
+          iframeCode={website.iframeCode ?? null}
+          heeftContact={website.heeftContact ?? false}
           embedConfig={website.embedConfig}
           magEmbedden={website.magEmbedden}
           magPubliceren={website.magPubliceren}

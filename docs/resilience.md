@@ -121,3 +121,45 @@ Wat is er gebouwd:
 
 Zonder `BLOB_READ_WRITE_TOKEN` gebeurt er niets nieuws: de embed leest uit de
 database zoals voorheen.
+
+## Fase 2 — Laadscript, skeleton en contactkaart
+
+Nieuwe embedcode (te kopiëren uit de editor, "Zet op mijn website"):
+
+```html
+<div id="kp-<toolId>" class="kostenplan-embed" style="…vaste breedte/min-hoogte…"
+  data-kp="<toolId>" data-app="https://…" data-hoogte="600" data-radius="12"
+  data-snap="<blob-url>" data-naam="…" data-tel="…" data-mail="…" data-kleur="#…" data-bg="#…"></div>
+<script>/* < 2 KB, zie app/lib/embed-code.ts */</script>
+```
+
+- Het **inline script** (< 2 KB, getest) laadt `/kp/v1.js` van de app; lukt dat
+  niet binnen 4 s (of geeft het een fout), dan van het reserve-adres
+  (`NEXT_PUBLIC_EMBED_RESERVE_URL`, niveau 2). Lukt ook dat niet, dan tekent het
+  zelf een simpele contactkaart uit de `data-`attributen. Het script is `async`
+  en blokkeert de pagina van de hovenier nooit.
+- **`/kp/v1.js`** (`public/kp/v1.js`, ~10 KB, onveranderlijk gecachet): maakt een
+  skeleton met vaste afmetingen (de plek is gereserveerd: geen verspringing),
+  laadt de iframe pas als die bijna in beeld komt (IntersectionObserver), wacht
+  maximaal 4 s op `kostenplan:klaar`/`kostenplan:resize`, en toont anders de
+  contactkaart ("Bereken je prijs telefonisch of per mail" met Bel/Mail-knoppen
+  in de kleuren van de hovenier). Komt de rekentool later alsnog binnen, dan
+  vervangt die de kaart weer.
+  - Contactgegevens voor de kaart: `data-`attributen → nieuwste uit de
+    gepubliceerde kopie (`data-snap`, 2,5 s time-out) → `localStorage`
+    (`kp:v1:<toolId>`, maximaal 30 dagen, altijd in try/catch).
+  - Geen uncaught errors en geen `console`-uitvoer: alles zit in `try/catch`.
+  - Oude codes zonder `data-tel`/`data-mail` krijgen een neutrale melding
+    ("Deze rekentool is tijdelijk niet beschikbaar.") i.p.v. een contactkaart.
+- **Versies**: een nieuwe loader wordt `v2.js` (nieuw bestand), `LAADSCRIPT_VERSIE`
+  in `app/lib/embed-code.ts` bepaalt wat nieuwe codes krijgen. `/kp/*` heeft
+  `Cache-Control: public, max-age=31536000, immutable`. Terugdraaien = de
+  constante terugzetten; reeds geplakte codes veranderen nooit.
+- **Alleen-iframe-variant** voor websitebouwers die scripts verwijderen
+  (uitklapbaar in de editor): iframe + verborgen contactkaart die na 4 s
+  zichtbaar wordt als de rekentool niet gemeld heeft dat hij geladen is.
+- **Embedpagina**: stuurt `kostenplan:klaar` zodra hij geladen is, en
+  `error.tsx` stuurt `kostenplan:fout` met een neutrale melding, zodat de kaart
+  direct (niet pas na 4 s) verschijnt.
+- **Oude codes** (iframe + resize-script) blijven werken: `/embed/<toolId>` en het
+  `kostenplan:resize`-bericht zijn ongewijzigd.

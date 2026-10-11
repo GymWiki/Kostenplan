@@ -43,7 +43,15 @@ const PLATFORMS: Platform[] = [
   },
 ];
 
-export function EmbedTutorialTabs({ embedCode }: { embedCode: string }) {
+export function EmbedTutorialTabs({
+  embedCode,
+  iframeCode = null,
+  heeftContact = true,
+}: {
+  embedCode: string;
+  iframeCode?: string | null;
+  heeftContact?: boolean;
+}) {
   const [platform, setPlatform] = useState<Platform>(PLATFORMS[0]);
 
   return (
@@ -80,6 +88,25 @@ export function EmbedTutorialTabs({ embedCode }: { embedCode: string }) {
       <div>
         <CopyButton text={embedCode} label="Kopieer embedcode" />
       </div>
+      <p className="text-sm text-muted-foreground">
+        {heeftContact
+          ? "Je bedrijfsnaam en de contactgegevens die je bij Uiterlijk laat zien, staan in de code. Laadt je rekentool een keer niet, dan krijgen bezoekers een kaart om je te bellen of te mailen."
+          : "Zet bij Uiterlijk je telefoonnummer of e-mailadres aan. Dan krijgen bezoekers een kaart om je te bellen of te mailen als je rekentool een keer niet laadt."}
+      </p>
+      {iframeCode && (
+        <details className="rounded-lg border border-border p-3 text-sm">
+          <summary className="cursor-pointer font-medium text-foreground">Werkt de code hierboven niet op je website?</summary>
+          <p className="mt-2 text-muted-foreground">
+            Sommige websitebouwers halen scripts weg. Gebruik dan deze code. Je rekentool werkt hetzelfde.
+          </p>
+          <pre className="mt-2 max-h-48 overflow-auto rounded-lg border border-border bg-card p-3 text-xs text-foreground">
+            <code>{iframeCode}</code>
+          </pre>
+          <div className="mt-2">
+            <CopyButton text={iframeCode} label="Kopieer deze code" />
+          </div>
+        </details>
+      )}
     </div>
   );
 }

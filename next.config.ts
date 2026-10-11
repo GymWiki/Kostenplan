@@ -64,6 +64,15 @@ const nextConfig: NextConfig = {
         source: "/t/:path*",
         headers: [{ key: "Content-Security-Policy", value: "frame-ancestors *;" }],
       },
+      // Laadscript-versies zijn onveranderlijk (nieuwe versie = nieuw bestand),
+      // dus eeuwig te cachen; de iframe-pagina's mogen overal ingesloten worden.
+      {
+        source: "/kp/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          { key: "Access-Control-Allow-Origin", value: "*" },
+        ],
+      },
       {
         source: "/embed/:path*",
         headers: [{ key: "Content-Security-Policy", value: "frame-ancestors *;" }],

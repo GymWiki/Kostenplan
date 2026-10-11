@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { canCreateTool, canPublishTool, requireActiveTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { getToolEmbedCode, getToolUrl } from "@/app/lib/url";
+import { getToolEmbedCode, getToolIframeCode, getToolUrl } from "@/app/lib/url";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
 import { parseEmbedConfig, parseLeadFormConfig, parseResultaatConfig } from "@/app/lib/tools";
 import { blobGeconfigureerd } from "@/app/lib/snapshot/opslag";
@@ -42,9 +42,19 @@ export async function laadEditorProps(toolId: string, paneel: string | undefined
   const aanvraag = parseLeadFormConfig(tool.leadFormConfig);
   const embedConfig = parseEmbedConfig(tool.embedConfig);
   const magEmbedden = PLAN_LIMITS[tier].embedEnabled;
-  const [toolUrl, embedCode] = await Promise.all([
+  // Alleen wat de hovenier zelf op zijn rekentool toont, komt ook in de
+  // embedcode te staan (voor de contactkaart als de rekentool niet laadt).
+  const contact = {
+    naam: company.naam,
+    telefoon: branding.toonTelefoonnummer ? branding.telefoonnummer : null,
+    email: branding.toonEmail ? user.email : null,
+    kleur: tier === "GRATIS" ? null : branding.primaireKleur,
+    achtergrond: tier === "GRATIS" ? null : branding.achtergrondKleur,
+  };
+  const [toolUrl, embedCode, iframeCode] = await Promise.all([
     getToolUrl(company.slug, tool.slug),
-    magEmbedden ? getToolEmbedCode(toolId, tool.naam, embedConfig) : Promise.resolve(null),
+    magEmbedden ? getToolEmbedCode(toolId, tool.naam, embedConfig, contact) : Promise.resolve(null),
+    magEmbedden ? getToolIframeCode(toolId, tool.naam, embedConfig, contact) : Promise.resolve(null),
   ]);
 
   // Liep een eerdere publicatie vast (bijv. opslag even onbereikbaar)? Dan
@@ -76,7 +86,7 @@ export async function laadEditorProps(toolId: string, paneel: string | undefined
       ctaTekst: resultaat.ctaTekst ?? "",
     },
     aanvraag: { vraagTelefoon: aanvraag.vraagTelefoon, bedankTekst: branding.bedankTekst },
-    website: { toolUrl, embedCode, embedConfig, magEmbedden, magPubliceren, limiet: PLAN_LIMITS[tier].maxActiveTools },
+    website: { toolUrl, embedCode, iframeCode, heeftContact: Boolean(contact.telefoon || contact.email), embedConfig, magEmbedden, magPubliceren, limiet: PLAN_LIMITS[tier].maxActiveTools },
     anderen: andereTools.map((t) => ({ id: t.id, naam: t.naam, werkzaamheden: t.products })),
     magNieuweTool,
     startPaneel,
