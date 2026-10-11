@@ -20,6 +20,17 @@ describe("bouwEmbedCode", () => {
     expect(() => new Function(script)).not.toThrow();
   });
 
+  it("blijft onder 2 KB met realistische (lange) adressen", () => {
+    const code = bouwEmbedCode({
+      ...opties,
+      toolId: "cmabcdefghijklmnopqrstuvw",
+      baseUrl: "https://www.kostenplan.nl",
+      reserveUrl: "https://kostenplan-reserve.mijnaccount.workers.dev",
+    });
+    const script = code.slice(code.indexOf("<script>") + 8, code.indexOf("</script>"));
+    expect(new TextEncoder().encode(script).length).toBeLessThan(2048);
+  });
+
   it("zet de contactgegevens als data-attributen en ontsnapt ze", () => {
     const code = bouwEmbedCode(opties);
     expect(code).toContain('data-tel="06 12345678"');

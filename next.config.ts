@@ -67,6 +67,13 @@ const nextConfig: NextConfig = {
       // Laadscript-versies zijn onveranderlijk (nieuwe versie = nieuw bestand),
       // dus eeuwig te cachen; de iframe-pagina's mogen overal ingesloten worden.
       {
+        source: "/embed-sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache" },
+          { key: "Service-Worker-Allowed", value: "/embed/" },
+        ],
+      },
+      {
         source: "/kp/:path*",
         headers: [
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
@@ -75,7 +82,14 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/embed/:path*",
-        headers: [{ key: "Content-Security-Policy", value: "frame-ancestors *;" }],
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors *;" },
+          // De pagina is voor iedereen gelijk (komt uit de gepubliceerde kopie):
+          // 30 s vers op de CDN, daarna nog 5 minuten direct serveren terwijl op
+          // de achtergrond ververst wordt. Een nieuwe publicatie is dus binnen
+          // een minuut zichtbaar, en een haperende server merkt de bezoeker niet.
+          { key: "Cache-Control", value: "public, max-age=0, s-maxage=30, stale-while-revalidate=300" },
+        ],
       },
     ];
   },

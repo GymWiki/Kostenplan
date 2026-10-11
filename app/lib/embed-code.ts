@@ -53,7 +53,9 @@ function containerStijl(c: ToolEmbedConfig) {
 // Het kleine inline script (< 2 KB): laadt het versie-bestand, probeert na
 // 4 seconden het reserve-adres, en toont anders zelf een eenvoudige
 // contactkaart. Zonder laadscript blijft de pagina van de hovenier dus
-// gewoon werken.
+// gewoon werken. Het laden begint pas als de pagina klaar is (`load`, of
+// uiterlijk 2,5 s na het inlezen), zodat het de laadtijd van de site zelf
+// niet beïnvloedt, ook niet als onze server traag is.
 function inlineScript(id: string, bronnen: string[]) {
   return (
     `(function(d){var c=d.getElementById(${JSON.stringify(id)}),i=0,t,L=${JSON.stringify(bronnen)};` +
@@ -65,7 +67,9 @@ function inlineScript(id: string, bronnen: string[]) {
     `function l(){if(i>=L.length)return g();var e=d.createElement("script"),o=0;e.async=1;e.src=L[i++];` +
     `function n(){if(o)return;o=1;clearTimeout(t);e.parentNode&&e.parentNode.removeChild(e);l()}` +
     `e.onerror=n;t=setTimeout(n,4000);e.onload=function(){o=1;clearTimeout(t)};d.head.appendChild(e)}` +
-    `if(c)l()})(document);`
+    `function s(){if(c&&!i&&!t){l()}}` +
+    `document.readyState==="complete"?s():(window.addEventListener("load",s),setTimeout(s,2500));` +
+    `})(document);`
   );
 }
 

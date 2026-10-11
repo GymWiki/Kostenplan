@@ -1,5 +1,4 @@
 import "server-only";
-import { revalidatePath } from "next/cache";
 import { prismaBasis } from "@/app/lib/prisma";
 import { getMateriaalOptiesVoorEngineVelden, getToolForSnapshot } from "@/app/lib/dal";
 import { alleVeldenVanConfig } from "@/app/lib/calculator-engine";
@@ -54,11 +53,6 @@ export async function publiceerTool(toolId: string, opties: { forceer?: boolean 
       where: { id: toolId, snapshotVersie: geclaimd.snapshotVersie },
       data: { snapshotHash: hash, snapshotOp: new Date(), snapshotFout: spiegelFout, snapshotVuil: false },
     });
-    try {
-      revalidatePath(`/embed/${toolId}`);
-    } catch {
-      // buiten een request-context: de pagina verloopt vanzelf binnen een minuut
-    }
     return { ok: true, versie: geclaimd.snapshotVersie, ongewijzigd: false, spiegelFout };
   } catch (e) {
     const fout = foutTekst(e);

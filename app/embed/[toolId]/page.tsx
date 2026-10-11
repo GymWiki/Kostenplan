@@ -16,11 +16,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// De pagina zelf wordt een minuut gecachet (en direct ververst als de hovenier
-// iets publiceert, zie publiceerTool). Valt de database of de opslag weg, dan
-// blijft de laatst gerenderde versie gewoon beschikbaar.
-export const revalidate = 60;
-
 function NietBeschikbaar({ naam }: { naam: string }) {
   return (
     <div className="flex min-h-[200px] flex-col items-center justify-center gap-2 bg-background px-4 py-8 text-center">

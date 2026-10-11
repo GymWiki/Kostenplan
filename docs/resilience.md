@@ -111,8 +111,10 @@ Wat is er gebouwd:
 - Inhoud ongewijzigd (zelfde hash) = niet opnieuw schrijven.
 - `/embed/<toolId>` leest uitsluitend de snapshot (Blob, anders de
   Cloudflare-spiegel). Alleen als er nog geen snapshot is, valt de pagina terug
-  op de database (en publiceert dan meteen). De pagina is 60 s gecachet
-  (`revalidate`) en wordt bij elke publicatie direct ververst.
+  op de database (en publiceert dan meteen). De pagina krijgt
+  `Cache-Control: s-maxage=30, stale-while-revalidate=300` (CDN): een nieuwe
+  publicatie is binnen ± 1 minuut zichtbaar en bezoekers merken een haperende
+  server minder.
 - `proxy.ts` slaat `/embed/*` over: de embed wacht niet meer op Supabase Auth.
 - Backfill: `GET /api/cron/snapshots` (met `Authorization: Bearer $CRON_SECRET`)
   publiceert maximaal 20 tools zonder snapshot of met fout per aanroep; de
@@ -306,3 +308,59 @@ in om valse meldingen te beperken.
 `[lead]` opslaan mislukt (bezoeker probeert opnieuw), `[lead-mail]` mail
 opnieuw ingepland, `[reserve]` aanvraag uit de reserve opgenomen, `[alarm]`
 dagelijkse controle.
+
+## Service worker (terugkerende bezoekers)
+
+De embedpagina registreert `/embed-sw.js` (scope `/embed/`) en laat zichzelf en
+de gebruikte `/_next/static/`-bestanden bewaren. Daarna geldt voor `/embed/*`:
+netwerk eerst (3 s), anders de bewaarde kopie; statische bestanden uit de cache.
+Zo ziet iemand die de rekentool eerder opende hem ook als onze server weg is.
+Beperking: werkt per browser en kan door privémodus of strikte
+tracking-bescherming (met name Safari) uit staan; dan valt het terug op de
+contactkaart. Het laadscript zelf komt in dat geval uit de HTTP-cache
+(`immutable`, 1 jaar).
+
+## Controle (Playwright, echte uitval)
+
+Opzet (`scripts/resilience-controle/`): productiebuild (`next start`) met een
+**onbereikbare database** (`DATABASE_URL` naar een dichte poort) en
+`BLOB_READ_WRITE_TOKEN` gezet; een stand-in voor Blob/Cloudflare serveert de
+snapshot, het reserve-laadscript en de hostpagina's op een tweede en derde
+herkomst (echte cross-origin iframe). Uitval is echt: servers worden gestopt of
+verzoeken worden geblokkeerd/vertraagd. Overal worden `pageerror`, console-
+errors en CLS gemeten (browser-eigen "Failed to load resource" bij bewust
+geblokkeerde verzoeken tellen niet als fout van onze code).
+
+| # | Scenario | Uitkomst |
+|---|---|---|
+| 1 | Database onbereikbaar | `/embed/<id>` 200, rekentool laadt en rekent; totaal € 1.857,35 gelijk aan de bestaande weergave (zelfde invoer) |
+| 2a | Trage scripthost (primair 15 s vertraagd) | hostpagina `load` na 28 ms en bedienbaar; reserve-bron neemt het over, rekentool na ± 4,2 s |
+| 2b | Beide scriptbronnen weg | contactkaart met juiste telefoon en mail binnen 0,1 s |
+| 2c | Alleen-iframe-variant, iframe niet bereikbaar | contactkaart zichtbaar |
+| 3 | Alles onbereikbaar, eerder bezocht | rekentool werkt uit de browser (service worker + HTTP-cache), contactgegevens in `localStorage` |
+| 3 | Alles onbereikbaar, nooit bezocht | contactkaart met juiste gegevens |
+| 4 | Versturen faalt (echte 503, database weg) | na 3 pogingen (± 4,4 s) eerlijke melding + Mail je aanvraag (mailto met samenvatting) + Bel ons + kopieerbare tekst; aanvraag in wachtrij; volgend bezoek: precies 1 verzoek met dezelfde sleutel, wachtrij daarna leeg |
+| 5 | Brevo faalt | niet in de browser te testen (geen database in de sandbox): afgedekt met unit-tests (`lead-mail.test.ts`: mislukte verzending legt poging + volgende tijd vast, geslaagde markeert verzonden; `lead-aanmaken.test.ts`: lead wordt eerst opgeslagen, dubbele sleutel = één lead) |
+| 6 | Layout shift en console | in alle scenario's 0 `pageerror` en 0 console-errors van onze code; CLS hostpagina 0 – 0,005 (vereiste < 0,1) |
+| 7 | Oude codes | oudste iframe + resize-script werkt volledig (incl. hoogte); nieuwe code zonder `data-tel/-mail`: neutrale melding, geen contactkaart |
+| 8 | Wijziging in editor | nieuwe snapshot lokaal na 0,9 s zichtbaar. Op Vercel: `s-maxage=30` + stale-while-revalidate, dus binnen ± 1 minuut (niet lokaal te meten zonder CDN) |
+
+Resultaten: 27/27 geslaagd. Schermafbeeldingen: `docs/resilience-screens/`.
+Opnieuw draaien: zie `scripts/resilience-controle/` (`start-alles.js`,
+`maak-fixture.ts`, `controle.js`; paden bovenin aanpassen).
+
+## Bekende beperkingen (eerlijk)
+
+- De rekentool zelf draait op Vercel; valt Vercel volledig weg, dan werkt
+  hij alleen voor bezoekers met een eerdere service-worker-kopie. Voor de rest
+  is er de contactkaart. Een volledig onafhankelijke rekentool vraagt een
+  aparte bundel en is bewust niet gebouwd.
+- Zonder `BREVO_API_KEY` wordt er (nog) niets gemaild; er bestond voorheen ook
+  geen mail.
+- De snapshot-publicatie is niet end-to-end met een echte Blob-store en
+  database getest (geen toegang in de sandbox); de bouw, de opslaglaag-logica
+  en het lezen zijn dat wel (unit-tests en de bovenstaande browser-tests met
+  een stand-in voor de opslag). Voer na de uitrol de backfill uit en controleer
+  `/api/health`.
+- Het inlog-e-mailadres komt alleen in embedcode en snapshot als de hovenier
+  "toon e-mailadres" aanzet.
