@@ -13,7 +13,7 @@ export function SectieKlantervaring() {
   const s = STIJLEN.groenhof;
   return (
     <section aria-labelledby="h-klant" className="bg-lp-bos-950 text-lp-papier">
-      <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:items-center">
+      <div className="mx-auto grid max-w-7xl gap-12 px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:items-center">
         <div>
           <Positie nr="06" label="Wat je klant ervaart" className="text-lp-bos-100 [&>span:first-child]:text-lp-oker-licht" />
           <h2 id="h-klant" className="mt-4 text-4xl font-extrabold leading-[1.02] sm:text-5xl">

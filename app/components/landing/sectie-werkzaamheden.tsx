@@ -25,7 +25,7 @@ const STAAL: Record<string, string> = {
 
 export function SectieWerkzaamheden() {
   return (
-    <section id="werkzaamheden" aria-labelledby="h-wz" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
+    <section id="werkzaamheden" aria-labelledby="h-wz" className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
         <div>
           <Positie nr="07" label="Werkzaamheden" />
@@ -61,7 +61,7 @@ export function SectieWerkzaamheden() {
             </thead>
             <tbody>
               {HOVENIER_PRESETS.map((p, i) => (
-                <tr key={p.id} className="block border-b border-lp-lijn py-3 md:table-row md:py-0">
+                <tr key={p.id} className="block border-b border-lp-lijn py-3 transition-colors hover:bg-lp-papier-2/70 md:table-row md:py-0">
                   <td className="block font-lp-maat text-[11px] text-lp-oker-donker md:table-cell md:py-4 md:pr-2">{String(i + 1).padStart(2, "0")}</td>
                   <td className="hidden md:table-cell md:py-4">
                     <span aria-hidden="true" className={`block h-8 w-10 border border-lp-inkt ${STAAL[p.id] ?? ""}`} />

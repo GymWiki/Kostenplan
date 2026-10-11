@@ -59,25 +59,27 @@ export default function Home() {
               <h1 id="h-hero" className="mt-5 text-5xl font-extrabold leading-[0.98] sm:text-6xl lg:text-[4.25rem]">
                 {KOPREGEL}
               </h1>
-              <p className="mt-6 max-w-xl text-lg leading-relaxed">{DEFINITIE}</p>
-              <div className="mt-8 flex flex-col gap-6">
-                <CtaLink href="/probeer" bron="hero" className="w-full sm:w-fit sm:text-lg">
+              <p className="lp-in mt-6 max-w-xl text-lg leading-relaxed [animation-delay:60ms]">{DEFINITIE}</p>
+              <div className="lp-in mt-8 flex flex-col gap-6 [animation-delay:140ms]">
+                <CtaLink href="/probeer" bron="hero" pijl className="w-full sm:w-fit sm:text-lg">
                   Maak je rekentool — gratis, geen account nodig
                 </CtaLink>
                 <div className="border-t-[1.5px] border-lp-inkt pt-5">
                   <WebsiteInvoer bron="hero" />
                 </div>
               </div>
-              <p className="mt-6 font-lp-maat text-[11px] uppercase leading-relaxed tracking-wider text-lp-inkt-2">
+              <p className="lp-in mt-6 font-lp-maat text-[11px] uppercase leading-relaxed tracking-wider text-lp-inkt-2">
                 Werkt op {WEBSITEBOUWERS.join(", ")} en elke andere website
               </p>
             </div>
-            <HeroDemo />
+            <div className="lp-in [animation-delay:200ms]">
+              <HeroDemo />
+            </div>
           </div>
         </section>
 
         {/* 2 · HET PROBLEEM */}
-        <section id="probleem" aria-labelledby="h-probleem" className="border-y-[1.5px] border-lp-inkt bg-lp-papier-2">
+        <section id="probleem" aria-labelledby="h-probleem" className="border-y-[1.5px] border-lp-inkt bg-lp-papier-2 lp-korrel">
           <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 sm:py-28 lg:grid-cols-12">
             <div className="lg:col-span-7">
               <Positie nr="02" label="Het probleem" />
@@ -115,7 +117,7 @@ export default function Home() {
 
         {/* 4 · JOUW HUISSTIJL */}
         <section id="huisstijl" aria-labelledby="h-huisstijl" className="border-y-[1.5px] border-lp-inkt bg-lp-wit">
-          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
+          <div className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
             <div className="max-w-3xl">
               <Positie nr="04" label="Jouw huisstijl" />
               <h2 id="h-huisstijl" className="mt-4 text-4xl font-extrabold leading-[1.02] sm:text-5xl">

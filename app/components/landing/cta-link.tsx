@@ -18,6 +18,7 @@ export function CtaLink({
   actie = "cta",
   pakket,
   stijl = "oker",
+  pijl = false,
   className,
   children,
 }: {
@@ -26,6 +27,7 @@ export function CtaLink({
   actie?: KlikActie;
   pakket?: string;
   stijl?: keyof typeof STIJL;
+  pijl?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -34,12 +36,17 @@ export function CtaLink({
       href={href}
       onClick={() => trackKlik(bron, actie, pakket ? { pakket } : undefined)}
       className={cn(
-        "inline-flex min-h-12 items-center rounded-lg justify-center gap-2 border-[1.5px] px-6 py-2 text-center text-base font-semibold transition-colors duration-150",
+        "group/cta inline-flex min-h-12 items-center rounded-lg justify-center gap-2 border-[1.5px] px-6 py-2 text-center text-base font-semibold transition-[background-color,color,transform] duration-200 ease-out hover:-translate-y-px active:translate-y-px active:scale-[0.98] motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100",
         STIJL[stijl],
         className
       )}
     >
       {children}
+      {pijl && (
+        <svg aria-hidden="true" viewBox="0 0 16 16" className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover/cta:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="1.75">
+          <path d="M2 8h11M9 4l4 4-4 4" />
+        </svg>
+      )}
     </Link>
   );
 }
