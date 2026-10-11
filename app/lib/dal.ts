@@ -284,6 +284,13 @@ export async function getLegacyToolForCompanySlug(companySlug: string) {
   return tool;
 }
 
+// Voor het publiceren van de snapshot: zoals getToolForEmbed, maar óók een
+// soft-deleted tool — de snapshot moet dan "niet beschikbaar" worden, anders
+// blijft de embed van een verwijderde tool gewoon werken.
+export async function getToolForSnapshot(toolId: string) {
+  return prisma.tool.findFirst({ where: { id: toolId }, include: PUBLIEKE_TOOL_INCLUDE });
+}
+
 // Voor /embed/[toolId] (zie Deel 26 van de opdracht) — laadt uitsluitend via
 // het onraadbare cuid, nooit via company/bedrijfsslug, zodat een embedcode
 // nooit per ongeluk een andere tool van hetzelfde bedrijf kan tonen. Geeft

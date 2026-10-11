@@ -371,6 +371,15 @@ model Tool {
   // bereikbaar. Zie requireActiveTool()/canCreateTool() in app/lib/dal.ts.
   deletedAt DateTime?
 
+  // Gepubliceerde, zelfstandige kopie voor de embed (zie app/lib/snapshot).
+  // snapshotVuil = er is een wijziging die nog niet gepubliceerd is (of de
+  // laatste poging mislukte; dan staat de reden in snapshotFout).
+  snapshotVersie Int       @default(0)
+  snapshotHash   String?
+  snapshotOp     DateTime?
+  snapshotFout   String?
+  snapshotVuil   Boolean   @default(false)
+
   branding        Branding?
   costSettings    CostSettings?
   products        Product[]
@@ -813,6 +822,17 @@ model Lead {
   // Los uit snapshot.totaal getrokken zodat de Pipeline Waarde-KPI zonder
   // JSON-parsing op de database kan optellen/filteren.
   totaalIndicatie Float
+
+  // Sleutel die de browser per aanvraag maakt: dezelfde aanvraag die
+  // meerdere keren binnenkomt (herhaling, tweede route) wordt één lead.
+  idempotentieSleutel String? @unique
+
+  // Uitgaande e-mail (outbox): de lead wordt eerst opgeslagen, de mail volgt
+  // en wordt opnieuw geprobeerd tot hij verstuurd is.
+  mailVerzondOp      DateTime?
+  mailPogingen       Int       @default(0)
+  mailVolgendePoging DateTime?
+  mailFout           String?
 
   notities LeadNote[]
   offerte  Offerte?

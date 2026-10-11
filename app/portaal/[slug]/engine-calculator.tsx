@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Mail, Phone, Printer, ArrowLeft, ArrowRight } from "lucide-react";
 import {
@@ -28,7 +28,7 @@ import { Button } from "@/app/components/ui/button";
 import { ThemeToggle } from "@/app/components/ui/theme-toggle";
 import { fontFamilyFor, brandingFontVariables } from "@/app/lib/fonts";
 import { accessibleTextColor } from "@/app/lib/color";
-import { createLeadAction, type LeadFormState } from "@/app/lib/actions/leads";
+import { UitgesteldMelding, useLeadVersturen } from "./lead-versturen";
 import { recordPublicAnalyticsEventAction } from "@/app/lib/actions/analytics";
 import type { LeadSnapshot, LeadSnapshotLine } from "@/app/lib/leads";
 import { cn } from "@/app/lib/cn";
@@ -257,7 +257,7 @@ export function EngineCalculator({
   useEffect(() => {
     if (previewModus || visitRecorded.current) return;
     visitRecorded.current = true;
-    void recordPublicAnalyticsEventAction(toolId, "VISIT");
+    recordPublicAnalyticsEventAction(toolId, "VISIT").catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -267,11 +267,11 @@ export function EngineCalculator({
     if (previewModus) return;
     if (!startRecorded.current && heeftInvoer) {
       startRecorded.current = true;
-      void recordPublicAnalyticsEventAction(toolId, "START");
+      recordPublicAnalyticsEventAction(toolId, "START").catch(() => {});
     }
     if (!completeRecorded.current && resultaat.heeftGeldigeInvoer && resultaat.totaal > 0) {
       completeRecorded.current = true;
-      void recordPublicAnalyticsEventAction(toolId, "COMPLETE");
+      recordPublicAnalyticsEventAction(toolId, "COMPLETE").catch(() => {});
     }
   }, [toolId, heeftInvoer, resultaat, previewModus]);
 
@@ -401,6 +401,8 @@ export function EngineCalculator({
         {toonResultaat ? (
           <ResultaatKaart
             toolId={toolId}
+            bedrijfsnaam={bedrijfsnaam}
+            contact={contact}
             resultaat={resultaat}
             evaluatie={evaluatie}
             snapshot={snapshot}
@@ -490,6 +492,8 @@ function ContactBalk({ telefoonnummer, email }: { telefoonnummer: string | null;
 
 function ResultaatKaart({
   toolId,
+  bedrijfsnaam,
+  contact,
   resultaat,
   evaluatie,
   snapshot,
@@ -502,6 +506,8 @@ function ResultaatKaart({
   onTerug,
 }: {
   toolId: string;
+  bedrijfsnaam: string;
+  contact: { telefoonnummer: string | null; email: string | null };
   resultaat: ReturnType<typeof bouwResultaat>;
   evaluatie: ReturnType<typeof evaluatePriceRules>;
   snapshot: LeadSnapshot;
@@ -514,8 +520,7 @@ function ResultaatKaart({
   onTerug: () => void;
 }) {
   const [formOpen, setFormOpen] = useState(false);
-  const action = createLeadAction.bind(null, toolId);
-  const [state, formAction, pending] = useActionState<LeadFormState, FormData>(action, null);
+  const [state, formAction, pending] = useLeadVersturen({ toolId, bedrijfsnaam, contact, uitgeschakeld: previewModus });
   const [leadNaam, setLeadNaam] = useState("");
   const [leadEmail, setLeadEmail] = useState("");
   const [leadTelefoon, setLeadTelefoon] = useState("");
@@ -645,6 +650,7 @@ function ResultaatKaart({
                       {state.error}
                     </p>
                   )}
+                  {state?.uitgesteld && <UitgesteldMelding info={state.uitgesteld} bedrijfsnaam={bedrijfsnaam} />}
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Button type="button" variant="ghost" size="lg" className="w-full sm:flex-1" onClick={() => setFormOpen(false)} disabled={pending}>
                       Terug

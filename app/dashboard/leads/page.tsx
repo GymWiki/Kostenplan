@@ -5,6 +5,8 @@ import { effectiveTier } from "@/app/lib/subscription";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import type { LeadSnapshot } from "@/app/lib/leads";
 import type { OfferteRegel } from "@/app/lib/offertes";
+import { planReserveIngest } from "@/app/lib/reserve-ingest";
+import { planLeadMailWachtrij } from "@/app/lib/mail/plan-lead-mail";
 import { LeadsView, type LeadWithNotes } from "./leads-view";
 
 export const metadata: Metadata = { title: "Leads" };
@@ -28,6 +30,9 @@ function LeadsViewFallback() {
 
 export default async function LeadsPage() {
   const { company } = await requireActiveCompany();
+  // Wie de leads bekijkt, ziet ook meteen aanvragen uit de reserve en verstuurt openstaande mails.
+  planReserveIngest();
+  planLeadMailWachtrij();
   const isGratis = effectiveTier(company) === "GRATIS";
 
   // Leads ontvangen is een Plus/Pro-feature — op Gratis tonen we alleen de

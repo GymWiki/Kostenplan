@@ -27,11 +27,17 @@ export async function recordPublicAnalyticsEventAction(
   toolId: string,
   type: Extract<AnalyticsEventType, "VISIT" | "START" | "COMPLETE">
 ) {
-  const tool = await prisma.tool.findFirst({
-    where: { id: toolId, status: "GEPUBLICEERD", deletedAt: null },
-    select: { companyId: true },
-  });
-  if (!tool) return;
+  // Statistiek mag nooit iets stukmaken: is de database weg, dan telt dit
+  // bezoek simpelweg niet mee.
+  try {
+    const tool = await prisma.tool.findFirst({
+      where: { id: toolId, status: "GEPUBLICEERD", deletedAt: null },
+      select: { companyId: true },
+    });
+    if (!tool) return;
 
-  await recordAnalyticsEvent(tool.companyId, toolId, type);
+    await recordAnalyticsEvent(tool.companyId, toolId, type);
+  } catch (error) {
+    console.error("Analytics-event overgeslagen:", error instanceof Error ? error.message : error);
+  }
 }

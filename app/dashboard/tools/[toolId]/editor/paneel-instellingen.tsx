@@ -151,6 +151,8 @@ export function PaneelWebsite({
   status,
   toolUrl,
   embedCode,
+  iframeCode,
+  heeftContact,
   embedConfig,
   magEmbedden,
   magPubliceren,
@@ -161,6 +163,8 @@ export function PaneelWebsite({
   status: ToolStatus;
   toolUrl: string;
   embedCode: string | null;
+  iframeCode: string | null;
+  heeftContact: boolean;
   embedConfig: ToolEmbedConfig;
   magEmbedden: boolean;
   magPubliceren: boolean;
@@ -194,7 +198,7 @@ export function PaneelWebsite({
         </h3>
         {magEmbedden && embedCode ? (
           <>
-            <EmbedTutorialTabs embedCode={embedCode} />
+            <EmbedTutorialTabs embedCode={embedCode} iframeCode={iframeCode} heeftContact={heeftContact} />
             <EmbedSettingsForm toolId={toolId} embedConfig={embedConfig} />
           </>
         ) : (

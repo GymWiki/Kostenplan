@@ -36,6 +36,8 @@ import {
   type ResultaatStart,
 } from "./paneel-instellingen";
 import { WerkzaamheidPaneel } from "./werkzaamheid-paneel";
+import { PublicatieStatusLabel } from "./publicatie-status";
+import type { PublicatieStatus } from "@/app/lib/actions/publicatie";
 
 export type EditorProps = {
   toolId: string;
@@ -51,6 +53,8 @@ export type EditorProps = {
   website: {
     toolUrl: string;
     embedCode: string | null;
+    iframeCode?: string | null;
+    heeftContact?: boolean;
     embedConfig: ToolEmbedConfig;
     magEmbedden: boolean;
     magPubliceren: boolean;
@@ -59,6 +63,8 @@ export type EditorProps = {
   anderen: AndereRekentool[];
   magNieuweTool: boolean;
   startPaneel: string;
+  // Stand van de gepubliceerde kopie voor de embed (alleen bij een echt account).
+  publicatie?: PublicatieStatus;
   // Alleen voor de probeer-flow (gast): dezelfde editor, met een
   // account-maken-paneel in plaats van publiceren en embed.
   gast?: { logoMislukt: boolean; opslagMelding: string | null; accountPaneel: React.ReactNode; uiterlijkPaneel: React.ReactNode; bedrijfsnaam: string };
@@ -114,6 +120,14 @@ export function RekentoolEditor(props: EditorProps) {
   const [apparaat, setApparaat] = useState<"desktop" | "mobiel">("desktop");
   const [opslag, setOpslag] = useState<Opslag>(KLAAR);
   const [volgordeBezig, setVolgordeBezig] = useState(false);
+  // Telt hoe vaak er een opslag is afgerond, zodat het publicatielabel weet
+  // wanneer het de stand moet gaan ophalen.
+  const [opgeslagenTeller, setOpgeslagenTeller] = useState(0);
+  const vorigeOpslag = useRef(opslag.status);
+  useEffect(() => {
+    if (vorigeOpslag.current !== "klaar" && opslag.status === "klaar") setOpgeslagenTeller((n) => n + 1);
+    vorigeOpslag.current = opslag.status;
+  }, [opslag.status]);
   const [melding, setMelding] = useState<string | null>(null);
   const [hernoemOpen, setHernoemOpen] = useState(false);
   const [hernoemTekst, setHernoemTekst] = useState("");
@@ -402,6 +416,8 @@ export function RekentoolEditor(props: EditorProps) {
           status={props.toolStatus}
           toolUrl={website.toolUrl}
           embedCode={website.embedCode}
+          iframeCode={website.iframeCode ?? null}
+          heeftContact={website.heeftContact ?? false}
           embedConfig={website.embedConfig}
           magEmbedden={website.magEmbedden}
           magPubliceren={website.magPubliceren}
@@ -466,6 +482,9 @@ export function RekentoolEditor(props: EditorProps) {
             fout={opslag.fout}
             onOpnieuw={opslag.opnieuw}
           />
+          {props.publicatie && (
+            <PublicatieStatusLabel toolId={toolId} begin={props.publicatie} opgeslagenTeller={opgeslagenTeller} />
+          )}
         </div>
 
         <div role="group" aria-label="Weergave" className="hidden shrink-0 rounded-lg border border-border p-0.5 md:flex">
