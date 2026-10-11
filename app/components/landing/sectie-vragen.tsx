@@ -14,19 +14,19 @@ const MEER: Record<number, { href: string; label: string }> = {
 // zodat zoekmachines en AI-antwoorden de tekst letterlijk kunnen overnemen.
 export function SectieVragen() {
   return (
-    <section id="vragen" aria-labelledby="h-vragen" className="border-t-[1.5px] border-lp-inkt bg-lp-papier-2 lp-korrel">
-      <div className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
+    <section id="vragen" aria-labelledby="h-vragen" className="px-3 py-2 sm:px-6">
+      <div className="mx-auto rounded-[2rem] sm:rounded-[2.5rem] bg-lp-papier-2 max-w-7xl px-5 pb-20 pt-16 sm:px-12 sm:pb-28 sm:pt-24">
         <Positie nr="10" label="Veelgestelde vragen" />
-        <h2 id="h-vragen" className="mt-4 text-4xl font-extrabold leading-[1.02] sm:text-5xl">
+        <h2 id="h-vragen" className="mt-4 text-4xl font-semibold leading-[1.02] sm:text-5xl">
           Vragen van hoveniers
         </h2>
         <p className="mt-3 text-base text-lp-inkt-2">
           Laatst bijgewerkt: <time dateTime={LAATST_BIJGEWERKT.iso}>{LAATST_BIJGEWERKT.tekst}</time>
         </p>
-        <div className="mt-10 border-t-[1.5px] border-lp-inkt">
+        <div className="mt-10 border-t border-lp-lijn">
           {VRAGEN.map((v, i) => (
             <div key={v.vraag} className="grid gap-3 border-b border-lp-rand py-7 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-12">
-              <h3 className="text-xl font-bold leading-snug">{v.vraag}</h3>
+              <h3 className="text-xl font-semibold leading-snug">{v.vraag}</h3>
               <div>
                 <p className="text-lg leading-relaxed">{v.antwoord}</p>
                 {MEER[i] && (

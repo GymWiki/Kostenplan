@@ -28,12 +28,12 @@ export function SectieAanvragen() {
   const eh = (e: string) => (e === "m1" ? "m" : e === "m2" ? "m²" : "stuks");
 
   return (
-    <section id="aanvragen" aria-labelledby="h-aanvragen" className="border-y-[1.5px] border-lp-inkt bg-lp-papier-2 lp-korrel">
-      <div className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
+    <section id="aanvragen" aria-labelledby="h-aanvragen" className="px-3 py-2 sm:px-6">
+      <div className="mx-auto rounded-[2rem] sm:rounded-[2.5rem] bg-lp-staal max-w-7xl px-5 pb-20 pt-16 sm:px-12 sm:pb-28 sm:pt-24">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end">
           <div>
             <Positie nr="05" label="Aanvragen en offertes" />
-            <h2 id="h-aanvragen" className="mt-4 text-4xl font-extrabold leading-[1.02] sm:text-5xl">
+            <h2 id="h-aanvragen" className="mt-4 text-4xl font-semibold leading-[1.02] sm:text-5xl">
               Aanvragen die iets waard zijn
             </h2>
           </div>
@@ -47,15 +47,15 @@ export function SectieAanvragen() {
         </div>
 
         {/* Inbox · werkbon · conceptofferte, één breed werkblad */}
-        <div className="mt-10 grid overflow-hidden rounded-xl border-[1.5px] border-lp-inkt bg-lp-wit lg:grid-cols-[minmax(0,3fr)_minmax(0,4fr)_minmax(0,4fr)]">
-          <div className="border-b-[1.5px] border-lp-inkt lg:border-b-0 lg:border-r-[1.5px]">
-            <p className="border-b-[1.5px] border-lp-inkt bg-lp-inkt px-4 py-2.5 font-lp-maat text-[11px] uppercase tracking-wider text-lp-papier">Jouw aanvragen · voorbeeld</p>
+        <div className="mt-10 grid overflow-hidden rounded-3xl border border-lp-lijn bg-lp-wit lg:grid-cols-[minmax(0,3fr)_minmax(0,4fr)_minmax(0,4fr)]">
+          <div className="border-b border-lp-lijn lg:border-b-0 lg:border-r-[1.5px]">
+            <p className="border-b border-lp-lijn bg-lp-papier-2 px-4 py-3 font-lp-maat text-[11px] tracking-wide text-lp-inkt-2">Jouw aanvragen · voorbeeld</p>
             <ul>
               {rijen.map((r, i) => (
                 <li key={r.naam} className={`flex items-center gap-3 border-b border-lp-lijn px-4 py-3 ${i === 0 ? "bg-lp-bos-100" : ""}`}>
                   <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 ${i === 0 ? "bg-lp-oker" : "border border-lp-rand"}`} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-bold">{r.naam}</span>
+                    <span className="block truncate text-sm font-semibold">{r.naam}</span>
                     <span className="block text-sm text-lp-inkt-2 tabular-nums">
                       {r.hoeveelheid} {eh(r.eenheid)} · {formatCurrency(r.opbouw.totaal)}
                     </span>
@@ -66,10 +66,10 @@ export function SectieAanvragen() {
             </ul>
           </div>
 
-          <div className="border-b-[1.5px] border-lp-inkt p-5 sm:p-6 lg:border-b-0 lg:border-r-[1.5px]">
+          <div className="border-b border-lp-lijn p-5 sm:p-6 lg:border-b-0 lg:border-r-[1.5px]">
             <div className="flex items-center justify-between gap-3">
-              <h3 className="text-xl font-bold">Nieuwe aanvraag</h3>
-              <span className="rounded-md bg-lp-oker px-2 py-1 font-lp-maat text-[11px] uppercase tracking-wider">Nieuw</span>
+              <h3 className="text-xl font-semibold">Nieuwe aanvraag</h3>
+              <span className="rounded-lg bg-lp-oker px-2 py-1 font-lp-maat text-[11px] tracking-wide">Nieuw</span>
             </div>
             <dl className="mt-4 divide-y divide-lp-lijn border-y border-lp-lijn text-sm">
               {[
@@ -92,10 +92,10 @@ export function SectieAanvragen() {
           </div>
 
           <div className="bg-lp-staal p-5 sm:p-6">
-            <div className="mx-auto max-w-sm rounded-lg border-[1.5px] border-lp-inkt bg-lp-wit p-4 shadow-[0_14px_28px_-16px_rgba(19,32,26,0.45)]">
+            <div className="mx-auto max-w-sm rounded-xl border border-lp-lijn bg-lp-wit p-4 shadow-[0_14px_28px_-16px_rgba(19,32,26,0.45)]">
               <div className="flex items-baseline justify-between gap-2">
-                <p className="font-lp-display text-lg font-extrabold">Offerte</p>
-                <p className="font-lp-maat text-[11px] uppercase tracking-wider text-lp-oker-donker">Concept</p>
+                <p className="font-lp-display text-lg font-semibold">Offerte</p>
+                <p className="font-lp-maat text-[11px] tracking-wide text-lp-oker-donker">Concept</p>
               </div>
               <p className="mt-1 text-sm text-lp-inkt-2">{STIJLEN.groenhof.naam} · voorbeeld</p>
               <table className="mt-4 w-full text-sm">
@@ -114,7 +114,7 @@ export function SectieAanvragen() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="font-bold">
+                  <tr className="font-semibold">
                     <th scope="row" className="pt-2 text-left">Totaal excl. btw</th>
                     <td className="pt-2 text-right text-base">{formatCurrency(eerste.opbouw.totaal)}</td>
                   </tr>

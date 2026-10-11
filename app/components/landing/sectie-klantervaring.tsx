@@ -12,11 +12,11 @@ const TIJDLIJN = [
 export function SectieKlantervaring() {
   const s = STIJLEN.groenhof;
   return (
-    <section aria-labelledby="h-klant" className="bg-lp-bos-950 text-lp-papier">
-      <div className="mx-auto grid max-w-7xl gap-12 px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:items-center">
+    <section aria-labelledby="h-klant" className="px-3 py-2 sm:px-6">
+      <div className="mx-auto rounded-[2rem] bg-lp-bos-950 text-lp-papier sm:rounded-[2.5rem] grid max-w-7xl gap-12 px-5 pb-20 pt-16 sm:px-12 sm:pb-28 sm:pt-24 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:items-center">
         <div>
-          <Positie nr="06" label="Wat je klant ervaart" className="text-lp-bos-100 [&>span:first-child]:text-lp-oker-licht" />
-          <h2 id="h-klant" className="mt-4 text-4xl font-extrabold leading-[1.02] sm:text-5xl">
+          <Positie nr="06" label="Wat je klant ervaart" className="text-lp-bos-100 [&>span:first-child]:bg-lp-bos-800 [&>span:first-child]:text-lp-oker-licht" />
+          <h2 id="h-klant" className="mt-4 text-4xl font-semibold leading-[1.02] sm:text-5xl">
             Hij rekent op jouw site. Ook als jij niet werkt.
           </h2>
           <p className="mt-5 max-w-xl text-lg text-lp-bos-100">
