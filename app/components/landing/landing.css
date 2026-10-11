@@ -1,6 +1,6 @@
 /* Alleen voor de landingspagina. Tokens staan in app/globals.css (--lp-*). */
 .lp {
-  font-family: var(--font-lp-tekst);
+  font-family: var(--font-lp-display), ui-sans-serif, system-ui, sans-serif;
   color: var(--lp-inkt);
   background: var(--lp-papier);
   color-scheme: light;
@@ -24,8 +24,12 @@
 .lp h2,
 .lp h3 {
   font-family: var(--font-lp-display);
-  letter-spacing: -0.015em;
+  font-weight: 600;
+  letter-spacing: -0.04em;
   text-wrap: balance;
+}
+.lp h1 {
+  letter-spacing: -0.045em;
 }
 
 .lp .tabnum {
@@ -85,7 +89,7 @@
   }
 }
 
-/* Schuifregelaar (probleem-model en voor/na): grote, duidelijke greep. */
+/* Schuifregelaar (probleem-model en voor/na): ronde greep, dunne spoor. */
 .lp input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -95,27 +99,32 @@
   cursor: pointer;
 }
 .lp input[type="range"]::-webkit-slider-runnable-track {
-  height: 2px;
-  background: var(--lp-inkt);
+  height: 6px;
+  border-radius: 999px;
+  background: var(--lp-lijn);
 }
 .lp input[type="range"]::-moz-range-track {
-  height: 2px;
-  background: var(--lp-inkt);
+  height: 6px;
+  border-radius: 999px;
+  background: var(--lp-lijn);
 }
 .lp input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  height: 28px;
-  width: 14px;
-  margin-top: -13px;
+  height: 26px;
+  width: 26px;
+  margin-top: -10px;
+  border-radius: 999px;
   background: var(--lp-oker);
-  border: 2px solid var(--lp-inkt);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgb(18 52 37 / 0.35);
 }
 .lp input[type="range"]::-moz-range-thumb {
-  height: 28px;
-  width: 14px;
-  border-radius: 0;
+  height: 22px;
+  width: 22px;
+  border-radius: 999px;
   background: var(--lp-oker);
-  border: 2px solid var(--lp-inkt);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgb(18 52 37 / 0.35);
 }
 
 /* Materiaalstalen: alleen in de werkzaamheden-tabel. */
@@ -146,15 +155,6 @@
 }
 .lp .staal-boom {
   background: radial-gradient(circle at 50% 35%, #5c9a49 0 9px, transparent 10px), linear-gradient(#6b4a2b, #6b4a2b) 50% 100% / 4px 45% no-repeat, #e0e8d8;
-}
-
-/* Archivo Black heeft één gewicht: geen nagebootst vet. */
-.lp h1,
-.lp h2,
-.lp h3,
-.lp .font-lp-display {
-  font-weight: 400 !important;
-  font-synthesis: none;
 }
 
 /* Aanraken: geen vertraging of dubbeltik-zoom op knoppen en links. */

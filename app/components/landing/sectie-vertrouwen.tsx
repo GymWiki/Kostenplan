@@ -15,29 +15,29 @@ const FEITEN = [
 export function SectieVertrouwen() {
   const t = TESTIMONIALS[0];
   return (
-    <section aria-labelledby="h-vertrouwen" className="border-t-[1.5px] border-lp-inkt bg-lp-staal lp-korrel">
-      <div className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
+    <section aria-labelledby="h-vertrouwen" className="px-3 py-2 sm:px-6">
+      <div className="mx-auto rounded-[2rem] sm:rounded-[2.5rem] bg-lp-bos-100 max-w-7xl px-5 pb-20 pt-16 sm:px-12 sm:pb-28 sm:pt-24">
         <Positie nr="08" label="Vertrouwen" />
         <h2 id="h-vertrouwen" className="sr-only">
           Waarom hoveniers Kostenplan kunnen vertrouwen
         </h2>
         {t ? (
           <figure className="mt-8 max-w-4xl">
-            <blockquote className="font-lp-display text-3xl font-bold leading-tight [font-stretch:108%] sm:text-5xl">“{t.tekst}”</blockquote>
+            <blockquote className="font-lp-display text-3xl font-semibold leading-tight sm:text-5xl">“{t.tekst}”</blockquote>
             <figcaption className="mt-5 text-base text-lp-inkt-2">
               <span className="font-semibold text-lp-inkt">{t.naam}</span>, {t.bedrijf}
               {t.plaats ? `, ${t.plaats}` : ""}
             </figcaption>
           </figure>
         ) : (
-          <p className="mt-8 max-w-4xl font-lp-display text-3xl font-bold leading-tight [font-stretch:108%] sm:text-5xl">
+          <p className="mt-8 max-w-4xl font-lp-display text-3xl font-semibold leading-tight sm:text-5xl">
             Gebouwd met een hoveniersbedrijf, voor hoveniers die hun avonden terug willen.
           </p>
         )}
-        <dl className="mt-12 grid gap-x-12 border-t-[1.5px] border-lp-inkt sm:grid-cols-2">
+        <dl className="mt-12 grid gap-x-12 border-t border-lp-lijn sm:grid-cols-2">
           {FEITEN.map(([k, v]) => (
             <div key={k} className="border-b border-lp-rand py-5">
-              <dt className="text-lg font-bold">{k}</dt>
+              <dt className="text-lg font-semibold">{k}</dt>
               <dd className="mt-1 text-base text-lp-inkt-2">{v}</dd>
             </div>
           ))}

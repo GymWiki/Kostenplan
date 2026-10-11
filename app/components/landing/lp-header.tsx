@@ -11,15 +11,15 @@ const LINKS = [
 
 export function LpHeader() {
   return (
-    <header className="border-b-[1.5px] border-lp-inkt bg-lp-papier">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5 font-lp-display text-xl font-extrabold [font-stretch:112%]">
-          <Logo />
+    <header className="sticky top-0 z-40 px-3 pt-3 sm:px-6">
+      <div className="lp-glas lp-zacht mx-auto flex max-w-7xl items-center justify-between gap-3 rounded-full border border-lp-lijn py-2 pl-4 pr-2 sm:pl-5">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5 text-lg font-semibold tracking-[-0.03em]">
+          <Logo className="rounded-xl" />
           Kostenplan
         </Link>
         <nav aria-label="Op deze pagina" className="hidden items-center gap-1 lg:flex">
           {LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="px-3 py-2 text-sm font-semibold text-lp-inkt-2 hover:text-lp-inkt">
+            <a key={l.href} href={l.href} className="rounded-full px-3.5 py-2 text-sm font-medium text-lp-inkt-2 transition-colors hover:bg-lp-papier-2 hover:text-lp-inkt">
               {l.label}
             </a>
           ))}

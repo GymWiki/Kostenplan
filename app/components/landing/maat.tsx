@@ -19,7 +19,7 @@ export function MaatH({ label, className, lijnClass }: { label?: string; classNa
     <div aria-hidden="true" className={cn("flex items-center gap-1.5 font-lp-maat text-[11px] leading-none text-lp-inkt-2", className)}>
       <Pijl naar="l" />
       <span className={cn("lp-teken h-px flex-1 bg-current", lijnClass)} />
-      {label && <span className="shrink-0 px-1 uppercase tracking-wider">{label}</span>}
+      {label && <span className="shrink-0 px-1 tracking-wide">{label}</span>}
       {label && <span className={cn("lp-teken h-px flex-1 bg-current", lijnClass)} />}
       <Pijl naar="r" />
     </div>
@@ -31,19 +31,18 @@ export function MaatV({ label, className }: { label?: string; className?: string
     <div aria-hidden="true" className={cn("flex flex-col items-center gap-1.5 font-lp-maat text-[11px] leading-none text-lp-inkt-2", className)}>
       <Pijl naar="o" />
       <span className="lp-teken-v w-px flex-1 bg-current" />
-      {label && <span className="shrink-0 py-1 uppercase tracking-wider [writing-mode:vertical-rl]">{label}</span>}
+      {label && <span className="shrink-0 py-1 tracking-wide [writing-mode:vertical-rl]">{label}</span>}
       {label && <span className="lp-teken-v w-px flex-1 bg-current" />}
       <Pijl naar="b" />
     </div>
   );
 }
 
-// Sectiekop-regel: nummer + maatlijn, zoals het positienummer op een tekening.
+// Sectielabel: een klein genummerd bolletje met de naam van het onderdeel.
 export function Positie({ nr, label, className }: { nr: string; label: string; className?: string }) {
   return (
-    <div className={cn("flex items-center gap-3 font-lp-maat text-[11px] uppercase tracking-wider text-lp-inkt-2", className)}>
-      <span className="text-lp-oker-donker">{nr}</span>
-      <span aria-hidden="true" className="h-px w-8 bg-current opacity-60" />
+    <div className={cn("flex items-center gap-2.5 text-sm font-medium text-lp-inkt-2", className)}>
+      <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-lp-bos-100 px-2 font-lp-maat text-xs font-medium text-lp-bos-800">{nr}</span>
       <span>{label}</span>
     </div>
   );

@@ -43,12 +43,12 @@ export function WebsiteInvoer({ bron, op = "licht", className }: { bron: KlikBro
           placeholder="jouwbedrijf.nl"
           aria-invalid={fout ? true : undefined}
           aria-describedby={`${id}-hulp`}
-          className="h-12 w-full min-w-0 rounded-lg sm:flex-1 border-[1.5px] border-lp-rand bg-lp-wit px-3 text-base text-lp-inkt placeholder:text-lp-inkt-2"
+          className="h-12 w-full min-w-0 rounded-full border border-lp-rand bg-lp-wit px-5 sm:flex-1 text-base text-lp-inkt placeholder:text-lp-inkt-2"
         />
         <button
           type="submit"
           className={cn(
-            "h-12 cursor-pointer whitespace-nowrap rounded-lg transition-[background-color,transform] duration-200 active:scale-[0.98] motion-reduce:transition-none border-[1.5px] px-5 text-base font-semibold",
+            "h-12 cursor-pointer whitespace-nowrap rounded-full transition-[background-color,transform] duration-200 active:scale-[0.98] motion-reduce:transition-none border px-6 text-base font-semibold",
             "border-lp-bos-900 bg-lp-bos-900 text-white hover:bg-lp-bos-950"
           )}
         >

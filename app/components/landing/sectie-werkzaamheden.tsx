@@ -29,7 +29,7 @@ export function SectieWerkzaamheden() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
         <div>
           <Positie nr="07" label="Werkzaamheden" />
-          <h2 id="h-wz" className="mt-4 text-4xl font-extrabold leading-[1.02] sm:text-5xl">
+          <h2 id="h-wz" className="mt-4 text-4xl font-semibold leading-[1.02] sm:text-5xl">
             Wat je kunt laten uitrekenen
           </h2>
           <p className="mt-5 max-w-md text-lg text-lp-inkt-2">
@@ -48,10 +48,10 @@ export function SectieWerkzaamheden() {
 
         <div>
           <MaatH label="bestek · begin hier" />
-          <table className="mt-3 w-full border-t-[1.5px] border-lp-inkt text-left">
+          <table className="mt-3 w-full border-t border-lp-lijn text-left">
             <caption className="sr-only">Werkzaamheden met rekenmethode en een voorbeeld</caption>
             <thead className="sr-only md:table-header-group md:not-sr-only">
-              <tr className="border-b border-lp-lijn font-lp-maat text-[11px] uppercase tracking-wider text-lp-inkt-2">
+              <tr className="border-b border-lp-lijn font-lp-maat text-[11px] tracking-wide text-lp-inkt-2">
                 <th scope="col" className="w-10 py-2 pr-2 font-medium">Pos.</th>
                 <th scope="col" className="w-14 py-2 font-medium">Staal</th>
                 <th scope="col" className="py-2 font-medium">Werkzaamheid</th>
@@ -66,7 +66,7 @@ export function SectieWerkzaamheden() {
                   <td className="hidden md:table-cell md:py-4">
                     <span aria-hidden="true" className={`block h-8 w-10 border border-lp-inkt ${STAAL[p.id] ?? ""}`} />
                   </td>
-                  <th scope="row" className="block text-lg font-bold md:table-cell md:py-4 md:pr-3">{p.naam}</th>
+                  <th scope="row" className="block text-lg font-semibold md:table-cell md:py-4 md:pr-3">{p.naam}</th>
                   <td className="block text-base md:table-cell md:py-4 md:pr-3">{METHODE[p.rekenmethode]}</td>
                   <td className="block text-base text-lp-inkt-2 tabular-nums md:table-cell md:py-4">
                     {p.voorbeeldHoeveelheid} {EENHEID[p.eenheid]} · {p.materialen.map((m) => m.naam).slice(0, 3).join(", ")}

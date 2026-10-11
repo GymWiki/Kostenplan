@@ -18,7 +18,7 @@ const DEMO_SRC = "/demo/rekentool/groenhof";
 const DEMO_TITEL = "Voorbeeld van een rekentool op de website van Groenhof Tuinen, een fictief hoveniersbedrijf";
 const geenAbonnement = () => () => {};
 const veld =
-  "h-11 w-full min-w-0 rounded-lg border-[1.5px] border-lp-rand bg-lp-wit px-2.5 text-base tabular-nums text-lp-inkt text-right";
+  "h-11 w-full min-w-0 rounded-xl border border-lp-rand bg-lp-wit px-2.5 text-base tabular-nums text-lp-inkt text-right";
 
 function wijzigDraft(d: Draft, fn: (c: Draft) => void): Draft {
   const kopie = structuredClone(d);
@@ -97,7 +97,7 @@ export function HeroDemo() {
       <MaatV label="jouw rekentool" className="hidden min-h-[30rem] sm:flex" />
       <div className="col-span-2 min-w-0 sm:col-span-1">
         <div className={cn("mb-3 flex items-center justify-between gap-3", !js && "invisible")} aria-hidden={!js}>
-          <div role="group" aria-label="Kijk mee vanuit" className="inline-flex overflow-hidden rounded-lg border-[1.5px] border-lp-inkt">
+          <div role="group" aria-label="Kijk mee vanuit" className="inline-flex gap-1 rounded-full border border-lp-lijn bg-lp-wit p-1">
             {(
               [
                 ["klant", "Wat je klant ziet"],
@@ -110,16 +110,16 @@ export function HeroDemo() {
                 aria-pressed={kant === k}
                 tabIndex={js ? 0 : -1}
                 onClick={() => setKant(k)}
-                className={cn("min-h-11 cursor-pointer px-3 text-sm font-semibold sm:px-4", kant === k ? "bg-lp-bos-800 text-white" : "bg-transparent text-lp-inkt hover:bg-lp-papier-2")}
+                className={cn("min-h-10 cursor-pointer rounded-full px-3 text-sm font-semibold transition-colors sm:px-4", kant === k ? "bg-lp-bos-800 text-white" : "bg-transparent text-lp-inkt hover:bg-lp-papier-2")}
               >
                 {label}
               </button>
             ))}
           </div>
-          <span className="hidden font-lp-maat text-[11px] uppercase tracking-wider text-lp-inkt-2 sm:inline">Voorbeeld · fictief bedrijf</span>
+          <span className="hidden font-lp-maat text-[11px] tracking-wide text-lp-inkt-2 sm:inline">Voorbeeld · fictief bedrijf</span>
         </div>
 
-        <div className="relative h-[620px] overflow-hidden rounded-xl border-[1.5px] border-lp-inkt bg-lp-wit">
+        <div className="lp-zacht-groot relative h-[620px] overflow-hidden rounded-3xl border border-lp-lijn bg-lp-wit">
           {bron ? (
             <iframe ref={frame} src={bron} title={DEMO_TITEL} className={cn("h-full w-full border-0", kant === "beheer" && "invisible")} />
           ) : (
@@ -128,14 +128,14 @@ export function HeroDemo() {
                 <style>{".lp-wacht{display:none!important}"}</style>
                 <iframe src={DEMO_SRC} title={DEMO_TITEL} className="absolute inset-0 h-full w-full border-0" />
               </noscript>
-              <div aria-hidden="true" className="lp-wacht flex h-full items-center justify-center bg-lp-wit font-lp-maat text-[11px] uppercase tracking-wider text-lp-inkt-2">
+              <div aria-hidden="true" className="lp-wacht flex h-full items-center justify-center bg-lp-wit font-lp-maat text-[11px] tracking-wide text-lp-inkt-2">
                 Rekentool wordt geladen…
               </div>
             </>
           )}
           {kant === "beheer" && (
             <div className="absolute inset-0 overflow-y-auto overscroll-contain bg-lp-staal p-4 sm:p-5">
-              <p className="font-lp-maat text-[11px] uppercase tracking-wider text-lp-inkt-2">Zo stel jij het in · alleen zichtbaar voor jou</p>
+              <p className="font-lp-maat text-[11px] tracking-wide text-lp-inkt-2">Zo stel jij het in · alleen zichtbaar voor jou</p>
               <div role="group" aria-label="Werkzaamheid" className="mt-3 flex flex-wrap gap-2">
                 {draft.calculator.werkzaamheden.map((x, i) => (
                   <button
@@ -143,14 +143,14 @@ export function HeroDemo() {
                     type="button"
                     aria-pressed={actief === i}
                     onClick={() => setActief(i)}
-                    className={cn("min-h-11 cursor-pointer rounded-lg border-[1.5px] border-lp-inkt px-3 text-sm font-semibold", actief === i ? "bg-lp-inkt text-lp-papier" : "bg-lp-wit text-lp-inkt hover:bg-lp-papier-2")}
+                    className={cn("min-h-11 cursor-pointer rounded-xl border border-lp-lijn px-3 text-sm font-semibold", actief === i ? "bg-lp-inkt text-lp-papier" : "bg-lp-wit text-lp-inkt hover:bg-lp-papier-2")}
                   >
                     {x.draft.naam}
                   </button>
                 ))}
               </div>
 
-              <h3 className="mt-5 text-base font-bold">Materialen en prijzen</h3>
+              <h3 className="mt-5 text-base font-semibold">Materialen en prijzen</h3>
               <ul className="mt-2 divide-y divide-lp-lijn border-y border-lp-lijn">
                 {w.draft.materialen.map((m, j) => (
                   <li key={m.sleutel} className="flex items-center gap-3 py-2">
@@ -170,7 +170,7 @@ export function HeroDemo() {
                 ))}
               </ul>
 
-              <h3 className="mt-5 text-base font-bold">Werktempo en tarieven</h3>
+              <h3 className="mt-5 text-base font-semibold">Werktempo en tarieven</h3>
               <div className="mt-2 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                 <label className="flex flex-col gap-1 text-sm">
                   Hoeveel {eenheid === "m1" ? "meter" : eenheid === "m2" ? "m²" : "stuks"} {w.draft.naam.toLowerCase()} in een dagdeel?
@@ -192,7 +192,7 @@ export function HeroDemo() {
                 </label>
               </div>
 
-              <KostenOpbouwKaart className="mt-5 rounded-xl" opbouw={opbouw} eenheid={eenheid} stap="DAGDEEL" />
+              <KostenOpbouwKaart className="mt-5 rounded-3xl" opbouw={opbouw} eenheid={eenheid} stap="DAGDEEL" />
               <p className="mt-3 text-sm text-lp-inkt-2">Ga terug naar “Wat je klant ziet”: de prijs in de rekentool is meegerekend. Voorbeeldprijzen, pas ze aan naar de jouwe.</p>
             </div>
           )}

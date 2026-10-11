@@ -97,3 +97,13 @@ Schermafbeeldingen per sectie: `docs/landing-screens/` (desktop 1440 px en mobie
 Open `TODO(Pieter)`: `app/lib/landing/testimonials.ts` (testimonials),
 `app/components/landing/landing-schema.tsx` (`sameAs`), en de voorbeeldprijzen en
 werktempo's in `app/lib/presets/hovenier.ts` (die de demo's gebruiken).
+
+## Herontwerp: moderne uitstraling (inhoud ongewijzigd)
+
+Alleen de vormgeving is vernieuwd; alle teksten zijn gelijk gebleven.
+- **Vormtaal:** lichte randen (1 px) en groen getinte schaduwen in plaats van harde inktranden; containers 24 px, bedieningselementen 12 px, knoppen en schakelaars als pil. Secties staan als ingezette, afgeronde vlakken op de pagina.
+- **Typografie:** één lettertype, Geist (koppen en tekst, strakke tracking), plus Geist Mono voor maatlabels. Archivo Black en IBM Plex zijn vervallen.
+- **Header:** zwevende glazen pil met effen terugval (`prefers-reduced-transparency`).
+- **Labels:** sectielabels zijn kleine genummerde bolletjes in gewone letters, geen hoofdletter-eyebrows.
+- **Beweging:** hero-onderdelen schuiven rustig binnen; scroll-onthulling (`lp-onthul`) werkt alleen waar de browser `animation-timeline: view()` kent en laat de inhoud anders gewoon staan.
+- **Bewust niet overgenomen uit de taste-skill:** foto's en stockbeeld (jouw regel: geen foto's), em-dashes in de teksten (inhoud blijft ongewijzigd), dark mode (licht thema volstaat), de ene donkere telefoonband blijft (jouw opdracht voor sectie 6).

@@ -17,8 +17,8 @@ export function ProbleemModel() {
   const werkdagen = uren / 8;
 
   return (
-    <div className="overflow-hidden rounded-xl border-[1.5px] border-lp-inkt bg-lp-wit">
-      <div className="flex items-center justify-between border-b-[1.5px] border-lp-inkt bg-lp-inkt px-4 py-2.5 font-lp-maat text-[11px] uppercase tracking-wider text-lp-papier">
+    <div className="overflow-hidden rounded-3xl border border-lp-lijn bg-lp-wit">
+      <div className="flex items-center justify-between border-b border-lp-lijn bg-lp-papier-2 px-4 py-3 font-lp-maat text-[11px] tracking-wide text-lp-inkt-2">
         <span>Werkbon · jouw avonden</span>
         <span>Schuif naar jouw cijfers</span>
       </div>
@@ -28,7 +28,7 @@ export function ProbleemModel() {
             <label htmlFor={a} className="text-base font-semibold">
               Hoeveel prijsaanvragen krijg je per week?
             </label>
-            <output htmlFor={a} className="font-lp-display text-2xl font-bold tabular-nums">
+            <output htmlFor={a} className="font-lp-display text-2xl font-semibold tabular-nums">
               {aanvragen}
             </output>
           </div>
@@ -40,7 +40,7 @@ export function ProbleemModel() {
             <label htmlFor={b} className="text-base font-semibold">
               Hoeveel minuten kost één offerte?
             </label>
-            <output htmlFor={b} className="font-lp-display text-2xl font-bold tabular-nums">
+            <output htmlFor={b} className="font-lp-display text-2xl font-semibold tabular-nums">
               {minuten} min
             </output>
           </div>
@@ -48,12 +48,12 @@ export function ProbleemModel() {
           <MaatH label="minuten per offerte" className="mt-1" />
         </div>
 
-        <div className="border-t-[1.5px] border-lp-inkt pt-5" aria-live="polite">
-          <p className="font-lp-maat text-[11px] uppercase tracking-wider text-lp-inkt-2">
+        <div className="border-t border-lp-lijn pt-5" aria-live="polite">
+          <p className="font-lp-maat text-[11px] tracking-wide text-lp-inkt-2">
             {aanvragen} × {minuten} min × 52 weken
           </p>
-          <p className="mt-1 font-lp-display text-5xl font-extrabold leading-none tabular-nums sm:text-6xl">
-            {getal(uren)} <span className="text-2xl font-bold sm:text-3xl">uur per jaar</span>
+          <p className="mt-1 font-lp-display text-5xl font-semibold leading-none tabular-nums sm:text-6xl">
+            {getal(uren)} <span className="text-2xl font-semibold sm:text-3xl">uur per jaar</span>
           </p>
           <p className="mt-2 text-base text-lp-inkt-2">
             Dat zijn ruim {getal(Math.round(werkdagen))} werkdagen van 8 uur die gaan zitten in prijzen uitrekenen, vóórdat je weet of een klant serieus is.

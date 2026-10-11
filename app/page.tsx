@@ -52,11 +52,12 @@ export default function Home() {
 
       <main id="main-content" className="flex-1">
         {/* 1 · HERO */}
+        <div className="lp-licht">
         <section aria-labelledby="h-hero" className="mx-auto max-w-7xl px-4 pb-16 pt-10 sm:px-6 sm:pb-24 sm:pt-16">
           <div className="grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-14">
             <div className="flex flex-col">
               <Positie nr="01" label="Rekentool voor hoveniers" />
-              <h1 id="h-hero" className="mt-5 text-5xl font-extrabold leading-[0.98] sm:text-6xl lg:text-[4.25rem]">
+              <h1 id="h-hero" className="mt-5 text-5xl font-semibold leading-[1] sm:text-6xl lg:text-[4.5rem]">
                 {KOPREGEL}
               </h1>
               <p className="lp-in mt-6 max-w-xl text-lg leading-relaxed [animation-delay:60ms]">{DEFINITIE}</p>
@@ -64,11 +65,11 @@ export default function Home() {
                 <CtaLink href="/probeer" bron="hero" pijl className="w-full sm:w-fit sm:text-lg">
                   Maak je rekentool — gratis, geen account nodig
                 </CtaLink>
-                <div className="border-t-[1.5px] border-lp-inkt pt-5">
+                <div className="border-t border-lp-lijn pt-5">
                   <WebsiteInvoer bron="hero" />
                 </div>
               </div>
-              <p className="lp-in mt-6 font-lp-maat text-[11px] uppercase leading-relaxed tracking-wider text-lp-inkt-2">
+              <p className="lp-in mt-6 font-lp-maat text-[11px] leading-relaxed tracking-wider text-lp-inkt-2">
                 Werkt op {WEBSITEBOUWERS.join(", ")} en elke andere website
               </p>
             </div>
@@ -77,13 +78,14 @@ export default function Home() {
             </div>
           </div>
         </section>
+        </div>
 
         {/* 2 · HET PROBLEEM */}
-        <section id="probleem" aria-labelledby="h-probleem" className="border-y-[1.5px] border-lp-inkt bg-lp-papier-2 lp-korrel">
-          <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 sm:py-28 lg:grid-cols-12">
+        <section id="probleem" aria-labelledby="h-probleem" className="px-3 py-2 sm:px-6">
+          <div className="mx-auto rounded-[2rem] sm:rounded-[2.5rem] bg-lp-papier-2 grid max-w-7xl gap-12 px-5 py-16 sm:px-12 sm:py-28 lg:grid-cols-12">
             <div className="lg:col-span-7">
               <Positie nr="02" label="Het probleem" />
-              <h2 id="h-probleem" className="mt-4 text-5xl font-extrabold leading-[0.95] sm:text-7xl lg:text-[5.5rem]">
+              <h2 id="h-probleem" className="mt-4 text-5xl font-semibold leading-[0.95] sm:text-7xl lg:text-[5.5rem]">
                 ’s Avonds nog offertes uitrekenen.
               </h2>
               <ul className="mt-10 max-w-xl divide-y divide-lp-rand border-y border-lp-rand text-xl">
@@ -116,11 +118,11 @@ export default function Home() {
         <SectieZoWerktHet />
 
         {/* 4 · JOUW HUISSTIJL */}
-        <section id="huisstijl" aria-labelledby="h-huisstijl" className="border-y-[1.5px] border-lp-inkt bg-lp-wit">
-          <div className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
+        <section id="huisstijl" aria-labelledby="h-huisstijl" className="px-3 py-2 sm:px-6">
+          <div className="mx-auto rounded-[2rem] sm:rounded-[2.5rem] border border-lp-lijn bg-lp-wit lp-zacht max-w-7xl px-5 pb-20 pt-16 sm:px-12 sm:pb-28 sm:pt-24">
             <div className="max-w-3xl">
               <Positie nr="04" label="Jouw huisstijl" />
-              <h2 id="h-huisstijl" className="mt-4 text-4xl font-extrabold leading-[1.02] sm:text-5xl">
+              <h2 id="h-huisstijl" className="mt-4 text-4xl font-semibold leading-[1.02] sm:text-5xl">
                 Eruit zien als jouw bedrijf, vanaf de eerste keer
               </h2>
               <MaatH label="logo en kleuren van jouw website" className="mt-6 max-w-md" />
