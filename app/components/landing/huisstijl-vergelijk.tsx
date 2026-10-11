@@ -19,7 +19,7 @@ export function HuisstijlVergelijk() {
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
       <div>
-        <div role="radiogroup" aria-label="Kies een voorbeeldbedrijf" className="flex flex-col border-t-[1.5px] border-lp-inkt">
+        <div role="group" aria-label="Kies een voorbeeldbedrijf" className="flex flex-col border-t-[1.5px] border-lp-inkt">
           {MERKEN.map((id) => {
             const s = STIJLEN[id];
             const aan = id === merk;
@@ -27,22 +27,21 @@ export function HuisstijlVergelijk() {
               <button
                 key={id}
                 type="button"
-                role="radio"
-                aria-checked={aan}
+                aria-pressed={aan}
                 onClick={() => setMerk(id)}
                 className={cn(
                   "flex min-h-16 cursor-pointer items-center gap-4 border-b-[1.5px] border-lp-inkt px-1 py-3 text-left transition-colors",
                   aan ? "bg-lp-papier-2" : "hover:bg-lp-papier-2/60"
                 )}
               >
-                <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center font-serif text-2xl font-bold text-white" style={{ backgroundColor: s.kleur }}>
+                <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg font-serif text-2xl font-bold text-white" style={{ backgroundColor: s.kleur }}>
                   {s.letter}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-base font-bold">{s.naam}</span>
                   <span className="block font-lp-maat text-[11px] uppercase tracking-wider text-lp-inkt-2">{s.site} · voorbeeld</span>
                 </span>
-                <span aria-hidden="true" className="h-5 w-5 shrink-0 border-[1.5px] border-lp-inkt" style={{ backgroundColor: aan ? s.kleur : "transparent" }} />
+                <span aria-hidden="true" className="h-5 w-5 shrink-0 rounded-md border-[1.5px] border-lp-inkt" style={{ backgroundColor: aan ? s.kleur : "transparent" }} />
               </button>
             );
           })}
@@ -57,10 +56,10 @@ export function HuisstijlVergelijk() {
 
       <div>
         <div className="mb-2 flex justify-between gap-2 font-lp-maat text-[11px] uppercase tracking-wider">
-          <span className="bg-lp-inkt px-2 py-1 text-lp-papier">Voor · zonder huisstijl</span>
-          <span className="bg-lp-oker px-2 py-1 text-lp-inkt">Na · jouw huisstijl</span>
+          <span className="rounded-md bg-lp-inkt px-2 py-1 text-lp-papier">Voor · zonder huisstijl</span>
+          <span className="rounded-md bg-lp-oker px-2 py-1 text-lp-inkt">Na · jouw huisstijl</span>
         </div>
-        <div className="relative h-[520px] overflow-hidden border-[1.5px] border-lp-inkt bg-lp-wit">
+        <div className="relative h-[520px] overflow-hidden rounded-xl border-[1.5px] border-lp-inkt bg-lp-wit">
           <iframe
             src="/demo/rekentool/standaard"
             title="Voor: een rekentool zonder eigen huisstijl"

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { lpFontClasses } from "@/app/components/landing/fonts";
 import "@/app/components/landing/landing.css";
@@ -23,6 +23,8 @@ import { DEFINITIE, KOPREGEL, WEBSITEBOUWERS } from "@/app/lib/landing/feiten";
 
 const TITLE = "Prijscalculator voor hoveniers | Kostenplan";
 const DESCRIPTION = "Online rekentool voor hoveniers: je klanten berekenen zelf de prijs van een schutting, terras of gazon en sturen een aanvraag. Gratis proberen.";
+
+export const viewport: Viewport = { themeColor: "#f3f4ee", colorScheme: "light" };
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },

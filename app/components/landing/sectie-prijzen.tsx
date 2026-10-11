@@ -20,7 +20,7 @@ export function SectiePrijzen() {
               Laatst bijgewerkt: <time dateTime={LAATST_BIJGEWERKT.iso}>{LAATST_BIJGEWERKT.tekst}</time>. Maandelijks opzegbaar.
             </p>
           </div>
-          <fieldset className="border-[1.5px] border-lp-inkt">
+          <fieldset className="overflow-hidden rounded-lg border-[1.5px] border-lp-inkt">
             <legend className="sr-only">Betaalperiode</legend>
             <div className="flex">
               {[

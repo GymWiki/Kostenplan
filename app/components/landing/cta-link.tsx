@@ -34,7 +34,7 @@ export function CtaLink({
       href={href}
       onClick={() => trackKlik(bron, actie, pakket ? { pakket } : undefined)}
       className={cn(
-        "inline-flex min-h-12 items-center justify-center gap-2 border-[1.5px] px-6 py-2 text-center text-base font-semibold transition-colors duration-150",
+        "inline-flex min-h-12 items-center rounded-lg justify-center gap-2 border-[1.5px] px-6 py-2 text-center text-base font-semibold transition-colors duration-150",
         STIJL[stijl],
         className
       )}

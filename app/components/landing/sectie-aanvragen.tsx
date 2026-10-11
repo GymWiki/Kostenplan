@@ -47,7 +47,7 @@ export function SectieAanvragen() {
         </div>
 
         {/* Inbox · werkbon · conceptofferte, één breed werkblad */}
-        <div className="mt-10 grid border-[1.5px] border-lp-inkt bg-lp-wit lg:grid-cols-[minmax(0,3fr)_minmax(0,4fr)_minmax(0,4fr)]">
+        <div className="mt-10 grid overflow-hidden rounded-xl border-[1.5px] border-lp-inkt bg-lp-wit lg:grid-cols-[minmax(0,3fr)_minmax(0,4fr)_minmax(0,4fr)]">
           <div className="border-b-[1.5px] border-lp-inkt lg:border-b-0 lg:border-r-[1.5px]">
             <p className="border-b-[1.5px] border-lp-inkt bg-lp-inkt px-4 py-2.5 font-lp-maat text-[11px] uppercase tracking-wider text-lp-papier">Jouw aanvragen · voorbeeld</p>
             <ul>
@@ -69,7 +69,7 @@ export function SectieAanvragen() {
           <div className="border-b-[1.5px] border-lp-inkt p-5 sm:p-6 lg:border-b-0 lg:border-r-[1.5px]">
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-xl font-bold">Nieuwe aanvraag</h3>
-              <span className="bg-lp-oker px-2 py-1 font-lp-maat text-[11px] uppercase tracking-wider">Nieuw</span>
+              <span className="rounded-md bg-lp-oker px-2 py-1 font-lp-maat text-[11px] uppercase tracking-wider">Nieuw</span>
             </div>
             <dl className="mt-4 divide-y divide-lp-lijn border-y border-lp-lijn text-sm">
               {[
@@ -92,7 +92,7 @@ export function SectieAanvragen() {
           </div>
 
           <div className="bg-lp-staal p-5 sm:p-6">
-            <div className="mx-auto max-w-sm border-[1.5px] border-lp-inkt bg-lp-wit p-4 shadow-[6px_6px_0_0_var(--lp-lijn)]">
+            <div className="mx-auto max-w-sm rounded-lg border-[1.5px] border-lp-inkt bg-lp-wit p-4 shadow-[0_14px_28px_-16px_rgba(19,32,26,0.45)]">
               <div className="flex items-baseline justify-between gap-2">
                 <p className="font-lp-display text-lg font-extrabold">Offerte</p>
                 <p className="font-lp-maat text-[11px] uppercase tracking-wider text-lp-oker-donker">Concept</p>
