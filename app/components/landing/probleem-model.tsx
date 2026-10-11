@@ -17,7 +17,7 @@ export function ProbleemModel() {
   const werkdagen = uren / 8;
 
   return (
-    <div className="border-[1.5px] border-lp-inkt bg-lp-wit">
+    <div className="overflow-hidden rounded-xl border-[1.5px] border-lp-inkt bg-lp-wit">
       <div className="flex items-center justify-between border-b-[1.5px] border-lp-inkt bg-lp-inkt px-4 py-2.5 font-lp-maat text-[11px] uppercase tracking-wider text-lp-papier">
         <span>Werkbon · jouw avonden</span>
         <span>Schuif naar jouw cijfers</span>

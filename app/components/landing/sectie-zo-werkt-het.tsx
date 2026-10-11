@@ -12,7 +12,7 @@ const GEKOZEN = ["bestrating", "schutting", "graszoden"];
 function Beeld1() {
   const lijst = HOVENIER_PRESETS.slice(0, 6);
   return (
-    <div className="border-[1.5px] border-lp-inkt bg-lp-wit">
+    <div className="overflow-hidden rounded-xl border-[1.5px] border-lp-inkt bg-lp-wit">
       <p className="border-b-[1.5px] border-lp-inkt bg-lp-inkt px-4 py-2.5 font-lp-maat text-[11px] uppercase tracking-wider text-lp-papier">Kies wat je doet</p>
       <ul className="divide-y divide-lp-lijn">
         {lijst.map((p) => {
@@ -20,7 +20,7 @@ function Beeld1() {
           const Icoon = PRODUCT_ICONS[p.icoon];
           return (
             <li key={p.id} className={`flex min-h-14 items-center gap-3 px-4 ${aan ? "bg-lp-bos-100" : ""}`}>
-              <span aria-hidden="true" className={`flex h-6 w-6 shrink-0 items-center justify-center border-[1.5px] border-lp-inkt ${aan ? "bg-lp-bos-800 text-white" : "bg-lp-wit"}`}>
+              <span aria-hidden="true" className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-[1.5px] border-lp-inkt ${aan ? "bg-lp-bos-800 text-white" : "bg-lp-wit"}`}>
                 {aan && <Check className="h-4 w-4" />}
               </span>
               {Icoon && <Icoon className="h-5 w-5 shrink-0 text-lp-bos-800" aria-hidden="true" />}
@@ -37,7 +37,7 @@ function Beeld1() {
 function Beeld2() {
   const p = HOVENIER_PRESETS.find((x) => x.id === "bestrating")!;
   return (
-    <div className="border-[1.5px] border-lp-inkt bg-lp-wit">
+    <div className="overflow-hidden rounded-xl border-[1.5px] border-lp-inkt bg-lp-wit">
       <p className="border-b-[1.5px] border-lp-inkt bg-lp-inkt px-4 py-2.5 font-lp-maat text-[11px] uppercase tracking-wider text-lp-papier">Bestrating / terras · jouw prijzen</p>
       <table className="w-full text-base">
         <caption className="sr-only">Materialen en prijzen per m²</caption>
@@ -52,7 +52,7 @@ function Beeld2() {
             <tr key={m.naam}>
               <th scope="row" className="px-4 py-3 text-left font-semibold">
                 {m.naam}
-                <span className="ml-2 bg-lp-oker-licht px-1.5 py-0.5 align-middle font-lp-maat text-[10px] uppercase text-lp-inkt">voorbeeld</span>
+                <span className="ml-2 rounded-sm bg-lp-oker-licht px-1.5 py-0.5 align-middle font-lp-maat text-[10px] uppercase text-lp-inkt">voorbeeld</span>
               </th>
               <td className="px-4 py-3 text-right">€ {m.prijs},00</td>
             </tr>
@@ -75,7 +75,7 @@ function Beeld2() {
 
 function Beeld3() {
   return (
-    <div className="border-[1.5px] border-lp-inkt bg-lp-wit">
+    <div className="overflow-hidden rounded-xl border-[1.5px] border-lp-inkt bg-lp-wit">
       <div className="flex items-center gap-2 border-b-[1.5px] border-lp-inkt bg-lp-papier-2 px-4 py-2.5 font-lp-maat text-[11px] text-lp-inkt-2">
         <span aria-hidden="true" className="h-2 w-2 bg-lp-inkt-2" />
         jouwbedrijf.nl/rekentool
@@ -86,12 +86,12 @@ function Beeld3() {
           <div className="mt-2 flex flex-col gap-2" aria-hidden="true">
             <span className="h-3 w-3/4 bg-lp-lijn" />
             <span className="h-3 w-1/2 bg-lp-lijn" />
-            <span className="mt-1 flex h-24 items-center justify-center border-[1.5px] border-dashed border-lp-bos-800 font-lp-maat text-[11px] uppercase text-lp-bos-800">hier staat je rekentool</span>
+            <span className="mt-1 flex h-24 items-center justify-center rounded-lg border-[1.5px] border-dashed border-lp-bos-800 font-lp-maat text-[11px] uppercase text-lp-bos-800">hier staat je rekentool</span>
           </div>
         </div>
         <div>
           <p className="font-lp-maat text-[11px] uppercase tracking-wider text-lp-inkt-2">Pro: plak één stukje code</p>
-          <pre className="mt-2 overflow-x-auto bg-lp-bos-950 p-3 font-lp-maat text-[11px] leading-relaxed text-lp-bos-100">{`<iframe
+          <pre className="mt-2 overflow-x-auto rounded-lg bg-lp-bos-950 p-3 font-lp-maat text-[11px] leading-relaxed text-lp-bos-100">{`<iframe
   src="https://…"
   title="Rekentool"
   width="100%"

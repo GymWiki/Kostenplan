@@ -18,7 +18,7 @@ const DEMO_SRC = "/demo/rekentool/groenhof";
 const DEMO_TITEL = "Voorbeeld van een rekentool op de website van Groenhof Tuinen, een fictief hoveniersbedrijf";
 const geenAbonnement = () => () => {};
 const veld =
-  "h-11 w-full min-w-0 rounded-none border-[1.5px] border-lp-rand bg-lp-wit px-2.5 text-base tabular-nums text-lp-inkt text-right";
+  "h-11 w-full min-w-0 rounded-lg border-[1.5px] border-lp-rand bg-lp-wit px-2.5 text-base tabular-nums text-lp-inkt text-right";
 
 function wijzigDraft(d: Draft, fn: (c: Draft) => void): Draft {
   const kopie = structuredClone(d);
@@ -97,7 +97,7 @@ export function HeroDemo() {
       <MaatV label="jouw rekentool" className="hidden min-h-[30rem] sm:flex" />
       <div className="col-span-2 min-w-0 sm:col-span-1">
         <div className={cn("mb-3 flex items-center justify-between gap-3", !js && "invisible")} aria-hidden={!js}>
-          <div role="group" aria-label="Kijk mee vanuit" className="inline-flex border-[1.5px] border-lp-inkt">
+          <div role="group" aria-label="Kijk mee vanuit" className="inline-flex overflow-hidden rounded-lg border-[1.5px] border-lp-inkt">
             {(
               [
                 ["klant", "Wat je klant ziet"],
@@ -119,7 +119,7 @@ export function HeroDemo() {
           <span className="hidden font-lp-maat text-[11px] uppercase tracking-wider text-lp-inkt-2 sm:inline">Voorbeeld · fictief bedrijf</span>
         </div>
 
-        <div className="relative h-[620px] border-[1.5px] border-lp-inkt bg-lp-wit">
+        <div className="relative h-[620px] overflow-hidden rounded-xl border-[1.5px] border-lp-inkt bg-lp-wit">
           {bron ? (
             <iframe ref={frame} src={bron} title={DEMO_TITEL} className={cn("h-full w-full border-0", kant === "beheer" && "invisible")} />
           ) : (
@@ -143,7 +143,7 @@ export function HeroDemo() {
                     type="button"
                     aria-pressed={actief === i}
                     onClick={() => setActief(i)}
-                    className={cn("min-h-11 cursor-pointer border-[1.5px] border-lp-inkt px-3 text-sm font-semibold", actief === i ? "bg-lp-inkt text-lp-papier" : "bg-lp-wit text-lp-inkt hover:bg-lp-papier-2")}
+                    className={cn("min-h-11 cursor-pointer rounded-lg border-[1.5px] border-lp-inkt px-3 text-sm font-semibold", actief === i ? "bg-lp-inkt text-lp-papier" : "bg-lp-wit text-lp-inkt hover:bg-lp-papier-2")}
                   >
                     {x.draft.naam}
                   </button>
@@ -192,7 +192,7 @@ export function HeroDemo() {
                 </label>
               </div>
 
-              <KostenOpbouwKaart className="mt-5 rounded-none" opbouw={opbouw} eenheid={eenheid} stap="DAGDEEL" />
+              <KostenOpbouwKaart className="mt-5 rounded-xl" opbouw={opbouw} eenheid={eenheid} stap="DAGDEEL" />
               <p className="mt-3 text-sm text-lp-inkt-2">Ga terug naar “Wat je klant ziet”: de prijs in de rekentool is meegerekend. Voorbeeldprijzen, pas ze aan naar de jouwe.</p>
             </div>
           )}

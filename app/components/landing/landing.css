@@ -3,6 +3,7 @@
   font-family: var(--font-lp-tekst);
   color: var(--lp-inkt);
   background: var(--lp-papier);
+  color-scheme: light;
   /* Hergebruikte app-componenten (bijv. de kostenopbouw) nemen de landingskleuren over. */
   --background: var(--lp-papier);
   --foreground: var(--lp-inkt);
@@ -154,4 +155,16 @@
 .lp .font-lp-display {
   font-weight: 400 !important;
   font-synthesis: none;
+}
+
+/* Aanraken: geen vertraging of dubbeltik-zoom op knoppen en links. */
+.lp a,
+.lp button,
+.lp label,
+.lp input[type="range"] {
+  touch-action: manipulation;
+}
+.lp p,
+.lp li {
+  text-wrap: pretty;
 }

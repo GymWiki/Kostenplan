@@ -14,7 +14,7 @@ export function LpHeader() {
     <header className="border-b-[1.5px] border-lp-inkt bg-lp-papier">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center gap-2.5 font-lp-display text-xl font-extrabold [font-stretch:112%]">
-          <Logo className="rounded-none" />
+          <Logo />
           Kostenplan
         </Link>
         <nav aria-label="Op deze pagina" className="hidden items-center gap-1 lg:flex">

@@ -33,8 +33,8 @@ export function SectieKlantervaring() {
         </div>
 
         <div className="mx-auto w-full max-w-[22rem]">
-          <div className="border-[3px] border-lp-bos-700 bg-lp-bos-900 p-2.5 [border-radius:2.25rem]">
-            <div className="overflow-hidden bg-lp-wit [border-radius:1.6rem]">
+          <div className="rounded-[2.25rem] border-[3px] border-lp-bos-700 bg-lp-bos-900 p-2.5">
+            <div className="overflow-hidden rounded-[1.6rem] bg-lp-wit">
               <div className="flex items-center gap-2 bg-lp-papier-2 px-3 py-2 font-lp-maat text-[11px] text-lp-inkt-2">
                 <span aria-hidden="true" className="h-1.5 w-1.5 bg-lp-inkt-2" />
                 <span className="truncate">{s.site}/rekentool</span>
