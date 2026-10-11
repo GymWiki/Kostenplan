@@ -42,7 +42,7 @@ export function MaatV({ label, className }: { label?: string; className?: string
 export function Positie({ nr, label, className }: { nr: string; label: string; className?: string }) {
   return (
     <div className={cn("flex items-center gap-2.5 text-sm font-medium text-lp-inkt-2", className)}>
-      <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-lp-bos-100 px-2 font-lp-maat text-xs font-medium text-lp-bos-800">{nr}</span>
+      <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-lp-wit px-2 font-lp-maat text-xs font-medium text-lp-bos-800 ring-1 ring-lp-lijn">{nr}</span>
       <span>{label}</span>
     </div>
   );

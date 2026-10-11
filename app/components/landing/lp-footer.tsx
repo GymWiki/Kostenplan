@@ -49,7 +49,7 @@ export function LpFooter() {
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
             {KOLOMMEN.map((k) => (
               <nav key={k.titel} aria-label={k.titel}>
-                <p className="font-lp-maat text-[11px] tracking-wide text-lp-oker-donker">{k.titel}</p>
+                <p className="font-lp-maat text-[11px] tracking-wide text-lp-bos-700">{k.titel}</p>
                 <ul className="mt-3 flex flex-col gap-1">
                   {k.links.map((l) => (
                     <li key={l.href}>

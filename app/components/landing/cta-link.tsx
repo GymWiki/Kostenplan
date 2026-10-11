@@ -5,6 +5,7 @@ import { trackKlik, type KlikActie, type KlikBron } from "@/app/lib/landing/trac
 import { cn } from "@/app/lib/cn";
 
 const STIJL = {
+  primair: "border-transparent bg-lp-bos-700 text-white shadow-[0_10px_24px_-12px_rgba(15,58,36,0.75)] hover:bg-lp-bos-800",
   oker: "border-transparent bg-lp-oker text-lp-inkt shadow-[0_10px_24px_-10px_rgba(125,90,16,0.55)] hover:bg-lp-oker-licht",
   bos: "border-transparent bg-lp-bos-800 text-white shadow-[0_10px_24px_-12px_rgba(18,52,37,0.7)] hover:bg-lp-bos-900",
   lijn: "border-lp-lijn bg-lp-wit text-lp-inkt hover:border-lp-rand",
@@ -17,7 +18,7 @@ export function CtaLink({
   bron,
   actie = "cta",
   pakket,
-  stijl = "oker",
+  stijl = "primair",
   pijl = false,
   className,
   children,

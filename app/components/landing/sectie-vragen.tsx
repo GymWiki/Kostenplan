@@ -31,7 +31,7 @@ export function SectieVragen() {
                 <p className="text-lg leading-relaxed">{v.antwoord}</p>
                 {MEER[i] && (
                   <p className="mt-2 text-base">
-                    <Link href={MEER[i].href} className="font-semibold underline decoration-lp-oker decoration-2 underline-offset-4">
+                    <Link href={MEER[i].href} className="font-semibold underline decoration-lp-bos-700 decoration-2 underline-offset-4">
                       {MEER[i].label}
                     </Link>
                   </p>

@@ -357,19 +357,19 @@ summary,
    Alleen gebruikt binnen .lp; de rest van de app blijft ongemoeid.
    ------------------------------------------------------------------ */
 :root {
-  --lp-bos-950: #0c2219;
-  --lp-bos-900: #123425;
-  --lp-bos-800: #1a4a35;
-  --lp-bos-700: #24634a;
-  --lp-bos-100: #dfe9e1;
-  --lp-papier: #f3f4ee;
-  --lp-papier-2: #e9ebe2;
-  --lp-wit: #fbfbf8;
-  --lp-staal: #e3e9e8;
-  --lp-lijn: #cfd5c8;
-  --lp-rand: #76827a;
-  --lp-inkt: #13201a;
-  --lp-inkt-2: #46534b;
+  --lp-bos-950: #0b2417;
+  --lp-bos-900: #0f3a24;
+  --lp-bos-800: #17512f;
+  --lp-bos-700: #1f6b3e;
+  --lp-bos-100: #e1efe4;
+  --lp-papier: #f3f7f2;
+  --lp-papier-2: #e8efe6;
+  --lp-wit: #fcfefb;
+  --lp-staal: #dfe9e4;
+  --lp-lijn: #d0dccf;
+  --lp-rand: #7a8c7d;
+  --lp-inkt: #0f2418;
+  --lp-inkt-2: #3f5546;
   --lp-oker: #c8962f;
   --lp-oker-donker: #7d5a10;
   --lp-oker-licht: #e6bf6a;

@@ -116,7 +116,7 @@
   border-radius: 999px;
   background: var(--lp-oker);
   border: 3px solid #fff;
-  box-shadow: 0 2px 8px rgb(18 52 37 / 0.35);
+  box-shadow: 0 2px 8px rgb(15 58 36 / 0.35);
 }
 .lp input[type="range"]::-moz-range-thumb {
   height: 22px;
@@ -124,7 +124,7 @@
   border-radius: 999px;
   background: var(--lp-oker);
   border: 3px solid #fff;
-  box-shadow: 0 2px 8px rgb(18 52 37 / 0.35);
+  box-shadow: 0 2px 8px rgb(15 58 36 / 0.35);
 }
 
 /* Materiaalstalen: alleen in de werkzaamheden-tabel. */

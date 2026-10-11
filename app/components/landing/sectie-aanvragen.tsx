@@ -39,7 +39,7 @@ export function SectieAanvragen() {
           </div>
           <p className="text-lg text-lp-inkt-2">
             Een aanvraag komt binnen met alles wat je nodig hebt: de maten, het gekozen materiaal, de prijs die je klant al gezien heeft en zijn gegevens. Jij past de conceptofferte aan en verstuurt hem pas als hij klopt.{" "}
-            <Link href="/online-offerte-maken" className="font-semibold underline decoration-lp-oker decoration-2 underline-offset-4 hover:text-lp-inkt">
+            <Link href="/online-offerte-maken" className="font-semibold underline decoration-lp-bos-700 decoration-2 underline-offset-4 hover:text-lp-inkt">
               Online offerte maken
             </Link>
             .
@@ -95,7 +95,7 @@ export function SectieAanvragen() {
             <div className="mx-auto max-w-sm rounded-xl border border-lp-lijn bg-lp-wit p-4 shadow-[0_14px_28px_-16px_rgba(19,32,26,0.45)]">
               <div className="flex items-baseline justify-between gap-2">
                 <p className="font-lp-display text-lg font-semibold">Offerte</p>
-                <p className="font-lp-maat text-[11px] tracking-wide text-lp-oker-donker">Concept</p>
+                <p className="font-lp-maat text-[11px] tracking-wide text-lp-bos-700">Concept</p>
               </div>
               <p className="mt-1 text-sm text-lp-inkt-2">{STIJLEN.groenhof.naam} · voorbeeld</p>
               <table className="mt-4 w-full text-sm">
