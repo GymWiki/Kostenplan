@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Minus, Plus, Printer, Mail, Phone, Image as ImageIcon, Check } from "lucide-react";
 import {
@@ -36,7 +36,7 @@ import { unitLabel } from "@/app/lib/units";
 import { cn } from "@/app/lib/cn";
 import { fontFamilyFor, brandingFontVariables } from "@/app/lib/fonts";
 import { accessibleTextColor } from "@/app/lib/color";
-import { createLeadAction, type LeadFormState } from "@/app/lib/actions/leads";
+import { UitgesteldMelding, useLeadVersturen } from "./lead-versturen";
 import { Bewerkbaar, EditorProvider, WerkzaamheidToevoegen, useEditorHaak, type EditorHaken } from "./bewerkbaar";
 import { recordPublicAnalyticsEventAction } from "@/app/lib/actions/analytics";
 import type { LeadSnapshot, LeadSnapshotLine } from "@/app/lib/leads";
@@ -239,7 +239,7 @@ export function Calculator({
   useEffect(() => {
     if (visitRecorded.current || inEditor) return;
     visitRecorded.current = true;
-    void recordPublicAnalyticsEventAction(toolId, "VISIT");
+    recordPublicAnalyticsEventAction(toolId, "VISIT").catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -282,11 +282,11 @@ export function Calculator({
     if (inEditor) return;
     if (!startRecorded.current && breakdown.heeftSelectie) {
       startRecorded.current = true;
-      void recordPublicAnalyticsEventAction(toolId, "START");
+      recordPublicAnalyticsEventAction(toolId, "START").catch(() => {});
     }
     if (!completeRecorded.current && breakdown.heeftSelectie && !heeftOntbrekendeVerplichteMaterialen && bedragTop(breakdown.totaal) > 0) {
       completeRecorded.current = true;
-      void recordPublicAnalyticsEventAction(toolId, "COMPLETE");
+      recordPublicAnalyticsEventAction(toolId, "COMPLETE").catch(() => {});
     }
   }, [toolId, breakdown, heeftOntbrekendeVerplichteMaterialen, inEditor]);
 
@@ -465,6 +465,8 @@ export function Calculator({
               <div className="flex flex-col gap-4 lg:sticky lg:top-6">
                 <Summary
                   toolId={toolId}
+                  bedrijfsnaam={bedrijfsnaam}
+                  contact={contact}
                   breakdown={breakdown}
                   snapshot={snapshot}
                   costSettings={costSettings}
@@ -1090,6 +1092,8 @@ function QuantityStepper({
 
 function Summary({
   toolId,
+  bedrijfsnaam,
+  contact,
   breakdown,
   snapshot,
   costSettings,
@@ -1104,6 +1108,8 @@ function Summary({
   ctaTekst: string | null;
   vraagTelefoon: boolean;
   toolId: string;
+  bedrijfsnaam: string;
+  contact: { telefoonnummer: string | null; email: string | null };
   breakdown: ReturnType<typeof calculateBreakdownRange>;
   snapshot: LeadSnapshot;
   costSettings: CostSettings;
@@ -1113,8 +1119,7 @@ function Summary({
 }) {
   const [formOpen, setFormOpen] = useState(false);
   const testmodus = useEditorHaak() !== null;
-  const action = createLeadAction.bind(null, toolId);
-  const [state, formAction, pending] = useActionState<LeadFormState, FormData>(action, null);
+  const [state, formAction, pending] = useLeadVersturen({ toolId, bedrijfsnaam, contact, uitgeschakeld: testmodus });
   // Los bijgehouden (niet defaultValue): React reset uncontrolled velden na
   // elke form action, ook bij een fout. Zonder deze eigen state raakt de
   // klant bij bijv. een ongeldig e-mailadres ook de al ingevulde naam kwijt.
@@ -1277,6 +1282,7 @@ function Summary({
                     </div>
                   )}
                   {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
+                  {state?.uitgesteld && <UitgesteldMelding info={state.uitgesteld} bedrijfsnaam={bedrijfsnaam} />}
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Button
                       type="button"

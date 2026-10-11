@@ -163,3 +163,47 @@ Nieuwe embedcode (te kopiëren uit de editor, "Zet op mijn website"):
   direct (niet pas na 4 s) verschijnt.
 - **Oude codes** (iframe + resize-script) blijven werken: `/embed/<toolId>` en het
   `kostenplan:resize`-bericht zijn ongewijzigd.
+
+## Fase 3 — Aanvragen gaan niet verloren
+
+Browser (`app/lib/lead-client.ts`, hook `useLeadVersturen` in
+`app/portaal/[slug]/lead-versturen.tsx`, in beide rekentools):
+
+- Versturen gaat naar `POST /api/embed/lead` met 8 s time-out en maximaal 3
+  pogingen (wachttijd 1 s, dan 3 s). Elke aanvraag heeft een sleutel
+  (`crypto.randomUUID`) die bij elke poging gelijk blijft.
+- Lukt het niet (netwerk, time-out, 5xx), dan gaat — als `NEXT_PUBLIC_LEAD_RESERVE_URL`
+  is ingesteld — één poging naar de reserve-route (niveau 2). Daarna wordt
+  alleen wat de bezoeker invulde (naam, e-mail, telefoon, de gekozen regels met
+  prijsindicatie) in `localStorage` (`kp:leads:v1`, max. 5 stuks, max. 30 dagen,
+  altijd in try/catch) bewaard.
+- Meteen daarna ziet de bezoeker: **"Je aanvraag is nog niet verstuurd. We
+  proberen het automatisch opnieuw."** met **Mail je aanvraag** (mailto met de
+  samenvatting in de tekst; alleen als de hovenier zijn e-mailadres toont),
+  **Bel ons** (alleen als het telefoonnummer getoond wordt) en de samenvatting
+  als kopieerbare tekst.
+- De wachtrij wordt geprobeerd bij elk volgend bezoek, zodra de verbinding
+  terug is (`online`) en elke 45 s zolang de aanvraag nog wacht. Een tweede
+  poging na bewerken vervangt dezelfde wachtrij-regel (zelfde sleutel), dus geen
+  dubbele lead.
+- Een definitieve afwijzing (400/404: ongeldige invoer, tool weg) haalt de
+  aanvraag uit de wachtrij; de browser controleert naam/e-mail vooraf dezelfde
+  manier als de server, zodat dat nauwelijks voorkomt.
+- Analytics-aanroepen zijn afgevangen (`.catch`) en de server-action zelf
+  faalt stil: statistiek kan nooit een fout in de pagina geven.
+
+Server:
+
+- `maakLead()` (`app/lib/lead-aanmaken.ts`) is de ene gedeelde kern (server
+  action, `/api/embed/lead` en straks de Cloudflare-ingest). Idempotentie:
+  `Lead.idempotentieSleutel` is uniek; een tweede verzoek met dezelfde sleutel
+  (ook gelijktijdig, via de unieke index) geeft `ok` zonder tweede lead.
+- De lead wordt **eerst** opgeslagen. E-mail volgt daarna uit een outbox
+  (`Lead.mailVerzondOp/mailPogingen/mailVolgendePoging/mailFout`):
+  `planLeadMail` probeert na het antwoord direct 3 keer (0 s, 3 s, 10 s), daarna
+  wachtrij met 2, 4, 8… minuten (max. 6 uur, max. 12 pogingen). De wachtrij
+  wordt opgeruimd bij elke nieuwe lead, door de dagelijkse cron en handmatig via
+  `GET /api/cron/leadmail`. Zonder `BREVO_API_KEY` wordt er niet gemaild
+  (zoals voorheen) en blijft alles gewoon in de database.
+- Bestaande leads krijgen in de migratie `mailVerzondOp = createdAt`, zodat er
+  niets nagestuurd wordt.
