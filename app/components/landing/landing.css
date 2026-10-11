@@ -1,0 +1,157 @@
+/* Alleen voor de landingspagina. Tokens staan in app/globals.css (--lp-*). */
+.lp {
+  font-family: var(--font-lp-tekst);
+  color: var(--lp-inkt);
+  background: var(--lp-papier);
+  /* Hergebruikte app-componenten (bijv. de kostenopbouw) nemen de landingskleuren over. */
+  --background: var(--lp-papier);
+  --foreground: var(--lp-inkt);
+  --card: var(--lp-wit);
+  --card-foreground: var(--lp-inkt);
+  --border: var(--lp-lijn);
+  --input: var(--lp-rand);
+  --ring: var(--lp-bos-700);
+  --primary: var(--lp-bos-800);
+  --primary-foreground: #ffffff;
+  --muted-foreground: var(--lp-inkt-2);
+  --secondary: var(--lp-papier-2);
+  --accent: var(--lp-bos-100);
+  --accent-foreground: var(--lp-bos-800);
+}
+
+.lp h1,
+.lp h2,
+.lp h3 {
+  font-family: var(--font-lp-display);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.lp .tabnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.lp :focus-visible {
+  outline: 3px solid var(--lp-oker);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Maatlijnen: tekenen zich één keer uit bij het laden. */
+@keyframes lp-teken {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes lp-teken-v {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes lp-verschijn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.lp .lp-teken {
+  transform-origin: left center;
+  animation: lp-teken 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.lp .lp-teken-v {
+  transform-origin: center top;
+  animation: lp-teken-v 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.lp .lp-pijl {
+  animation: lp-verschijn 300ms 650ms both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp .lp-teken,
+  .lp .lp-teken-v,
+  .lp .lp-pijl {
+    animation: none;
+  }
+  .lp * {
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Schuifregelaar (probleem-model en voor/na): grote, duidelijke greep. */
+.lp input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+}
+.lp input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--lp-inkt);
+}
+.lp input[type="range"]::-moz-range-track {
+  height: 2px;
+  background: var(--lp-inkt);
+}
+.lp input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 28px;
+  width: 14px;
+  margin-top: -13px;
+  background: var(--lp-oker);
+  border: 2px solid var(--lp-inkt);
+}
+.lp input[type="range"]::-moz-range-thumb {
+  height: 28px;
+  width: 14px;
+  border-radius: 0;
+  background: var(--lp-oker);
+  border: 2px solid var(--lp-inkt);
+}
+
+/* Materiaalstalen: alleen in de werkzaamheden-tabel. */
+.lp .staal-klinker {
+  background:
+    linear-gradient(90deg, transparent 49%, rgba(0, 0, 0, 0.18) 50%, transparent 51%) 0 0 / 14px 100%,
+    linear-gradient(0deg, transparent 47%, rgba(0, 0, 0, 0.2) 50%, transparent 53%) 0 0 / 100% 7px, #b5654a;
+}
+.lp .staal-tegel {
+  background:
+    linear-gradient(90deg, transparent 47%, rgba(0, 0, 0, 0.16) 50%, transparent 53%) 0 0 / 24px 100%,
+    linear-gradient(0deg, transparent 47%, rgba(0, 0, 0, 0.16) 50%, transparent 53%) 0 0 / 100% 24px, #a9aaa5;
+}
+.lp .staal-hout {
+  background: repeating-linear-gradient(90deg, #a7773f 0 6px, #96692f 6px 7px, #b4854d 7px 13px);
+}
+.lp .staal-gras {
+  background: repeating-linear-gradient(100deg, #4f8a3a 0 3px, #5f9a47 3px 6px);
+}
+.lp .staal-kunstgras {
+  background: repeating-linear-gradient(80deg, #3f9a4d 0 2px, #54ad5c 2px 5px);
+}
+.lp .staal-haag {
+  background: radial-gradient(circle at 30% 40%, #3f7a3a 0 3px, transparent 4px) 0 0 / 9px 9px, #2f5f2c;
+}
+.lp .staal-grond {
+  background: repeating-linear-gradient(45deg, #6b5a46 0 4px, #5d4d3a 4px 8px);
+}
+.lp .staal-boom {
+  background: radial-gradient(circle at 50% 35%, #5c9a49 0 9px, transparent 10px), linear-gradient(#6b4a2b, #6b4a2b) 50% 100% / 4px 45% no-repeat, #e0e8d8;
+}
+
+/* Archivo Black heeft één gewicht: geen nagebootst vet. */
+.lp h1,
+.lp h2,
+.lp h3,
+.lp .font-lp-display {
+  font-weight: 400 !important;
+  font-synthesis: none;
+}

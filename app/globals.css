@@ -351,3 +351,48 @@ summary,
     animation: none;
   }
 }
+
+/* ------------------------------------------------------------------
+   Landingspagina (docs/landing-design.md): eigen, afgebakende tokens.
+   Alleen gebruikt binnen .lp; de rest van de app blijft ongemoeid.
+   ------------------------------------------------------------------ */
+:root {
+  --lp-bos-950: #0c2219;
+  --lp-bos-900: #123425;
+  --lp-bos-800: #1a4a35;
+  --lp-bos-700: #24634a;
+  --lp-bos-100: #dfe9e1;
+  --lp-papier: #f3f4ee;
+  --lp-papier-2: #e9ebe2;
+  --lp-wit: #fbfbf8;
+  --lp-staal: #e3e9e8;
+  --lp-lijn: #cfd5c8;
+  --lp-rand: #76827a;
+  --lp-inkt: #13201a;
+  --lp-inkt-2: #46534b;
+  --lp-oker: #c8962f;
+  --lp-oker-donker: #7d5a10;
+  --lp-oker-licht: #e6bf6a;
+}
+
+@theme inline {
+  --color-lp-bos-950: var(--lp-bos-950);
+  --color-lp-bos-900: var(--lp-bos-900);
+  --color-lp-bos-800: var(--lp-bos-800);
+  --color-lp-bos-700: var(--lp-bos-700);
+  --color-lp-bos-100: var(--lp-bos-100);
+  --color-lp-papier: var(--lp-papier);
+  --color-lp-papier-2: var(--lp-papier-2);
+  --color-lp-wit: var(--lp-wit);
+  --color-lp-staal: var(--lp-staal);
+  --color-lp-lijn: var(--lp-lijn);
+  --color-lp-rand: var(--lp-rand);
+  --color-lp-inkt: var(--lp-inkt);
+  --color-lp-inkt-2: var(--lp-inkt-2);
+  --color-lp-oker: var(--lp-oker);
+  --color-lp-oker-donker: var(--lp-oker-donker);
+  --color-lp-oker-licht: var(--lp-oker-licht);
+  --font-lp-display: var(--font-lp-display), ui-sans-serif, system-ui, sans-serif;
+  --font-lp-tekst: var(--font-lp-tekst), ui-sans-serif, system-ui, sans-serif;
+  --font-lp-maat: var(--font-lp-maat), ui-monospace, monospace;
+}

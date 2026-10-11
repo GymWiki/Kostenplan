@@ -15,7 +15,7 @@ export default async function proxy(request: NextRequest) {
   // Het uitproberen zonder account (/probeer) werkt volledig in de browser en
   // raakt Supabase niet. Alleen het overnemen na het inloggen vraagt een sessie.
   const pad = request.nextUrl.pathname;
-  if ((pad === "/probeer" || pad.startsWith("/probeer/")) && !pad.startsWith("/probeer/importeren")) {
+  if (pad.startsWith("/demo/") || ((pad === "/probeer" || pad.startsWith("/probeer/")) && !pad.startsWith("/probeer/importeren"))) {
     return NextResponse.next({ request });
   }
 
@@ -49,7 +49,8 @@ export default async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isProtected = protectedPrefixes.some((prefix) => path.startsWith(prefix));
+  // Hele padsegmenten: "/voorbeeld" mag niet ook "/voorbeelden-rekentools" (publiek) beschermen.
+  const isProtected = protectedPrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
   const isAuthRoute = authRoutes.includes(path);
 
   if (isProtected && !user) {

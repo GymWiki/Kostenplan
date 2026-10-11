@@ -73,14 +73,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Levering A (multi-tool) is /t/[bedrijfsslug]/[toolslug], niet meer de
   // legacy /portaal/[slug] (die blijft wél werken, maar wordt bewust niet
   // meer actief gepromoot voor indexering — voorkomt dubbele content).
-  const tools = await prisma.tool.findMany({
-    where: {
-      status: "GEPUBLICEERD",
-      deletedAt: null,
-      products: { some: { actief: true } },
-    },
-    select: { slug: true, updatedAt: true, company: { select: { slug: true } } },
-  });
+  // Een onbereikbare database mag de sitemap (en dus de build) niet breken: dan
+  // staan er tijdelijk alleen de vaste pagina's in.
+  const tools = await prisma.tool
+    .findMany({
+      where: {
+        status: "GEPUBLICEERD",
+        deletedAt: null,
+        products: { some: { actief: true } },
+      },
+      select: { slug: true, updatedAt: true, company: { select: { slug: true } } },
+    })
+    .catch(() => []);
 
   const toolPages: MetadataRoute.Sitemap = tools.map((tool) => ({
     url: `${BASE_URL}/t/${tool.company.slug}/${tool.slug}`,

@@ -49,7 +49,7 @@ export function SiteFooter() {
               Kostenplan
             </Link>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              Kostenplan is een handelsnaam van GymWiki.
+              Kostenplan is onderdeel van GymWiki, Zwolle.
             </p>
             <dl className="mt-4 flex flex-col gap-1 text-sm text-muted-foreground">
               <div className="flex gap-1.5">
