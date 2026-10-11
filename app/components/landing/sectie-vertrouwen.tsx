@@ -15,8 +15,8 @@ const FEITEN = [
 export function SectieVertrouwen() {
   const t = TESTIMONIALS[0];
   return (
-    <section aria-labelledby="h-vertrouwen" className="border-t-[1.5px] border-lp-inkt bg-lp-staal">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
+    <section aria-labelledby="h-vertrouwen" className="border-t-[1.5px] border-lp-inkt bg-lp-staal lp-korrel">
+      <div className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
         <Positie nr="08" label="Vertrouwen" />
         <h2 id="h-vertrouwen" className="sr-only">
           Waarom hoveniers Kostenplan kunnen vertrouwen

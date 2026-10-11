@@ -14,8 +14,8 @@ const MEER: Record<number, { href: string; label: string }> = {
 // zodat zoekmachines en AI-antwoorden de tekst letterlijk kunnen overnemen.
 export function SectieVragen() {
   return (
-    <section id="vragen" aria-labelledby="h-vragen" className="border-t-[1.5px] border-lp-inkt bg-lp-papier-2">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
+    <section id="vragen" aria-labelledby="h-vragen" className="border-t-[1.5px] border-lp-inkt bg-lp-papier-2 lp-korrel">
+      <div className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
         <Positie nr="10" label="Veelgestelde vragen" />
         <h2 id="h-vragen" className="mt-4 text-4xl font-extrabold leading-[1.02] sm:text-5xl">
           Vragen van hoveniers

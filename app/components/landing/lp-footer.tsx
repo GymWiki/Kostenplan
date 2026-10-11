@@ -8,9 +8,10 @@ const KOLOMMEN: { titel: string; links: { href: string; label: string }[] }[] = 
       { href: "/probeer", label: "Probeer gratis" },
       { href: "/rekentool", label: "Wat is een rekentool?" },
       { href: "/voorbeelden-rekentools", label: "Voorbeelden" },
-      { href: "/rekentool-templates", label: "Templates" },
       { href: "/features", label: "Functionaliteiten" },
       { href: "/prijzen", label: "Prijzen" },
+      { href: "/kennisbank", label: "Kennisbank" },
+      { href: "/login", label: "Inloggen" },
     ],
   },
   {
@@ -21,14 +22,6 @@ const KOLOMMEN: { titel: string; links: { href: string; label: string }[] }[] = 
       { href: "/prijs-calculator", label: "Prijs calculator" },
       { href: "/online-offerte-maken", label: "Online offerte maken" },
       { href: "/rekentool-op-eigen-website", label: "Op je eigen website" },
-    ],
-  },
-  {
-    titel: "Meer lezen",
-    links: [
-      { href: "/kennisbank", label: "Kennisbank" },
-      { href: "/blog", label: "Blog" },
-      { href: "/login", label: "Inloggen" },
     ],
   },
   {
@@ -53,7 +46,7 @@ export function LpFooter() {
               Kostenplan is onderdeel van {BEDRIJF.naam} · KVK {BEDRIJF.kvk} · BTW {BEDRIJF.btw} · {BEDRIJF.plaats}
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
             {KOLOMMEN.map((k) => (
               <nav key={k.titel} aria-label={k.titel}>
                 <p className="font-lp-maat text-[11px] uppercase tracking-wider text-lp-oker-licht">{k.titel}</p>

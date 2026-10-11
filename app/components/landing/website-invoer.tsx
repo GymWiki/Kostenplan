@@ -48,7 +48,7 @@ export function WebsiteInvoer({ bron, op = "licht", className }: { bron: KlikBro
         <button
           type="submit"
           className={cn(
-            "h-12 cursor-pointer whitespace-nowrap rounded-lg border-[1.5px] px-5 text-base font-semibold",
+            "h-12 cursor-pointer whitespace-nowrap rounded-lg transition-[background-color,transform] duration-200 active:scale-[0.98] motion-reduce:transition-none border-[1.5px] px-5 text-base font-semibold",
             "border-lp-bos-900 bg-lp-bos-900 text-white hover:bg-lp-bos-950"
           )}
         >

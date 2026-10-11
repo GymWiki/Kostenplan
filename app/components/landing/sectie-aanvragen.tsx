@@ -28,8 +28,8 @@ export function SectieAanvragen() {
   const eh = (e: string) => (e === "m1" ? "m" : e === "m2" ? "m²" : "stuks");
 
   return (
-    <section id="aanvragen" aria-labelledby="h-aanvragen" className="border-y-[1.5px] border-lp-inkt bg-lp-papier-2">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
+    <section id="aanvragen" aria-labelledby="h-aanvragen" className="border-y-[1.5px] border-lp-inkt bg-lp-papier-2 lp-korrel">
+      <div className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end">
           <div>
             <Positie nr="05" label="Aanvragen en offertes" />

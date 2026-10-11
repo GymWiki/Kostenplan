@@ -127,7 +127,7 @@ const STAPPEN = [
 
 export function SectieZoWerktHet() {
   return (
-    <section id="zo-werkt-het" aria-labelledby="h-zo" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
+    <section id="zo-werkt-het" aria-labelledby="h-zo" className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
       <Positie nr="03" label="Zo werkt het" />
       <h2 id="h-zo" className="mt-4 max-w-3xl text-4xl font-extrabold leading-[1.02] sm:text-5xl">
         In drie stappen staat je rekentool online

@@ -8,7 +8,7 @@ import { PRIJZEN } from "@/app/lib/subscription";
 // uit app/lib/subscription.ts, dezelfde bron als de betaling.
 export function SectiePrijzen() {
   return (
-    <section id="prijzen" aria-labelledby="h-prijzen" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
+    <section id="prijzen" aria-labelledby="h-prijzen" className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
       <div className="group/prijs">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
