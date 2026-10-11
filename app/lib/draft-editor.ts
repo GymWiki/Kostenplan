@@ -1,7 +1,8 @@
 import { DAGDELEN_PER_DAG, UREN_PER_DAG } from "@/app/lib/calculate";
 import { HOVENIER_PRESETS, presetById, presetNaarDraft, type HovenierPreset } from "@/app/lib/presets";
 import { bouwPreviewProduct, type ProductMetRelaties, type WerkzaamheidDraft } from "@/app/lib/werkzaamheid";
-import { nieuweId, type Draft, type DraftWerkzaamheid } from "@/app/lib/draft";
+import { nieuweId } from "@/app/lib/draft-id";
+import type { Draft, DraftWerkzaamheid } from "@/app/lib/draft";
 import type { Branding, CostSettings } from "@/app/generated/prisma/client";
 
 // Vertaalt het browser-concept naar de gegevens die de editor al kent, zodat

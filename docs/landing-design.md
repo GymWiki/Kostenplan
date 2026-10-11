@@ -126,3 +126,7 @@ Kritische blik: de pagina las als crème met oker; groen zat vooral in donkere v
 ### Opgeruimd
 - Vervallen: oude `SiteHeader`, `SiteFooter`, marketing-`MobileNav`, `nav-links`, `ScrollCalculatorDemo`, `TryItDemo`, `UseCaseSwitcher`, het oude `StructuredData`, `MarketingPricingTable`.
 - 11 pagina's voor andere vakgebieden onder `/voor/*` (alleen nog doorverwijzingen) en `/voor` zijn vervangen door permanente redirects in `next.config.ts`; de gegevens van die 12 vakgebieden zijn uit `doelgroepen.ts` gehaald. Sectie "andere vakmensen" op de hoveniers-pagina en "Welke rekentools kun je maken?" op `/rekentool` (verwees naar die pagina's) zijn verwijderd.
+
+## LCP van de homepage
+
+Oorzaak: de homepage laadde zod (±285 KB onverkleind) in de browser, doordat `draft-editor.ts` een hulpfunctie uit `draft.ts` haalde (dat de zod-schema's bevat). Die hulpfunctie staat nu in `draft-id.ts`. Gevolg in Lighthouse mobiel (7 runs, productiebuild): LCP 2,0 tot 2,4 s (was 2,1 tot 2,9 s), Performance 96 tot 98, TBT 10 tot 190 ms. Met echte throttling (4x CPU, trage 4G) is de LCP ±1,5 s en gelijk aan de FCP. Geprobeerd en teruggedraaid: `experimental.inlineCss` (HTML groeide naar 580 KB, Performance daalde naar 87).
