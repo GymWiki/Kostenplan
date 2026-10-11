@@ -48,7 +48,7 @@ export function Overlay({
 
   // Binnen het admin-thema renderen (anders valt de overlay buiten de
   // thema-variabelen van het dashboard).
-  const doel = document.querySelector<HTMLElement>("[data-admin-theme]") ?? document.body;
+  const doel = document.querySelector<HTMLElement>("[data-admin-theme], [data-lp]") ?? document.body;
   return createPortal(
     <div
       role="dialog"

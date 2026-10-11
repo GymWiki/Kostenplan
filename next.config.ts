@@ -29,6 +29,27 @@ const nextConfig: NextConfig = {
       dynamic: 120,
     },
   },
+  // Kostenplan is er alleen voor hoveniers: de oude vakgebied-pagina's (en het
+  // overzicht) sturen permanent door naar de hoveniers-pagina.
+  async redirects() {
+    const oud = [
+      "aannemers",
+      "badkamerbedrijven",
+      "bouwbedrijven",
+      "elektriciens",
+      "keukenbedrijven",
+      "klusbedrijven",
+      "kozijnen",
+      "loodgieters",
+      "schilders",
+      "schuttingbedrijven",
+      "stratenmakers",
+    ];
+    return [
+      { source: "/voor", destination: "/voor/hoveniers", permanent: true },
+      ...oud.map((slug) => ({ source: `/voor/${slug}`, destination: "/voor/hoveniers", permanent: true })),
+    ];
+  },
   async headers() {
     return [
       {

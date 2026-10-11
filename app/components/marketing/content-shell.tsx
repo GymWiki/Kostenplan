@@ -1,6 +1,5 @@
 import { MDXRemote } from "next-mdx-remote/rsc";
-import { SiteHeader } from "@/app/components/marketing/site-header";
-import { SiteFooter } from "@/app/components/marketing/site-footer";
+import { MarketingShell } from "@/app/components/landing/marketing-shell";
 import { Breadcrumbs, type BreadcrumbItem } from "@/app/components/marketing/breadcrumbs";
 import { GeoAnswer } from "@/app/components/marketing/geo-answer";
 import { FaqSection } from "@/app/components/marketing/faq-section";
@@ -85,9 +84,8 @@ export async function ContentShell({
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <MarketingShell>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <SiteHeader />
       <Breadcrumbs items={kruimels} />
 
       <main id="main-content" className="flex-1">
@@ -119,8 +117,6 @@ export async function ContentShell({
 
         {gerelateerd && <section className="mx-auto max-w-4xl px-4 pb-16 sm:px-6">{gerelateerd}</section>}
       </main>
-
-      <SiteFooter />
-    </div>
+    </MarketingShell>
   );
 }

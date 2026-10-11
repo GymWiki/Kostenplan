@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { SiteHeader } from "@/app/components/marketing/site-header";
-import { SiteFooter } from "@/app/components/marketing/site-footer";
+import { MarketingShell } from "@/app/components/landing/marketing-shell";
 import { Breadcrumbs } from "@/app/components/marketing/breadcrumbs";
-import { MarketingPricingTable } from "@/app/components/pricing/marketing-pricing-table";
+import { SectiePrijzen } from "@/app/components/landing/sectie-prijzen";
 
 export const metadata: Metadata = {
   title: "Prijzen voor Hoveniers",
@@ -30,24 +29,11 @@ export const metadata: Metadata = {
 
 export default function PrijzenPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <SiteHeader />
+    <MarketingShell>
       <Breadcrumbs items={[{ label: "Prijzen", href: "/prijzen" }]} />
-      <main id="main-content" className="mx-auto w-full max-w-5xl flex-1 px-4 py-20 sm:px-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Simpele, eerlijke prijzen
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            Begin gratis en groei mee. Betaal maandelijks of kies jaarlijks voor de beste prijs —
-            altijd maandelijks op te zeggen.
-          </p>
-        </div>
-        <div className="mt-14">
-          <MarketingPricingTable />
-        </div>
+      <main id="main-content" className="flex-1">
+        <SectiePrijzen hoofdkop />
       </main>
-      <SiteFooter />
-    </div>
+    </MarketingShell>
   );
 }

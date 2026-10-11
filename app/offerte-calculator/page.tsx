@@ -3,8 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Check, X } from "lucide-react";
 import { LinkButton } from "@/app/components/ui/button";
 import { Reveal } from "@/app/components/ui/reveal";
-import { SiteHeader } from "@/app/components/marketing/site-header";
-import { SiteFooter } from "@/app/components/marketing/site-footer";
+import { MarketingShell } from "@/app/components/landing/marketing-shell";
 import { Breadcrumbs } from "@/app/components/marketing/breadcrumbs";
 import { GeoAnswer } from "@/app/components/marketing/geo-answer";
 import { FaqSection } from "@/app/components/marketing/faq-section";
@@ -73,8 +72,7 @@ const FAQS = [
 
 export default function OfferteCalculatorPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <SiteHeader />
+    <MarketingShell>
       <Breadcrumbs
         items={[
           { label: "Rekentool", href: "/rekentool" },
@@ -229,8 +227,6 @@ export default function OfferteCalculatorPage() {
           </Reveal>
         </section>
       </main>
-
-      <SiteFooter />
-    </div>
+    </MarketingShell>
   );
 }

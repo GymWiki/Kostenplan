@@ -1,15 +1,13 @@
-import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Reveal } from "@/app/components/ui/reveal";
-import { SiteHeader } from "@/app/components/marketing/site-header";
-import { SiteFooter } from "@/app/components/marketing/site-footer";
+import { MarketingShell } from "@/app/components/landing/marketing-shell";
 import { Breadcrumbs } from "@/app/components/marketing/breadcrumbs";
 import { GeoAnswer } from "@/app/components/marketing/geo-answer";
 import { FaqSection } from "@/app/components/marketing/faq-section";
 import { RelatedContent } from "@/app/components/marketing/related-content";
-import { ZICHTBARE_DOELGROEPEN, type Doelgroep } from "@/app/lib/doelgroepen";
+import type { Doelgroep } from "@/app/lib/doelgroepen";
 import { alleContent } from "@/app/lib/content";
 
 // Gedeelde template voor de doelgroep-landingspagina's onder /voor/[slug].
@@ -17,13 +15,11 @@ import { alleContent } from "@/app/lib/content";
 // app/lib/doelgroepen.ts) en krijgt daarmee een unieke URL, title en H1,
 // terwijl de opmaak en de onderlinge cross-links hier centraal blijven.
 export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
-  const andereDoelgroepen = ZICHTBARE_DOELGROEPEN.filter((d) => d.slug !== doelgroep.slug);
   const features = alleContent("features");
   const kennisbank = alleContent("kennisbank").slice(0, 2);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <SiteHeader />
+    <MarketingShell>
       <Breadcrumbs
         items={[
           { label: "Voor hoveniers", href: "/voor/hoveniers" },
@@ -127,42 +123,6 @@ export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
           </div>
         </section>
 
-        {/* ANDERE DOELGROEPEN — alleen als er meer dan één doelgroep actief is */}
-        {andereDoelgroepen.length > 0 && <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-          <Reveal className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
-              Ook een rekentool voor andere vakmensen
-            </h2>
-            <p className="mt-3 text-muted-foreground">
-              Kostenplan werkt voor elk vakgebied waarin je klanten vooraf een prijsindicatie
-              willen zien.
-            </p>
-          </Reveal>
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {andereDoelgroepen.map((d) => (
-              <Reveal key={d.slug}>
-                <Link
-                  href={`/voor/${d.slug}`}
-                  className="group flex h-full flex-col justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-md"
-                >
-                  <div>
-                    <h3 className="font-semibold text-foreground">
-                      Voor {d.naamMeervoud}
-                    </h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                      Prijsindicaties voor {d.projectVoorbeeld}, direct vanaf je website.
-                    </p>
-                  </div>
-                  <span className="flex items-center gap-1.5 text-sm font-medium text-primary">
-                    Bekijken
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
-                  </span>
-                </Link>
-              </Reveal>
-            ))}
-          </div>
-        </section>}
-
         {/* FINAL CTA */}
         <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
           <Reveal>
@@ -195,8 +155,6 @@ export function DoelgroepLanding({ doelgroep }: { doelgroep: Doelgroep }) {
           </Reveal>
         </section>
       </main>
-
-      <SiteFooter />
-    </div>
+    </MarketingShell>
   );
 }

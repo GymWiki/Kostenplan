@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { SiteHeader } from "@/app/components/marketing/site-header";
-import { SiteFooter } from "@/app/components/marketing/site-footer";
+import { MarketingShell } from "@/app/components/landing/marketing-shell";
 import { LegalSection } from "@/app/components/marketing/legal-section";
 
 export const metadata: Metadata = {
@@ -12,8 +11,7 @@ export const metadata: Metadata = {
 
 export default function PrivacybeleidPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <SiteHeader />
+    <MarketingShell>
       <main id="main-content" className="mx-auto w-full max-w-3xl flex-1 px-4 py-16 sm:px-6 sm:py-20">
         <div className="border-b border-border pb-8">
           <h1 className="text-3xl font-bold tracking-tight text-balance text-foreground sm:text-4xl">
@@ -87,7 +85,6 @@ export default function PrivacybeleidPage() {
           </LegalSection>
         </div>
       </main>
-      <SiteFooter />
-    </div>
+    </MarketingShell>
   );
 }

@@ -10,14 +10,14 @@ import { ShieldCheck } from "lucide-react";
 // Agenda of andere Google-diensten.
 export function GoogleDataSection() {
   return (
-    <section className="border-y border-border bg-secondary/40 py-16">
-      <div className="mx-auto max-w-3xl px-4 sm:px-6">
+    <section aria-labelledby="h-google" className="px-3 py-2 sm:px-6">
+      <div className="mx-auto max-w-7xl rounded-[2rem] border border-border bg-card px-5 py-10 sm:rounded-[2.5rem] sm:px-12 sm:py-14">
         <div className="flex items-start gap-4">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
             <ShieldCheck className="h-5 w-5" />
           </span>
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">
+          <div className="max-w-3xl">
+            <h2 id="h-google" className="text-xl font-semibold text-foreground">
               Hoe gebruiken we jouw Google-gegevens?
             </h2>
             <div className="mt-4 flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">

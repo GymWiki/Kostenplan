@@ -11,13 +11,11 @@ import {
 import { LinkButton } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Reveal } from "@/app/components/ui/reveal";
-import { SiteHeader } from "@/app/components/marketing/site-header";
-import { SiteFooter } from "@/app/components/marketing/site-footer";
+import { MarketingShell } from "@/app/components/landing/marketing-shell";
 import { Breadcrumbs } from "@/app/components/marketing/breadcrumbs";
 import { GeoAnswer } from "@/app/components/marketing/geo-answer";
 import { FaqSection } from "@/app/components/marketing/faq-section";
 import { WebsiteCalculatorMockup } from "@/app/components/marketing/website-calculator-mockup";
-import { DOELGROEPEN } from "@/app/lib/doelgroepen";
 
 const TITLE = "Rekentool voor je website maken";
 const DESCRIPTION =
@@ -74,8 +72,7 @@ const FAQS = [
 
 export default function RekentoolPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <SiteHeader />
+    <MarketingShell>
       <Breadcrumbs items={[{ label: "Rekentool", href: "/rekentool" }]} />
 
       <main id="main-content" className="flex-1">
@@ -158,43 +155,6 @@ export default function RekentoolPage() {
                 hij contact opneemt.
               </p>
             </Reveal>
-          </div>
-        </section>
-
-        {/* SOORTEN REKENTOOLS */}
-        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <Reveal className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
-              Welke rekentools kun je maken?
-            </h2>
-            <p className="mt-3 text-muted-foreground">
-              Elke tuinklus heeft zijn eigen vragen en prijsopbouw. Kies een startpunt of bouw
-              volledig zelf een rekentool op maat.
-            </p>
-          </Reveal>
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {DOELGROEPEN.map((d, i) => (
-              <Reveal key={d.slug} delay={i * 80}>
-                <Link
-                  href={`/voor/${d.slug}`}
-                  className="group flex h-full flex-col justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-md"
-                >
-                  <div>
-                    <h3 className="font-semibold text-foreground">
-                      Rekentool voor {d.naamMeervoud}
-                    </h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                      Een prijsindicatie voor {d.projectVoorbeeld}, opgebouwd uit jouw eigen
-                      tarieven en materialen.
-                    </p>
-                  </div>
-                  <span className="flex items-center gap-1.5 text-sm font-medium text-primary">
-                    Bekijken
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
-                  </span>
-                </Link>
-              </Reveal>
-            ))}
           </div>
         </section>
 
@@ -339,9 +299,7 @@ export default function RekentoolPage() {
           </Reveal>
         </section>
       </main>
-
-      <SiteFooter />
-    </div>
+    </MarketingShell>
   );
 }
 

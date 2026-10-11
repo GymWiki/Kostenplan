@@ -114,3 +114,15 @@ Kritische blik: de pagina las als crème met oker; groen zat vooral in donkere v
 - **Groen domineert:** bosgroen `#1f6b3e`/`#17512f` voor hoofdknoppen, schakelaars en de afsluiterband; neutralen zijn nu groen getint (`#f3f7f2`, `#e8efe6`, `#dfe9e4`) in plaats van warm crème.
 - **Oker is alleen nog accent:** de knop op de groene afsluiterband, kleine labels ("Nieuw", "voorbeeld"), de schuifregelaar. Linkonderstrepingen en positienummers zijn groen.
 - Contrast opnieuw berekend: wit op `#1f6b3e` 6,5 · inkt-2 op papier 7,5 · inkt op oker 6,1 · papier op bos-950 14,0.
+
+## Doorgetrokken naar alle publieke pagina's
+
+- **Schil:** `MarketingShell` (`app/components/landing/marketing-shell.tsx`) geeft elke marketingpagina dezelfde zwevende header (hoofdnavigatie, zoeken, menu op telefoon) en landingsfooter. Binnen `.lp` nemen bestaande componenten (`bg-background`, `border-border`, `text-foreground`, kaarten) vanzelf de groene tokens over. Inloggen, registreren, wachtwoord en de 404-pagina gebruiken dezelfde stijl. Overlays (zoeken) renderen binnen `[data-lp]`.
+- **Prijzen:** `/prijzen` toont dezelfde vergelijkingstabel als de landing (`SectiePrijzen`, één bron), de losse `MarketingPricingTable` is vervallen.
+- **Reveal:** `Reveal` verbergt niets meer tot JavaScript draait; het is een CSS-onthulling (`animation-timeline: view()`) met zichtbare inhoud als terugval.
+- **Google-gegevens:** de uitleg over Google-gegevens (nodig voor de Google OAuth-verificatie) staat weer op de homepage, in de nieuwe stijl.
+- **Buiten bereik:** dashboard, editor en publieke klant-rekentool (`/t`, `/portaal`, `/embed`) blijven de app-stijl houden (productinterface, eigen huisstijl van de hovenier).
+
+### Opgeruimd
+- Vervallen: oude `SiteHeader`, `SiteFooter`, marketing-`MobileNav`, `nav-links`, `ScrollCalculatorDemo`, `TryItDemo`, `UseCaseSwitcher`, het oude `StructuredData`, `MarketingPricingTable`.
+- 11 pagina's voor andere vakgebieden onder `/voor/*` (alleen nog doorverwijzingen) en `/voor` zijn vervangen door permanente redirects in `next.config.ts`; de gegevens van die 12 vakgebieden zijn uit `doelgroepen.ts` gehaald. Sectie "andere vakmensen" op de hoveniers-pagina en "Welke rekentools kun je maken?" op `/rekentool` (verwees naar die pagina's) zijn verwijderd.

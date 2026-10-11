@@ -3,8 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { LinkButton } from "@/app/components/ui/button";
 import { Reveal } from "@/app/components/ui/reveal";
-import { SiteHeader } from "@/app/components/marketing/site-header";
-import { SiteFooter } from "@/app/components/marketing/site-footer";
+import { MarketingShell } from "@/app/components/landing/marketing-shell";
 import { Breadcrumbs } from "@/app/components/marketing/breadcrumbs";
 import { GeoAnswer } from "@/app/components/marketing/geo-answer";
 import { WebsiteCalculatorMockup, type MockupVeld } from "@/app/components/marketing/website-calculator-mockup";
@@ -113,8 +112,7 @@ const VOORBEELDEN: Voorbeeld[] = [
 
 export default function VoorbeeldenRekentoolsPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <SiteHeader />
+    <MarketingShell>
       <Breadcrumbs items={[{ label: "Voorbeelden van rekentools", href: "/voorbeelden-rekentools" }]} />
 
       <main id="main-content" className="flex-1">
@@ -224,8 +222,6 @@ export default function VoorbeeldenRekentoolsPage() {
           </Reveal>
         </section>
       </main>
-
-      <SiteFooter />
-    </div>
+    </MarketingShell>
   );
 }

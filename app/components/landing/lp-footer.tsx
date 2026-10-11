@@ -11,6 +11,7 @@ const KOLOMMEN: { titel: string; links: { href: string; label: string }[] }[] = 
       { href: "/features", label: "Functionaliteiten" },
       { href: "/prijzen", label: "Prijzen" },
       { href: "/kennisbank", label: "Kennisbank" },
+      { href: "/blog", label: "Blog" },
       { href: "/login", label: "Inloggen" },
     ],
   },
