@@ -4,19 +4,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Mail, Phone, Printer, ArrowLeft, ArrowRight } from "lucide-react";
 import {
-  bouwScope,
-  pasAfgeleideVariabelenToe,
-  evaluatePriceRules,
-  bouwResultaat,
+  berekenModulair,
+  bouwModulairSnapshot,
   veldIsIngevuld,
   veldIsZichtbaar,
-  evalueerOnderdeel,
-  combineerOnderdelen,
   type AnyCalculatorConfigData,
   type CalculatorField,
   type CalculatorStep,
+  type EngineResult,
   type ExpressionScope,
   type OnderdeelLineItem,
+  type PriceRuleEvaluationResult,
 } from "@/app/lib/calculator-engine";
 import { DebugPaneel } from "./debug-paneel";
 import { CTA_LABELS } from "@/app/lib/tools";
@@ -30,7 +28,7 @@ import { fontFamilyFor, brandingFontVariables } from "@/app/lib/fonts";
 import { accessibleTextColor } from "@/app/lib/color";
 import { UitgesteldMelding, useLeadVersturen } from "./lead-versturen";
 import { recordPublicAnalyticsEventAction } from "@/app/lib/actions/analytics";
-import type { LeadSnapshot, LeadSnapshotLine } from "@/app/lib/leads";
+import type { LeadSnapshot } from "@/app/lib/leads";
 import { cn } from "@/app/lib/cn";
 import { EngineVeld, type MateriaalOptie } from "./engine-fields";
 import type { Branding, SubscriptionTier } from "@/app/generated/prisma/client";
@@ -155,28 +153,13 @@ export function EngineCalculator({
     return prijzen;
   }, [materiaalOpties]);
 
-  // v1: één globale scope over alle velden (ongewijzigd gedrag). v2: per
-  // Onderdeel een geïsoleerde evaluatie (evalueerOnderdeel, modulair.ts),
-  // daarna samengevoegd (combineerOnderdelen) tot hetzelfde
-  // PriceRuleEvaluationResult-formaat dat bouwResultaat() al verwachtte —
-  // nul wijzigingen aan de kernprijsengine.
-  const scope: ExpressionScope = useMemo(() => {
-    if (config.versie === 2) return {};
-    const basisScope = bouwScope(config.velden, waarden, materiaalPrijzen);
-    return pasAfgeleideVariabelenToe(basisScope, config.afgeleideVariabelen);
-  }, [config, waarden, materiaalPrijzen]);
-
-  const onderdeelEvaluaties = useMemo(() => {
-    if (config.versie !== 2) return [];
-    return config.onderdelen
-      .filter((o) => o.actief)
-      .map((o) => {
-        const onderdeelWaarden: Record<string, unknown> = {};
-        for (const veld of o.velden) onderdeelWaarden[veld.id] = waarden[waardeKey(o.id, veld.id)];
-        return evalueerOnderdeel(o, onderdeelWaarden, materiaalPrijzen, { alleenPubliek: true });
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config, waarden, materiaalPrijzen]);
+  // De berekening zelf staat in berekenModulair() (app/lib/calculator-engine/rekenen.ts): de browser
+  // gebruikt hem voor het scherm, de server rekent er de aanvraag mee na.
+  const berekening = useMemo(
+    () => berekenModulair({ config, waarden, materiaalPrijzen, btwPercentage }),
+    [config, waarden, materiaalPrijzen, btwPercentage]
+  );
+  const { evaluatie, resultaat, onderdeelEvaluaties, scope } = berekening;
 
   const onderdeelScopePerId = useMemo(() => {
     const map = new Map<string, ExpressionScope>();
@@ -191,26 +174,6 @@ export function EngineCalculator({
   // gebeurtenis hieronder — vóór de eerste invoer is er nog niets te
   // registreren, ongeacht of er al dan niet verplichte velden zijn).
   const heeftInvoer = Object.keys(waarden).length > 0;
-
-  const heeftAlleVerplichteVelden = useMemo(() => {
-    if (config.versie === 2) return onderdeelEvaluaties.every((e) => e.heeftGeldigeInvoer);
-    return config.velden.every((veld) => veldIsIngevuld(veld, waarden[veld.id], scope));
-  }, [config, waarden, scope, onderdeelEvaluaties]);
-
-  const evaluatie = useMemo(() => {
-    if (config.versie === 2) return combineerOnderdelen(onderdeelEvaluaties);
-    return evaluatePriceRules(config.regels, scope, { alleenPubliek: true });
-  }, [config, scope, onderdeelEvaluaties]);
-
-  const resultaat = useMemo(
-    () =>
-      bouwResultaat(evaluatie, {
-        btwPercentage,
-        resultaatInstellingen: config.resultaatInstellingen,
-        heeftGeldigeInvoer: heeftAlleVerplichteVelden,
-      }),
-    [evaluatie, btwPercentage, config.resultaatInstellingen, heeftAlleVerplichteVelden]
-  );
 
   // Branding/personalisatie — zelfde afleiding als de bestaande <Calculator>
   // (app/portaal/[slug]/calculator.tsx), bewust hier opnieuw (i.p.v.
@@ -275,27 +238,7 @@ export function EngineCalculator({
     }
   }, [toolId, heeftInvoer, resultaat, previewModus]);
 
-  const snapshot: LeadSnapshot = useMemo(() => {
-    const zichtbareRegels = evaluatie.lineItems.filter((item) => item.toonInUitsplitsing && !item.intern);
-    const regels: LeadSnapshotLine[] = (zichtbareRegels.length > 0 ? zichtbareRegels : evaluatie.lineItems).map(
-      (item) => ({
-        naam: item.label,
-        type: "dienst",
-        prijs: item.bedrag,
-        onderdeel: isModulair ? (item as OnderdeelLineItem).onderdeelNaam : undefined,
-      })
-    );
-    return {
-      regels,
-      arbeidskosten: resultaat.arbeid,
-      materiaalkosten: resultaat.materiaal,
-      transportkosten: resultaat.transport,
-      voorrijkosten: 0,
-      subtotaal: resultaat.subtotaal,
-      btw: resultaat.btw,
-      totaal: resultaat.totaal,
-    };
-  }, [evaluatie.lineItems, resultaat, isModulair]);
+  const snapshot: LeadSnapshot = useMemo(() => bouwModulairSnapshot({ config, waarden, berekening }), [config, waarden, berekening]);
 
   // Alleen ooit gebruikt door het eigenaar-only debug-paneel (previewModus)
   // hieronder — puur presentationeel, geen invloed op de berekening zelf.
@@ -508,8 +451,8 @@ function ResultaatKaart({
   toolId: string;
   bedrijfsnaam: string;
   contact: { telefoonnummer: string | null; email: string | null };
-  resultaat: ReturnType<typeof bouwResultaat>;
-  evaluatie: ReturnType<typeof evaluatePriceRules>;
+  resultaat: EngineResult;
+  evaluatie: PriceRuleEvaluationResult;
   snapshot: LeadSnapshot;
   gekozenWaarden: { label: string; waarde: string }[];
   ctaTekst: string;

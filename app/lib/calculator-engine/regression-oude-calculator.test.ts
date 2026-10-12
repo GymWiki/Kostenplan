@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { berekenProductKosten, calculateBreakdown, type CalcCostSettings, type CalcProduct } from "@/app/lib/calculate";
+import { calculateBreakdown, type CalcCostSettings, type CalcProduct } from "@/app/lib/calculate";
+import { berekenProductKosten } from "@/app/lib/pricing/legacy/calculate-oud";
 import { bouwScope, evaluatePriceRules, bouwResultaat } from "./index";
 import type { CalculatorResultSettings, Expression, PriceRule } from "./types";
 

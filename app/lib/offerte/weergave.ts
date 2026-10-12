@@ -1,8 +1,8 @@
-import { formatCurrency } from "@/app/lib/format";
+import { formatAantal as formatAantalGedeeld, formatCenten } from "@/app/lib/pricing/format";
 import { RECHTSVORM_LABEL, heeftStatutaireGegevens } from "./gegevens";
 import type { Adres, OfferteAfzender, OfferteInhoud } from "./model";
 
-export const formatCents = (c: number) => formatCurrency(c / 100);
+export const formatCents = formatCenten;
 
 const datumFmt = new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long", year: "numeric" });
 export function formatDatum(iso: string): string {
@@ -18,10 +18,7 @@ export function formatWeek(v: string): string {
   return m ? `week ${Number(m[2])} van ${m[1]}` : v;
 }
 
-export function formatAantal(n: number): string {
-  const r = Math.round(n * 100) / 100;
-  return Number.isInteger(r) ? String(r) : r.toFixed(2).replace(".", ",").replace(/0$/, "");
-}
+export const formatAantal = formatAantalGedeeld;
 
 export const adresRegels = (a: Adres): string[] => [a.straat, [a.postcode, a.plaats].filter(Boolean).join(" ")].filter((x) => x.trim() !== "");
 

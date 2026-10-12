@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { calculateBreakdown, type CalcCostSettings, type CalcProduct } from "@/app/lib/calculate";
+import type { CalcCostSettings, CalcProduct } from "@/app/lib/calculate";
 import { berekenKostenOpbouw } from "@/app/lib/werkzaamheid-kosten";
 import { bouwLeadSnapshot } from "@/app/lib/lead-snapshot";
+import { configVanProducten, invoerVanKlant } from "./adapters";
+import { berekenPrijs } from "./engine";
 import { prefillOfferteRegels, offerteSubtotaal } from "@/app/lib/offertes";
 import { bouwOfferteUitLead } from "@/app/lib/offerte/uit-lead";
 
@@ -30,8 +32,10 @@ const selecties = { tegels: "betontegel", zand: "straatzand" };
 const VERWACHT_SUBTOTAAL = 960 + 560 + 35 + 60;
 
 function bouwSnapshot() {
-  const b = calculateBreakdown({ products: [terras], productQty: { terras: 20 }, materialSelections: selecties, extraSelections: {}, costSettings: kosten });
-  return { b, snapshot: bouwLeadSnapshot({ products: [terras as never], productQty: { terras: 20 }, productRegelsBedrag: {}, materialSelections: selecties, extraSelections: {}, breakdown: { modus: "GEEN", ...b } as never, btwPercentage: 21 }) };
+  const config = configVanProducten([terras], kosten);
+  const invoer = invoerVanKlant({ producten: [terras], hoeveelheden: { terras: 20 }, materiaalKeuzes: selecties });
+  const resultaat = berekenPrijs(config, invoer);
+  return { resultaat, snapshot: bouwLeadSnapshot({ config, invoer, resultaat }) };
 }
 
 describe("bug 1: meerdere materiaalcategorieën in het rekenvoorbeeld", () => {
@@ -42,8 +46,8 @@ describe("bug 1: meerdere materiaalcategorieën in het rekenvoorbeeld", () => {
   });
 
   it("geeft per categorie een eigen regel (aantal × prijs per eenheid)", () => {
-    const o = berekenKostenOpbouw({ product: terras as never, optieId: null, hoeveelheid: 20, costSettings: kosten }) as unknown as { materiaalRegels?: { categorie: string; bedrag: number }[] };
-    expect(o.materiaalRegels?.map((r) => [r.categorie, r.bedrag])).toEqual([["Tegels", 800], ["Zand", 160]]);
+    const o = berekenKostenOpbouw({ product: terras as never, optieId: null, hoeveelheid: 20, costSettings: kosten });
+    expect(o.materiaalRegels.map((r) => [r.categorie, r.aantal, r.prijsPerEenheid, r.bedrag])).toEqual([["Tegels", 20, 40, 800], ["Zand", 20, 8, 160]]);
   });
 });
 

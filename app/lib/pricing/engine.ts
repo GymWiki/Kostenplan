@@ -120,11 +120,17 @@ function materiaalPrijs(m: PricingMateriaal, richting: Richting, w: Waarschuwing
   return (m.prijsMinCenten + m.prijsMaxCenten) / 2;
 }
 
+// Een categorie met precies één optie heeft niets te kiezen: die optie telt automatisch mee.
+// Anders telt de keuze van de klant (of niets als er nog niet gekozen is).
+export function geselecteerdeMateriaalId(materialen: readonly { id: string }[], keuze: string | undefined): string | null {
+  if (materialen.length === 1) return materialen[0].id;
+  return keuze ?? null;
+}
+
 function gekozenMateriaal(cat: PricingCategorie, keuze: string | undefined): PricingMateriaal | "onbekend" | null {
-  // Een categorie met precies één optie heeft niets te kiezen: die optie telt automatisch mee.
-  if (cat.materialen.length === 1) return cat.materialen[0];
-  if (!keuze) return null;
-  return cat.materialen.find((m) => m.id === keuze) ?? "onbekend";
+  const id = geselecteerdeMateriaalId(cat.materialen, keuze);
+  if (id === null) return null;
+  return cat.materialen.find((m) => m.id === id) ?? "onbekend";
 }
 
 function leesHoeveelheid(od: PricingOnderdeel, inv: PricingOnderdeelInvoer, w: Waarschuwing[]): { qty: number; artikelen: SjabloonRegelResultaat[] } {

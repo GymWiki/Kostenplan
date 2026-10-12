@@ -1,3 +1,4 @@
+import { formatCenten } from "@/app/lib/pricing/format";
 import { isGeldigBtwId, isGeldigEmail, isGeldigKvk } from "./validatie";
 import { heeftStatutaireGegevens } from "./gegevens";
 import { berekenTotalen } from "./bereken";
@@ -45,7 +46,7 @@ export function controleerOfferte(inhoud: OfferteInhoud, nu: Date = new Date()):
   const rek = inhoud.bron?.totaalRekentoolInclCenten;
   if (rek && rek > 0) {
     const afwijking = Math.abs(t.totaalIncl - rek) / rek;
-    if (afwijking > AFWIJKING_DREMPEL) waarschuwingen.push({ id: "afwijking", bericht: `Het totaal wijkt ${Math.round(afwijking * 100)}% af van de berekening in de rekentool (die was ${(rek / 100).toLocaleString("nl-NL", { style: "currency", currency: "EUR" })}). Klopt dat?`, actie: "regels" });
+    if (afwijking > AFWIJKING_DREMPEL) waarschuwingen.push({ id: "afwijking", bericht: `Het totaal wijkt ${Math.round(afwijking * 100)}% af van de berekening in de rekentool (die was ${formatCenten(rek)}). Klopt dat?`, actie: "regels" });
   }
   for (const w of inhoud.bron?.waarschuwingen ?? []) waarschuwingen.push({ id: `bron-${w.slice(0, 12)}`, bericht: w, actie: "regels" });
 

@@ -1,18 +1,21 @@
-import {
-  arbeidTariefVoorStapEenheid,
-  calculateBreakdown,
-  dagenVoorArbeidstijd,
-  type CalcCostSettings,
-} from "@/app/lib/calculate";
+import type { CalcCostSettings } from "@/app/lib/calculate";
+import { configVanProducten, invoerVanKlant, arbeidTariefVoorEenheid } from "@/app/lib/pricing/adapters";
+import { berekenPrijs } from "@/app/lib/pricing/engine";
 import type { PreviewProduct } from "@/app/lib/werkzaamheid";
 
-// De kostenopbouw "alleen voor jou" voor één werkzaamheid en één gekozen
-// materiaal — uitsluitend uit de echte rekenlogica (calculateBreakdown), zodat
-// dit nooit afwijkt van wat een klant te zien krijgt. Gedeeld door het
-// bewerkscherm, de wizard en het overzicht.
+// De kostenopbouw "alleen voor jou" voor één werkzaamheid en één gekozen materiaal — uitsluitend uit
+// de rekenkern (app/lib/pricing), dezelfde berekening als de klant-rekentool, de aanvraag en de
+// offerte. Gedeeld door het bewerkscherm, de wizard en het overzicht. Bedragen in euro's.
+export type MateriaalRegelWeergave = { categorie: string; omschrijving: string; aantal: number; prijsPerEenheid: number; bedrag: number };
+
 export type KostenOpbouw = {
   hoeveelheid: number;
+  // Materiaal inclusief extra's en toeslagen.
   materiaal: number;
+  // Per materiaalcategorie een eigen regel (aantal × prijs per eenheid).
+  materiaalRegels: MateriaalRegelWeergave[];
+  // Extra's en toeslagen (altijd meegerekend), apart van het materiaal.
+  extraRegels: { omschrijving: string; aantal: number; bedrag: number }[];
   arbeid: number;
   // Aantal arbeidseenheden (dagdelen/dagen/uren) dat de arbeid kost.
   arbeidstijd: number;
@@ -24,6 +27,8 @@ export type KostenOpbouw = {
   // Excl. btw — hovenierstarieven zijn al inclusief marge, btw komt er in de
   // klant-rekentool apart bij.
   totaal: number;
+  // Wat er aan de invoer niet klopt (ontbrekende prijs, geen werktempo, …).
+  waarschuwingen: string[];
 };
 
 export function berekenKostenOpbouw({
@@ -39,38 +44,34 @@ export function berekenKostenOpbouw({
 }): KostenOpbouw {
   const categorie = product.materiaalCategorieen[0];
   const gekozen = categorie?.materialen.find((m) => m.id === optieId) ?? categorie?.materialen[0];
-  const selecties: Record<string, string> = {};
+  const keuzes: Record<string, string> = {};
   for (const [i, c] of product.materiaalCategorieen.entries()) {
     const keuze = i === 0 ? gekozen : c.materialen[0];
-    if (keuze) selecties[c.id] = keuze.id;
+    if (keuze) keuzes[c.id] = keuze.id;
   }
 
-  const b = calculateBreakdown({
-    products: [product],
-    productQty: { [product.id]: hoeveelheid },
-    materialSelections: selecties,
-    extraSelections: {},
-    costSettings,
-  });
-
-  const tempo = gekozen?.productiviteitOverride ?? product.productiviteit;
-  const arbeidstijd = tempo && tempo > 0 && hoeveelheid > 0 ? hoeveelheid / tempo : 0;
-  const transportDagen =
-    product.transportPerDag && arbeidstijd > 0
-      ? Math.max(1, Math.ceil(Math.round(dagenVoorArbeidstijd(arbeidstijd, costSettings.arbeidStapEenheid) * 1e6) / 1e6))
-      : null;
-
+  // Het voorbeeld rekent altijd met een losse hoeveelheid, ook bij sjablonen met lengte × breedte.
+  const bron = { ...product, sjabloon: "ENKELE_HOEVEELHEID" as const };
+  const r = berekenPrijs(
+    configVanProducten([bron], costSettings),
+    invoerVanKlant({ producten: [bron], hoeveelheden: { [product.id]: hoeveelheid }, materiaalKeuzes: keuzes })
+  );
+  const o = r.onderdelen[0];
+  const euro = (c: number) => c / 100;
+  const k = o?.kosten;
   return {
     hoeveelheid,
-    materiaal: b.materiaalkosten,
-    arbeid: b.arbeidskosten,
-    arbeidstijd,
-    arbeidTarief:
-      product.arbeidTariefOverride ?? arbeidTariefVoorStapEenheid(costSettings, costSettings.arbeidStapEenheid),
-    transport: b.transportkosten,
-    transportDagen,
-    voorrijkosten: b.voorrijkosten,
-    totaal: b.subtotaal,
+    materiaal: euro((k?.materiaal ?? 0) + (k?.extra ?? 0) + (k?.artikel ?? 0)),
+    materiaalRegels: (o?.regels ?? []).filter((x) => x.soort === "materiaal").map((x) => ({ categorie: x.categorie ?? "Materiaal", omschrijving: x.omschrijving, aantal: x.aantal, prijsPerEenheid: euro(x.prijsPerEenheidCenten), bedrag: euro(x.bedragExclCenten) })),
+    extraRegels: (o?.regels ?? []).filter((x) => x.soort === "extra" || x.soort === "artikel").map((x) => ({ omschrijving: x.omschrijving, aantal: x.aantal, bedrag: euro(x.bedragExclCenten) })),
+    arbeid: euro(k?.arbeid ?? 0),
+    arbeidstijd: o?.arbeidstijd ?? 0,
+    arbeidTarief: product.arbeidTariefOverride ?? arbeidTariefVoorEenheid(costSettings, costSettings.arbeidStapEenheid),
+    transport: euro(k?.transport ?? 0),
+    transportDagen: o?.transportDagen ?? null,
+    voorrijkosten: euro(k?.voorrijkosten ?? 0),
+    totaal: euro(o?.subtotaalExclCenten ?? 0),
+    waarschuwingen: r.waarschuwingen.map((w) => w.bericht),
   };
 }
 

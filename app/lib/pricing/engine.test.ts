@@ -217,3 +217,52 @@ describe("rekenkern: robuust tegen ongeldige invoer", () => {
     expect(r.waarschuwingen.map((w) => w.code)).toContain("onbekende-keuze");
   });
 });
+
+// ── Overgenomen uit de tests van de oude berekening (calculate.ts): dezelfde scenario's, nu op de kern ──
+
+describe("rekenkern: scenario's van de oude berekening", () => {
+  const paneel = { id: "categorie-paneel", naam: "Paneel", materialen: [optie("paneel-1", "Paneel douglas", 65)] };
+  const palen = { id: "categorie-palen", naam: "Palen", materialen: [optie("paal-1", "Paal standaard", 15)] };
+
+  it("één regel per categorie, niet alleen de eerste", () => {
+    const r = reken([product({ id: "h", eenheid: "m1", materiaalCategorieen: [paneel, palen] })], { hoeveelheden: { h: 20 } });
+    expect(soort(r, "materiaal").map((x) => [x.categorie, x.aantal, x.prijsPerEenheidCenten, x.bedragExclCenten])).toEqual([["Paneel", 20, 6500, 130000], ["Palen", 20, 1500, 30000]]);
+    expect(r.kosten.materiaal).toBe(160000);
+  });
+
+  it("stapgrootte rondt per regel op een veelvoud: 21 → 22", () => {
+    const metStap = { ...palen, materialen: [optie("paal-1", "Paal", 15, { stapgrootte: 2 })] };
+    const r = reken([product({ id: "h", eenheid: "m1", materiaalCategorieen: [paneel, metStap] })], { hoeveelheden: { h: 21 } });
+    expect(soort(r, "materiaal").map((x) => x.aantal)).toEqual([21, 22]);
+  });
+
+  it("slaat een categorie zonder eenduidige keuze over", () => {
+    const kleur = { id: "kleur", naam: "Kleur", materialen: [optie("rood", "Rood", 5), optie("groen", "Groen", 6)] };
+    const r = reken([product({ id: "h", eenheid: "m1", materiaalCategorieen: [paneel, kleur] })], { hoeveelheden: { h: 20 } });
+    expect(soort(r, "materiaal").map((x) => x.categorie)).toEqual(["Paneel"]);
+  });
+
+  it("10 m schutting in douglas: materiaal 280, arbeid 240, transport 45, voorrijkosten 35 → 600", () => {
+    const p = product({ id: "s", eenheid: "m1", productiviteit: 10, transportkostenOverride: 45, materiaalCategorieen: [{ id: "c", naam: "Hout", materialen: [optie("d", "Douglas", 28)] }] });
+    const r = reken([p], { hoeveelheden: { s: 10 } }, { arbeidTariefDagdeel: 240, voorrijTarief: 35 });
+    expect(r.kosten).toMatchObject({ materiaal: 28000, arbeid: 24000, transport: 4500, voorrijkosten: 3500 });
+    expect(r.subtotaalExclCenten).toBe(60000);
+  });
+
+  it("transport per dag: 20 m / 6 per dagdeel = 3,33 dagdeel = 2 dagen; arbeid € 800", () => {
+    const k = { arbeidTariefDagdeel: 240, transportTarief: 65 };
+    const basis = { id: "t", eenheid: "m1", productiviteit: 6, materiaalCategorieen: [] };
+    expect(soort(reken([product(basis)], { hoeveelheden: { t: 20 } }, k), "arbeid")[0].bedragExclCenten).toBe(80000);
+    expect(soort(reken([product(basis)], { hoeveelheden: { t: 20 } }, k), "transport")[0].bedragExclCenten).toBe(6500);
+    expect(soort(reken([product({ ...basis, transportPerDag: true })], { hoeveelheden: { t: 20 } }, k), "transport")[0].bedragExclCenten).toBe(13000);
+    // arbeidseenheid dag, 5 per dag: 4 dagen
+    expect(soort(reken([product({ ...basis, productiviteit: 5, transportPerDag: true })], { hoeveelheden: { t: 20 } }, { ...k, arbeidStapEenheid: "DAG" }), "transport")[0].bedragExclCenten).toBe(26000);
+    // zonder werktempo: één keer
+    expect(soort(reken([product({ ...basis, productiviteit: null, transportPerDag: true })], { hoeveelheden: { t: 20 } }, k), "transport")[0].bedragExclCenten).toBe(6500);
+  });
+
+  it("een duurder materiaal verhoogt de arbeid niet", () => {
+    const maak = (prijs: number) => product({ id: "a", materiaalCategorieen: [{ id: "c", naam: "M", materialen: [optie("m", "M", prijs)] }] });
+    expect(soort(reken([maak(10)], { hoeveelheden: { a: 10 } }), "arbeid")[0].bedragExclCenten).toBe(soort(reken([maak(900)], { hoeveelheden: { a: 10 } }), "arbeid")[0].bedragExclCenten);
+  });
+});

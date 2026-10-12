@@ -1,3 +1,4 @@
+import { pricingInputSchema } from "@/app/lib/pricing/schema";
 import { z } from "zod";
 import { PRODUCT_ICON_NAMES } from "@/app/lib/icons";
 
@@ -323,9 +324,19 @@ const leadSnapshotLineSchema = z.object({
     .optional(),
 });
 
-// Vertrouwt de client-berekende bedragen (geen echte transactie, slechts een
-// prijsindicatie die de vakman zelf te zien krijgt in zijn eigen CRM) — ziet
-// alleen toe op de VORM van de data, niet op herberekening server-side.
+// De browser stuurt de keuzes van de klant (`rekenkern.invoer`) en zijn eigen uitkomst mee. Dit schema
+// ziet toe op de vorm; de server rekent daarna zelf opnieuw uit de invoer (lead-aanmaken.ts) en
+// vertrouwt de bedragen van de browser niet. Zonder `rekenkern` (oudere browser, reserve-ingest) blijft
+// de snapshot zoals hij is, gemarkeerd als niet nagerekend.
+const leadRekenkernSchema = z.object({
+  versie: z.literal(1),
+  configHash: z.string().max(64),
+  invoer: pricingInputSchema.refine((i) => Object.keys(i.onderdelen).length <= 200, "Te veel onderdelen"),
+  resultaat: z.looseObject({ totaalInclCenten: z.number(), bandbreedte: z.unknown().optional() }),
+  bron: z.enum(["server", "client"]).optional(),
+  afwijking: z.object({ klantCenten: z.number(), serverCenten: z.number() }).optional(),
+});
+
 export const leadSnapshotSchema = z.object({
   regels: z.array(leadSnapshotLineSchema).min(1, "Selecteer minimaal één onderdeel"),
   arbeidskosten: z.number(),
@@ -337,6 +348,16 @@ export const leadSnapshotSchema = z.object({
   totaal: z.number(),
   btwPercentage: z.number().optional(),
   bandbreedte: z.boolean().optional(),
+  rekenkern: leadRekenkernSchema.optional(),
+  modulair: z
+    .object({
+      versie: z.literal(1),
+      configHash: z.string().max(64),
+      waarden: z.record(z.string(), z.unknown()).refine((w) => Object.keys(w).length <= 500, "Te veel velden"),
+      bron: z.enum(["server", "client"]).optional(),
+      afwijking: z.object({ klantCenten: z.number(), serverCenten: z.number() }).optional(),
+    })
+    .optional(),
 });
 
 export const leadContactSchema = z.object({

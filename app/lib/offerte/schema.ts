@@ -61,6 +61,7 @@ export const offerteInhoudSchema = z.object({
   planning: z.object({ startweek: tekst(40), doorlooptijd: tekst(120) }),
   bijlagen: z.array(z.object({ naam: tekst(160), url: tekst(600) })).max(10),
   slottekst: tekst(3000),
+  rekenregel: z.literal(2).optional(),
   bron: z.object({ leadId: z.string(), totaalRekentoolInclCenten: z.number(), bandbreedte: z.boolean().optional(), waarschuwingen: z.array(z.string().max(400)).max(20).optional() }).optional(),
 });
 

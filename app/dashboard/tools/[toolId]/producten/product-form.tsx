@@ -13,7 +13,9 @@ import { VeldenRenderer, VeldInputEnkel } from "./velden/veld-form";
 import { OverrideVeld, MateriaalkostenVeld, KostenUitsplitsing } from "./velden/kosten-blok";
 import type { ProductFormState } from "@/app/lib/actions/products";
 import { arbeidEenheidEnkelvoud } from "@/app/lib/arbeid";
-import { arbeidTariefVoorStapEenheid, berekenMateriaalRegels } from "@/app/lib/calculate";
+import { arbeidTariefVoorStapEenheid, type CalcCostSettings } from "@/app/lib/calculate";
+import { berekenKostenOpbouw } from "@/app/lib/werkzaamheid-kosten";
+import type { PreviewProduct } from "@/app/lib/werkzaamheid";
 import { cn } from "@/app/lib/cn";
 import {
   berekenHoeveelheidVoorSjabloon,
@@ -29,6 +31,7 @@ import {
 import { CUSTOM_UNIT_VALUE, UNIT_GROUPS, isKnownUnit, unitLabel } from "@/app/lib/units";
 import type {
   ArbeidStapEenheid,
+  ExtraOption,
   MaterialCategory,
   MaterialOption,
   Product,
@@ -37,6 +40,7 @@ import type {
 
 type ProductMetRelaties = Product & {
   materiaalCategorieen: (MaterialCategory & { materialen: MaterialOption[] })[];
+  extraOpties?: ExtraOption[];
 };
 
 export type PricingSettings = {
@@ -227,21 +231,28 @@ export function ProductForm({
         berekenHoeveelheidVoorSjabloon(sjabloon, sjabloonConfig, coerceVeldWaarden(klantVelden, voorbeeldInvoer))
       );
 
-  // Eén regel per materiaalcategorie (niet alleen de eerste) — de primaire
-  // categorie (blok 1 hierboven) reflecteert de nog niet opgeslagen,
-  // live-getypte materiaalPrijs; de overige categorieën gebruiken hun
-  // opgeslagen prijs, met een fallback op de eerste optie zodat een
-  // categorie zonder eenduidige keuze niet uit het voorbeeld verdwijnt.
-  const materiaalRegels = berekenMateriaalRegels(
-    product?.materiaalCategorieen ?? [],
-    voorbeeldHoeveelheid,
-    {},
-    { valtTerugOpEersteOptie: true }
-  ).regels.map((regel) =>
-    primaireCategorie && regel.categorieId === primaireCategorie.id
-      ? { ...regel, prijsPerEenheid: parseGetal(materiaalPrijs, 0), bedrag: regel.hoeveelheid * parseGetal(materiaalPrijs, 0) }
-      : regel
-  );
+  // Het rekenvoorbeeld komt uit de rekenkern, met de nog niet opgeslagen waarden uit dit formulier:
+  // alle materiaalcategorieën (de eerste optie als er niet gekozen is), extra's en toeslagen,
+  // werktempo, transport en voorrijkosten. De primaire categorie gebruikt de live-getypte prijs.
+  const voorbeeldCostSettings: CalcCostSettings = { ...pricingSettings, bandbreedteModus: "GEEN", bandbreedteMargeOmlaag: 0, bandbreedteMargeOmhoog: 0 };
+  const voorbeeldProduct = {
+    ...(product ?? ({ id: "voorbeeld", toolId, omschrijving: null, icoon: null, actief: true, order: 0, createdAt: new Date(0), updatedAt: new Date(0) } as unknown as Product)),
+    naam,
+    eenheid: effectieveEenheid,
+    productiviteit: parseGetal(productiviteit, 0) > 0 ? parseGetal(productiviteit, 0) : null,
+    arbeidTariefOverride: parseGetal(arbeidTarief, 0),
+    transportkostenOverride: parseGetal(transportBedrag, 0),
+    transportMeeschalend,
+    voorrijkostenOverride: parseGetal(voorrijBedrag, 0),
+    voorrijMeeschalend,
+    materiaalCategorieen: (product?.materiaalCategorieen ?? []).map((c) =>
+      primaireCategorie && c.id === primaireCategorie.id
+        ? { ...c, materialen: c.materialen.map((m, i) => (i === 0 ? { ...m, prijs: parseGetal(materiaalPrijs, 0) } : m)) }
+        : c
+    ),
+    extraOpties: product?.extraOpties ?? [],
+  } as unknown as PreviewProduct;
+  const voorbeeldOpbouw = berekenKostenOpbouw({ product: voorbeeldProduct, optieId: null, hoeveelheid: voorbeeldHoeveelheid, costSettings: voorbeeldCostSettings });
 
   function handleKiesSjabloon(nieuw: ProductSjabloon) {
     if (nieuw === sjabloon) return;
@@ -555,23 +566,7 @@ export function ProductForm({
             </AdvancedSettings>
 
             <div className="border-t border-border pt-4">
-              <KostenUitsplitsing
-                naam={naam}
-                hoeveelheid={voorbeeldHoeveelheid}
-                eenheid={effectieveEenheid}
-                materiaalRegels={materiaalRegels}
-                materiaalEnabled={pricingSettings.materiaalEnabled}
-                productiviteit={parseGetal(productiviteit, 0) > 0 ? parseGetal(productiviteit, 0) : null}
-                arbeidTarief={parseGetal(arbeidTarief, 0)}
-                arbeidEnabled={pricingSettings.arbeidEnabled}
-                arbeidAfronden={pricingSettings.arbeidAfronden}
-                transportBedrag={parseGetal(transportBedrag, 0)}
-                transportMeeschalend={transportMeeschalend}
-                transportEnabled={pricingSettings.transportEnabled}
-                voorrijBedrag={parseGetal(voorrijBedrag, 0)}
-                voorrijMeeschalend={voorrijMeeschalend}
-                voorrijEnabled={pricingSettings.voorrijEnabled}
-              />
+              <KostenUitsplitsing naam={naam} eenheid={effectieveEenheid} opbouw={voorbeeldOpbouw} />
             </div>
           </>
         )}

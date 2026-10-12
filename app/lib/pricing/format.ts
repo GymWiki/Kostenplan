@@ -2,7 +2,7 @@
 // hoeveelheid op het scherm, in een mail of in een PDF zet, gebruikt deze functies.
 
 const euroFmt = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
-const getalFmt = new Intl.NumberFormat("nl-NL", { maximumFractionDigits: 2 });
+const getalFmt = new Intl.NumberFormat("nl-NL", { maximumFractionDigits: 2, useGrouping: false });
 
 // "€ 1.234,56" voor een bedrag in centen. Geen eindige invoer wordt "€ 0,00".
 export function formatCenten(centen: number): string {
@@ -62,4 +62,10 @@ export function formatHoeveelheid(aantal: number, eenheid: string | null | undef
   const e = formatEenheid(eenheid);
   const meervoud = aantal > 1 && eenheid && MEERVOUD[eenheid] ? MEERVOUD[eenheid] : e;
   return `${formatAantal(aantal)}${meervoud ? ` ${meervoud}` : ""}`;
+}
+
+// Compacte vorm voor samenvattingen op een kleine regel: "€28" of "€28,50".
+export function formatEuroKort(euro: number): string {
+  const n = Number.isFinite(euro) ? euro : 0;
+  return `€${Number.isInteger(n) ? n : n.toFixed(2).replace(".", ",")}`;
 }
