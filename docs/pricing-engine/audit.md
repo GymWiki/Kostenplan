@@ -44,3 +44,24 @@ Stand: branch `pricing-engine`, vóór de rekenkern. "Euro" betekent drijvende-k
 |---|---|---|
 | Rekenvoorbeeld telt alleen de materiaalkosten van de eerste categorie | **Grotendeels al verholpen** voor de klant-berekening en de editorvoorbeelden (`berekenMateriaalRegels` telt alle categorieën). Niet verholpen: het oude productformulier (#9) heeft een eigen kopie en `berekenKostenOpbouw` geeft geen regel per categorie terug | `app/lib/pricing/bekende-bugs.test.ts` |
 | Offerte uit aanvraag: regels op €0 per eenheid en alles in "Materiaal- en overige kosten" | **Verholpen voor nieuwe leads in offerte v2** (`bouwOfferteUitLead`). **Nog aanwezig** in de v1-route (`prefillOfferteRegels` via "Opnieuw berekenen") voor leads zonder prijs per regel, en voor v1 ook als er wel een prijs is (één samengevoegde regel per onderdeel) | `app/lib/pricing/bekende-bugs.test.ts` |
+
+## 4. Na de rekenkern
+
+Alle berekeningen uit de tabel in paragraaf 1 lopen nu via `app/lib/pricing`:
+
+| # | Nu |
+|---|---|
+| 1–2 | `calculateBreakdown` en `calculateBreakdownRange` in `calculate.ts` zijn dunne laagjes boven `berekenPrijs()`; de klant-rekentool roept `berekenPrijs()` rechtstreeks aan |
+| 3 | `eigenProductPrijs` is verwijderd: de onderdeelkaart toont het bedrag van het onderdeel uit dezelfde berekening als het totaal |
+| 4–5 | de hoeveelheid uit het sjabloon wordt in de kern berekend uit de ruwe invoer van de klant |
+| 6–7 | de browser bouwt de momentopname met `bouwLeadSnapshot()` uit het resultaat van de kern; `maakLead` laat de server opnieuw rekenen (`herberekenAanvraag`) en bewaart de uitkomst van de server |
+| 8 | `berekenKostenOpbouw` gebruikt de kern en geeft een regel per materiaalcategorie |
+| 9 | `KostenUitsplitsing` toont de opbouw uit `berekenKostenOpbouw`; de eigen kopie is weg |
+| 10 | via #8 |
+| 11–12 | de formule-gebaseerde motor blijft de rekenaar van de formules (`berekenModulair`, gedeeld door browser en server), maar de bedragen lopen door dezelfde afronding en btw-regel (`bouwResultaat`) |
+| 13–14 | `bouwOfferteUitLead` bouwt uit `snapshot.rekenkern`; `berekenTotalen` gebruikt dezelfde afrondingsregel (offertes met `rekenregel: 2`) |
+| 15 | de offerte volgt het btw-tarief van de rekentool; een eigen tarief per regelsoort uit het Profiel gaat voor |
+| 16 | `prefillOfferteRegels` (oude offertes) bouwt via dezelfde functie als de nieuwe offerte. De totalen van bestaande oude offertes zijn bewust niet aangepast |
+| 17 | de oude PDF en publieke pagina tonen de bedragen van de oude offerte |
+| 18–19 | gebruiken de totalen uit de kern of de offerte |
+| 20 | `app/lib/pricing/format.ts` is de enige opmaak van bedragen, hoeveelheden en eenheden; `formatCurrency`, `formatCents` en `formatAantal` verwijzen ernaar |
