@@ -31,13 +31,22 @@ const adapter = new PrismaPg({
 export const prismaBasis = globalForPrisma.prismaBasis ?? new PrismaClient({ adapter });
 globalForPrisma.prismaBasis = prismaBasis;
 
+// Eigen, aparte verbinding voor de haak hieronder. Met `max: 1` houdt een
+// lopende interactieve transactie de enige verbinding van `prismaBasis` vast;
+// de haak mag daar nooit op wachten (dan blijft de transactie hangen tot zijn
+// time-out). Deze client doet alleen korte leesacties.
+const globalVoorHaak = globalThis as unknown as { prismaHaak: PrismaClient | undefined };
+export const prismaHaak =
+  globalVoorHaak.prismaHaak ?? new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 1 }) });
+globalVoorHaak.prismaHaak = prismaHaak;
+
 export const prisma = prismaBasis.$extends({
   name: "snapshot-publicatie",
   query: {
     $allModels: {
       async $allOperations({ model, operation, args, query }) {
         const plan = await import("@/app/lib/snapshot/plan");
-        if (!plan.raaktSnapshot(model, operation, args)) return query(args);
+        if (!process.env.BLOB_READ_WRITE_TOKEN || !plan.raaktSnapshot(model, operation, args)) return query(args);
 
         // Bewerken/verwijderen: de tool-id's nú opzoeken (verwijderde rijen
         // zijn straks weg). Nieuwe rijen worden pas na afloop opgelost.
@@ -49,7 +58,9 @@ export const prisma = prismaBasis.$extends({
           const na = typeof id === "string" && (operation === "create" || operation === "upsert")
             ? { model, where: { id } }
             : null;
-          await plan.verwerkSchrijfactie(voorIds, na);
+          // Bewust niet afwachten: alles wat de haak verder doet gebeurt los van
+          // deze (eventueel nog lopende) transactie.
+          plan.verwerkSchrijfactie(voorIds, na);
         } catch {
           // publiceren mag opslaan nooit laten mislukken
         }
