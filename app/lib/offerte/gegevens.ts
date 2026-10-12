@@ -58,7 +58,7 @@ export const VOORWAARDEN_INFO: Record<VoorwaardenBlok["id"], { titel: string; ke
     titel: "KLIC-melding",
     keuzes: [
       { waarde: "door_ons", label: "Door ons", tekst: "De KLIC-melding wordt door ons gedaan." },
-      { waarde: "opdrachtgever", label: "Door de opdrachtgever", tekst: "De KLIC-melding wordt door de opdrachtgever gedaan voordat de werkzaamheden beginnen." },
+      { waarde: "opdrachtgever", label: "Door de opdrachtgever", tekst: "De KLIC-melding wordt door de opdrachtgever gedaan voordat wij beginnen." },
     ],
   },
   meerwerk: { titel: "Meerwerk", tekst: "Meerwerk voeren wij alleen uit na overleg en vooraf schriftelijk akkoord van de opdrachtgever." },
@@ -88,9 +88,9 @@ export function voorwaardenTeksten(blokken: VoorwaardenBlok[] | null | undefined
 
 // TODO(Pieter): juridisch laten checken.
 export const STANDAARD_HERROEPINGSTEKST =
-  "Bent u een consument en komt deze overeenkomst op afstand of buiten onze verkoopruimte tot stand, dan heeft u het recht om binnen 14 dagen na het sluiten van de overeenkomst zonder opgave van redenen te herroepen. Wilt u dat wij binnen die termijn met de werkzaamheden beginnen, dan vragen wij u daar uitdrukkelijk om te verzoeken; herroept u daarna, dan betaalt u ons een evenredig deel voor het reeds verrichte werk. Herroepen kunt u door ons dit schriftelijk of per e-mail te laten weten.";
+  "Bent u een consument en komt deze overeenkomst op afstand of buiten onze verkoopruimte tot stand, dan heeft u het recht om binnen 14 dagen na het sluiten van de overeenkomst zonder opgave van redenen te herroepen. Wilt u dat wij binnen die termijn met het werk beginnen, dan vragen wij u daar uitdrukkelijk om te verzoeken; herroept u daarna, dan betaalt u ons een evenredig deel voor het reeds verrichte werk. Herroepen kunt u door ons dit schriftelijk of per e-mail te laten weten.";
 
-export const STANDAARD_INTRO = "Hartelijk dank voor uw aanvraag. Hieronder vindt u onze offerte voor de besproken werkzaamheden.";
+export const STANDAARD_INTRO = "Hartelijk dank voor uw aanvraag. Hieronder vindt u onze offerte voor het besproken werk.";
 export const STANDAARD_SLOT = "Wij vertrouwen erop u hiermee een passend aanbod te hebben gedaan en zien uw reactie graag tegemoet. Heeft u vragen? Neem gerust contact met ons op.";
 
 export type OfferteGegevensWaarden = {
