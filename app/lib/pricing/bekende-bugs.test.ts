@@ -31,7 +31,7 @@ const VERWACHT_SUBTOTAAL = 960 + 560 + 35 + 60;
 
 function bouwSnapshot() {
   const b = calculateBreakdown({ products: [terras], productQty: { terras: 20 }, materialSelections: selecties, extraSelections: {}, costSettings: kosten });
-  return { b, snapshot: bouwLeadSnapshot({ products: [terras], productQty: { terras: 20 }, productRegelsBedrag: {}, materialSelections: selecties, extraSelections: {}, breakdown: { modus: "GEEN", ...b } as never, btwPercentage: 21 }) };
+  return { b, snapshot: bouwLeadSnapshot({ products: [terras as never], productQty: { terras: 20 }, productRegelsBedrag: {}, materialSelections: selecties, extraSelections: {}, breakdown: { modus: "GEEN", ...b } as never, btwPercentage: 21 }) };
 }
 
 describe("bug 1: meerdere materiaalcategorieën in het rekenvoorbeeld", () => {
