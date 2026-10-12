@@ -340,14 +340,14 @@ export function OfferteEditor({
           <CardContent className="flex flex-col gap-3">
             <p className="text-sm font-medium text-foreground">Delen met de klant</p>
             <div className="flex flex-wrap gap-2">
-              <CopyButton text={deelUrl} label="Kopieer link" />
+              <CopyButton text={deelUrl} label="Kopieer link" className="max-md:h-12" />
               {offerte.pdfUrl ? (
-                <LinkButton href={offerte.pdfUrl} target="_blank" variant="secondary">
+                <LinkButton href={offerte.pdfUrl} target="_blank" variant="secondary" className="max-md:h-12">
                   <Download className="h-4 w-4" />
                   Download PDF
                 </LinkButton>
               ) : (
-                <Button type="button" variant="secondary" disabled>
+                <Button type="button" variant="secondary" disabled className="max-md:h-12">
                   <Download className="h-4 w-4" />
                   PDF niet beschikbaar
                 </Button>
@@ -357,6 +357,7 @@ export function OfferteEditor({
                   `Hoi ${klantNaam},\n\nHierbij de offerte: ${deelUrl}\n\nMet vriendelijke groet,\n${bedrijfsnaam}`
                 )}`}
                 variant="secondary"
+                className="max-md:h-12"
               >
                 <Mail className="h-4 w-4" />
                 Open in e-mail

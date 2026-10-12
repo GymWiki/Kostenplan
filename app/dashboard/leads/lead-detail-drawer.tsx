@@ -98,7 +98,7 @@ export function LeadDetailDrawer({
 
             <div className="flex gap-2">
               <a href={mailtoHref} className="flex-1">
-                <Button type="button" variant="secondary" className="w-full">
+                <Button type="button" variant="secondary" className="w-full max-md:h-12">
                   <Mail className="h-4 w-4" />
                   E-mail
                 </Button>
@@ -110,7 +110,7 @@ export function LeadDetailDrawer({
                   rel="noopener noreferrer"
                   className="flex-1"
                 >
-                  <Button type="button" variant="secondary" className="w-full">
+                  <Button type="button" variant="secondary" className="w-full max-md:h-12">
                     <MessageCircle className="h-4 w-4" />
                     WhatsApp
                   </Button>
@@ -133,7 +133,7 @@ export function LeadDetailDrawer({
                   <p className="text-xs italic text-muted-foreground">“{lead.externAfgehandeldNotitie}”</p>
                 )}
                 {lead.offerte && (
-                  <LinkButton href={`/dashboard/leads/${lead.id}/offerte`} variant="secondary" className="w-full">
+                  <LinkButton href={`/dashboard/leads/${lead.id}/offerte`} variant="secondary" className="w-full max-md:h-12">
                     <FileText className="h-4 w-4" />
                     Offerte bekijken/bewerken
                     <OfferteStatusBadge offerte={lead.offerte} />
@@ -151,7 +151,7 @@ export function LeadDetailDrawer({
               </div>
             ) : lead.offerte ? (
               <div className="flex flex-col gap-1.5">
-                <LinkButton href={`/dashboard/leads/${lead.id}/offerte`} variant="secondary" className="w-full">
+                <LinkButton href={`/dashboard/leads/${lead.id}/offerte`} variant="secondary" className="w-full max-md:h-12">
                   <FileText className="h-4 w-4" />
                   Offerte bekijken/bewerken
                   <OfferteStatusBadge offerte={lead.offerte} />
@@ -177,7 +177,7 @@ export function LeadDetailDrawer({
               <Button
                 type="button"
                 variant="secondary"
-                className="w-full"
+                className="w-full max-md:h-12"
                 onClick={() => setKeuzeModal({ open: true, startStap: "keuze" })}
               >
                 <FileText className="h-4 w-4" />
