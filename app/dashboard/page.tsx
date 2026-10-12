@@ -7,6 +7,8 @@ import { bouwOnboardingStappen } from "@/app/lib/onboarding";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { LinkButton } from "@/app/components/ui/button";
 import { OnboardingChecklist } from "./onboarding-checklist";
+import { laadVandaag } from "@/app/lib/vandaag";
+import { VandaagMobiel } from "@/app/components/dashboard/vandaag-mobiel";
 import { RecenteAanvragen } from "@/app/components/dashboard/recente-aanvragen";
 
 export const metadata: Metadata = { title: "Overzicht" };
@@ -34,8 +36,12 @@ export default async function DashboardPage() {
   }
   const toonOnboarding = !company.onboardingVoltooid || justCompletedOnboarding;
 
+  const vandaag = await laadVandaag(company.id).catch(() => null);
+
   return (
-    <div className="flex flex-col gap-8">
+    <>
+    {vandaag && <VandaagMobiel data={vandaag} />}
+    <div className="hidden flex-col gap-8 md:flex">
       <div>
         <h1 className="text-2xl font-semibold text-foreground">
           Welkom terug, {company.naam}
@@ -88,6 +94,7 @@ export default async function DashboardPage() {
         </Card>
       </div>
     </div>
+    </>
   );
 }
 

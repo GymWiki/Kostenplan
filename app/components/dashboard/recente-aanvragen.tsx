@@ -28,7 +28,7 @@ const STATUS_BADGE_VARIANT: Record<LeadStatus, "default" | "success" | "warning"
 // activiteit" is "2 uur geleden" bruikbaarder dan "01-09-2026". Valt terug op
 // een korte datum zodra het langer dan een week geleden is (dan is "geleden"
 // niet meer precies genoeg om nuttig te zijn).
-function relatieveTijd(datum: Date) {
+export function relatieveTijd(datum: Date) {
   const diffMin = Math.floor((Date.now() - datum.getTime()) / 60000);
   if (diffMin < 1) return "Zojuist";
   if (diffMin < 60) return `${diffMin} min geleden`;
