@@ -36,6 +36,7 @@ import {
   type ResultaatStart,
 } from "./paneel-instellingen";
 import { WerkzaamheidPaneel } from "./werkzaamheid-paneel";
+import { MobieleEditor } from "./mobiele-editor";
 import { PublicatieStatusLabel } from "./publicatie-status";
 import type { PublicatieStatus } from "@/app/lib/actions/publicatie";
 
@@ -430,6 +431,132 @@ export function RekentoolEditor(props: EditorProps) {
 
   const nietOpgeslagen = opslag.status === "fout" || opslag.ongeldig;
 
+  const dialogen = (
+    <>
+      <Overlay open={hernoemOpen} onClose={() => setHernoemOpen(false)} ariaLabelledBy="hernoem-titel" className="flex items-center justify-center p-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void hernoem();
+          }}
+          className="relative flex w-full max-w-sm flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-lg"
+        >
+          <h2 id="hernoem-titel" className="text-lg font-bold text-foreground">
+            Naam wijzigen
+          </h2>
+          <label htmlFor="hernoem-naam" className="text-sm font-semibold text-foreground">
+            Naam van je rekentool
+          </label>
+          <Input id="hernoem-naam" value={hernoemTekst} maxLength={80} onChange={(e) => setHernoemTekst(e.target.value)} aria-invalid={hernoemFout ? true : undefined} />
+          {hernoemFout && (
+            <p role="alert" className="text-sm font-medium text-destructive">
+              {hernoemFout}
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" className="h-11" onClick={() => setHernoemOpen(false)}>
+              Annuleren
+            </Button>
+            <Button type="submit" className="h-11" disabled={bezig}>
+              Opslaan
+            </Button>
+          </div>
+        </form>
+      </Overlay>
+      <ConfirmDialog
+        open={verwijderTool}
+        onClose={() => setVerwijderTool(false)}
+        onConfirm={() => void verwijderRekentool()}
+        pending={bezig}
+        title={`“${naam}” verwijderen?`}
+        description="De link en de code op je website werken daarna niet meer. Je leads blijven bewaard. Je kunt dit direct ongedaan maken."
+      />
+      <ConfirmDialog
+        open={verwijderProduct !== null}
+        onClose={() => setVerwijderProduct(null)}
+        onConfirm={() => void verwijderWerkzaamheid()}
+        pending={bezig}
+        title="Onderdeel verwijderen?"
+        description="Het onderdeel verdwijnt uit je rekentool. Dit kun je niet ongedaan maken."
+      />
+      <ConfirmDialog
+        open={weggaan}
+        onClose={() => setWeggaan(false)}
+        onConfirm={() => router.push("/dashboard/tools")}
+        title="Niet alles is opgeslagen"
+        description={opslag.fout ? `Opslaan is niet gelukt: ${opslag.fout}` : "Een paar velden zijn nog niet goed ingevuld, daardoor zijn je laatste wijzigingen niet opgeslagen."}
+        confirmLabel="Toch weggaan"
+        cancelLabel="Blijven"
+      />
+    </>
+  );
+
+  const statusBlok = (
+    <>
+      <OpslaanStatus
+        status={volgordeBezig && opslag.status === "klaar" ? "opslaan" : opslag.status}
+        ongeldig={opslag.ongeldig}
+        fout={opslag.fout}
+        onOpnieuw={opslag.opnieuw}
+      />
+      {props.publicatie && <PublicatieStatusLabel toolId={toolId} begin={props.publicatie} opgeslagenTeller={opgeslagenTeller} />}
+    </>
+  );
+
+  // Mobiel (< 768 px, echt account): eigen, rustige weergave. De desktop- en
+  // gast-weergave hieronder blijven ongewijzigd.
+  if (isMobiel && !gast) {
+    return (
+      <>
+        <MobieleEditor
+          naam={naam}
+          toolStatus={props.toolStatus}
+          isAangepast={isAangepast}
+          producten={producten}
+          waarschuwingen={waarschuwingen}
+          modus={modus}
+          setModus={setModus}
+          paneel={paneel}
+          setPaneel={setPaneel}
+          sluitPaneel={() => setPaneel("start")}
+          paneelInhoud={paneelInhoud}
+          paneelTitel={PANEEL_TITEL(paneel, producten)}
+          statusNode={statusBlok}
+          zetZichtbaar={(id, aan) => void zetZichtbaar(id, aan)}
+          verplaats={verplaats}
+          menu={menu}
+          gast={false}
+          meldingNode={
+            melding ? (
+              <p role="alert" className="flex items-center justify-between gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+                {melding}
+                <button type="button" aria-label="Melding sluiten" onClick={() => setMelding(null)} className="flex h-11 w-11 cursor-pointer items-center justify-center">
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </p>
+            ) : null
+          }
+          voorbeeld={<iframe ref={iframeRef} title={`Voorbeeld van ${naam}`} src={props.voorbeeldUrl ?? `/voorbeeld/${toolId}`} className="h-full w-full border-0 bg-white" />}
+          renderWerkzaamheid={(product, mob) => (
+            <WerkzaamheidPaneel
+              key={`${product.id}-${mob}`}
+              toolId={toolId}
+              product={product}
+              onPreview={updateProduct}
+              onStatus={setOpslag}
+              onVerwijder={() => setVerwijderProduct(product.id)}
+              onGekopieerd={nieuwToegevoegd}
+              mobiel={mob}
+              onKlaar={() => setPaneel("start")}
+            />
+          )}
+        />
+        {dialogen}
+      </>
+    );
+  }
+
+
   return (
     <div className={cn("flex min-h-[32rem] flex-col", gast ? "h-dvh" : "-mx-4 -my-6 h-[calc(100dvh-4rem)] md:-mx-8 md:-my-8")}>
       {gast && (
@@ -601,62 +728,7 @@ export function RekentoolEditor(props: EditorProps) {
         </div>
       )}
 
-      {/* Dialogen */}
-      <Overlay open={hernoemOpen} onClose={() => setHernoemOpen(false)} ariaLabelledBy="hernoem-titel" className="flex items-center justify-center p-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void hernoem();
-          }}
-          className="relative flex w-full max-w-sm flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-lg"
-        >
-          <h2 id="hernoem-titel" className="text-lg font-bold text-foreground">
-            Naam wijzigen
-          </h2>
-          <label htmlFor="hernoem-naam" className="text-sm font-semibold text-foreground">
-            Naam van je rekentool
-          </label>
-          <Input id="hernoem-naam" value={hernoemTekst} maxLength={80} onChange={(e) => setHernoemTekst(e.target.value)} aria-invalid={hernoemFout ? true : undefined} />
-          {hernoemFout && (
-            <p role="alert" className="text-sm font-medium text-destructive">
-              {hernoemFout}
-            </p>
-          )}
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" className="h-11" onClick={() => setHernoemOpen(false)}>
-              Annuleren
-            </Button>
-            <Button type="submit" className="h-11" disabled={bezig}>
-              Opslaan
-            </Button>
-          </div>
-        </form>
-      </Overlay>
-      <ConfirmDialog
-        open={verwijderTool}
-        onClose={() => setVerwijderTool(false)}
-        onConfirm={() => void verwijderRekentool()}
-        pending={bezig}
-        title={`“${naam}” verwijderen?`}
-        description="De link en de code op je website werken daarna niet meer. Je leads blijven bewaard. Je kunt dit direct ongedaan maken."
-      />
-      <ConfirmDialog
-        open={verwijderProduct !== null}
-        onClose={() => setVerwijderProduct(null)}
-        onConfirm={() => void verwijderWerkzaamheid()}
-        pending={bezig}
-        title="Onderdeel verwijderen?"
-        description="Het onderdeel verdwijnt uit je rekentool. Dit kun je niet ongedaan maken."
-      />
-      <ConfirmDialog
-        open={weggaan}
-        onClose={() => setWeggaan(false)}
-        onConfirm={() => router.push("/dashboard/tools")}
-        title="Niet alles is opgeslagen"
-        description={opslag.fout ? `Opslaan is niet gelukt: ${opslag.fout}` : "Een paar velden zijn nog niet goed ingevuld, daardoor zijn je laatste wijzigingen niet opgeslagen."}
-        confirmLabel="Toch weggaan"
-        cancelLabel="Blijven"
-      />
+      {dialogen}
     </div>
   );
 }

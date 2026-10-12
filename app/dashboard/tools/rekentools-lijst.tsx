@@ -10,6 +10,8 @@ import { Card, CardContent } from "@/app/components/ui/card";
 import { DropdownMenu } from "@/app/components/ui/dropdown-menu";
 import { Input } from "@/app/components/ui/input";
 import { Overlay } from "@/app/components/ui/overlay";
+import { ChevronRight } from "lucide-react";
+import { StickyActiebalk } from "@/app/components/mobile/sticky-actiebalk";
 import { UpgradeModal } from "@/app/components/dashboard/upgrade-modal";
 import { duplicateToolAction } from "@/app/lib/actions/tools";
 import {
@@ -25,6 +27,7 @@ export type RekentoolKaartData = {
   live: boolean;
   aantalWerkzaamheden: number;
   leadsDezeMaand: number;
+  nieuweLeads: number;
   toolUrl: string;
 };
 
@@ -70,7 +73,7 @@ export function RekentoolsLijst({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="hidden flex-col gap-4 sm:flex-row sm:items-center sm:justify-between md:flex">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Rekentools</h1>
           <p className="mt-1 text-muted-foreground">Elke rekentool heeft zijn eigen onderdelen, uiterlijk en link.</p>
@@ -92,8 +95,24 @@ export function RekentoolsLijst({
         </p>
       )}
 
+      {/* Mobiel: één kaart per rekentool, tik opent; nieuwe rekentool onderin. */}
+      <div className="flex flex-col gap-3 pb-24 md:hidden">
+        {tools.length === 0 ? (
+          <p className="rounded-xl border border-border bg-card p-5 text-base text-foreground">
+            Je hebt nog geen rekentool. Maak er een en zet hem op je website.
+          </p>
+        ) : (
+          tools.map((t) => <KaartMobiel key={t.id} tool={t} />)
+        )}
+        <StickyActiebalk metTabbalk>
+          <Button type="button" size="lg" className="w-full" onClick={() => (magNieuweTool ? setNieuwOpen(true) : setUpgradeOpen(true))}>
+            <Plus className="h-5 w-5" aria-hidden="true" /> Nieuwe rekentool
+          </Button>
+        </StickyActiebalk>
+      </div>
+
       {tools.length === 0 ? (
-        <Card>
+        <Card className="hidden md:block">
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <p className="font-medium text-foreground">Nog geen rekentools</p>
             <p className="max-w-sm text-sm text-muted-foreground">Maak je eerste rekentool, kies een paar onderdelen en zet hem op je website.</p>
@@ -101,7 +120,7 @@ export function RekentoolsLijst({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
+        <div className="hidden gap-4 md:grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
           {tools.map((t) => (
             <Kaart
               key={t.id}
@@ -125,6 +144,28 @@ export function RekentoolsLijst({
         description={limiet ? `Je pakket biedt plek voor maximaal ${limiet} rekentool${limiet === 1 ? "" : "s"}. Upgrade voor meer.` : "Upgrade je pakket om meer rekentools te maken."}
       />
     </div>
+  );
+}
+
+function KaartMobiel({ tool }: { tool: RekentoolKaartData }) {
+  return (
+    <Link href={`/dashboard/tools/${tool.id}`} className="flex min-h-20 items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-lg font-semibold text-foreground">{tool.naam}</span>
+        <span className="mt-1 flex flex-wrap items-center gap-2">
+          <Badge variant={tool.live ? "success" : "muted"}>{tool.live ? "Live" : "Concept"}</Badge>
+          <span className="text-sm text-muted-foreground">
+            {tool.aantalWerkzaamheden} {tool.aantalWerkzaamheden === 1 ? "werkzaamheid" : "werkzaamheden"}
+          </span>
+        </span>
+      </span>
+      {tool.nieuweLeads > 0 && (
+        <span className="shrink-0 rounded-full bg-primary px-2.5 py-1 text-sm font-bold text-primary-foreground">
+          {tool.nieuweLeads} nieuw
+        </span>
+      )}
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+    </Link>
   );
 }
 
