@@ -8,6 +8,16 @@ import { usePortalDoel } from "./use-mobiel";
 
 export type SheetStand = "half" | "volledig";
 
+// Ruimte tussen de onderkant van de editor-kopbalk en de bovenkant van de sheet.
+const KOP_RUIMTE = 8;
+const KOP_BODEM = "var(--editor-header-bottom, 3.5rem)";
+
+// Plaatst een knop (bijv. het ⋯-menu) in de kop van de sheet, naast de sluitknop.
+export function SheetActie({ children }: { children: React.ReactNode }) {
+  const doel = usePortalDoel("#sheet-actie");
+  return doel && doel.id === "sheet-actie" ? createPortal(children, doel) : null;
+}
+
 const FOCUSBAAR = 'a[href], button:not([disabled]), input:not([disabled]):not([type=hidden]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 // Bottom sheet voor mobiel met twee standen (half / volledig). Sluit via de
@@ -19,6 +29,7 @@ function SheetInhoud({
   open,
   onClose,
   titel,
+  icoon,
   children,
   voet,
   beginStand = "half",
@@ -27,6 +38,7 @@ function SheetInhoud({
   open: boolean;
   onClose: () => void;
   titel: string;
+  icoon?: React.ReactNode;
   children: React.ReactNode;
   voet?: React.ReactNode;
   beginStand?: SheetStand;
@@ -114,16 +126,18 @@ function SheetInhoud({
 
   if (!doel) return null;
 
+  // Volledig = van net onder de kopbalk tot de onderkant van het zichtbare
+  // scherm (met toetsenbord: tot boven het toetsenbord); half = 55 % daarvan.
   const maxH = zichtbaar ? Math.min(zichtbaar, window.innerHeight) : null;
-  const hoogte = stand === "volledig" ? 0.94 : 0.55;
+  const beschikbaar = `${maxH ? `${Math.round(maxH)}px` : "100dvh"} - ${KOP_BODEM} - ${KOP_RUIMTE}px`;
   const stijl: React.CSSProperties = {
-    height: maxH ? `${Math.round(maxH * hoogte)}px` : stand === "volledig" ? "94dvh" : "55dvh",
+    height: stand === "volledig" ? `calc(${beschikbaar})` : `calc((${beschikbaar}) * 0.6)`,
     transform: sleep !== 0 ? `translateY(${Math.max(0, sleep)}px)` : undefined,
     bottom: zichtbaar && window.visualViewport ? `${Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop)}px` : 0,
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] md:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-[100] md:hidden" style={{ top: KOP_BODEM }}>
       <button type="button" aria-label="Sluiten" tabIndex={-1} onClick={sluit} className="absolute inset-0 cursor-default bg-black/45" />
       <div
         ref={paneel}
@@ -162,10 +176,12 @@ function SheetInhoud({
           }}
         >
           <span className="mb-1 h-1.5 w-12 rounded-full bg-muted-foreground/40" aria-hidden="true" />
-          <div className="flex w-full items-center justify-between gap-2 px-4">
-            <h2 id={titelId} className="min-w-0 truncate text-lg font-bold text-foreground">
+          <div className="flex w-full items-center gap-2 px-4">
+            {icoon}
+            <h2 id={titelId} className="min-w-0 flex-1 truncate text-lg font-bold text-foreground">
               {titel}
             </h2>
+            <div id="sheet-actie" className="flex shrink-0 items-center" />
             <button
               type="button"
               onClick={sluit}
@@ -177,7 +193,16 @@ function SheetInhoud({
             </button>
           </div>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-2">{children}</div>
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-2"
+          onFocus={(e) => {
+            // Toetsenbord open: het actieve veld blijft in beeld.
+            const el = e.target as HTMLElement;
+            if (["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName)) setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 250);
+          }}
+        >
+          {children}
+        </div>
         {voet && <div className="shrink-0 border-t border-border px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">{voet}</div>}
       </div>
     </div>,

@@ -39,6 +39,27 @@ export function MobieleKop({ rechts }: { rechts?: React.ReactNode }) {
   const pad = usePathname();
   const { stand } = useContext(KopDataContext);
   const [klein, setKlein] = useState(false);
+  const kopRef = useRef<HTMLElement>(null);
+
+  // Onderkant van de kop als CSS-variabele: sheets beginnen daaronder en laten de kop vrij.
+  useEffect(() => {
+    const kop = kopRef.current;
+    const root = document.documentElement;
+    if (!kop) return;
+    const zet = () => {
+      const r = kop.getBoundingClientRect();
+      if (r.height > 0) root.style.setProperty("--editor-header-bottom", `${Math.round(r.bottom)}px`);
+    };
+    zet();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(zet) : null;
+    ro?.observe(kop);
+    window.addEventListener("resize", zet);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", zet);
+      root.style.removeProperty("--editor-header-bottom");
+    };
+  }, []);
 
   useEffect(() => {
     function bijScroll() {
@@ -57,6 +78,7 @@ export function MobieleKop({ rechts }: { rechts?: React.ReactNode }) {
   return (
     <>
       <header
+        ref={kopRef}
         data-mobiele-kop
         className={cn(
           "sticky top-0 z-30 flex touch-manipulation select-none items-center gap-1 border-b border-border bg-background/90 px-2 backdrop-blur transition-[height] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] motion-reduce:transition-none md:hidden",

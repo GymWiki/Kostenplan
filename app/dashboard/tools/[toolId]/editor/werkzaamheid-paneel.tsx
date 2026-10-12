@@ -4,10 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Clock, Copy, Layers, Plus, Ruler, Trash2, Truck, X } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
-import { KopActie } from "@/app/components/mobile/mobiele-kop";
-import { MobieleSheet } from "@/app/components/mobile/mobiele-sheet";
+import { MobieleSheet, SheetActie } from "@/app/components/mobile/mobiele-sheet";
 import { SamenvattingRij } from "@/app/components/mobile/samenvatting-rij";
-import { StickyActiebalk } from "@/app/components/mobile/sticky-actiebalk";
 import { Stepper } from "@/app/components/mobile/stepper";
 import { bedragKort } from "./mobiele-editor";
 import { DropdownMenu } from "@/app/components/ui/dropdown-menu";
@@ -232,8 +230,8 @@ export function WerkzaamheidPaneel({
     const voorbeeldAantal = draft.materialen.filter((m) => m.isVoorbeeld).length;
     const wissel = (id: string) => setOpenBlok((o) => (o === id ? null : id));
     return (
-      <div className="flex flex-col gap-3 pb-20 md:hidden">
-        <KopActie>
+      <div className="flex flex-col gap-3 md:hidden">
+        <SheetActie>
           <DropdownMenu
             ariaLabel="Meer acties voor dit onderdeel"
             className="h-11 w-11"
@@ -242,7 +240,7 @@ export function WerkzaamheidPaneel({
               { label: "Verwijderen", icon: Trash2, destructive: true, onSelect: onVerwijder },
             ]}
           />
-        </KopActie>
+        </SheetActie>
         <label className="flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 text-base font-semibold text-foreground">
           Op je website
           <Switch checked={actief} onChange={(e) => void wisselZichtbaar(e.target.checked)} aria-label="Op je website" />
@@ -253,7 +251,7 @@ export function WerkzaamheidPaneel({
           </p>
         )}
 
-        <SamenvattingRij id="basis" titel="Basis" samenvatting={`${METHODE_OPTIES.find((m) => m.value === draft.methode)?.label ?? "Eigen instelling"} · ${draft.naam}`} open={openBlok === "basis"} onToggle={() => wissel("basis")}>
+        <SamenvattingRij id="basis" titel="Basis" samenvatting={METHODE_OPTIES.find((m) => m.value === draft.methode)?.label ?? "Eigen instelling"} open={openBlok === "basis"} onToggle={() => wissel("basis")}>
           <label className="flex flex-col gap-1.5 text-sm font-semibold text-foreground">
             Naam
             <Input value={draft.naam} maxLength={120} enterKeyHint="done" aria-invalid={draft.naam.trim() === "" ? true : undefined} onChange={(e) => wijzig({ naam: e.target.value })} />
@@ -359,7 +357,7 @@ export function WerkzaamheidPaneel({
           </button>
         )}
 
-        <StickyActiebalk>
+        <div className="sticky bottom-0 z-10 -mx-4 -mb-4 mt-1 flex items-center gap-3 border-t border-border bg-card px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
           <button
             type="button"
             onClick={() => setOpbouwOpen(true)}
@@ -371,7 +369,7 @@ export function WerkzaamheidPaneel({
           <Button type="button" size="lg" className="shrink-0 px-8" onClick={onKlaar}>
             Klaar
           </Button>
-        </StickyActiebalk>
+        </div>
 
         <MobieleSheet open={opbouwOpen} onClose={() => setOpbouwOpen(false)} titel={`Opbouw voor ${voorbeeldHoeveelheid} ${eenheidKort}`}>
           <KostenOpbouwKaart opbouw={opbouw} eenheid={eenheid} stap={stap} />
