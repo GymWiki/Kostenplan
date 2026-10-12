@@ -8,6 +8,7 @@ import { Button } from "@/app/components/ui/button";
 import { Input, Label } from "@/app/components/ui/input";
 import { UnitInput } from "@/app/components/ui/unit-input";
 import { cn } from "@/app/lib/cn";
+import { StickyActiebalk } from "@/app/components/mobile/sticky-actiebalk";
 import { PRODUCT_ICONS } from "@/app/lib/icons";
 import { HOVENIER_PRESETS } from "@/app/lib/presets";
 import { draftOpslag } from "@/app/lib/draft-opslag";
@@ -87,6 +88,8 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
   const [fout, setFout] = useState<string | null>(null);
   const [bezig, setBezig] = useState(false);
   const [ophalen, setOphalen] = useState<string | null>(null);
+  // Mobiel: één vraag per scherm (0 website, 1 werkzaamheden, 2 tarief).
+  const [stap, setStap] = useState(0);
   const cache = useRef<{ site: string; belofte: Promise<Huisstijl> } | null>(null);
 
   const ophalenVoor = (naam: string) => {
@@ -157,8 +160,14 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
   const naamOphalen = ophalen;
 
   return (
-    <form onSubmit={maak} className="flex flex-col gap-8" noValidate>
-      <section aria-labelledby="stap-site" className="flex flex-col gap-2">
+    <form id="probeer-formulier" onSubmit={maak} className="flex flex-col gap-8 max-md:pb-24" noValidate>
+      <div className="md:hidden" role="group" aria-label={`Stap ${stap + 1} van 3`}>
+        <div className="h-2 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuemin={1} aria-valuemax={3} aria-valuenow={stap + 1}>
+          <div className="h-full rounded-full bg-primary transition-[width] motion-reduce:transition-none" style={{ width: `${((stap + 1) / 3) * 100}%` }} />
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground">Stap {stap + 1} van 3</p>
+      </div>
+      <section aria-labelledby="stap-site" className={cn("flex flex-col gap-2", stap !== 0 && "max-md:hidden")}>
         <h2 id="stap-site" className="text-lg font-semibold text-foreground">
           1. Wat is je website?
         </h2>
@@ -184,7 +193,7 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
         </p>
       </section>
 
-      <fieldset className="flex flex-col gap-3">
+      <fieldset className={cn("flex flex-col gap-3", stap !== 1 && "max-md:hidden")}>
         <legend className="text-lg font-semibold text-foreground">2. Welke werkzaamheden doe je?</legend>
         <p className="-mt-1 text-sm text-muted-foreground">Kies er minstens één. Je past alles daarna zelf aan.</p>
         <ul className="grid grid-cols-1 gap-2 min-[480px]:grid-cols-2">
@@ -210,7 +219,7 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
         </ul>
       </fieldset>
 
-      <section aria-labelledby="stap-tarief" className="flex flex-col gap-2">
+      <section aria-labelledby="stap-tarief" className={cn("flex flex-col gap-2", stap !== 2 && "max-md:hidden")}>
         <h2 id="stap-tarief" className="text-lg font-semibold text-foreground">
           3. Wat reken je per dagdeel?
         </h2>
@@ -219,13 +228,18 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
         <p className="text-sm text-muted-foreground">Voorrijkosten en transport zetten we alvast voor je klaar. Die pas je later aan.</p>
       </section>
 
-      <div className="flex flex-col gap-3">
+      {fout && stap !== 2 && (
+        <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive md:hidden">
+          {fout}
+        </p>
+      )}
+      <div className={cn("flex flex-col gap-3", stap !== 2 && "max-md:hidden")}>
         {fout && (
           <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
             {fout}
           </p>
         )}
-        <Button type="submit" size="lg" disabled={bezig || gekozen.length === 0} className="w-full sm:w-auto">
+        <Button type="submit" size="lg" disabled={bezig || gekozen.length === 0} className="w-full sm:w-auto max-md:hidden">
           {bezig ? "Je rekentool wordt gemaakt…" : "Maak mijn rekentool"}
         </Button>
         <p className="text-sm text-muted-foreground">
@@ -235,6 +249,31 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
           </Link>
         </p>
       </div>
+      <StickyActiebalk>
+        {stap > 0 && (
+          <Button type="button" variant="outline" size="lg" className="shrink-0" onClick={() => { setFout(null); setStap((s) => s - 1); }}>
+            Terug
+          </Button>
+        )}
+        {stap < 2 ? (
+          <Button
+            type="button"
+            size="lg"
+            className="flex-1"
+            onClick={() => {
+              if (stap === 1 && gekozen.length === 0) return setFout("Kies minstens één werkzaamheid.");
+              setFout(null);
+              setStap((s) => s + 1);
+            }}
+          >
+            Volgende
+          </Button>
+        ) : (
+          <Button type="submit" form="probeer-formulier" size="lg" className="flex-1" disabled={bezig || gekozen.length === 0}>
+            {bezig ? "Bezig…" : "Maak mijn rekentool"}
+          </Button>
+        )}
+      </StickyActiebalk>
     </form>
   );
 }

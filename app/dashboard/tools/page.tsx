@@ -21,7 +21,7 @@ export default async function ToolsOverzichtPage({
   beginVanMaand.setDate(1);
   beginVanMaand.setHours(0, 0, 0, 0);
 
-  const [magNieuweTool, toolUrls, leadsPerTool] = await Promise.all([
+  const [magNieuweTool, toolUrls, leadsPerTool, nieuwePerToolRijen] = await Promise.all([
     canCreateTool(company.id, tier),
     Promise.all(tools.map((tool) => getToolUrl(company.slug, tool.slug))),
     prisma.lead.groupBy({
@@ -29,8 +29,14 @@ export default async function ToolsOverzichtPage({
       where: { companyId: company.id, createdAt: { gte: beginVanMaand } },
       _count: { _all: true },
     }),
+    prisma.lead.groupBy({
+      by: ["toolId"],
+      where: { companyId: company.id, status: "NIEUW" },
+      _count: { _all: true },
+    }),
   ]);
   const perTool = new Map(leadsPerTool.map((r) => [r.toolId, r._count._all]));
+  const nieuwePerTool = new Map(nieuwePerToolRijen.map((r) => [r.toolId, r._count._all]));
 
   return (
     <RekentoolsLijst
@@ -40,6 +46,7 @@ export default async function ToolsOverzichtPage({
         live: t.status === "GEPUBLICEERD",
         aantalWerkzaamheden: t._count.products,
         leadsDezeMaand: perTool.get(t.id) ?? 0,
+        nieuweLeads: nieuwePerTool.get(t.id) ?? 0,
         toolUrl: toolUrls[i],
       }))}
       magNieuweTool={magNieuweTool}

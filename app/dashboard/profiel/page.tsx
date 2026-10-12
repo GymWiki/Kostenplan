@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getToolCostSettings, requireActiveCompany } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { effectiveTier } from "@/app/lib/subscription";
+import { pushBeschikbaar } from "@/app/lib/push/versturen";
 import { ProfielView } from "./profiel-view";
 
 export const metadata: Metadata = { title: "Profiel" };
@@ -30,6 +31,7 @@ export default async function ProfielPage({
 
   return (
     <ProfielView
+      pushBeschikbaar={pushBeschikbaar()}
       email={user.email}
       activeCompanyId={company.id}
       companies={alleBedrijven}

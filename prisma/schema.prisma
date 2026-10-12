@@ -326,6 +326,7 @@ model Company {
   analyticsEvents      AnalyticsEvent[]
   cancellationFeedback CancellationFeedback[]
   onderdeelBibliotheek OnderdeelBibliotheek[]
+  pushAbonnementen     PushAbonnement[]
 
   @@index([gastVerlooptOp])
 }
@@ -946,4 +947,21 @@ model GastGebeurtenis {
 
   @@index([type, createdAt])
   @@index([bron, createdAt])
+}
+
+// Eén rij per toestel/browser dat meldingen wil bij een nieuwe lead (Web Push).
+// Alleen na expliciete toestemming van de gebruiker (Profiel > Meldingen).
+// `endpoint` is uniek per toestel; verlopen/ingetrokken abonnementen worden bij
+// het versturen automatisch verwijderd (410/404).
+model PushAbonnement {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
 }

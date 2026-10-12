@@ -1,6 +1,11 @@
 import { requireActiveCompany } from "@/app/lib/dal";
 import { Sidebar } from "@/app/components/dashboard/sidebar";
 import { Topbar } from "@/app/components/dashboard/topbar";
+import { prisma } from "@/app/lib/prisma";
+import { Tabbalk } from "@/app/components/mobile/tabbalk";
+import { KopProvider, MobieleKop } from "@/app/components/mobile/mobiele-kop";
+import { PwaBasis } from "@/app/components/mobile/pwa-basis";
+import { MobielBasis } from "@/app/components/mobile/mobiel-basis";
 import { adminFontClasses } from "@/app/lib/admin-fonts";
 
 export default async function DashboardLayout({
@@ -9,13 +14,18 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { company, alleBedrijven } = await requireActiveCompany();
+  // Badge op de tabbalk (alleen mobiel). Een mislukte telling mag het
+  // dashboard nooit breken.
+  const nieuweLeads = await prisma.lead.count({ where: { companyId: company.id, status: "NIEUW" } }).catch(() => 0);
 
   return (
+    <KopProvider>
     <div data-admin-theme className={`flex min-h-screen bg-background text-foreground ${adminFontClasses}`}>
       <aside className="hidden w-64 shrink-0 border-r border-border md:flex">
         <Sidebar />
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
+        <MobieleKop />
         <Topbar
           bedrijfsnaam={company.naam}
           activeCompanyId={company.id}
@@ -27,10 +37,14 @@ export default async function DashboardLayout({
             i.p.v. per pagina, dekt elke bestaande en toekomstige pagina
             automatisch; instellingenpagina's die zelf al een nauwere
             max-w-2xl gebruiken nestelen daar gewoon binnen. */}
-        <main id="main-content" className="flex-1 px-4 py-6 md:px-8 md:py-8">
+        <main id="main-content" className="flex-1 px-4 py-4 pb-24 md:px-8 md:py-8 md:pb-8">
           <div className="mx-auto max-w-[1800px]">{children}</div>
         </main>
       </div>
+      <Tabbalk nieuweLeads={nieuweLeads} />
+      <MobielBasis />
+      <PwaBasis />
     </div>
+    </KopProvider>
   );
 }

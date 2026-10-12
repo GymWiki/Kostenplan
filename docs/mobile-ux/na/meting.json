@@ -1,0 +1,178 @@
+{
+  "390/overzicht": {
+    "interactiefBovenVouw": 15,
+    "invoervelden": 0,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "390/rekentools": {
+    "interactiefBovenVouw": 9,
+    "invoervelden": 0,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "390/editor": {
+    "interactiefBovenVouw": 17,
+    "invoervelden": 0,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "390/werkzaamheid": {
+    "interactiefBovenVouw": 11,
+    "invoervelden": 0,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "390/leads": {
+    "interactiefBovenVouw": 18,
+    "invoervelden": 1,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "390/lead-detail": {
+    "interactiefBovenVouw": 28,
+    "invoervelden": 3,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "390/offerte": {
+    "interactiefBovenVouw": 13,
+    "invoervelden": 0,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "390/profiel": {
+    "interactiefBovenVouw": 12,
+    "invoervelden": 0,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "390/probeer": {
+    "interactiefBovenVouw": 6,
+    "invoervelden": 1,
+    "kleineTikdoelen": 17,
+    "kleineVoorbeelden": [
+      "a:Kostenplan(132x32)",
+      "a:Probeer gratis(90x36)",
+      "a:Wat is een rekentool?(137x36)",
+      "a:Voorbeelden(81x36)",
+      "a:Functionaliteiten(107x36)",
+      "a:Prijzen(44x36)"
+    ],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "360/overzicht": {
+    "interactiefBovenVouw": 14,
+    "invoervelden": 0,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "360/rekentools": {
+    "interactiefBovenVouw": 9,
+    "invoervelden": 0,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "360/editor": {
+    "interactiefBovenVouw": 15,
+    "invoervelden": 0,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "360/werkzaamheid": {
+    "interactiefBovenVouw": 11,
+    "invoervelden": 0,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "360/leads": {
+    "interactiefBovenVouw": 18,
+    "invoervelden": 1,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "360/lead-detail": {
+    "interactiefBovenVouw": 28,
+    "invoervelden": 3,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "360/offerte": {
+    "interactiefBovenVouw": 13,
+    "invoervelden": 0,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "360/profiel": {
+    "interactiefBovenVouw": 12,
+    "invoervelden": 0,
+    "kleineTikdoelen": 0,
+    "kleineVoorbeelden": [],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  },
+  "360/probeer": {
+    "interactiefBovenVouw": 6,
+    "invoervelden": 1,
+    "kleineTikdoelen": 17,
+    "kleineVoorbeelden": [
+      "a:Kostenplan(132x32)",
+      "a:Probeer gratis(90x36)",
+      "a:Wat is een rekentool?(137x36)",
+      "a:Voorbeelden(81x36)",
+      "a:Functionaliteiten(107x36)",
+      "a:Prijzen(44x36)"
+    ],
+    "horizontaalScrollen": false,
+    "afgekapteTeksten": 0,
+    "afgekaptVoorbeelden": []
+  }
+}

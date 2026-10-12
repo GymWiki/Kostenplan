@@ -7,11 +7,15 @@ import { TarievenSectie } from "./tarieven-sectie";
 import { UiterlijkOverzicht, type BrandingRegel } from "./uiterlijk-overzicht";
 import { AccountForm } from "./account-form";
 import { CompanyCard } from "./company-card";
+import { ProfielMobiel } from "./profiel-mobiel";
+import { MeldingenPaneel } from "./meldingen-paneel";
+import { PLAN_LABELS } from "@/app/lib/subscription";
 import { effectiveTier, isBetaaldTier, PRIJZEN } from "@/app/lib/subscription";
 import { formatCurrency } from "@/app/lib/format";
 import type { Company } from "@/app/generated/prisma/client";
 
 export function ProfielView({
+  pushBeschikbaar = false,
   email,
   activeCompanyId,
   companies,
@@ -19,6 +23,7 @@ export function ProfielView({
   tarieven,
   branding,
 }: {
+  pushBeschikbaar?: boolean;
   email: string;
   activeCompanyId: string;
   companies: Company[];
@@ -42,8 +47,52 @@ export function ProfielView({
     return som + perMaand;
   }, 0);
 
+  const actiefBedrijf = companies.find((c) => c.id === activeCompanyId);
+  const eenheidWoord = tarieven.eenheid === "UUR" ? "uur" : tarieven.eenheid === "DAG" ? "dag" : "dagdeel";
+
   return (
-    <div className="flex flex-col gap-8">
+    <>
+    <ProfielMobiel
+      meldingenBeschikbaar={pushBeschikbaar}
+      samenvattingen={{
+        tarieven: `${formatCurrency(tarieven.tarief)} per ${eenheidWoord}`,
+        bedrijf: actiefBedrijf?.naam ?? "Je bedrijf",
+        uiterlijk: branding.length === 1 ? "Logo en kleuren" : `${branding.length} rekentools`,
+        abonnement: PLAN_LABELS?.[abonnement.effectivePlan] ?? String(abonnement.effectivePlan),
+        meldingen: "Bij een nieuwe aanvraag",
+        account: email,
+      }}
+      schermen={{
+        tarieven: (
+          <section className="flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground">Eén keer instellen, geldt voor al je rekentools.</p>
+            <TarievenSectie start={tarieven} />
+          </section>
+        ),
+        bedrijf: (
+          <section className="flex flex-col gap-4">
+            {companies.map((company) => (
+              <CompanyCard key={company.id} company={company} isActive={company.id === activeCompanyId} isLastCompany={companies.length === 1} />
+            ))}
+            <LinkButton href="/dashboard/bedrijven/nieuw" size="lg" variant="outline" className="w-full">
+              <Plus className="h-4 w-4" />
+              Nieuw bedrijf toevoegen
+            </LinkButton>
+          </section>
+        ),
+        uiterlijk: <UiterlijkOverzicht regels={branding} />,
+        abonnement: <AbonnementView {...abonnement} />,
+        meldingen: <MeldingenPaneel />,
+        account: (
+          <Card>
+            <CardContent>
+              <AccountForm email={email} />
+            </CardContent>
+          </Card>
+        ),
+      }}
+    />
+    <div className="hidden flex-col gap-8 md:flex">
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Profiel</h1>
         <p className="mt-1 text-muted-foreground">
@@ -106,5 +155,6 @@ export function ProfielView({
         <AbonnementView {...abonnement} />
       </section>
     </div>
+    </>
   );
 }

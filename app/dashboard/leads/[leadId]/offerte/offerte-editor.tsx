@@ -17,6 +17,12 @@ import {
   Undo2,
 } from "lucide-react";
 import { Button, LinkButton } from "@/app/components/ui/button";
+import { KopActie, KopInstellen } from "@/app/components/mobile/mobiele-kop";
+import { MobieleSheet } from "@/app/components/mobile/mobiele-sheet";
+import { SamenvattingRij } from "@/app/components/mobile/samenvatting-rij";
+import { StickyActiebalk } from "@/app/components/mobile/sticky-actiebalk";
+import { DropdownMenu } from "@/app/components/ui/dropdown-menu";
+import { UnitInput } from "@/app/components/ui/unit-input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
 import { DecimalInput, Input, Label, Textarea } from "@/app/components/ui/input";
 import { CopyButton } from "@/app/components/dashboard/copy-link";
@@ -209,10 +215,41 @@ export function OfferteEditor({
 
   const router = useRouter();
   const [verlaatBevestigenOpen, setVerlaatBevestigenOpen] = useState(false);
+  // Mobiel: één regel tegelijk bewerken in een sheet; teksten ingeklapt.
+  const [bewerkId, setBewerkId] = useState<string | null>(null);
+  const [tekstenOpen, setTekstenOpen] = useState(false);
+  const [conceptMelding, setConceptMelding] = useState(false);
+  const bewerkRegel = regels.find((r) => r.id === bewerkId) ?? null;
+  const kanBewerken = offerte.status !== "GEACCEPTEERD";
+  function voegRegelToeMobiel() {
+    const id = crypto.randomUUID();
+    setRegels((r) => [...r, { id, omschrijving: "", aantal: "1", eenheid: "stuk", prijsPerEenheid: "0" }]);
+    setBewerkId(id);
+  }
+  function terugMobiel() {
+    if (isDirty) setVerlaatBevestigenOpen(true);
+    else router.push("/dashboard/leads");
+  }
+  function bewaarVoorComputer() {
+    if (!formRef.current) return;
+    saveAction(new FormData(formRef.current));
+    setConceptMelding(true);
+  }
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <KopInstellen titel={`Offerte voor ${klantNaam}`} onTerug={terugMobiel} />
+      <KopActie>
+        <DropdownMenu
+          ariaLabel="Meer acties voor deze offerte"
+          className="h-11 w-11"
+          items={[
+            ...(offerte.status === "VERSTUURD" ? [{ label: "Intrekken", onSelect: () => setIntrekOpen(true) }] : []),
+            ...(offerte.status === "CONCEPT" ? [{ label: "Concept opslaan", onSelect: bewaarVoorComputer }] : []),
+          ]}
+        />
+      </KopActie>
+      <div className="flex flex-wrap items-center justify-between gap-3 max-md:hidden">
         <div>
           <Link
             href="/dashboard/leads"
@@ -303,14 +340,14 @@ export function OfferteEditor({
           <CardContent className="flex flex-col gap-3">
             <p className="text-sm font-medium text-foreground">Delen met de klant</p>
             <div className="flex flex-wrap gap-2">
-              <CopyButton text={deelUrl} label="Kopieer link" />
+              <CopyButton text={deelUrl} label="Kopieer link" className="max-md:h-12" />
               {offerte.pdfUrl ? (
-                <LinkButton href={offerte.pdfUrl} target="_blank" variant="secondary">
+                <LinkButton href={offerte.pdfUrl} target="_blank" variant="secondary" className="max-md:h-12">
                   <Download className="h-4 w-4" />
                   Download PDF
                 </LinkButton>
               ) : (
-                <Button type="button" variant="secondary" disabled>
+                <Button type="button" variant="secondary" disabled className="max-md:h-12">
                   <Download className="h-4 w-4" />
                   PDF niet beschikbaar
                 </Button>
@@ -320,6 +357,7 @@ export function OfferteEditor({
                   `Hoi ${klantNaam},\n\nHierbij de offerte: ${deelUrl}\n\nMet vriendelijke groet,\n${bedrijfsnaam}`
                 )}`}
                 variant="secondary"
+                className="max-md:h-12"
               >
                 <Mail className="h-4 w-4" />
                 Open in e-mail
@@ -348,7 +386,133 @@ export function OfferteEditor({
           />
         </div>
       ) : (
-      <div className="grid gap-6 lg:grid-cols-2">
+      <>
+      {/* Mobiel: regels als kaarten, aanpassen in een sheet. */}
+      <div className="flex flex-col gap-4 pb-44 md:hidden">
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <OfferteStatusBadge offerte={offerte} />
+          Vooraf gevuld vanuit de aanvraag. Pas aan wat nodig is.
+        </p>
+        <ul className="flex flex-col gap-2">
+          {regels.map((regel) => (
+            <li key={regel.id}>
+              <button
+                type="button"
+                onClick={() => kanBewerken && setBewerkId(regel.id)}
+                className="flex min-h-16 w-full cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block break-words text-base font-semibold text-foreground">{regel.omschrijving || "Nieuwe regel"}</span>
+                  <span className="block text-sm text-muted-foreground">
+                    {regel.aantal} {regel.eenheid} × {formatCurrency(parseDecimal(regel.prijsPerEenheid))}
+                  </span>
+                </span>
+                <span className="shrink-0 text-base font-semibold tabular-nums text-foreground">{formatCurrency(regelTotaal(naarOfferteRegel(regel)))}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        {kanBewerken && (
+          <button type="button" onClick={voegRegelToeMobiel} className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-input text-base font-semibold text-foreground">
+            <Plus className="h-5 w-5" aria-hidden="true" /> Regel toevoegen
+          </button>
+        )}
+        <div className="flex flex-col gap-1 rounded-xl bg-secondary/50 p-4 text-sm tabular-nums">
+          <div className="flex justify-between text-muted-foreground">
+            <span>Subtotaal</span>
+            <span>{formatCurrency(totalen.subtotaal)}</span>
+          </div>
+          <div className="flex justify-between text-muted-foreground">
+            <span>Btw ({btwPercentage}%)</span>
+            <span>{formatCurrency(totalen.btw)}</span>
+          </div>
+        </div>
+        <SamenvattingRij id="teksten" titel="Teksten en geldigheid" samenvatting={`Geldig tot ${geldigTot.split("-").reverse().join("-")}`} open={tekstenOpen} onToggle={() => setTekstenOpen((o) => !o)}>
+          <label className="flex flex-col gap-1.5 text-sm font-semibold text-foreground">
+            Introtekst
+            <Textarea value={introTekst} onChange={(e) => setIntroTekst(e.target.value)} rows={3} />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm font-semibold text-foreground">
+            Voorwaarden
+            <Textarea value={voorwaardenTekst} onChange={(e) => setVoorwaardenTekst(e.target.value)} rows={3} />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm font-semibold text-foreground">
+            Geldig tot
+            <Input type="date" value={geldigTot} onChange={(e) => setGeldigTot(e.target.value)} />
+          </label>
+        </SamenvattingRij>
+        {(saveState?.error || shareState?.error) && (
+          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive" aria-live="polite">
+            {saveState?.error || shareState?.error}
+          </p>
+        )}
+        {conceptMelding && saveState?.success && (
+          <p role="status" className="rounded-md bg-accent px-3 py-2 text-sm text-accent-foreground">
+            Concept opgeslagen. Je kunt op de computer verder.
+          </p>
+        )}
+
+        {kanBewerken && (
+          <StickyActiebalk>
+            <div className="flex w-full flex-col gap-2">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-base font-bold tabular-nums text-foreground">Totaal {formatCurrency(totalen.totaal)}</span>
+                <button type="button" onClick={bewaarVoorComputer} disabled={pending} className="min-h-11 cursor-pointer text-sm font-semibold text-primary underline disabled:opacity-50">
+                  Verder op de computer
+                </button>
+              </div>
+              <Button type="button" size="lg" className="w-full" disabled={pending} onClick={() => setVerzendModalOpen(true)}>
+                {sharePending ? "Bezig…" : "Controleren en versturen"}
+              </Button>
+            </div>
+          </StickyActiebalk>
+        )}
+
+        <MobieleSheet
+          open={bewerkRegel !== null}
+          onClose={() => setBewerkId(null)}
+          titel="Regel aanpassen"
+          beginStand="volledig"
+          voet={
+            <div className="flex gap-2">
+              {bewerkRegel && (
+                <Button type="button" variant="outline" size="lg" className="shrink-0 text-destructive" onClick={() => { const r = bewerkRegel; setBewerkId(null); handleVerwijderKlik(r); }}>
+                  <Trash2 className="h-5 w-5" aria-hidden="true" />
+                  <span className="sr-only">Regel verwijderen</span>
+                </Button>
+              )}
+              <Button type="button" size="lg" className="flex-1" onClick={() => setBewerkId(null)}>
+                Klaar
+              </Button>
+            </div>
+          }
+        >
+          {bewerkRegel && (
+            <div className="flex flex-col gap-4">
+              <label className="flex flex-col gap-1.5 text-sm font-semibold text-foreground">
+                Omschrijving
+                <Input value={bewerkRegel.omschrijving} enterKeyHint="next" onChange={(e) => updateRegel(bewerkRegel.id, { omschrijving: e.target.value })} data-autofocus />
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1.5 text-sm font-semibold text-foreground">
+                  Aantal
+                  <DecimalInput value={bewerkRegel.aantal} enterKeyHint="next" onChange={(e) => updateRegel(bewerkRegel.id, { aantal: e.target.value })} />
+                </label>
+                <label className="flex flex-col gap-1.5 text-sm font-semibold text-foreground">
+                  Eenheid
+                  <Input value={bewerkRegel.eenheid} enterKeyHint="next" onChange={(e) => updateRegel(bewerkRegel.id, { eenheid: e.target.value })} />
+                </label>
+              </div>
+              <label className="flex flex-col gap-1.5 text-sm font-semibold text-foreground">
+                Prijs per eenheid
+                <UnitInput prefix="€" value={bewerkRegel.prijsPerEenheid} enterKeyHint="done" onChange={(e) => updateRegel(bewerkRegel.id, { prijsPerEenheid: e.target.value })} />
+              </label>
+              <p className="text-right text-base font-semibold tabular-nums text-foreground">Totaal: {formatCurrency(regelTotaal(naarOfferteRegel(bewerkRegel)))}</p>
+            </div>
+          )}
+        </MobieleSheet>
+      </div>
+      <div className="hidden gap-6 md:grid lg:grid-cols-2">
         <form ref={formRef} className="flex flex-col gap-4">
           <input type="hidden" name="regels" value={regelsJson} />
           <input type="hidden" name="introTekst" value={introTekst} />
@@ -532,6 +696,7 @@ export function OfferteEditor({
           />
         </div>
       </div>
+      </>
       )}
 
       <VerzendBevestigingModal

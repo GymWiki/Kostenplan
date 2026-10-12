@@ -67,6 +67,13 @@ const nextConfig: NextConfig = {
       // Laadscript-versies zijn onveranderlijk (nieuwe versie = nieuw bestand),
       // dus eeuwig te cachen; de iframe-pagina's mogen overal ingesloten worden.
       {
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+      {
         source: "/embed-sw.js",
         headers: [
           { key: "Cache-Control", value: "no-cache" },

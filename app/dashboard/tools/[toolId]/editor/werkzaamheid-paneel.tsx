@@ -4,6 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Clock, Copy, Layers, Plus, Ruler, Trash2, Truck, X } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
+import { KopActie } from "@/app/components/mobile/mobiele-kop";
+import { MobieleSheet } from "@/app/components/mobile/mobiele-sheet";
+import { SamenvattingRij } from "@/app/components/mobile/samenvatting-rij";
+import { StickyActiebalk } from "@/app/components/mobile/sticky-actiebalk";
+import { Stepper } from "@/app/components/mobile/stepper";
+import { bedragKort } from "./mobiele-editor";
 import { DropdownMenu } from "@/app/components/ui/dropdown-menu";
 import { Field } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
@@ -31,7 +37,7 @@ import {
   type ProductMetRelaties,
   type WerkzaamheidDraft,
 } from "@/app/lib/werkzaamheid";
-import { berekenKostenOpbouw } from "@/app/lib/werkzaamheid-kosten";
+import { berekenKostenOpbouw, prijsRange } from "@/app/lib/werkzaamheid-kosten";
 import { useTarieven } from "../tarieven-context";
 import { useEditorRepository } from "./repository";
 import { KostenOpbouwKaart } from "../producten/editor/kosten-opbouw-kaart";
@@ -56,6 +62,8 @@ export function WerkzaamheidPaneel({
   onStatus,
   onVerwijder,
   onGekopieerd,
+  mobiel,
+  onKlaar,
 }: {
   toolId: string;
   product: ProductMetRelaties;
@@ -63,8 +71,15 @@ export function WerkzaamheidPaneel({
   onStatus: (s: { status: AutosaveStatus; fout: string | null; ongeldig: boolean; opnieuw: () => void }) => void;
   onVerwijder: () => void;
   onGekopieerd: (productId: string) => void;
+  // Alleen mobiel (< 768 px): "scherm" = eigen scherm met accordeon, "prijzen"
+  // en "tempo" = snelle wijziging in een sheet. Zonder = het gewone paneel.
+  mobiel?: "scherm" | "prijzen" | "tempo";
+  onKlaar?: () => void;
 }) {
   const { costSettings, openTarieven } = useTarieven();
+  const [openBlok, setOpenBlok] = useState<string | null>(null);
+  const [opbouwOpen, setOpbouwOpen] = useState(false);
+  const [blokKiezen, setBlokKiezen] = useState(false);
   const repo = useEditorRepository();
   // De oorspronkelijke database-versie, vastgezet: de live voorbeeldversie die
   // we naar boven doorgeven mag nooit weer als invoer terugkomen (lus).
@@ -165,6 +180,225 @@ export function WerkzaamheidPaneel({
     const r = await repo.kopieerWerkzaamheid(product.id, toolId);
     if (r.ok) onGekopieerd(r.productId);
     else setFout(r.error);
+  }
+
+  // --- Mobiele weergaven (zelfde state en opslag als het paneel hierboven)
+  const prijzenBlok = (
+    <>
+      <MaterialenTabel
+        rijen={draft.materialen}
+        onChange={(materialen) => wijzig({ materialen })}
+        eenheidSuffix={`/ ${eenheidKort}`}
+        bandbreedte={draft.bandbreedte}
+        werktempo={draft.werktempoPerMateriaal}
+        tempoSuffix={`${eenheidKort} per ${woord}`}
+        fouten={fouten}
+      />
+      {heeftVoorbeeld && (
+        <p className="rounded-md border border-example bg-example/15 px-3 py-2 text-sm text-foreground">
+          Gele <strong>voorbeeld</strong>-labels zijn prijzen uit onze startlijst. Pas ze aan naar wat jij rekent.
+        </p>
+      )}
+    </>
+  );
+  const tempoGetal = Number(String(draft.productiviteit).replace(",", ".")) || 0;
+  const tempoBlok = (
+    <div className="flex flex-col gap-3">
+      <p className="text-base text-foreground">{arbeidVraag(draft.naam, eenheid, stap)}</p>
+      <Stepper
+        label={`Werktempo ${eenheidKort} per ${woord}`}
+        waarde={tempoGetal}
+        onChange={(n) => wijzig({ productiviteit: String(n).replace(".", ",") })}
+        stap={1}
+        min={0}
+        eenheid={`${eenheidKort} per ${woord}`}
+      />
+      <p className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg bg-muted px-3 py-2.5 text-sm text-foreground">
+        <span>
+          Je rekent <strong>{formatCurrency(opbouw.arbeidTarief)}</strong> per {woord}.
+        </span>
+        <button type="button" onClick={openTarieven} className="min-h-11 cursor-pointer font-semibold underline">
+          Wijzigen
+        </button>
+      </p>
+    </div>
+  );
+  if (mobiel === "prijzen") return <div className="flex flex-col gap-3">{prijzenBlok}</div>;
+  if (mobiel === "tempo") return tempoBlok;
+
+  if (mobiel === "scherm") {
+    const range = prijsRange(preview);
+    const aantalMat = draft.materialen.filter((m) => m.naam.trim() !== "").length;
+    const voorbeeldAantal = draft.materialen.filter((m) => m.isVoorbeeld).length;
+    const wissel = (id: string) => setOpenBlok((o) => (o === id ? null : id));
+    return (
+      <div className="flex flex-col gap-3 pb-20 md:hidden">
+        <KopActie>
+          <DropdownMenu
+            ariaLabel="Meer acties voor dit onderdeel"
+            className="h-11 w-11"
+            items={[
+              ...(repo.kopieerWerkzaamheid ? [{ label: "Dupliceren", icon: Copy, onSelect: dupliceer }] : []),
+              { label: "Verwijderen", icon: Trash2, destructive: true, onSelect: onVerwijder },
+            ]}
+          />
+        </KopActie>
+        <label className="flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 text-base font-semibold text-foreground">
+          Op je website
+          <Switch checked={actief} onChange={(e) => void wisselZichtbaar(e.target.checked)} aria-label="Op je website" />
+        </label>
+        {fout && (
+          <p role="alert" className="text-sm font-medium text-destructive">
+            {fout}
+          </p>
+        )}
+
+        <SamenvattingRij id="basis" titel="Basis" samenvatting={`${METHODE_OPTIES.find((m) => m.value === draft.methode)?.label ?? "Eigen instelling"} · ${draft.naam}`} open={openBlok === "basis"} onToggle={() => wissel("basis")}>
+          <label className="flex flex-col gap-1.5 text-sm font-semibold text-foreground">
+            Naam
+            <Input value={draft.naam} maxLength={120} enterKeyHint="done" aria-invalid={draft.naam.trim() === "" ? true : undefined} onChange={(e) => wijzig({ naam: e.target.value })} />
+          </label>
+          {draft.methode === null ? (
+            <p className="rounded-md bg-muted px-3 py-2 text-sm text-foreground">Deze werkzaamheid rekent op een eigen manier. Die instelling blijft zoals ze is.</p>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-semibold text-foreground">Rekenmethode</span>
+              <div className="grid grid-cols-2 gap-2">
+                {METHODE_OPTIES.map((m) => (
+                  <button
+                    key={m.value}
+                    type="button"
+                    aria-pressed={draft.methode === m.value}
+                    onClick={() => wijzig({ methode: m.value })}
+                    className={`min-h-11 cursor-pointer rounded-lg border-[1.5px] px-3 py-2 text-sm font-semibold ${draft.methode === m.value ? "border-primary bg-accent text-foreground" : "border-input bg-card text-foreground"}`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </SamenvattingRij>
+
+        <SamenvattingRij
+          id="materialen"
+          titel="Materialen en prijzen"
+          samenvatting={`${aantalMat} ${aantalMat === 1 ? "materiaal" : "materialen"}${range ? ` · ${bedragKort(range.min)}${range.max !== range.min ? `–${bedragKort(range.max)}` : ""} per ${eenheidKort}` : ""}`}
+          waarschuwing={voorbeeldAantal > 0 ? (voorbeeldAantal === 1 ? "1 voorbeeldprijs" : `${voorbeeldAantal} voorbeeldprijzen`) : null}
+          open={openBlok === "materialen"}
+          onToggle={() => wissel("materialen")}
+        >
+          {prijzenBlok}
+        </SamenvattingRij>
+
+        <SamenvattingRij id="tempo" titel="Werktempo" samenvatting={tempoGetal > 0 ? `${tempoGetal} ${eenheidKort} per ${woord}` : "Nog niet ingevuld"} open={openBlok === "tempo"} onToggle={() => wissel("tempo")}>
+          {tempoBlok}
+        </SamenvattingRij>
+
+        <SamenvattingRij
+          id="vast"
+          titel="Vaste kosten"
+          samenvatting={`Voorrijkosten ${bedragKort(costSettings.voorrijTarief)} · Transport ${bedragKort(costSettings.transportTarief)}`}
+          open={openBlok === "vast"}
+          onToggle={() => wissel("vast")}
+        >
+          <dl className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-muted px-3 py-2.5">
+              <dt className="text-sm text-muted-foreground">Voorrijkosten</dt>
+              <dd className="text-lg font-bold text-foreground">{formatCurrency(costSettings.voorrijTarief)}</dd>
+            </div>
+            <div className="rounded-lg bg-muted px-3 py-2.5">
+              <dt className="text-sm text-muted-foreground">Transport</dt>
+              <dd className="text-lg font-bold text-foreground">{formatCurrency(costSettings.transportTarief)}</dd>
+            </div>
+          </dl>
+          <button type="button" onClick={openTarieven} className="min-h-11 w-fit cursor-pointer text-base font-semibold text-primary underline">
+            Wijzigen
+          </button>
+        </SamenvattingRij>
+
+        {toegevoegd.has("extra-vraag") && (
+          <SamenvattingRij id="extra" titel={BLOK_INFO["extra-vraag"].titel} samenvatting={`${(draft.extras ?? []).filter((e) => !e.altijd).length} vraag`} open={openBlok === "extra"} onToggle={() => wissel("extra")}>
+            <ExtraRijen altijd={false} rijen={draft.extras ?? []} fouten={extraFouten} onChange={(extras) => wijzig({ extras })} eenheidKort={eenheidKort} />
+            <Button type="button" variant="ghost" className="w-fit text-destructive" onClick={() => verwijderBlok("extra-vraag")}>
+              Blok verwijderen
+            </Button>
+          </SamenvattingRij>
+        )}
+        {toegevoegd.has("toeslag") && (
+          <SamenvattingRij id="toeslag" titel={BLOK_INFO.toeslag.titel} samenvatting={`${(draft.extras ?? []).filter((e) => e.altijd).length} toeslag`} open={openBlok === "toeslag"} onToggle={() => wissel("toeslag")}>
+            <ExtraRijen altijd rijen={draft.extras ?? []} fouten={extraFouten} onChange={(extras) => wijzig({ extras })} eenheidKort={eenheidKort} />
+            <Button type="button" variant="ghost" className="w-fit text-destructive" onClick={() => verwijderBlok("toeslag")}>
+              Blok verwijderen
+            </Button>
+          </SamenvattingRij>
+        )}
+        {toegevoegd.has("bandbreedte") && (
+          <SamenvattingRij id="bandbreedte" titel={BLOK_INFO.bandbreedte.titel} samenvatting="Prijs van–tot" open={openBlok === "bandbreedte"} onToggle={() => wissel("bandbreedte")}>
+            <p className="text-sm text-muted-foreground">Vul bij elk materiaal een prijs “van” en “tot” in, bij Materialen en prijzen.</p>
+            <Button type="button" variant="ghost" className="w-fit text-destructive" onClick={() => verwijderBlok("bandbreedte")}>
+              Blok verwijderen
+            </Button>
+          </SamenvattingRij>
+        )}
+        {toegevoegd.has("tempo-per-materiaal") && (
+          <SamenvattingRij id="tpm" titel={BLOK_INFO["tempo-per-materiaal"].titel} samenvatting="Per materiaal" open={openBlok === "tpm"} onToggle={() => wissel("tpm")}>
+            <p className="text-sm text-muted-foreground">Vul bij elk materiaal het eigen werktempo in, bij Materialen en prijzen.</p>
+            <Button type="button" variant="ghost" className="w-fit text-destructive" onClick={() => verwijderBlok("tempo-per-materiaal")}>
+              Blok verwijderen
+            </Button>
+          </SamenvattingRij>
+        )}
+        {beschikbaar.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setBlokKiezen(true)}
+            className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-input text-base font-semibold text-foreground"
+          >
+            <Plus className="h-5 w-5" aria-hidden="true" /> Blok toevoegen
+          </button>
+        )}
+
+        <StickyActiebalk>
+          <button
+            type="button"
+            onClick={() => setOpbouwOpen(true)}
+            className="min-h-11 min-w-0 flex-1 cursor-pointer rounded-lg px-1 text-left text-sm text-foreground"
+          >
+            <span className="block text-muted-foreground">Opbouw voor {voorbeeldHoeveelheid} {eenheidKort}</span>
+            <span className="block text-base font-bold tabular-nums">{formatCurrency(opbouw.totaal)}</span>
+          </button>
+          <Button type="button" size="lg" className="shrink-0 px-8" onClick={onKlaar}>
+            Klaar
+          </Button>
+        </StickyActiebalk>
+
+        <MobieleSheet open={opbouwOpen} onClose={() => setOpbouwOpen(false)} titel={`Opbouw voor ${voorbeeldHoeveelheid} ${eenheidKort}`}>
+          <KostenOpbouwKaart opbouw={opbouw} eenheid={eenheid} stap={stap} />
+          <p className="mt-2 text-sm text-muted-foreground">Alleen voor jou zichtbaar, zonder btw.</p>
+        </MobieleSheet>
+        <MobieleSheet open={blokKiezen} onClose={() => setBlokKiezen(false)} titel="Blok toevoegen">
+          <ul className="flex flex-col gap-2">
+            {beschikbaar.map((b) => (
+              <li key={b}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    voegBlokToe(b);
+                    setBlokKiezen(false);
+                    setOpenBlok(b === "extra-vraag" ? "extra" : b === "tempo-per-materiaal" ? "tpm" : b);
+                  }}
+                  className="flex min-h-16 w-full cursor-pointer flex-col items-start justify-center rounded-xl border border-border bg-card px-4 py-2 text-left"
+                >
+                  <span className="text-base font-semibold text-foreground">{BLOK_INFO[b].titel}</span>
+                  <span className="text-sm text-muted-foreground">{BLOK_INFO[b].uitleg}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </MobieleSheet>
+      </div>
+    );
   }
 
   return (
