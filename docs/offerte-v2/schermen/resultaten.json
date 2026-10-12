@@ -35,19 +35,49 @@
     "d": ""
   },
   {
-    "n": "offerte verstuurd, link naar online offerte",
+    "n": "desktop: mailto naar de klant met onderwerp 'Offerte 2026-0001 – …'",
     "ok": true,
-    "d": "http://localhost:3200/o/xVZi4VqVuaF7bwZYCmXLRMnSVvhrISh-"
+    "d": "a.jansen@example.nl | Offerte 2026-0001 – Terras en schutting"
   },
   {
-    "n": "e-mail naar de klant met PDF-bijlage en link",
+    "n": "desktop: mailtekst bevat de link naar de online offerte",
     "ok": true,
-    "d": "Offerte 2026-0001 van Hoveniersbedrijf De Vries [\"Offerte 2026-0001 – Hoveniersbedrijf De Vries.pdf\"]"
+    "d": "Geachte Mevrouw A. Jansen,\r\n\r\nHierbij ontvangt u mijn offerte 2026-0001 voor ter"
   },
   {
-    "n": "afzendernaam is de handelsnaam, reply-to is de hovenier",
+    "n": "desktop: PDF downloaden, link kopiëren en WhatsApp aanwezig",
     "ok": true,
-    "d": "{\"email\":\"jan@devries-hoveniers.nl\",\"name\":\"Jan de Vries\"}"
+    "d": ""
+  },
+  {
+    "n": "PDF te downloaden (echte PDF)",
+    "ok": true,
+    "d": "198173"
+  },
+  {
+    "n": "antwoord 'Nee' laat de offerte een concept (niets automatisch aangenomen)",
+    "ok": true,
+    "d": "CONCEPT"
+  },
+  {
+    "n": "Android-Chrome: deelmenu met de PDF als bestand, onderwerp en link",
+    "ok": true,
+    "d": "{\"title\":\"Offerte 2026-0001 – Terras en schutting\",\"bestanden\":[{\"name\":\"Offerte 2026-0001 – Hoveniersbedrijf De Vries.pdf\",\"type\":\"application/pdf\",\"size\":198173}]}"
+  },
+  {
+    "n": "iOS-Safari zonder bestandsdeling: alleen tekst + link",
+    "ok": true,
+    "d": "{\"title\":\"Offerte 2026-0001 – Terras en schutting\",\"bestanden\":[]}"
+  },
+  {
+    "n": "delen alleen (zonder 'Ja') verandert de status niet",
+    "ok": true,
+    "d": "CONCEPT"
+  },
+  {
+    "n": "na 'Ja' staat de offerte op Verstuurd met verzenddatum",
+    "ok": true,
+    "d": "VERSTUURD|t"
   },
   {
     "n": "na sluiten is de offerte vergrendeld (nieuwe versie maken beschikbaar)",
@@ -95,14 +125,14 @@
     "d": ""
   },
   {
-    "n": "getekende PDF per e-mail naar de klant",
+    "n": "er is geen mailverkeer nodig: geen BREVO_API_KEY/CRON_SECRET in de omgeving van de app",
     "ok": true,
-    "d": "[\"Offerte 2026-0001 – Hoveniersbedrijf De Vries – getekend.pdf\"]"
+    "d": ""
   },
   {
-    "n": "getekende PDF per e-mail naar de hovenier",
+    "n": "klant ziet na akkoord de bevestiging met download van de getekende PDF",
     "ok": true,
-    "d": "jan@devries-hoveniers.nl"
+    "d": ""
   },
   {
     "n": "na akkoord is de offerte vergrendeld in de editor",
@@ -110,7 +140,37 @@
     "d": ""
   },
   {
+    "n": "hovenier ziet de activiteit (akkoord) bij de offerte",
+    "ok": true,
+    "d": ""
+  },
+  {
     "n": "Leads toont de offertestatus 'Geaccepteerd'",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "tip 'Herinnering sturen' verschijnt (10 dagen zonder reactie)",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "herinnering opent dezelfde deelflow met herinneringstekst",
+    "ok": true,
+    "d": "mailto:a.jansen@example.nl?subject=Herinnering: offerte 2026-9001 – Terras en schutting&body=Geachte Mevrouw A. Jansen,\r"
+  },
+  {
+    "n": "akkoord na de geldig-tot-datum wordt server-side geweigerd",
+    "ok": true,
+    "d": "BEKEKEN|0"
+  },
+  {
+    "n": "klant ziet 'Verlopen' en kan niet meer akkoord geven",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "Leads toont 'Verlopen' voor de verlopen offerte",
     "ok": true,
     "d": ""
   },

@@ -124,7 +124,8 @@ export type OfferteGegevensWaarden = {
   voorwaardenBlokken: VoorwaardenBlok[];
   herroepingTekst: string;
   btwStandaard: Partial<Record<RegelSoort, number>> | null;
-  herinneringDagen: number | null;
+  deelTekst: string;
+  herinneringTekst: string;
 };
 
 export type OntbrekendVeld = { veld: string; label: string; uitleg: string };

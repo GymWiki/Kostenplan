@@ -49,7 +49,8 @@ export async function bewaarConcept(db: PrismaClient, { offerteId, companyId, in
   if (isDefinitief(o.status)) throw new OfferteVergrendeldFout();
   const r = await db.offerteVersie.updateMany({
     where: { offerteId, versie: o.huidigeVersie, vergrendeld: false },
-    data: { inhoud: { ...inhoud, versie: o.huidigeVersie } as object, ...totalenVan(inhoud) },
+    // Een wijziging maakt een eerder klaargezette PDF ongeldig: die wordt opnieuw gemaakt bij het delen.
+    data: { inhoud: { ...inhoud, versie: o.huidigeVersie } as object, ...totalenVan(inhoud), pdfData: null, pdfHash: null },
   });
   if (r.count === 0) throw new OfferteVergrendeldFout();
 }
@@ -70,8 +71,16 @@ export async function maakNieuweVersie(db: PrismaClient, { offerteId, companyId 
   });
 }
 
-// Vergrendelt een versie (bij versturen). Mislukt als hij al vergrendeld is.
-export async function vergrendelVersie(db: PrismaClient, { offerteId, versie, pdf, pdfHash }: { offerteId: string; versie: number; pdf: Buffer | null; pdfHash: string }) {
-  const r = await db.offerteVersie.updateMany({ where: { offerteId, versie, vergrendeld: false }, data: { vergrendeld: true, verstuurdOp: new Date(), pdfData: pdf ? new Uint8Array(pdf) : null, pdfHash } });
+// Zet de PDF van een (nog niet verstuurde) versie klaar om te delen. Zolang de versie niet is
+// vergrendeld kan de klant hem al bekijken via de link, maar elke wijziging wist de PDF weer.
+export async function bewaarDeelklaarPdf(db: PrismaClient, { offerteId, versie, pdf, pdfHash }: { offerteId: string; versie: number; pdf: Buffer; pdfHash: string }) {
+  const r = await db.offerteVersie.updateMany({ where: { offerteId, versie, vergrendeld: false }, data: { pdfData: new Uint8Array(pdf), pdfHash } });
+  if (r.count === 0) throw new OfferteVergrendeldFout();
+}
+
+// Vergrendelt een klaargezette versie (zodra de hovenier bevestigt dat hij is verstuurd, of de klant
+// akkoord geeft). Mislukt als hij al vergrendeld is of geen PDF heeft.
+export async function vergrendelVersie(db: PrismaClient, { offerteId, versie }: { offerteId: string; versie: number }) {
+  const r = await db.offerteVersie.updateMany({ where: { offerteId, versie, vergrendeld: false, pdfHash: { not: null } }, data: { vergrendeld: true, verstuurdOp: new Date() } });
   if (r.count === 0) throw new OfferteVergrendeldFout();
 }

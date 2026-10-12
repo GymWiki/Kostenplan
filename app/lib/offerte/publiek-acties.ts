@@ -6,15 +6,13 @@ import type { OfferteInhoud } from "./model";
 
 // Registreert het eerste openen door de klant (zonder tracking-pixels in de mail).
 export async function registreerBekeken(offerte: { id: string; status: string; versie: number }): Promise<boolean> {
-  const r = await prismaBasis.offerteV2.updateMany({ where: { id: offerte.id, eersteBekekenOp: null, status: "VERSTUURD" }, data: { eersteBekekenOp: new Date(), status: "BEKEKEN" } });
+  // Ook bekijken vóórdat de hovenier "verstuurd" bevestigde telt (de link is al gedeeld); de status
+  // verandert dan pas bij de bevestiging. Een melding in de app (stip) hoort erbij.
+  const r = await prismaBasis.offerteV2.updateMany({ where: { id: offerte.id, eersteBekekenOp: null, status: { in: ["CONCEPT", "VERSTUURD"] } }, data: { eersteBekekenOp: new Date(), reactieGezien: false } });
   if (r.count === 0) return false;
+  await prismaBasis.offerteV2.updateMany({ where: { id: offerte.id, status: "VERSTUURD" }, data: { status: "BEKEKEN" } });
   await prismaBasis.offerteGebeurtenis.create({ data: { offerteId: offerte.id, versieNummer: offerte.versie, soort: "BEKEKEN" } });
   return true;
-}
-
-// Zet een verlopen openstaande offerte ook in de database op Verlopen (idempotent).
-export async function markeerVerlopen(offerteId: string): Promise<void> {
-  await prismaBasis.offerteV2.updateMany({ where: { id: offerteId, status: { in: ["VERSTUURD", "BEKEKEN"] } }, data: { status: "VERLOPEN" } });
 }
 
 // Maakt (eenmalig) de getekende PDF van een akkoord: dezelfde offerte met het ingevulde akkoordblok.

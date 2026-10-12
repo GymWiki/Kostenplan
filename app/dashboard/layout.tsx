@@ -1,3 +1,4 @@
+import { telOngezienReacties } from "@/app/lib/offerte/tips";
 import { requireActiveCompany } from "@/app/lib/dal";
 import { Sidebar } from "@/app/components/dashboard/sidebar";
 import { Topbar } from "@/app/components/dashboard/topbar";
@@ -16,7 +17,12 @@ export default async function DashboardLayout({
   const { company, alleBedrijven } = await requireActiveCompany();
   // Badge op de tabbalk (alleen mobiel). Een mislukte telling mag het
   // dashboard nooit breken.
-  const nieuweLeads = await prisma.lead.count({ where: { companyId: company.id, status: "NIEUW" } }).catch(() => 0);
+  // Telt ook offertes met een reactie van de klant die de hovenier nog niet heeft gezien.
+  const [nieuweAanvragen, offerteReacties] = await Promise.all([
+    prisma.lead.count({ where: { companyId: company.id, status: "NIEUW" } }).catch(() => 0),
+    telOngezienReacties(company.id).catch(() => 0),
+  ]);
+  const nieuweLeads = nieuweAanvragen + offerteReacties;
 
   return (
     <KopProvider>

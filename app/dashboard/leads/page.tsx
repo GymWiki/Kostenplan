@@ -1,3 +1,5 @@
+import { OfferteTips } from "@/app/components/dashboard/offerte-tips";
+import { laadOfferteTips } from "@/app/lib/offerte/tips";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { requireActiveCompany, getLeadsPageData } from "@/app/lib/dal";
@@ -82,9 +84,14 @@ export default async function LeadsPage() {
   // KPI's (pipelinewaarde, conversieratio, …) worden client-side in
   // LeadsView afgeleid van `leads` — zo bewegen ze meteen mee met een
   // optimistische statuswijziging in plaats van pas na de server-round-trip.
+  const offerteTips = await laadOfferteTips(company.id).catch(() => []);
+
   return (
-    <Suspense fallback={<LeadsViewFallback />}>
-      <LeadsView leads={leads} isGratis={false} tools={tools} />
-    </Suspense>
+    <div className="flex flex-col gap-6">
+      <OfferteTips tips={offerteTips} />
+      <Suspense fallback={<LeadsViewFallback />}>
+        <LeadsView leads={leads} isGratis={false} tools={tools} />
+      </Suspense>
+    </div>
   );
 }

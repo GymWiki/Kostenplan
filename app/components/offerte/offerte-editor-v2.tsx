@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ChevronRight, Download, FilePlus2, Loader2, Plus, TriangleAlert } from "lucide-react";
@@ -11,15 +11,15 @@ import { MobieleSheet } from "@/app/components/mobile/mobiele-sheet";
 import { SegmentedControl } from "@/app/components/mobile/segmented-control";
 import { StickyActiebalk } from "@/app/components/mobile/sticky-actiebalk";
 import { useIsMobiel } from "@/app/components/mobile/use-mobiel";
-import { bewaarOfferteAction, nieuweVersieAction, slaStandaardRegelOpAction, verwijderStandaardRegelAction, type StandaardRegelDto } from "@/app/lib/actions/offerte-v2";
+import { bevestigVerstuurdAction, bewaarOfferteAction, nieuweVersieAction, slaStandaardRegelOpAction, verwijderStandaardRegelAction, type StandaardRegelDto } from "@/app/lib/actions/offerte-v2";
 import { berekenTotalen } from "@/app/lib/offerte/bereken";
 import { controleerOfferte, type ControlePunt } from "@/app/lib/offerte/controle";
 import type { RegelSoort } from "@/app/lib/offerte/btw-config";
 import type { OfferteInhoud, OfferteRegel } from "@/app/lib/offerte/model";
-import { OFFERTE_V2_STATUS_LABEL } from "@/app/lib/offerte/status";
+import { OFFERTE_V2_STATUS_LABEL, type HerinneringReden } from "@/app/lib/offerte/status";
 import { formatCents } from "@/app/lib/offerte/weergave";
 import * as w from "@/app/lib/offerte/wijzig";
-import { ControleDialoog } from "./controle-dialoog";
+import { DeelDialoog } from "./deel-dialoog";
 import { OfferteDocument, type Selectie } from "./offerte-document";
 import { BetalingPaneel, KlantPaneel, MetaPaneel, PlanningPaneel, RegelPaneel, SectiePaneel, TekstPaneel, VoorwaardenPaneel, type Wijzig } from "./offerte-paneel";
 import { VelSchaal } from "./vel-schaal";
@@ -33,6 +33,22 @@ type Props = {
   versies: { versie: number; vergrendeld: boolean; verstuurdOp: string | null }[];
   standaardRegels: StandaardRegelDto[];
   btwStandaard: Partial<Record<RegelSoort, number>> | null;
+  // De huidige versie is als PDF klaargezet om te delen, maar nog niet als verstuurd gemarkeerd.
+  deelklaar?: boolean;
+  startHerinnering?: boolean;
+  herinnering?: HerinneringReden | null;
+  activiteit?: { id: string; soort: string; tekst: string | null; op: string }[];
+  heeftGetekend?: boolean;
+};
+
+const ACTIVITEIT_LABEL: Record<string, string> = {
+  VERZONDEN: "Als verstuurd gemarkeerd",
+  BEKEKEN: "Door de klant bekeken",
+  VRAAG: "Vraag van de klant",
+  AFGEWEZEN: "Afgewezen door de klant",
+  AKKOORD: "Akkoord van de klant",
+  INGETROKKEN: "Ingetrokken",
+  HERINNERING: "Herinnering verstuurd",
 };
 
 type Opslag = "klaar" | "wijzigingen" | "opslaan" | "fout";
@@ -60,7 +76,7 @@ export function OfferteEditorV2(props: Props) {
   return <OfferteEditorBinnen key={`${props.offerteId}-${props.begin.versie}-${opnieuw}`} {...props} naVerzenden={() => setOpnieuw((n) => n + 1)} />;
 }
 
-function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, standaardRegels: startStandaard, btwStandaard, naVerzenden }: Props & { naVerzenden: () => void }) {
+function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, standaardRegels: startStandaard, btwStandaard, deelklaar = false, startHerinnering = false, herinnering = null, activiteit = [], heeftGetekend = false, naVerzenden }: Props & { naVerzenden: () => void }) {
   const router = useRouter();
   const isMobiel = useIsMobiel();
   const [inhoud, setInhoud] = useState<OfferteInhoud>(begin);
@@ -68,7 +84,9 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
   const [opslag, setOpslag] = useState<Opslag>("klaar");
   const [opslagFout, setOpslagFout] = useState<string | null>(null);
   const [standaardRegels, setStandaardRegels] = useState(startStandaard);
-  const [controleOpen, setControleOpen] = useState(false);
+  const client = useSyncExternalStore(() => () => {}, () => true, () => false);
+  const [deelModus, setDeelModus] = useState<"offerte" | "herinnering">(startHerinnering ? "herinnering" : "offerte");
+  const [controleOpen, setControleOpen] = useState(startHerinnering);
   const [mobielModus, setMobielModus] = useState<"bewerken" | "voorbeeld">("bewerken");
   const [sheet, setSheet] = useState<null | "klant" | "meta" | "onderdelen" | "voorwaarden" | "betaling" | "teksten">(null);
   const [regelSheet, setRegelSheet] = useState<{ sectieId: string; regelId: string } | null>(null);
@@ -141,6 +159,17 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
   }, []);
 
   // De pagina pas verversen als de bevestiging is gesloten, anders verdwijnt die meteen.
+  function openDelen(modus: "offerte" | "herinnering") {
+    setDeelModus(modus);
+    setControleOpen(true);
+  }
+
+  async function markeerVerstuurd() {
+    const r = await bevestigVerstuurdAction(offerteId, "link");
+    if (r.ok) naVerzenden();
+    else setMelding(r.error);
+  }
+
   function sluitControle() {
     setControleOpen(false);
     if (pasVerstuurd) naVerzenden();
@@ -205,6 +234,40 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
       )}
     </div>
   );
+  const toonKlaar = deelklaar && !alleenLezen && inhoud === begin;
+  const klaarBanner = toonKlaar && (
+    <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-accent px-4 py-2.5 text-sm text-foreground">
+      <span>De PDF staat klaar om te delen, maar de offerte is nog niet als verstuurd gemarkeerd.</span>
+      <span className="flex gap-2">
+        <Button type="button" size="sm" variant="outline" onClick={() => openDelen("offerte")}>Opnieuw delen</Button>
+        <Button type="button" size="sm" onClick={() => void markeerVerstuurd()}>Markeer als verstuurd</Button>
+      </span>
+    </div>
+  );
+  const herinneringBanner = alleenLezen && herinnering && status !== "GEACCEPTEERD" && (
+    <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-warning/10 px-4 py-2.5 text-sm text-foreground">
+      <span>{herinnering === "verloopt-binnenkort" ? "Deze offerte verloopt binnenkort." : "De klant heeft al een week niet gereageerd."}</span>
+      <Button type="button" size="sm" onClick={() => openDelen("herinnering")}>Herinnering sturen</Button>
+    </div>
+  );
+  const activiteitLijst = activiteit.length > 0 && (
+    <div>
+      <h3 className="mb-1 font-bold text-foreground">Activiteit</h3>
+      <ul className="flex flex-col gap-1 text-muted-foreground">
+        {activiteit.map((a) => (
+          <li key={a.id}>
+            <span className="text-foreground">{ACTIVITEIT_LABEL[a.soort] ?? a.soort}</span> · {new Date(a.op).toLocaleDateString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+            {a.tekst ? <span className="block whitespace-pre-wrap">“{a.tekst}”</span> : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+  const getekendLink = heeftGetekend && (
+    <a href={`/api/offertes/${offerteId}/pdf?getekend=1`} className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold underline">
+      <Download className="h-4 w-4" aria-hidden="true" /> Getekende PDF
+    </a>
+  );
   const fouttekst = opslagFout && opslag === "fout" ? <p role="alert" className="px-4 py-2 text-sm font-medium text-destructive">{opslagFout}</p> : null;
 
   const paneelInhoud = (sel: Selectie | null) => {
@@ -243,6 +306,8 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
               <Plus className="h-4 w-4" aria-hidden="true" /> Sectie toevoegen
             </Button>
           </div>
+          {getekendLink}
+          {activiteitLijst}
           {versies.length > 1 && (
             <div>
               <h3 className="mb-1 font-bold text-foreground">Versies</h3>
@@ -349,6 +414,8 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
         <KopInstellen titel={`Offerte ${inhoud.nummer}`} terug="/dashboard/leads" />
         <KopActie>{statusBlok}</KopActie>
         {banner}
+        {klaarBanner}
+        {herinneringBanner}
         {fouttekst}
         <SegmentedControl label="Weergave" waarde={mobielModus} onChange={setMobielModus} opties={[{ waarde: "bewerken", label: "Bewerken" }, { waarde: "voorbeeld", label: "Voorbeeld" }]} />
         {mobielModus === "voorbeeld" ? (
@@ -368,6 +435,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
               {rij("Nummer en datums", `Geldig tot ${inhoud.geldigTot.split("-").reverse().join("-")}`, () => setSheet("meta"), controle.blokkerend.some((p) => p.id === "geldig"))}
             </ul>
             {melding && <p role="status" className="rounded-lg bg-accent px-3 py-2 text-sm text-foreground">{melding}</p>}
+            {(activiteit.length > 0 || heeftGetekend) && <div className="flex flex-col gap-3 text-sm">{getekendLink}{activiteitLijst}</div>}
             <a href={pdfHref} className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card text-base font-semibold text-foreground">
               <Download className="h-5 w-5" aria-hidden="true" /> PDF bekijken
             </a>
@@ -386,8 +454,8 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
               </Button>
             )
           ) : (
-            <Button type="button" size="lg" onClick={() => setControleOpen(true)}>
-              Controleren en versturen{aantalProblemen > 0 ? ` (${aantalProblemen})` : ""}
+            <Button type="button" size="lg" onClick={() => openDelen("offerte")}>
+              Versturen{aantalProblemen > 0 ? ` (${aantalProblemen})` : ""}
             </Button>
           )}
         </StickyActiebalk>
@@ -456,7 +524,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
           {sectieSheet && <SectiePaneel inhoud={inhoud} sectieId={sectieSheet} wijzig={wijzig} standaardRegels={standaardRegels} onVerwijderStandaard={verwijderStandaard} onSelect={(s) => (s.soort === "regel" && s.id && s.sectieId ? setRegelSheet({ sectieId: s.sectieId, regelId: s.id }) : setSectieSheet(s.id ?? null))} btwStandaard={btwStandaard} />}
         </MobieleSheet>
 
-        <ControleDialoog open={controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} />
+        <DeelDialoog modus={deelModus} open={client && controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} />
       </div>
     );
   }
@@ -477,13 +545,15 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
             <Download className="h-4 w-4" aria-hidden="true" /> PDF
           </a>
           {!alleenLezen && (
-            <Button type="button" onClick={() => setControleOpen(true)}>
-              Controleren en versturen{aantalProblemen > 0 ? ` (${aantalProblemen})` : ""}
+            <Button type="button" onClick={() => openDelen("offerte")}>
+              Versturen{aantalProblemen > 0 ? ` (${aantalProblemen})` : ""}
             </Button>
           )}
         </div>
       </header>
       {banner}
+      {klaarBanner}
+      {herinneringBanner}
       {fouttekst}
       <div className="flex min-h-0 flex-1">
         <div className="min-w-0 flex-1 overflow-auto bg-muted p-6" onClick={(e) => { if (e.target === e.currentTarget) setSelectie(null); }}>
@@ -499,10 +569,10 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
             )}
           </div>
           {melding && <p role="status" className="mb-3 rounded-lg bg-accent px-3 py-2 text-sm text-foreground">{melding}</p>}
-          {alleenLezen ? <p className="text-sm text-muted-foreground">Deze versie is verstuurd. Maak een nieuwe versie om te wijzigen.</p> : paneelInhoud(selectie)}
+          {alleenLezen ? <div className="flex flex-col gap-4 text-sm"><p className="text-muted-foreground">Deze versie is verstuurd. Maak een nieuwe versie om te wijzigen.</p>{getekendLink}{activiteitLijst}</div> : paneelInhoud(selectie)}
         </aside>
       </div>
-      <ControleDialoog open={controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} />
+      <DeelDialoog modus={deelModus} open={client && controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} />
     </div>
   );
 }

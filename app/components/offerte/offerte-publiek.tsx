@@ -348,7 +348,7 @@ function AkkoordDialoog({ inhoud, versie, token, gekozen, totaal, kor, inclusief
         <button type="button" disabled={bezig} onClick={bevestig} className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg px-5 font-semibold text-white disabled:opacity-60" style={{ background: kleur }}>
           {bezig ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Check className="h-4 w-4" aria-hidden="true" />} Bevestigen
         </button>
-        <p className="text-xs text-neutral-600">We leggen je naam, het tijdstip en je IP-adres vast als bewijs van je akkoord. Je krijgt de getekende offerte per e-mail.</p>
+        <p className="text-xs text-neutral-600">We leggen je naam, het tijdstip en je IP-adres vast als bewijs van je akkoord. Na je akkoord kun je de getekende offerte direct downloaden.</p>
       </div>
     </Overlay>
   );

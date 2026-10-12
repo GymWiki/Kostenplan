@@ -13,6 +13,7 @@ import {
   type VoorwaardenBlok,
 } from "./gegevens";
 import type { RegelSoort } from "./btw-config";
+import { STANDAARD_DEELTEKST, STANDAARD_HERINNERINGSTEKST } from "./berichten";
 
 // Laadt de offertegegevens van een bedrijf, aangevuld met wat we al weten
 // (handelsnaam, KvK, adres, logo, e-mail, telefoon) zodat het formulier
@@ -57,6 +58,7 @@ export async function laadOfferteGegevens(company: Pick<Company, "id" | "naam" |
     voorwaardenBlokken: blokken,
     herroepingTekst: s(rij?.herroepingTekst) || STANDAARD_HERROEPINGSTEKST,
     btwStandaard: (rij?.btwStandaard as Partial<Record<RegelSoort, number>> | null) ?? null,
-    herinneringDagen: rij?.herinneringDagen ?? null,
+    deelTekst: s(rij?.deelTekst) || STANDAARD_DEELTEKST,
+    herinneringTekst: s(rij?.herinneringTekst) || STANDAARD_HERINNERINGSTEKST,
   };
 }
