@@ -14,6 +14,7 @@ import { updateLeadStatusAction } from "@/app/lib/actions/leads";
 import { telItMeeVoorPipeline } from "@/app/lib/leads";
 import { LeadsTable } from "./leads-table";
 import { LeadDetailDrawer } from "./lead-detail-drawer";
+import { LeadsMobiel, type LeadFilter } from "./leads-mobiel";
 import type { Lead, LeadNote, LeadStatus, Offerte } from "@/app/generated/prisma/client";
 import type { LeadSnapshot } from "@/app/lib/leads";
 import type { OfferteRegel } from "@/app/lib/offertes";
@@ -83,7 +84,8 @@ export function LeadsView({
   // Het bord stapelt op een smal scherm al zijn statuskolommen verticaal —
   // veel minder bruikbaar dan de Lijst-weergave daar.
   const view: View = gekozenView ?? (isNarrow ? "lijst" : "kanban");
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  // ?lead=<id> (vanaf "Vandaag") opent meteen die aanvraag.
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(() => searchParams.get("lead"));
   // "alle" = company-brede weergave (standaard) — een gebruiker met precies
   // één rekentool ziet deze filter niet eens (zie de check bij het renderen
   // hieronder), voor hen is "alle" en "die ene tool" toch hetzelfde.
@@ -126,6 +128,12 @@ export function LeadsView({
       await updateLeadStatusAction(formData);
     });
   }
+
+  // Mobiele statusfilter (?status=): zonder keuze starten we bij Nieuw als er
+  // nieuwe aanvragen zijn, anders bij Open.
+  const heeftNieuw = optimisticLeads.some((l) => l.status === "NIEUW");
+  const statusParam = searchParams.get("status");
+  const mobielFilter: LeadFilter = statusParam === "nieuw" || statusParam === "open" || statusParam === "alles" ? statusParam : heeftNieuw ? "nieuw" : "open";
 
   const selectedLead = optimisticLeads.find((lead) => lead.id === selectedLeadId) ?? null;
 
@@ -174,7 +182,16 @@ export function LeadsView({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <LeadsMobiel
+        leads={zichtbareLeads}
+        filter={mobielFilter}
+        onFilter={(f) => updateQuery({ status: f })}
+        tools={tools}
+        toolFilter={toolFilter}
+        onToolFilter={setToolFilter}
+        onSelect={setSelectedLeadId}
+      />
+      <div className="hidden flex-col gap-4 sm:flex-row sm:items-center sm:justify-between md:flex">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Leads</h1>
           <p className="mt-1 text-muted-foreground">
@@ -231,7 +248,7 @@ export function LeadsView({
         </div>
       </div>
 
-      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
+      <div className="hidden gap-4 md:grid [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
         <KpiCard
           icon={TrendingUp}
           label="Pipeline waarde"
@@ -250,7 +267,7 @@ export function LeadsView({
       </div>
 
       {zichtbareLeads.length === 0 ? (
-        <Card>
+        <Card className="hidden md:block">
           <CardContent className="flex flex-col items-center gap-2 py-16 text-center">
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Users className="h-6 w-6" />
@@ -264,19 +281,23 @@ export function LeadsView({
           </CardContent>
         </Card>
       ) : view === "kanban" ? (
-        <KanbanBoard
-          leads={zichtbareLeads}
-          showTool={tools.length > 1}
-          onSelectLead={setSelectedLeadId}
-          onUpdateStatus={updateLeadStatus}
-        />
+        <div className="hidden md:block">
+          <KanbanBoard
+            leads={zichtbareLeads}
+            showTool={tools.length > 1}
+            onSelectLead={setSelectedLeadId}
+            onUpdateStatus={updateLeadStatus}
+          />
+        </div>
       ) : (
-        <LeadsTable
-          leads={zichtbareLeads}
-          showTool={tools.length > 1}
-          onSelectLead={setSelectedLeadId}
-          onUpdateStatus={updateLeadStatus}
-        />
+        <div className="hidden md:block">
+          <LeadsTable
+            leads={zichtbareLeads}
+            showTool={tools.length > 1}
+            onSelectLead={setSelectedLeadId}
+            onUpdateStatus={updateLeadStatus}
+          />
+        </div>
       )}
 
       <LeadDetailDrawer

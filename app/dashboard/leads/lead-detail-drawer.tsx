@@ -81,14 +81,14 @@ export function LeadDetailDrawer({
             type="button"
             onClick={onClose}
             aria-label="Sluiten"
-            className="shrink-0 cursor-pointer rounded-md p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="shrink-0 cursor-pointer rounded-md p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground max-md:flex max-md:h-11 max-md:w-11 max-md:items-center max-md:justify-center"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex flex-col gap-6 p-5">
-          <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-6 p-5 max-md:pb-6">
+          <div className="flex flex-col gap-3 max-md:order-2">
             <StatusSelect leadId={lead.id} status={lead.status} className="w-full" onStatusChange={onUpdateStatus} />
 
             <div className="flex flex-col gap-0.5 text-sm text-muted-foreground">
@@ -119,7 +119,7 @@ export function LeadDetailDrawer({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 max-md:order-3">
             <h3 className="text-sm font-semibold text-foreground">Offerte</h3>
             {lead.status === "EXTERN_AFGEHANDELD" ? (
               <div className="flex flex-col gap-2 rounded-lg border border-border bg-secondary/30 p-3">
@@ -193,7 +193,7 @@ export function LeadDetailDrawer({
             />
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 max-md:order-1">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-semibold text-foreground">Wat de klant koos</h3>
               {toolBestaat && (
@@ -247,7 +247,7 @@ export function LeadDetailDrawer({
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 max-md:order-4">
             <h3 className="text-sm font-semibold text-foreground">Interne notities</h3>
             <NewNoteForm leadId={lead.id} />
             {lead.notities.length > 0 && (
@@ -258,6 +258,33 @@ export function LeadDetailDrawer({
               </div>
             )}
           </div>
+        </div>
+
+        {/* Mobiel: de drie acties onder de duim. */}
+        <div className="sticky bottom-0 mt-auto flex gap-2 border-t border-border bg-card px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:hidden">
+          {lead.telefoonnummer ? (
+            <LinkButton href={`tel:${lead.telefoonnummer.replace(/[^0-9+]/g, "")}`} size="lg" className="flex-1 px-3">
+              Bellen
+            </LinkButton>
+          ) : (
+            <LinkButton href={mailtoHref} size="lg" className="flex-1 px-3">
+              Mailen
+            </LinkButton>
+          )}
+          {lead.telefoonnummer && (
+            <LinkButton href={whatsappLink(lead.telefoonnummer)} target="_blank" rel="noopener noreferrer" variant="secondary" size="lg" className="flex-1 px-3">
+              WhatsApp
+            </LinkButton>
+          )}
+          {lead.offerte ? (
+            <LinkButton href={`/dashboard/leads/${lead.id}/offerte`} variant="secondary" size="lg" className="flex-1 px-3">
+              Offerte
+            </LinkButton>
+          ) : (
+            <Button type="button" variant="secondary" size="lg" className="flex-1 px-3" onClick={() => setKeuzeModal({ open: true, startStap: "keuze" })}>
+              Offerte maken
+            </Button>
+          )}
         </div>
       </div>
     </Overlay>
