@@ -9,6 +9,7 @@ import { LinkButton } from "@/app/components/ui/button";
 import { OnboardingChecklist } from "./onboarding-checklist";
 import { laadVandaag } from "@/app/lib/vandaag";
 import { VandaagMobiel } from "@/app/components/dashboard/vandaag-mobiel";
+import { OfferteTips } from "@/app/components/dashboard/offerte-tips";
 import { RecenteAanvragen } from "@/app/components/dashboard/recente-aanvragen";
 
 export const metadata: Metadata = { title: "Overzicht" };
@@ -50,6 +51,8 @@ export default async function DashboardPage() {
           Dit is jouw Kostenplan-dashboard. Beheer je rekentool en deel hem met je klanten.
         </p>
       </div>
+
+      {vandaag && <OfferteTips tips={vandaag.offerteTips} />}
 
       {toonOnboarding && (
         <OnboardingChecklist stappen={onboardingStappen} justCompleted={justCompletedOnboarding} />

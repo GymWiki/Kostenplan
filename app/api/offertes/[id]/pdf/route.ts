@@ -3,6 +3,7 @@ import { requireActiveCompany } from "@/app/lib/dal";
 import { prismaBasis } from "@/app/lib/prisma";
 import { maakOffertePdf } from "@/app/lib/offerte/pdf";
 import { maakPrintToken } from "@/app/lib/offerte/pdf-token";
+import { zorgVoorGetekendePdf } from "@/app/lib/offerte/publiek-acties";
 import { bestandsnaam } from "@/app/lib/offerte/weergave";
 import type { OfferteInhoud } from "@/app/lib/offerte/model";
 
@@ -22,7 +23,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (!v) return new NextResponse("Niet gevonden", { status: 404 });
   const inhoud = v.inhoud as unknown as OfferteInhoud;
   const koppen = (b: Uint8Array | Buffer) => new NextResponse(new Uint8Array(b), { headers: { "content-type": "application/pdf", "content-disposition": `inline; filename*=UTF-8''${encodeURIComponent(bestandsnaam(inhoud))}`, "cache-control": "private, no-store" } });
-  if (v.vergrendeld && v.pdfData) return koppen(v.pdfData);
+  // Getekende PDF na akkoord (voor de hovenier, bij de lead).
+  if (url.searchParams.get("getekend")) {
+    const pdf = await zorgVoorGetekendePdf(id, url.origin).catch(() => null);
+    return pdf ? koppen(pdf) : new NextResponse("Nog niet getekend", { status: 404 });
+  }
+  // Een klaargezette of verstuurde versie komt exact zoals hij is bewaard.
+  if (v.pdfData) return koppen(v.pdfData);
   try {
     const pdf = await maakOffertePdf(`${url.origin}/offerte-print/${maakPrintToken({ k: "versie", o: id, v: versieNr })}`, inhoud);
     return koppen(pdf);

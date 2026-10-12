@@ -22,6 +22,7 @@ import {
 } from "@/app/lib/offerte/gegevens";
 import { BTW_TARIEVEN, REGEL_SOORT_LABEL, btwVoorSoort, type RegelSoort } from "@/app/lib/offerte/btw-config";
 import { formatteerOfferteNummer } from "@/app/lib/offerte/nummer-formaat";
+import { STANDAARD_DEELTEKST, STANDAARD_HERINNERINGSTEKST } from "@/app/lib/offerte/berichten";
 
 // Velden-groepen die de wizard één voor één kan vragen (zelfde sleutels als
 // ontbrekendeVerplichteGegevens() in app/lib/offerte/gegevens.ts).
@@ -348,19 +349,22 @@ export function OfferteGegevensFormulier({
           </fieldset>
 
           <fieldset className="flex flex-col gap-3">
-            <legend className="mb-1 text-base font-bold text-foreground">Herinnering</legend>
-            <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground">
-              <span>
-                Klant een herinnering sturen voor de offerte verloopt
-                <span className="block text-sm font-normal text-muted-foreground">Standaard uit.</span>
-              </span>
-              <Switch checked={g.herinneringDagen != null} onChange={(e) => zet("herinneringDagen", e.target.checked ? 5 : null)} aria-label="Herinnering aan de klant" />
-            </label>
-            {g.herinneringDagen != null && (
-              <Field label="Aantal dagen vóór het verlopen" htmlFor="og-herinnering">
-                <Input id="og-herinnering" inputMode="numeric" value={String(g.herinneringDagen)} onChange={(e) => zet("herinneringDagen", Math.max(1, Number(e.target.value.replace(/\D/g, "")) || 1))} />
-              </Field>
-            )}
+            <legend className="mb-1 text-base font-bold text-foreground">Berichten bij het delen</legend>
+            <p className="text-sm text-muted-foreground">
+              Zo klinkt het bericht als je een offerte via je eigen mail, WhatsApp of het deelmenu van je telefoon verstuurt. Je ziet en wijzigt het altijd nog voordat je het opent. Beschikbaar: {"{naam}"} {"{nummer}"} {"{onderwerp}"} {"{totaal}"} {"{geldigTot}"} {"{contactNaam}"} {"{handelsnaam}"} {"{link}"}.
+            </p>
+            <Field label="Bericht bij een nieuwe offerte" htmlFor="og-deelTekst">
+              <Textarea id="og-deelTekst" className="min-h-44" value={g.deelTekst} onChange={(e) => zet("deelTekst", e.target.value)} />
+              <button type="button" className="w-fit text-sm font-semibold underline" onClick={() => zet("deelTekst", STANDAARD_DEELTEKST)}>
+                Standaardtekst terugzetten
+              </button>
+            </Field>
+            <Field label="Bericht bij een herinnering" htmlFor="og-herinneringTekst" hint="Je krijgt een tip om een herinnering te sturen als een offerte binnen 3 dagen verloopt of 7 dagen zonder reactie openstaat.">
+              <Textarea id="og-herinneringTekst" className="min-h-44" value={g.herinneringTekst} onChange={(e) => zet("herinneringTekst", e.target.value)} />
+              <button type="button" className="w-fit text-sm font-semibold underline" onClick={() => zet("herinneringTekst", STANDAARD_HERINNERINGSTEKST)}>
+                Standaardtekst terugzetten
+              </button>
+            </Field>
           </fieldset>
         </>
       )}

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/app/generated/prisma/client";
-import { bewaarConcept, maakNieuweVersie, maakOfferte, OfferteVergrendeldFout, vergrendelVersie } from "./opslag";
+import { bewaarConcept, bewaarDeelklaarPdf, maakNieuweVersie, maakOfferte, OfferteVergrendeldFout, vergrendelVersie } from "./opslag";
 import type { OfferteInhoud } from "./model";
 
 const url = process.env.TEST_DATABASE_URL;
@@ -40,7 +40,8 @@ describe.skipIf(!url)("offerte-opslag (database)", () => {
   it("een verstuurde versie is onveranderlijk; wijzigen maakt een nieuwe versie", async () => {
     const { id, nummer } = await maakOfferte(db, { companyId, leadId: null, prefix: "T", bouw: (n) => inhoudVoor(n) });
     await bewaarConcept(db, { offerteId: id, companyId, inhoud: inhoudVoor(nummer, 20000) });
-    await vergrendelVersie(db, { offerteId: id, versie: 1, pdf: null, pdfHash: "abc" });
+    await bewaarDeelklaarPdf(db, { offerteId: id, versie: 1, pdf: Buffer.from("%PDF-test"), pdfHash: "abc" });
+    await vergrendelVersie(db, { offerteId: id, versie: 1 });
     await expect(bewaarConcept(db, { offerteId: id, companyId, inhoud: inhoudVoor(nummer, 30000) })).rejects.toBeInstanceOf(OfferteVergrendeldFout);
     await db.offerteV2.update({ where: { id }, data: { status: "VERSTUURD" } });
     const v2 = await maakNieuweVersie(db, { offerteId: id, companyId });
@@ -52,9 +53,20 @@ describe.skipIf(!url)("offerte-opslag (database)", () => {
     expect(versies[1].vergrendeld).toBe(false);
   });
 
+  it("een wijziging na het klaarzetten wist de PDF; zonder PDF kan niet worden vergrendeld", async () => {
+    const { id, nummer } = await maakOfferte(db, { companyId, leadId: null, prefix: "W", bouw: (n) => inhoudVoor(n) });
+    await expect(vergrendelVersie(db, { offerteId: id, versie: 1 })).rejects.toBeInstanceOf(OfferteVergrendeldFout);
+    await bewaarDeelklaarPdf(db, { offerteId: id, versie: 1, pdf: Buffer.from("%PDF-x"), pdfHash: "x" });
+    await bewaarConcept(db, { offerteId: id, companyId, inhoud: inhoudVoor(nummer, 15000) });
+    const v = await db.offerteVersie.findFirst({ where: { offerteId: id, versie: 1 } });
+    expect(v?.pdfHash).toBeNull();
+    expect(v?.pdfData).toBeNull();
+  });
+
   it("een geaccepteerde offerte is definitief vergrendeld", async () => {
     const { id } = await maakOfferte(db, { companyId, leadId: null, prefix: "A", bouw: (n) => inhoudVoor(n) });
-    await vergrendelVersie(db, { offerteId: id, versie: 1, pdf: null, pdfHash: "h" });
+    await bewaarDeelklaarPdf(db, { offerteId: id, versie: 1, pdf: Buffer.from("%PDF-test"), pdfHash: "h" });
+    await vergrendelVersie(db, { offerteId: id, versie: 1 });
     await db.offerteV2.update({ where: { id }, data: { status: "GEACCEPTEERD" } });
     await expect(maakNieuweVersie(db, { offerteId: id, companyId })).rejects.toBeInstanceOf(OfferteVergrendeldFout);
   });

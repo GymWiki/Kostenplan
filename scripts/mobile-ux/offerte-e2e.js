@@ -1,4 +1,4 @@
-// E2E offerte v2 (lokaal): wizard → editor → versturen (nep-Brevo) → online offerte → akkoord → getekende PDF.
+// E2E offerte v2 (lokaal): wizard → editor → delen via eigen mail/app → online offerte → akkoord → getekende PDF.
 //   LEAD=<leadId> node scripts/mobile-ux/offerte-e2e.js <uitmap>
 const { chromium } = require("/opt/node22/lib/node_modules/playwright");
 const { execSync } = require("child_process");
@@ -20,7 +20,7 @@ fs.mkdirSync("/tmp/e2e", { recursive: true });
   sql(`delete from "OfferteGegevens" where "companyId" = '${COMPANY}'`);
   sql(`delete from "OfferteNummerTeller" where "companyId" = '${COMPANY}'`);
   sql(`update "Lead" set status = 'NIEUW' where id = '${LEAD}'`);
-  fs.writeFileSync("/tmp/brevo-mails.jsonl", "");
+  try { fs.unlinkSync("/tmp/brevo-mails.jsonl"); } catch {}
   const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] });
   const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
   await ctx.addCookies([require("./cookie.js")()]);
@@ -74,25 +74,70 @@ fs.mkdirSync("/tmp/e2e", { recursive: true });
   await p.waitForSelector("[data-offerte-document]");
   rapport("wijziging is automatisch opgeslagen", /Hagenmest bij planten/.test(await docTekst()), "");
 
-  // 4. controleren en versturen
-  await p.getByRole("button", { name: /Controleren en versturen/ }).click();
+  // 4. versturen: controle → delen (eigen mail/app) → "Is de offerte verstuurd?"
+  const LEAD2 = process.env.LEAD2;
+  await p.getByRole("button", { name: /^Versturen/ }).first().click();
   await p.getByRole("heading", { name: "Controleren en versturen" }).waitFor();
   await p.screenshot({ path: `${UIT}/04-controle-1440.png` });
   rapport("controle: geen blokkerende punten, waarschuwing zonder algemene voorwaarden", (await p.getByRole("dialog").getByText("Dit moet eerst kloppen").count()) === 0 && (await p.getByRole("dialog").getByText(/algemene voorwaarden bijgevoegd/).count()) === 1, "");
   await p.getByRole("button", { name: "Verder naar versturen" }).click();
-  await p.getByText(/versturen naar a\.jansen@example\.nl\?/).waitFor();
-  await p.screenshot({ path: `${UIT}/05-bevestigen-1440.png` });
-  await p.getByRole("button", { name: /Versturen naar a\.jansen/ }).click();
-  await p.getByRole("heading", { name: "Offerte verstuurd" }).waitFor({ timeout: 90000 });
-  const link = (await p.locator("p.break-all").innerText()).trim();
-  await p.screenshot({ path: `${UIT}/06-verstuurd-1440.png` });
-  rapport("offerte verstuurd, link naar online offerte", /\/o\/[A-Za-z0-9_-]{20,}$/.test(link), link);
+  await p.getByRole("heading", { name: /^Offerte .* versturen$/ }).waitFor({ timeout: 90000 });
+  await p.getByRole("link", { name: "Mail openen" }).waitFor();
+  await p.screenshot({ path: `${UIT}/05-delen-1440.png` });
+  const token = sql(`select token from "OfferteV2" where "leadId" = '${LEAD}'`);
+  const link = `${BASE}/o/${token}`;
+  const mailto = await p.getByRole("link", { name: "Mail openen" }).getAttribute("href");
+  const mu = new URL(mailto.replace("mailto:", "http://x/"));
+  const ontvanger = decodeURIComponent(mailto.slice(7).split("?")[0]);
+  const onderwerp = mu.searchParams.get("subject") || "";
+  const body = mu.searchParams.get("body") || "";
+  rapport("desktop: mailto naar de klant met onderwerp 'Offerte 2026-0001 – …'", ontvanger === "a.jansen@example.nl" && /^Offerte \d{4}-0001 – .+/.test(onderwerp), `${ontvanger} | ${onderwerp}`);
+  rapport("desktop: mailtekst bevat de link naar de online offerte", body.includes(`/o/${token}`), body.slice(0, 80));
+  rapport("desktop: PDF downloaden, link kopiëren en WhatsApp aanwezig", (await p.getByRole("link", { name: "PDF downloaden" }).count()) === 1 && (await p.getByRole("button", { name: /Link kopiëren/ }).count()) === 1 && /wa\.me/.test((await p.getByRole("link", { name: "Delen via WhatsApp" }).getAttribute("href")) || ""), "");
+  const pdfDl = await ctx.request.get(BASE + (await p.getByRole("link", { name: "PDF downloaden" }).getAttribute("href")));
+  const pdfBytes = await pdfDl.body();
+  rapport("PDF te downloaden (echte PDF)", pdfBytes.subarray(0, 5).toString() === "%PDF-" && pdfBytes.length > 20000, String(pdfBytes.length));
+  // Nee → blijft concept
+  await p.getByRole("button", { name: "Nee, nog niet" }).click();
+  await p.getByRole("heading", { name: /blijft een concept/ }).waitFor();
+  const naNee = sql(`select status from "OfferteV2" where "leadId" = '${LEAD}'`);
+  rapport("antwoord 'Nee' laat de offerte een concept (niets automatisch aangenomen)", naNee === "CONCEPT", naNee);
+  await p.getByRole("button", { name: "Terug" }).click();
 
-  // 5. mail
-  const mails = fs.readFileSync("/tmp/brevo-mails.jsonl", "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l));
-  const klantMail = mails.find((m) => m.to?.[0]?.email === "a.jansen@example.nl");
-  rapport("e-mail naar de klant met PDF-bijlage en link", !!klantMail && klantMail.attachment?.some((a) => a.pdf === "%PDF-" && a.bytes > 20000) && klantMail.textContent.includes(link), klantMail ? klantMail.subject + " " + JSON.stringify(klantMail.attachment.map((a) => a.name)) : "geen mail");
-  rapport("afzendernaam is de handelsnaam, reply-to is de hovenier", klantMail?.sender?.name === "Hoveniersbedrijf De Vries" && !!klantMail?.replyTo?.email, JSON.stringify(klantMail?.replyTo));
+  // Android-Chrome (Web Share met bestanden) en iOS-Safari (alleen tekst + link): eigen contexten op dezelfde concept-offerte
+  const maakShareContext = async (naam, ua, bestanden) => {
+    const c = await b.newContext({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, userAgent: ua });
+    await c.addCookies([require("./cookie.js")()]);
+    await c.addInitScript((kanBestanden) => {
+      window.__gedeeld = null;
+      Object.defineProperty(navigator, "canShare", { configurable: true, value: (d) => !(d && d.files) || kanBestanden });
+      Object.defineProperty(navigator, "share", { configurable: true, value: async (d) => { window.__gedeeld = { title: d.title, text: d.text, bestanden: (d.files || []).map((f) => ({ name: f.name, type: f.type, size: f.size })) }; } });
+    }, bestanden);
+    const mp = await c.newPage();
+    await mp.goto(`${BASE}/dashboard/leads/${LEAD}/offerte`, { waitUntil: "networkidle" });
+    await mp.getByRole("button", { name: /^Versturen/ }).first().click();
+    await mp.getByRole("button", { name: "Verder naar versturen" }).click();
+    await mp.getByRole("button", { name: "Delen (met PDF)" }).waitFor({ timeout: 90000 });
+    await mp.screenshot({ path: `${UIT}/05b-delen-${naam}.png` });
+    await mp.getByRole("button", { name: "Delen (met PDF)" }).tap();
+    await slaap(1500);
+    const gedeeld = await mp.evaluate(() => window.__gedeeld);
+    await c.close();
+    return gedeeld;
+  };
+  const android = await maakShareContext("android-412", "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36", true);
+  rapport("Android-Chrome: deelmenu met de PDF als bestand, onderwerp en link", !!android && android.bestanden.length === 1 && android.bestanden[0].type === "application/pdf" && android.bestanden[0].size > 20000 && /\.pdf$/.test(android.bestanden[0].name) && /^Offerte \d{4}-0001 – /.test(android.title) && android.text.includes(`/o/${token}`), JSON.stringify(android && { ...android, text: undefined }));
+  const ios = await maakShareContext("ios-390", "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1", false);
+  rapport("iOS-Safari zonder bestandsdeling: alleen tekst + link", !!ios && ios.bestanden.length === 0 && ios.text.includes(`/o/${token}`), JSON.stringify(ios && { ...ios, text: undefined }));
+  const naShare = sql(`select status from "OfferteV2" where "leadId" = '${LEAD}'`);
+  rapport("delen alleen (zonder 'Ja') verandert de status niet", naShare === "CONCEPT", naShare);
+
+  // Ja → Verstuurd
+  await p.getByRole("button", { name: "Ja, verstuurd" }).click();
+  await p.getByRole("heading", { name: "Offerte staat op Verstuurd" }).waitFor({ timeout: 30000 });
+  await p.screenshot({ path: `${UIT}/06-verstuurd-1440.png` });
+  const verstuurd = sql(`select status, "verstuurdOp" is not null from "OfferteV2" where "leadId" = '${LEAD}'`);
+  rapport("na 'Ja' staat de offerte op Verstuurd met verzenddatum", verstuurd === "VERSTUURD|t", verstuurd);
   await p.getByRole("button", { name: "Klaar" }).click();
   await slaap(1500);
   rapport("na sluiten is de offerte vergrendeld (nieuwe versie maken beschikbaar)", (await p.getByRole("button", { name: "Nieuwe versie maken" }).count()) >= 1, "");
@@ -141,12 +186,11 @@ fs.mkdirSync("/tmp/e2e", { recursive: true });
   fs.writeFileSync("/tmp/e2e/getekend.pdf", pdfBuf);
   const tekst = execSync("pdftotext -layout /tmp/e2e/getekend.pdf -", { encoding: "utf8" });
   rapport("getekende PDF bevat naam en tijdstip van het akkoord", pdfBuf.subarray(0, 5).toString() === "%PDF-" && /A\. Jansen/.test(tekst) && /\bom \d{2}:\d{2}/.test(tekst), "");
-  await slaap(1500);
-  const mails2 = fs.readFileSync("/tmp/brevo-mails.jsonl", "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l));
-  const bevestiging = mails2.find((x) => /Bevestiging/.test(x.subject));
-  const melding = mails2.find((x) => /is akkoord met offerte/.test(x.subject));
-  rapport("getekende PDF per e-mail naar de klant", !!bevestiging && bevestiging.to[0].email === "a.jansen@example.nl" && bevestiging.attachment.some((a) => a.pdf === "%PDF-"), bevestiging ? JSON.stringify(bevestiging.attachment.map((a) => a.name)) : "");
-  rapport("getekende PDF per e-mail naar de hovenier", !!melding && melding.attachment?.some((a) => a.pdf === "%PDF-"), melding ? melding.to[0].email : "geen melding");
+  const geenMailLog = !fs.existsSync("/tmp/brevo-mails.jsonl");
+  rapport("er is geen mailverkeer nodig: geen BREVO_API_KEY/CRON_SECRET in de omgeving van de app", !process.env.BREVO_API_KEY && !process.env.CRON_SECRET && geenMailLog, "");
+  const dl = await mctx.newPage();
+  await dl.goto(link.replace(/^https?:\/\/[^/]+/, BASE), { waitUntil: "networkidle" });
+  rapport("klant ziet na akkoord de bevestiging met download van de getekende PDF", (await dl.getByRole("link", { name: /Getekende PDF|Download/i }).count()) >= 1, "");
   fs.copyFileSync("/tmp/e2e/getekend.pdf", `${UIT}/getekende-offerte.pdf`);
 
   // 9. vergrendeld voor de hovenier
@@ -157,9 +201,45 @@ fs.mkdirSync("/tmp/e2e", { recursive: true });
   await h.getByText(/geaccepteerd en definitief vergrendeld/).waitFor({ timeout: 15000 });
   rapport("na akkoord is de offerte vergrendeld in de editor", (await h.getByRole("button", { name: "Nieuwe versie maken" }).count()) === 0, "");
   await h.screenshot({ path: `${UIT}/11-vergrendeld-1440.png` });
+  rapport("hovenier ziet de activiteit (akkoord) bij de offerte", (await h.getByText("Akkoord van de klant").count()) >= 1 && (await h.getByRole("link", { name: "Getekende PDF" }).count()) >= 1, "");
   await h.goto(`${BASE}/dashboard/leads`, { waitUntil: "networkidle" });
   await h.screenshot({ path: `${UIT}/12-leads-1440.png` });
   rapport("Leads toont de offertestatus 'Geaccepteerd'", (await h.getByText("Geaccepteerd").count()) >= 1, "");
+
+  // 10. verlopen: server-side afgeleid, zonder cron
+  if (LEAD2) {
+    sql(`delete from "OfferteV2" where "leadId" = '${LEAD2}'`);
+    const bron = sql(`select id from "OfferteV2" where "leadId" = '${LEAD}'`);
+    sql(`insert into "OfferteV2"(id,"companyId","leadId",nummer,token,status,"huidigeVersie","verstuurdOp","geldigTot","reactieGezien","createdAt","updatedAt") select 'e2eexp1',"companyId",'${LEAD2}','2026-9001','e2eexptoken0123456789abcdef','VERSTUURD',1,now()-interval '10 days',current_date+5,true,now(),now() from "OfferteV2" where id='${bron}'; create temp table v as select * from "OfferteVersie" where "offerteId"='${bron}'; update v set id='e2eexpv1',"offerteId"='e2eexp1',vergrendeld=true,inhoud=jsonb_set(jsonb_set(inhoud,'{geldigTot}',to_jsonb((current_date+5)::text)),'{nummer}','"2026-9001"'); insert into "OfferteVersie" select * from v;`);
+    // Tip "Herinnering sturen": 10 dagen verstuurd zonder reactie
+    await h.goto(`${BASE}/dashboard/leads`, { waitUntil: "networkidle" });
+    rapport("tip 'Herinnering sturen' verschijnt (10 dagen zonder reactie)", (await h.getByRole("link", { name: /Herinnering sturen/ }).count()) >= 1, "");
+    await h.screenshot({ path: `${UIT}/13-herinnering-tip-1440.png` });
+    await h.getByRole("link", { name: /Herinnering sturen/ }).first().click();
+    await h.getByRole("heading", { name: /Herinnering sturen voor offerte/ }).waitFor({ timeout: 90000 });
+    const hm = await h.getByRole("link", { name: "Mail openen" }).getAttribute("href");
+    rapport("herinnering opent dezelfde deelflow met herinneringstekst", /subject=/.test(hm) && /herinner|nog/i.test(decodeURIComponent(hm)), decodeURIComponent(hm).slice(0, 120));
+    await h.screenshot({ path: `${UIT}/14-herinnering-1440.png` });
+    // Verlopen: eerst geldig openen, dan in de database 'gisteren' zetten; akkoord moet server-side falen
+    const vm = await mctx.newPage();
+    await vm.goto(`${BASE}/o/e2eexptoken0123456789abcdef`, { waitUntil: "networkidle" });
+    await vm.getByRole("button", { name: "Akkoord geven" }).first().waitFor();
+    sql(`update "OfferteV2" set "geldigTot" = current_date - 1 where id = 'e2eexp1'; update "OfferteVersie" set inhoud = jsonb_set(inhoud,'{geldigTot}',to_jsonb((current_date - 1)::text)) where id = 'e2eexpv1'`);
+    await vm.getByRole("button", { name: "Akkoord geven" }).first().tap();
+    await vm.getByLabel("Je volledige naam").fill("Te Laat");
+    await vm.getByLabel(/Ik ga akkoord met deze offerte/).check();
+    await vm.getByRole("button", { name: "Bevestigen" }).tap();
+    await slaap(2500);
+    const naPoging = sql(`select status from "OfferteV2" where id = 'e2eexp1'`) + "|" + sql(`select count(*) from "OfferteAkkoord" where "offerteId" = 'e2eexp1'`);
+    rapport("akkoord na de geldig-tot-datum wordt server-side geweigerd", /^(VERSTUURD|BEKEKEN)\|0$/.test(naPoging), naPoging);
+    await vm.screenshot({ path: `${UIT}/15-verlopen-akkoord-geweigerd-412.png` });
+    await vm.reload({ waitUntil: "networkidle" });
+    rapport("klant ziet 'Verlopen' en kan niet meer akkoord geven", (await vm.getByText(/verlopen/i).count()) >= 1 && (await vm.getByRole("button", { name: "Akkoord geven" }).count()) === 0, "");
+    await vm.screenshot({ path: `${UIT}/16-verlopen-412.png` });
+    await h.goto(`${BASE}/dashboard/leads`, { waitUntil: "networkidle" });
+    rapport("Leads toont 'Verlopen' voor de verlopen offerte", (await h.getByText("Verlopen").count()) >= 1, "");
+    sql(`delete from "OfferteV2" where id = 'e2eexp1'`);
+  }
   rapport("geen uncaught fouten", fouten.length === 0, fouten.join("; ").slice(0, 200));
   fs.writeFileSync(`${UIT}/resultaten.json`, JSON.stringify(res, null, 2));
   console.log(`\n${res.filter((r) => r.ok).length}/${res.length} geslaagd`);

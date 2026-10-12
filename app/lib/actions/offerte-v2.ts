@@ -7,18 +7,17 @@ import { effectiveTier } from "@/app/lib/subscription";
 import { laadOfferteGegevens } from "@/app/lib/offerte/gegevens-server";
 import { ontbrekendeVerplichteGegevens } from "@/app/lib/offerte/gegevens";
 import { bouwInhoudUitLead } from "@/app/lib/offerte/nieuw";
-import { bewaarConcept, maakNieuweVersie, maakOfferte, OfferteVergrendeldFout } from "@/app/lib/offerte/opslag";
+import { bewaarConcept, bewaarDeelklaarPdf, maakNieuweVersie, maakOfferte, OfferteVergrendeldFout, vergrendelVersie } from "@/app/lib/offerte/opslag";
 import { parseOfferteInhoud } from "@/app/lib/offerte/schema";
 import { getBaseUrl } from "@/app/lib/url";
 import { controleerOfferte } from "@/app/lib/offerte/controle";
-import { bouwOfferteMail, whatsappDeelLink } from "@/app/lib/offerte/mail";
 import { maakOffertePdf, sha256 } from "@/app/lib/offerte/pdf";
 import { maakPrintToken } from "@/app/lib/offerte/pdf-token";
 import { bestandsnaam } from "@/app/lib/offerte/weergave";
 import { afzenderUit } from "@/app/lib/offerte/nieuw";
+import { bouwDeelBericht } from "@/app/lib/offerte/berichten";
+import { isVerlopen, staatOpenVoorReactie } from "@/app/lib/offerte/status";
 import { publiekeOfferteLink } from "@/app/lib/offerte/links";
-import { verstuurBrevoMail, type MailBijlage } from "@/app/lib/mail/brevo";
-import { vergrendelVersie } from "@/app/lib/offerte/opslag";
 import type { OfferteInhoud } from "@/app/lib/offerte/model";
 
 
@@ -104,22 +103,25 @@ export async function verwijderStandaardRegelAction(id: string): Promise<{ ok: t
   return { ok: true };
 }
 
-// ── Controleren en versturen ──────────────────────────────────────────────
+// ── Controleren en delen ──────────────────────────────────────────────────
+// De hovenier verstuurt de offerte zelf (eigen mail, deelmenu, WhatsApp). De app zet de PDF
+// klaar en geeft de link en berichttekst; pas als de hovenier bevestigt dat hij is verstuurd,
+// wordt de versie vergrendeld en de status Verstuurd.
 
+export type DeelKlaar = {
+  versie: number;
+  link: string;
+  onderwerp: string;
+  tekst: string;
+  klantEmail: string;
+  klantTelefoon: string;
+  pdfNaam: string;
+  pdfUrl: string;
+};
+export type DeelKlaarResultaat = ({ ok: true } & DeelKlaar) | { ok: false; error: string };
 
-export type VerstuurResultaat =
-  | { ok: true; link: string; whatsapp: string; mail: "verzonden" | "mislukt" | "niet-gevraagd"; mailFout?: string }
-  | { ok: false; error: string };
-
-async function haalBijlage(url: string, naam: string): Promise<MailBijlage[]> {
-  // De algemene voorwaarden staan publiek in opslag; Brevo haalt ze zelf op via de URL.
-  return [{ naam, url }];
-}
-
-
-// Verstuurt de huidige versie: controle (server-side), PDF maken, versie vergrendelen, en
-// e-mailen (kanaal "email") of alleen de link vrijgeven (kanaal "link": de hovenier deelt zelf).
-export async function verstuurOfferteAction(offerteId: string, kanaal: "email" | "link"): Promise<VerstuurResultaat> {
+// Stap 1 na "Controleren": gegevens verversen, server-side controleren, PDF maken en klaarzetten.
+export async function maakDeelklaarAction(offerteId: string): Promise<DeelKlaarResultaat> {
   const { company } = await requireActiveCompany();
   const o = await prismaBasis.offerteV2.findFirst({ where: { id: offerteId, companyId: company.id }, include: { versies: { orderBy: { versie: "desc" }, take: 1, omit: { pdfData: true } } } });
   if (!o) return { ok: false, error: "Offerte niet gevonden." };
@@ -127,7 +129,7 @@ export async function verstuurOfferteAction(offerteId: string, kanaal: "email" |
   const versie = o.versies[0];
   if (versie.vergrendeld) return { ok: false, error: "Deze versie is al verstuurd. Maak een nieuwe versie om opnieuw te versturen." };
 
-  // 1. Actuele bedrijfsgegevens uit Profiel overnemen (en de algemene voorwaarden), dan controleren.
+  // Actuele bedrijfsgegevens uit Profiel (en de algemene voorwaarden) overnemen, dan controleren.
   const gegevens = await laadOfferteGegevens(company);
   let inhoud = versie.inhoud as unknown as OfferteInhoud;
   inhoud = {
@@ -139,81 +141,75 @@ export async function verstuurOfferteAction(offerteId: string, kanaal: "email" |
   if (controle.blokkerend.length > 0) return { ok: false, error: controle.blokkerend[0].bericht };
   await bewaarConcept(prismaBasis, { offerteId, companyId: company.id, inhoud });
 
-  // 2. PDF van precies deze inhoud.
   const basis = await getBaseUrl();
   let pdf: Buffer;
   try {
     pdf = await maakOffertePdf(`${basis}/offerte-print/${maakPrintToken({ k: "versie", o: offerteId, v: versie.versie })}`, inhoud);
   } catch (e) {
     console.error("[offerte] PDF maken mislukt", e);
-    return { ok: false, error: "De PDF maken is niet gelukt. Er is niets verstuurd; probeer het zo opnieuw." };
+    return { ok: false, error: "De PDF maken is niet gelukt. Probeer het zo opnieuw." };
   }
-
-  // 3. Vergrendelen en status bijwerken (vanaf nu onveranderlijk).
   try {
-    await vergrendelVersie(prismaBasis, { offerteId, versie: versie.versie, pdf, pdfHash: sha256(pdf) });
+    await bewaarDeelklaarPdf(prismaBasis, { offerteId, versie: versie.versie, pdf, pdfHash: sha256(pdf) });
   } catch {
     return { ok: false, error: "Deze versie is al verstuurd." };
   }
-  await prismaBasis.offerteV2.update({ where: { id: offerteId }, data: { status: "VERSTUURD", verstuurdOp: new Date(), geldigTot: new Date(`${inhoud.geldigTot}T23:59:59`), reactieGezien: true, eersteBekekenOp: null, herinneringVerstuurdOp: null } });
-  await prismaBasis.offerteGebeurtenis.create({ data: { offerteId, versieNummer: versie.versie, soort: "VERZONDEN", tekst: kanaal === "email" ? `per e-mail naar ${inhoud.klant.email}` : "link gedeeld door de hovenier" } });
-  if (o.leadId) await prismaBasis.lead.updateMany({ where: { id: o.leadId, companyId: company.id }, data: { status: "OFFERTE_VERSTUURD" } });
-
   const link = publiekeOfferteLink(basis, o.token);
-  const whatsapp = whatsappDeelLink(inhoud, link, inhoud.klant.telefoon);
+  const bericht = bouwDeelBericht({ inhoud, link, sjabloon: gegevens.deelTekst });
+  return { ok: true, versie: versie.versie, link, onderwerp: bericht.onderwerp, tekst: bericht.tekst, klantEmail: inhoud.klant.email, klantTelefoon: inhoud.klant.telefoon, pdfNaam: bestandsnaam(inhoud), pdfUrl: `/api/offertes/${offerteId}/pdf?versie=${versie.versie}` };
+}
+
+// Stap 2: de hovenier bevestigt "Ja, de offerte is verstuurd". Nu pas wordt de versie
+// vergrendeld en de status Verstuurd (met datum). Op "Nee" gebeurt er niets: het blijft een concept.
+export async function bevestigVerstuurdAction(offerteId: string, kanaal: "mail" | "delen" | "whatsapp" | "link"): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { company } = await requireActiveCompany();
+  const o = await prismaBasis.offerteV2.findFirst({ where: { id: offerteId, companyId: company.id }, include: { versies: { orderBy: { versie: "desc" }, take: 1, omit: { pdfData: true } } } });
+  if (!o) return { ok: false, error: "Offerte niet gevonden." };
+  if (o.status === "GEACCEPTEERD") return { ok: false, error: "Deze offerte is al geaccepteerd." };
+  const versie = o.versies[0];
+  const inhoud = versie.inhoud as unknown as OfferteInhoud;
+  if (!versie.vergrendeld) {
+    try {
+      await vergrendelVersie(prismaBasis, { offerteId, versie: versie.versie });
+    } catch {
+      return { ok: false, error: "Deze versie kan niet als verstuurd worden gemarkeerd. Zet de PDF eerst klaar via Controleren en versturen." };
+    }
+  }
+  await prismaBasis.offerteV2.update({
+    where: { id: offerteId },
+    data: { status: o.eersteBekekenOp ? "BEKEKEN" : "VERSTUURD", verstuurdOp: new Date(), geldigTot: new Date(`${inhoud.geldigTot}T12:00:00Z`), reactieGezien: true, herinneringVerstuurdOp: null },
+  });
+  await prismaBasis.offerteGebeurtenis.create({ data: { offerteId, versieNummer: versie.versie, soort: "VERZONDEN", tekst: `door de hovenier verstuurd via ${kanaal}` } });
+  if (o.leadId) await prismaBasis.lead.updateMany({ where: { id: o.leadId, companyId: company.id }, data: { status: "OFFERTE_VERSTUURD" } });
   revalidatePath("/dashboard/leads");
   revalidatePath(`/dashboard/leads/${o.leadId}/offerte`);
-  if (kanaal === "link") return { ok: true, link, whatsapp, mail: "niet-gevraagd" };
-
-  // 4. E-mail met link, PDF en algemene voorwaarden.
-  const mail = bouwOfferteMail({ inhoud, link });
-  const bijlagen: MailBijlage[] = [{ naam: bestandsnaam(inhoud), content: pdf }, ...(inhoud.bijlagen[0] ? await haalBijlage(inhoud.bijlagen[0].url, inhoud.bijlagen[0].naam) : [])];
-  const r = await verstuurBrevoMail({
-    afzenderNaam: inhoud.afzender.handelsnaam,
-    naar: { email: inhoud.klant.email, naam: inhoud.klant.naam },
-    replyTo: inhoud.afzender.email ? { email: inhoud.afzender.email, naam: inhoud.afzender.contactNaam || inhoud.afzender.handelsnaam } : undefined,
-    onderwerp: mail.onderwerp,
-    tekst: mail.tekst,
-    html: mail.html,
-    bijlagen,
-  });
-  if (!r.ok) {
-    await prismaBasis.offerteGebeurtenis.create({ data: { offerteId, versieNummer: versie.versie, soort: "VERZONDEN", tekst: `e-mail mislukt: ${r.fout}` } });
-    return { ok: true, link, whatsapp, mail: "mislukt", mailFout: r.fout };
-  }
-  return { ok: true, link, whatsapp, mail: "verzonden" };
+  return { ok: true };
 }
 
-// Voorbeeld van de e-mail voor de bevestiging in de pagina (geen verzending).
-export async function offerteMailVoorbeeldAction(offerteId: string, inhoud: unknown): Promise<{ ok: true; onderwerp: string; tekst: string; html: string; naar: string } | { ok: false; error: string }> {
+// Herinnering: dezelfde deelflow met een herinneringstekst, voor een al verstuurde offerte.
+export async function maakHerinneringKlaarAction(offerteId: string): Promise<DeelKlaarResultaat> {
   const { company } = await requireActiveCompany();
-  const p = parseOfferteInhoud(inhoud);
-  if (!p.ok) return { ok: false, error: p.error };
-  const o = await prismaBasis.offerteV2.findFirst({ where: { id: offerteId, companyId: company.id }, select: { token: true } });
-  if (!o) return { ok: false, error: "Offerte niet gevonden." };
-  const m = bouwOfferteMail({ inhoud: p.inhoud, link: publiekeOfferteLink(await getBaseUrl(), o.token) });
-  return { ok: true, ...m, naar: p.inhoud.klant.email };
-}
-
-// Opnieuw versturen van de mail van een al verstuurde versie (bijv. na een mislukte poging).
-export async function herzendOfferteMailAction(offerteId: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { company } = await requireActiveCompany();
-  const o = await prismaBasis.offerteV2.findFirst({ where: { id: offerteId, companyId: company.id }, include: { versies: { where: { vergrendeld: true }, orderBy: { versie: "desc" }, take: 1 } } });
+  const o = await prismaBasis.offerteV2.findFirst({ where: { id: offerteId, companyId: company.id }, include: { versies: { where: { vergrendeld: true }, orderBy: { versie: "desc" }, take: 1, omit: { pdfData: true } } } });
   const v = o?.versies[0];
   if (!o || !v) return { ok: false, error: "Er is nog geen verstuurde versie." };
+  if (!staatOpenVoorReactie(o.status)) return { ok: false, error: "Op deze offerte is al gereageerd." };
   const inhoud = v.inhoud as unknown as OfferteInhoud;
-  const mail = bouwOfferteMail({ inhoud, link: publiekeOfferteLink(await getBaseUrl(), o.token) });
-  const r = await verstuurBrevoMail({
-    afzenderNaam: inhoud.afzender.handelsnaam,
-    naar: { email: inhoud.klant.email, naam: inhoud.klant.naam },
-    replyTo: inhoud.afzender.email ? { email: inhoud.afzender.email, naam: inhoud.afzender.contactNaam || inhoud.afzender.handelsnaam } : undefined,
-    onderwerp: mail.onderwerp,
-    tekst: mail.tekst,
-    html: mail.html,
-    bijlagen: [...(v.pdfData ? [{ naam: bestandsnaam(inhoud), content: Buffer.from(v.pdfData) }] : []), ...(inhoud.bijlagen[0] ? [{ naam: inhoud.bijlagen[0].naam, url: inhoud.bijlagen[0].url }] : [])],
-  });
-  if (!r.ok) return { ok: false, error: r.fout };
-  await prismaBasis.offerteGebeurtenis.create({ data: { offerteId, versieNummer: v.versie, soort: "VERZONDEN", tekst: `opnieuw per e-mail naar ${inhoud.klant.email}` } });
+  if (isVerlopen(inhoud.geldigTot)) return { ok: false, error: "Deze offerte is verlopen. Maak een nieuwe versie met een nieuwe geldigheidsdatum." };
+  const gegevens = await laadOfferteGegevens(company);
+  const basis = await getBaseUrl();
+  const link = publiekeOfferteLink(basis, o.token);
+  const bericht = bouwDeelBericht({ inhoud, link, sjabloon: gegevens.herinneringTekst, herinnering: true });
+  return { ok: true, versie: v.versie, link, onderwerp: bericht.onderwerp, tekst: bericht.tekst, klantEmail: inhoud.klant.email, klantTelefoon: inhoud.klant.telefoon, pdfNaam: bestandsnaam(inhoud), pdfUrl: `/api/offertes/${offerteId}/pdf?versie=${v.versie}` };
+}
+
+export async function bevestigHerinneringAction(offerteId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { company } = await requireActiveCompany();
+  const o = await prismaBasis.offerteV2.findFirst({ where: { id: offerteId, companyId: company.id }, select: { id: true, huidigeVersie: true, leadId: true } });
+  if (!o) return { ok: false, error: "Offerte niet gevonden." };
+  await prismaBasis.offerteV2.update({ where: { id: o.id }, data: { herinneringVerstuurdOp: new Date() } });
+  await prismaBasis.offerteGebeurtenis.create({ data: { offerteId, versieNummer: o.huidigeVersie, soort: "HERINNERING", tekst: "herinnering verstuurd door de hovenier" } });
+  revalidatePath("/dashboard/leads");
+  revalidatePath("/dashboard");
   return { ok: true };
 }
 

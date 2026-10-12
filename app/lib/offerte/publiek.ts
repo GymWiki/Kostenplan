@@ -26,7 +26,8 @@ export async function laadPubliekeOfferte(token: string, gevraagdeVersie?: numbe
   const o = await prismaBasis.offerteV2.findUnique({
     where: { token },
     include: {
-      versies: { where: { vergrendeld: true }, orderBy: { versie: "desc" }, omit: { pdfData: true } },
+      // Zichtbaar voor de klant zodra de PDF klaarstaat (gedeeld) of de versie is verstuurd.
+      versies: { where: { OR: [{ vergrendeld: true }, { pdfHash: { not: null } }] }, orderBy: { versie: "desc" }, omit: { pdfData: true } },
       akkoorden: { omit: { getekendePdfData: true } },
     },
   });
@@ -42,8 +43,9 @@ export async function laadPubliekeOfferte(token: string, gevraagdeVersie?: numbe
     companyId: o.companyId,
     leadId: o.leadId,
     token: o.token,
-    status: o.status,
-    weergaveStatus: weergaveStatusV2({ status: o.status, geldigTot: (laatste.inhoud as unknown as OfferteInhoud).geldigTot }),
+    // Een gedeelde offerte die de hovenier nog niet als verstuurd bevestigde, telt voor de klant als verstuurd.
+    status: o.status === "CONCEPT" ? "VERSTUURD" : o.status,
+    weergaveStatus: weergaveStatusV2({ status: o.status === "CONCEPT" ? "VERSTUURD" : o.status, geldigTot: (laatste.inhoud as unknown as OfferteInhoud).geldigTot }),
     nummer: o.nummer,
     versie: v.versie,
     inhoud,

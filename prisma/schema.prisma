@@ -1021,10 +1021,11 @@ model OfferteGegevens {
   slotTekst       String?
   voorwaardenBlokken Json?
   herroepingTekst String?
+  // Berichten bij het delen van een offerte; {naam} {nummer} {onderwerp} {totaal} {geldigTot} {handelsnaam} {link}.
+  deelTekst       String?
+  herinneringTekst String?
   // Standaard btw-tarief per regeltype, bijv. {"arbeid":21,"materiaal":21,"planten":9}.
   btwStandaard    Json?
-  // Aantal dagen vóór het verlopen waarop de klant een herinnering krijgt; null = uit.
-  herinneringDagen Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

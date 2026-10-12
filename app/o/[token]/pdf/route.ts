@@ -20,6 +20,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
     const pdf = await zorgVoorGetekendePdf(o.id, url.origin);
     return pdf ? antwoord(pdf, true) : new NextResponse("De getekende PDF is nog niet klaar.", { status: 503 });
   }
-  const v = await prismaBasis.offerteVersie.findFirst({ where: { offerteId: o.id, versie: o.versie, vergrendeld: true }, select: { pdfData: true } });
+  const v = await prismaBasis.offerteVersie.findFirst({ where: { offerteId: o.id, versie: o.versie, pdfHash: { not: null } }, select: { pdfData: true } });
   return v?.pdfData ? antwoord(v.pdfData, false) : new NextResponse("Niet gevonden", { status: 404 });
 }

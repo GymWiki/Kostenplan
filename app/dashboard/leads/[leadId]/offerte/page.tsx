@@ -9,20 +9,24 @@ import { laadOfferteGegevens } from "@/app/lib/offerte/gegevens-server";
 import { ontbrekendeVerplichteGegevens } from "@/app/lib/offerte/gegevens";
 import type { OfferteInhoud } from "@/app/lib/offerte/model";
 import type { RegelSoort } from "@/app/lib/offerte/btw-config";
+import { herinneringNodig, weergaveStatusV2 } from "@/app/lib/offerte/status";
 import { OfferteEditorV2 } from "@/app/components/offerte/offerte-editor-v2";
 import { OfferteStarter } from "@/app/components/offerte/offerte-starter";
 
-// Het versturen maakt de PDF met headless Chromium; geef de server daar de tijd voor.
+// Het klaarzetten om te delen maakt de PDF met headless Chromium; geef de server daar de tijd voor.
 export const maxDuration = 60;
 
 export const metadata: Metadata = { title: "Offerte" };
 
 export default async function OffertePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ leadId: string }>;
+  searchParams: Promise<{ herinnering?: string }>;
 }) {
   const { leadId } = await params;
+  const { herinnering: herinneringParam } = await searchParams;
   const { company } = await requireActiveCompany();
 
   const lead = await prisma.lead.findFirst({
@@ -37,15 +41,22 @@ export default async function OffertePage({
     if (!v2.reactieGezien) await prisma.offerteV2.update({ where: { id: v2.id }, data: { reactieGezien: true } });
     const versies = await prisma.offerteVersie.findMany({ where: { offerteId: v2.id }, orderBy: { versie: "asc" }, omit: { pdfData: true } });
     const huidig = versies.find((v) => v.versie === v2.huidigeVersie) ?? versies[versies.length - 1];
-    const [standaardRegels, gegevens] = await Promise.all([
+    const [gebeurtenissen, akkoord, standaardRegels, gegevens] = await Promise.all([
+      prisma.offerteGebeurtenis.findMany({ where: { offerteId: v2.id }, orderBy: { createdAt: "desc" }, take: 15 }),
+      prisma.offerteAkkoord.findFirst({ where: { offerteId: v2.id }, select: { id: true } }),
       prisma.offerteStandaardRegel.findMany({ where: { companyId: company.id }, orderBy: { createdAt: "desc" } }),
       laadOfferteGegevens(company),
     ]);
     return (
       <OfferteEditorV2
         offerteId={v2.id}
-        status={v2.status}
+        status={weergaveStatusV2({ status: v2.status, geldigTot: v2.geldigTot })}
         vergrendeld={huidig.vergrendeld}
+        deelklaar={!huidig.vergrendeld && Boolean(huidig.pdfHash)}
+        startHerinnering={herinneringParam === "1"}
+        herinnering={herinneringNodig({ status: v2.status, geldigTot: v2.geldigTot, verstuurdOp: v2.verstuurdOp })}
+        activiteit={gebeurtenissen.map((g) => ({ id: g.id, soort: g.soort, tekst: g.tekst, op: g.createdAt.toISOString() }))}
+        heeftGetekend={Boolean(akkoord)}
         begin={huidig.inhoud as unknown as OfferteInhoud}
         versies={versies.map((v) => ({ versie: v.versie, vergrendeld: v.vergrendeld, verstuurdOp: v.verstuurdOp?.toISOString() ?? null }))}
         standaardRegels={standaardRegels.map((r) => ({ id: r.id, omschrijving: r.omschrijving, eenheid: r.eenheid, prijsCenten: r.prijsCenten, btw: r.btw, soort: r.soort }))}

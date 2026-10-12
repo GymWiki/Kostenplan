@@ -48,7 +48,8 @@ export async function saveOfferteGegevensAction(invoer: Partial<OfferteGegevensW
     voorwaardenBlokken: invoer.voorwaardenBlokken,
     herroepingTekst: t(invoer.herroepingTekst),
     btwStandaard: invoer.btwStandaard === undefined ? undefined : (invoer.btwStandaard ?? undefined),
-    herinneringDagen: invoer.herinneringDagen,
+    deelTekst: t(invoer.deelTekst),
+    herinneringTekst: t(invoer.herinneringTekst),
   };
   // Lege tekst betekent "terug naar standaard" voor de lange teksten en de KOR-tekst.
   const schoon = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined));

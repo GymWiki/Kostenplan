@@ -1,16 +1,19 @@
 import { prisma } from "@/app/lib/prisma";
 import { eersteRegelNaam } from "@/app/lib/lead-weergave";
+import { laadOfferteTips, type OfferteTip } from "@/app/lib/offerte/tips";
 
 export { eersteRegelNaam };
 
 export type VandaagLead = { id: string; naam: string; werkzaamheid: string; bedrag: number; createdAt: Date };
 export type VandaagOfferte = { leadId: string; naam: string; bedrag: number; verstuurdOp: Date | null };
+export type { OfferteTip };
 export type ChecklistStap = { id: string; label: string; klaar: boolean; href: string };
 
 export type VandaagData = {
   nieuweLeads: number;
   laatsteNieuweLeads: VandaagLead[];
   wachtendeOffertes: { aantal: number; lijst: VandaagOfferte[] };
+  offerteTips: OfferteTip[];
   checklist: { toolId: string; toolNaam: string; stappen: ChecklistStap[] } | null;
   leadsDezeMaand: number;
   toolsLive: number;
@@ -35,7 +38,7 @@ export async function laadVandaag(companyId: string): Promise<VandaagData> {
   beginVanMaand.setDate(1);
   beginVanMaand.setHours(0, 0, 0, 0);
 
-  const [nieuw, nieuweLijst, offertes, leadsDezeMaand, tools] = await Promise.all([
+  const [nieuw, nieuweLijst, offertes, leadsDezeMaand, tools, offerteTips] = await Promise.all([
     prisma.lead.count({ where: { companyId, status: "NIEUW" } }),
     prisma.lead.findMany({
       where: { companyId, status: "NIEUW" },
@@ -55,6 +58,7 @@ export async function laadVandaag(companyId: string): Promise<VandaagData> {
       orderBy: { order: "asc" },
       select: { id: true, naam: true, status: true },
     }),
+    laadOfferteTips(companyId).catch(() => []),
   ]);
 
   // Checklist voor de eerste rekentool die nog niet af is (anders de eerste):
@@ -106,6 +110,7 @@ export async function laadVandaag(companyId: string): Promise<VandaagData> {
       aantal: offertes.length,
       lijst: offertes.slice(0, 3).map((o) => ({ leadId: o.leadId, naam: o.lead.naam, bedrag: o.lead.totaalIndicatie, verstuurdOp: o.verstuurdOp })),
     },
+    offerteTips,
     checklist,
     leadsDezeMaand,
     toolsLive: tools.filter((t) => t.status === "GEPUBLICEERD").length,

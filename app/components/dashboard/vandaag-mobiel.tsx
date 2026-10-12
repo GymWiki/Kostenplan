@@ -1,3 +1,4 @@
+import { OfferteTips } from "@/app/components/dashboard/offerte-tips";
 import Link from "next/link";
 import { Check, ChevronRight, Circle } from "lucide-react";
 import { LinkButton } from "@/app/components/ui/button";
@@ -47,6 +48,8 @@ export function VandaagMobiel({ data }: { data: VandaagData }) {
               </ul>
             </section>
           )}
+
+          <OfferteTips tips={data.offerteTips} />
 
           {data.wachtendeOffertes.aantal > 0 && (
             <section aria-labelledby="vd-offertes" className="flex flex-col gap-2">
@@ -102,7 +105,7 @@ export function VandaagMobiel({ data }: { data: VandaagData }) {
             </section>
           )}
 
-          {data.nieuweLeads === 0 && data.wachtendeOffertes.aantal === 0 && !data.checklist && (
+          {data.nieuweLeads === 0 && data.wachtendeOffertes.aantal === 0 && data.offerteTips.length === 0 && !data.checklist && (
             <p className="rounded-xl border border-border bg-card p-5 text-base text-foreground">Alles is bij. Er wacht niets op je.</p>
           )}
 
