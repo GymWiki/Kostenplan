@@ -1,17 +1,24 @@
 import { Badge } from "@/app/components/ui/badge";
 import { OFFERTE_STATUS_LABELS, weergaveOfferteStatus } from "@/app/lib/offertes";
-import type { OfferteStatus } from "@/app/generated/prisma/client";
+import { leadOfferteStatus } from "@/app/lib/offerte/lead-status";
+import type { OfferteStatus, OfferteV2Status } from "@/app/generated/prisma/client";
 
-const VARIANT_BY_STATUS: Record<OfferteStatus, "default" | "success" | "warning" | "outline" | "muted"> = {
-  CONCEPT: "muted",
-  VERSTUURD: "default",
-  GEACCEPTEERD: "success",
-  AFGEWEZEN: "warning",
-  VERLOPEN: "outline",
-  INGETROKKEN: "outline",
+const VARIANT: Record<string, "default" | "success" | "warning" | "outline" | "muted"> = {
+  concept: "muted",
+  verstuurd: "default",
+  bekeken: "default",
+  geaccepteerd: "success",
+  afgewezen: "warning",
+  verlopen: "outline",
+  ingetrokken: "outline",
 };
 
-export function OfferteStatusBadge({ offerte }: { offerte: { status: OfferteStatus; geldigTot: Date } }) {
+// Label van de offertestatus bij een lead, voor nieuwe (v2: ook "Bekeken") en oude offertes.
+export function OfferteStatusBadge({ offerte }: { offerte: { status: OfferteStatus; geldigTot: Date; v2Status?: OfferteV2Status } }) {
+  if (offerte.v2Status) {
+    const s = leadOfferteStatus({ offerte });
+    return <Badge variant={VARIANT[s.sleutel] ?? "muted"}>{s.label}</Badge>;
+  }
   const status = weergaveOfferteStatus(offerte);
-  return <Badge variant={VARIANT_BY_STATUS[status]}>{OFFERTE_STATUS_LABELS[status]}</Badge>;
+  return <Badge variant={VARIANT[status.toLowerCase()] ?? "muted"}>{OFFERTE_STATUS_LABELS[status]}</Badge>;
 }

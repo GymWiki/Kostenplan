@@ -34,6 +34,7 @@ export default async function OffertePage({
   // Nieuwe offertes (v2): versies, nummering en btw per regel.
   const v2 = lead.offertesV2[0];
   if (v2) {
+    if (!v2.reactieGezien) await prisma.offerteV2.update({ where: { id: v2.id }, data: { reactieGezien: true } });
     const versies = await prisma.offerteVersie.findMany({ where: { offerteId: v2.id }, orderBy: { versie: "asc" }, omit: { pdfData: true } });
     const huidig = versies.find((v) => v.versie === v2.huidigeVersie) ?? versies[versies.length - 1];
     const [standaardRegels, gegevens] = await Promise.all([

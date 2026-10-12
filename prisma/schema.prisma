@@ -1077,8 +1077,12 @@ model OfferteV2 {
   huidigeVersie Int @default(1)
 
   verstuurdOp   DateTime?
+  // Einde van de geldigheid van de laatst verstuurde versie (voor het overzicht, verval en herinneringen).
+  geldigTot     DateTime?
   eersteBekekenOp DateTime?
   herinneringVerstuurdOp DateTime?
+  // false zodra de klant reageerde (bekeken telt niet): de hovenier ziet dan een stip tot hij de offerte opent.
+  reactieGezien Boolean @default(true)
 
   versies       OfferteVersie[]
   akkoorden     OfferteAkkoord[]
@@ -1090,6 +1094,7 @@ model OfferteV2 {
   @@unique([companyId, nummer])
   @@index([leadId])
   @@index([companyId, status])
+  @@index([status, geldigTot])
 }
 
 model OfferteVersie {

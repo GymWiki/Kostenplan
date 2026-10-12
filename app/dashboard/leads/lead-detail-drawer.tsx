@@ -17,6 +17,7 @@ import {
   type LeadFormState,
 } from "@/app/lib/actions/leads";
 import { omzettenNaarOfferteAction, markOffertReactieGezienAction } from "@/app/lib/actions/offertes";
+import { markeerOfferteV2GezienAction } from "@/app/lib/actions/offerte-v2";
 import { whatsappLink } from "@/app/lib/leads";
 import { StatusSelect } from "./status-select";
 import { OfferteStatusBadge } from "./offerte-status-badge";
@@ -48,7 +49,8 @@ export function LeadDetailDrawer({
   // pulserende stip op de kanban-kaart/lijstregel (zie kanban-board.tsx).
   useEffect(() => {
     if (lead?.offerte && !lead.offerte.reactieGezien) {
-      markOffertReactieGezienAction(lead.offerte.id);
+      if (lead.offerte.v2Status) void markeerOfferteV2GezienAction(lead.offerte.id);
+      else markOffertReactieGezienAction(lead.offerte.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lead?.id]);

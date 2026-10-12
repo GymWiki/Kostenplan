@@ -47,13 +47,37 @@ export default async function LeadsPage() {
 
   const { rawLeads, tools } = await getLeadsPageData(company.id);
 
-  const leads: LeadWithNotes[] = rawLeads.map((lead) => ({
-    ...lead,
-    snapshot: lead.snapshot as unknown as LeadSnapshot,
-    offerte: lead.offerte
-      ? { ...lead.offerte, regels: lead.offerte.regels as unknown as OfferteRegel[] }
-      : null,
-  }));
+  const leads: LeadWithNotes[] = rawLeads.map(({ offertesV2, ...lead }) => {
+    const v2 = offertesV2[0];
+    return {
+      ...lead,
+      snapshot: lead.snapshot as unknown as LeadSnapshot,
+      // Nieuwe offertes (v2) krijgen dezelfde vorm als de oude, zodat bord, lijst en paneel ze gelijk tonen.
+      offerte: v2
+        ? {
+            id: v2.id,
+            leadId: lead.id,
+            status: v2.status === "BEKEKEN" || v2.status === "VERSTUURD" ? "VERSTUURD" : v2.status === "CONCEPT" ? "CONCEPT" : v2.status,
+            regels: [],
+            introTekst: null,
+            voorwaardenTekst: null,
+            geldigTot: v2.geldigTot ?? new Date(8.64e15),
+            deelToken: null,
+            pdfUrl: null,
+            verstuurdOp: null,
+            ingetrokkenOp: null,
+            gereageerdOp: null,
+            klantReactie: null,
+            reactieGezien: v2.reactieGezien,
+            createdAt: lead.createdAt,
+            updatedAt: lead.createdAt,
+            v2Status: v2.status,
+          }
+        : lead.offerte
+          ? { ...lead.offerte, regels: lead.offerte.regels as unknown as OfferteRegel[] }
+          : null,
+    };
+  });
 
   // KPI's (pipelinewaarde, conversieratio, …) worden client-side in
   // LeadsView afgeleid van `leads` — zo bewegen ze meteen mee met een

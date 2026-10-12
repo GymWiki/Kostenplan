@@ -34,6 +34,7 @@ export async function meldHovenier({
   bijlage?: { naam: string; content: Buffer };
 }): Promise<void> {
   const onderwerp = TITEL[soort](inhoud.nummer, inhoud.klant.naam || "De klant");
+  if (soort !== "bekeken") await prismaBasis.offerteV2.updateMany({ where: { companyId, nummer: inhoud.nummer }, data: { reactieGezien: false } }).catch(() => undefined);
   const url = leadId ? `/dashboard/leads/${leadId}/offerte` : "/dashboard/leads";
   try {
     await stuurPush(companyId, { titel: onderwerp, tekst: tekst ? tekst.slice(0, 120) : inhoud.onderwerp, url });

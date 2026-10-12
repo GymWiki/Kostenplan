@@ -155,7 +155,7 @@ export async function verstuurOfferteAction(offerteId: string, kanaal: "email" |
   } catch {
     return { ok: false, error: "Deze versie is al verstuurd." };
   }
-  await prismaBasis.offerteV2.update({ where: { id: offerteId }, data: { status: "VERSTUURD", verstuurdOp: new Date() } });
+  await prismaBasis.offerteV2.update({ where: { id: offerteId }, data: { status: "VERSTUURD", verstuurdOp: new Date(), geldigTot: new Date(`${inhoud.geldigTot}T23:59:59`), reactieGezien: true, eersteBekekenOp: null, herinneringVerstuurdOp: null } });
   await prismaBasis.offerteGebeurtenis.create({ data: { offerteId, versieNummer: versie.versie, soort: "VERZONDEN", tekst: kanaal === "email" ? `per e-mail naar ${inhoud.klant.email}` : "link gedeeld door de hovenier" } });
   if (o.leadId) await prismaBasis.lead.updateMany({ where: { id: o.leadId, companyId: company.id }, data: { status: "OFFERTE_VERSTUURD" } });
 
@@ -214,5 +214,12 @@ export async function herzendOfferteMailAction(offerteId: string): Promise<{ ok:
   });
   if (!r.ok) return { ok: false, error: r.fout };
   await prismaBasis.offerteGebeurtenis.create({ data: { offerteId, versieNummer: v.versie, soort: "VERZONDEN", tekst: `opnieuw per e-mail naar ${inhoud.klant.email}` } });
+  return { ok: true };
+}
+
+export async function markeerOfferteV2GezienAction(offerteId: string): Promise<{ ok: true }> {
+  const { company } = await requireActiveCompany();
+  await prismaBasis.offerteV2.updateMany({ where: { id: offerteId, companyId: company.id }, data: { reactieGezien: true } });
+  revalidatePath("/dashboard/leads");
   return { ok: true };
 }

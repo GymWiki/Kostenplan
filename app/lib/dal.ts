@@ -449,7 +449,11 @@ export async function getLeadsPageData(companyId: string) {
     // vervolgwerk zodra een company dit plafond daadwerkelijk nadert.
     prisma.lead.findMany({
       where: { companyId },
-      include: { notities: { orderBy: { createdAt: "asc" } }, offerte: true },
+      include: {
+        notities: { orderBy: { createdAt: "asc" } },
+        offerte: true,
+        offertesV2: { orderBy: { createdAt: "desc" }, take: 1, select: { id: true, status: true, huidigeVersie: true, geldigTot: true, reactieGezien: true, nummer: true } },
+      },
       orderBy: { createdAt: "desc" },
       take: 500,
     }),
