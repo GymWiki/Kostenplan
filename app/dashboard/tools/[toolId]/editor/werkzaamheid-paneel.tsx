@@ -77,7 +77,7 @@ export function WerkzaamheidPaneel({
   onKlaar?: () => void;
 }) {
   const { costSettings, openTarieven } = useTarieven();
-  const [openBlok, setOpenBlok] = useState<string | null>("materialen");
+  const [openBlok, setOpenBlok] = useState<string | null>(null);
   const [opbouwOpen, setOpbouwOpen] = useState(false);
   const [blokKiezen, setBlokKiezen] = useState(false);
   const repo = useEditorRepository();

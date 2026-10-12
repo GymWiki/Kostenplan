@@ -57,27 +57,41 @@ export async function laadVandaag(companyId: string): Promise<VandaagData> {
     }),
   ]);
 
-  // Checklist voor de eerste rekentool die nog niet af is (anders de eerste).
-  let checklist: VandaagData["checklist"] = null;
+  // Checklist voor de eerste rekentool die nog niet af is (anders de eerste):
+  // drie samengevoegde queries voor alle tools tegelijk i.p.v. per tool.
   const kandidaten = tools.slice(0, 5);
+  const ids = kandidaten.map((t) => t.id);
+  const [brandings, producten, voorbeelden] = ids.length
+    ? await Promise.all([
+        prisma.branding.findMany({ where: { toolId: { in: ids } }, select: { toolId: true, logoUrl: true } }),
+        prisma.product.groupBy({ by: ["toolId"], where: { toolId: { in: ids }, actief: true }, _count: { _all: true } }),
+        prisma.materialOption.findMany({
+          where: { isVoorbeeld: true, actief: true, materialCategory: { product: { toolId: { in: ids }, actief: true } } },
+          select: { materialCategory: { select: { product: { select: { toolId: true } } } } },
+        }),
+      ])
+    : [[], [], []];
+  const logoPerTool = new Map(brandings.map((x) => [x.toolId, x.logoUrl]));
+  const aantalPerTool = new Map(producten.map((x) => [x.toolId, x._count._all]));
+  const voorbeeldPerTool = new Map<string, number>();
+  for (const v of voorbeelden) {
+    const id = v.materialCategory.product.toolId;
+    voorbeeldPerTool.set(id, (voorbeeldPerTool.get(id) ?? 0) + 1);
+  }
+  let checklist: VandaagData["checklist"] = null;
   for (const t of kandidaten) {
-    const [branding, producten, voorbeeld] = await Promise.all([
-      prisma.branding.findUnique({ where: { toolId: t.id }, select: { logoUrl: true } }),
-      prisma.product.count({ where: { toolId: t.id, actief: true } }),
-      prisma.materialOption.count({ where: { isVoorbeeld: true, actief: true, materialCategory: { product: { toolId: t.id, actief: true } } } }),
-    ]);
+    const aantal = aantalPerTool.get(t.id) ?? 0;
     const stappen: ChecklistStap[] = [
-      { id: "logo", label: "Logo instellen", klaar: Boolean(branding?.logoUrl), href: `/dashboard/tools/${t.id}?paneel=uiterlijk` },
-      { id: "werk", label: "Minstens één werkzaamheid", klaar: producten > 0, href: `/dashboard/tools/${t.id}?paneel=toevoegen` },
-      { id: "prijzen", label: "Voorbeeldprijzen vervangen", klaar: producten > 0 && voorbeeld === 0, href: `/dashboard/tools/${t.id}` },
+      { id: "logo", label: "Logo instellen", klaar: Boolean(logoPerTool.get(t.id)), href: `/dashboard/tools/${t.id}?paneel=uiterlijk` },
+      { id: "werk", label: "Minstens één werkzaamheid", klaar: aantal > 0, href: `/dashboard/tools/${t.id}?paneel=toevoegen` },
+      { id: "prijzen", label: "Voorbeeldprijzen vervangen", klaar: aantal > 0 && (voorbeeldPerTool.get(t.id) ?? 0) === 0, href: `/dashboard/tools/${t.id}` },
       { id: "website", label: "Op je website gezet", klaar: t.status === "GEPUBLICEERD", href: `/dashboard/tools/${t.id}?paneel=website` },
     ];
-    if (!checklist || (checklist.stappen.every((s) => s.klaar) && !stappen.every((s) => s.klaar))) {
+    if (!stappen.every((x) => x.klaar)) {
       checklist = { toolId: t.id, toolNaam: t.naam, stappen };
+      break;
     }
-    if (checklist && !checklist.stappen.every((s) => s.klaar)) break;
   }
-  if (checklist && checklist.stappen.every((s) => s.klaar)) checklist = null;
 
   return {
     nieuweLeads: nieuw,

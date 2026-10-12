@@ -3,7 +3,7 @@ const { chromium } = require("/opt/node22/lib/node_modules/playwright");
 const fs = require("fs"), path = require("path");
 const cookie = require("./cookie.js")();
 const [label = "na", uit = "docs/mobile-ux", viewports = "390x844,360x800,1440x900"] = process.argv.slice(2);
-const TOOL = process.env.TOOL, PROD = process.env.PROD, LEAD = process.env.LEAD, BASE = "http://localhost:3200";
+const TOOL = process.env.TOOL, PROD = process.env.PROD, LEAD = process.env.LEAD, BASE = process.env.BASE || "http://localhost:3200";
 
 const SCHERMEN = [
   ["overzicht", "/dashboard"],
