@@ -40,7 +40,7 @@ describe.skipIf(!url)("offerte-opslag (database)", () => {
   it("een verstuurde versie is onveranderlijk; wijzigen maakt een nieuwe versie", async () => {
     const { id, nummer } = await maakOfferte(db, { companyId, leadId: null, prefix: "T", bouw: (n) => inhoudVoor(n) });
     await bewaarConcept(db, { offerteId: id, companyId, inhoud: inhoudVoor(nummer, 20000) });
-    await vergrendelVersie(db, { offerteId: id, versie: 1, pdfUrl: null, pdfHash: "abc" });
+    await vergrendelVersie(db, { offerteId: id, versie: 1, pdf: null, pdfHash: "abc" });
     await expect(bewaarConcept(db, { offerteId: id, companyId, inhoud: inhoudVoor(nummer, 30000) })).rejects.toBeInstanceOf(OfferteVergrendeldFout);
     await db.offerteV2.update({ where: { id }, data: { status: "VERSTUURD" } });
     const v2 = await maakNieuweVersie(db, { offerteId: id, companyId });
@@ -54,7 +54,7 @@ describe.skipIf(!url)("offerte-opslag (database)", () => {
 
   it("een geaccepteerde offerte is definitief vergrendeld", async () => {
     const { id } = await maakOfferte(db, { companyId, leadId: null, prefix: "A", bouw: (n) => inhoudVoor(n) });
-    await vergrendelVersie(db, { offerteId: id, versie: 1, pdfUrl: null, pdfHash: "h" });
+    await vergrendelVersie(db, { offerteId: id, versie: 1, pdf: null, pdfHash: "h" });
     await db.offerteV2.update({ where: { id }, data: { status: "GEACCEPTEERD" } });
     await expect(maakNieuweVersie(db, { offerteId: id, companyId })).rejects.toBeInstanceOf(OfferteVergrendeldFout);
   });

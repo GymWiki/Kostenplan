@@ -71,7 +71,7 @@ export async function maakNieuweVersie(db: PrismaClient, { offerteId, companyId 
 }
 
 // Vergrendelt een versie (bij versturen). Mislukt als hij al vergrendeld is.
-export async function vergrendelVersie(db: PrismaClient, { offerteId, versie, pdfUrl, pdfHash }: { offerteId: string; versie: number; pdfUrl: string | null; pdfHash: string }) {
-  const r = await db.offerteVersie.updateMany({ where: { offerteId, versie, vergrendeld: false }, data: { vergrendeld: true, verstuurdOp: new Date(), pdfUrl, pdfHash } });
+export async function vergrendelVersie(db: PrismaClient, { offerteId, versie, pdf, pdfHash }: { offerteId: string; versie: number; pdf: Buffer | null; pdfHash: string }) {
+  const r = await db.offerteVersie.updateMany({ where: { offerteId, versie, vergrendeld: false }, data: { vergrendeld: true, verstuurdOp: new Date(), pdfData: pdf ? new Uint8Array(pdf) : null, pdfHash } });
   if (r.count === 0) throw new OfferteVergrendeldFout();
 }

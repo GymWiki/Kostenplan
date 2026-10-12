@@ -1106,7 +1106,9 @@ model OfferteVersie {
   // Vanaf het versturen onveranderlijk; wijzigen maakt een nieuwe versie.
   vergrendeld Boolean   @default(false)
   verstuurdOp DateTime?
-  pdfUrl      String?
+  // De PDF van deze versie zoals verstuurd (bytes), met SHA-256. Staat in de database
+  // zodat de klant hem ook zonder opslagrechten kan downloaden en de hash klopt.
+  pdfData     Bytes?
   pdfHash     String?
 
   createdAt DateTime @default(now())
@@ -1133,7 +1135,7 @@ model OfferteAkkoord {
   totaalInclCenten Int
   // SHA-256 van de PDF van déze versie (zonder akkoordblok) en van de getekende PDF.
   pdfHash          String
-  getekendePdfUrl  String?
+  getekendePdfData Bytes?
   getekendePdfHash String?
 
   @@unique([versieId])

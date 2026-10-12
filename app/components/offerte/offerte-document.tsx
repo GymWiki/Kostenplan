@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { berekenTotalen, prijsPerEenheidWeergave, type Totalen } from "@/app/lib/offerte/bereken";
-import { REGEL_TYPE_LABEL, type OfferteInhoud, type OfferteRegel } from "@/app/lib/offerte/model";
+import type { OfferteInhoud, OfferteRegel } from "@/app/lib/offerte/model";
 import {
   adresRegels,
   formatAantal,
