@@ -36,7 +36,7 @@ export function ExtraOptionsManager({
         <p className="text-sm text-muted-foreground">
           Optionele toevoegingen die de klant kan aanvinken, bijv. &ldquo;Extra
           sterke scharnieren&rdquo;. Kies of de prijs meetelt met de hoeveelheid
-          van deze werkzaamheid (per {unitLabel(productEenheid)}) of dat de klant er zelf een apart
+          van dit onderdeel (per {unitLabel(productEenheid)}) of dat de klant er zelf een apart
           aantal van opgeeft (per stuk).
         </p>
       </div>

@@ -94,7 +94,7 @@ export function StartpakketForm({
         </div>
         {teVeel && (
           <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
-            Je pakket past {ruimte} werkzaamhe{ruimte === 1 ? "id" : "den"}. De eerste {ruimte} maak ik aan; de rest
+            Je pakket past {ruimte} onderde{ruimte === 1 ? "el" : "len"}. De eerste {ruimte} maak ik aan; de rest
             kun je later toevoegen met een upgrade.
           </p>
         )}
@@ -106,7 +106,7 @@ export function StartpakketForm({
             Je vaste tarieven
           </h2>
           <p className="text-xs text-muted-foreground">
-            Geldt voor al je werkzaamheden. {VOORBEELD_LABEL.charAt(0).toUpperCase() + VOORBEELD_LABEL.slice(1)}.
+            Geldt voor al je onderdelen. {VOORBEELD_LABEL.charAt(0).toUpperCase() + VOORBEELD_LABEL.slice(1)}.
           </p>
         </div>
         <BasisTarievenVelden start={tarievenStart} idPrefix="onb" />

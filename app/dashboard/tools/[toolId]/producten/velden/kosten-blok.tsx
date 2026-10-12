@@ -74,7 +74,7 @@ export function OverrideVeld({
           onChange={(e) => toggle(e.target.checked)}
           className="h-4 w-4 rounded border-input accent-primary"
         />
-        {titel} wijkt af voor deze werkzaamheid
+        {titel} wijkt af voor dit onderdeel
         <span className="font-normal text-muted-foreground">(standaard {standaardTekst})</span>
       </label>
       <div className={cn("relative", !wijktAf && "opacity-50")}>
@@ -92,7 +92,7 @@ export function OverrideVeld({
       {!wijktAf && <input type="hidden" name={name} value="" />}
       <p className="text-xs text-muted-foreground">
         {wijktAf ? (
-          <>Deze werkzaamheid gebruikt vanaf nu een eigen bedrag in plaats van de standaard van {standaardTekst}.</>
+          <>Dit onderdeel gebruikt vanaf nu een eigen bedrag in plaats van de standaard van {standaardTekst}.</>
         ) : (
           <>
             Volgt de standaardinstelling — vink aan voor een eigen bedrag voor dit product. Standaard

@@ -45,7 +45,7 @@ export function bouwDemoDraft(stijl: Stijl, tarief = 180): Draft {
     logoDataUrl: logoDataUrl(stijl.kleur, stijl.letter),
     kleur: stijl.kleur,
     titel: "Bereken de prijs van jouw project",
-    welkomst: "Kies een werkzaamheid en zie direct wat het ongeveer kost.",
+    welkomst: "Kies een onderdeel en zie direct wat het ongeveer kost.",
     lettertype: stijl.lettertype,
   });
   // Vaste id's: de server rendert de demo vooraf (statisch) en de browser bouwt

@@ -63,7 +63,7 @@ export const VERGELIJKING: { label: string; waarden: [string, string, string] }[
     ],
   },
   {
-    label: "Werkzaamheden",
+    label: "Onderdelen",
     waarden: [
       `Tot ${PLAN_LIMITS.GRATIS.maxProductsPerCompany}`,
       "Onbeperkt",
@@ -77,7 +77,7 @@ export const VERGELIJKING: { label: string; waarden: [string, string, string] }[
   },
   { label: "Aanvragen en offertes van klanten", waarden: ["Nee", "Ja", "Ja"] },
   {
-    label: "Op je website",
+    label: "Rekentool op je website",
     waarden: [
       PLAN_LIMITS.GRATIS.embedEnabled ? "Link of insluiten" : "Link",
       PLAN_LIMITS.PLUS.embedEnabled ? "Link of insluiten" : "Link",
@@ -118,7 +118,7 @@ export const VRAGEN: { vraag: string; antwoord: string }[] = [
   {
     vraag: "Moet ik verstand hebben van computers?",
     antwoord:
-      "Nee. Je kiest je werkzaamheden uit een lijst met voorbeeldprijzen, past de prijzen aan naar de jouwe en klikt in je rekentool op wat je wilt wijzigen. Op de proefpagina bouw je een voorbeeld zonder account; een eerste rekentool staat in een paar minuten klaar.",
+      "Nee. Je kiest je onderdelen uit een lijst met voorbeeldprijzen, past de prijzen aan naar de jouwe en klikt in je rekentool op wat je wilt wijzigen. Op de proefpagina bouw je een voorbeeld zonder account; een eerste rekentool staat in een paar minuten klaar.",
   },
   {
     vraag: "Haalt Kostenplan mijn logo en kleuren van mijn website?",

@@ -331,7 +331,7 @@ export function RekentoolEditor(props: EditorProps) {
     { id: "logo", label: "Logo ingesteld", klaar: Boolean(branding.logoUrl), paneel: "uiterlijk" },
     { id: "wz", label: "Minstens één onderdeel", klaar: producten.some((p) => p.actief), paneel: producten.length ? "start" : "toevoegen" },
     { id: "prijzen", label: "Geen voorbeeldprijzen meer", klaar: producten.length > 0 && Object.values(waarschuwingen).every((w) => w.soort !== "voorbeeld"), paneel: "start" },
-    { id: "web", label: "Op je website gezet", klaar: props.toolStatus === "GEPUBLICEERD", paneel: gast ? "account" : "website" },
+    { id: "web", label: "Staat op je website", klaar: props.toolStatus === "GEPUBLICEERD", paneel: gast ? "account" : "website" },
   ];
 
   const geselecteerdProduct = paneel.startsWith("werkzaamheid:") ? producten.find((p) => p.id === paneel.slice(13)) : undefined;

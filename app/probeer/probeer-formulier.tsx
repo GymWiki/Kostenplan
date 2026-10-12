@@ -139,7 +139,7 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
     setFout(null);
     const bedrag = parseGetal(tarief, NaN);
     if (Number.isNaN(bedrag) || bedrag < 0 || bedrag > 10_000) return setFout("Vul een bedrag in voor je tarief per dagdeel.");
-    if (gekozen.length === 0) return setFout("Kies minstens één werkzaamheid.");
+    if (gekozen.length === 0) return setFout("Kies minstens één onderdeel.");
     setBezig(true);
     const naam = normaliseerSite(site);
     const stijl: Huisstijl = naam ? await ophalenVoor(naam) : { logoMislukt: false };
@@ -194,7 +194,7 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
       </section>
 
       <fieldset className={cn("flex flex-col gap-3", stap !== 1 && "max-md:hidden")}>
-        <legend className="text-lg font-semibold text-foreground">2. Welke werkzaamheden doe je?</legend>
+        <legend className="text-lg font-semibold text-foreground">2. Welke onderdelen doe je?</legend>
         <p className="-mt-1 text-sm text-muted-foreground">Kies er minstens één. Je past alles daarna zelf aan.</p>
         <ul className="grid grid-cols-1 gap-2 min-[480px]:grid-cols-2">
           {HOVENIER_PRESETS.map((p) => {
@@ -261,7 +261,7 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
             size="lg"
             className="flex-1"
             onClick={() => {
-              if (stap === 1 && gekozen.length === 0) return setFout("Kies minstens één werkzaamheid.");
+              if (stap === 1 && gekozen.length === 0) return setFout("Kies minstens één onderdeel.");
               setFout(null);
               setStap((s) => s + 1);
             }}

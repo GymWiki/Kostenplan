@@ -155,7 +155,7 @@ function KaartMobiel({ tool }: { tool: RekentoolKaartData }) {
         <span className="mt-1 flex flex-wrap items-center gap-2">
           <Badge variant={tool.live ? "success" : "muted"}>{tool.live ? "Live" : "Concept"}</Badge>
           <span className="text-sm text-muted-foreground">
-            {tool.aantalWerkzaamheden} {tool.aantalWerkzaamheden === 1 ? "werkzaamheid" : "werkzaamheden"}
+            {tool.aantalWerkzaamheden} {tool.aantalWerkzaamheden === 1 ? "onderdeel" : "onderdelen"}
           </span>
         </span>
       </span>

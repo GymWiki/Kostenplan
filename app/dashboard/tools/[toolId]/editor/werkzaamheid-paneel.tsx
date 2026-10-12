@@ -242,8 +242,8 @@ export function WerkzaamheidPaneel({
           />
         </SheetActie>
         <label className="flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 text-base font-semibold text-foreground">
-          Op je website
-          <Switch checked={actief} onChange={(e) => void wisselZichtbaar(e.target.checked)} aria-label="Op je website" />
+          Zichtbaar
+          <Switch checked={actief} onChange={(e) => void wisselZichtbaar(e.target.checked)} aria-label={`Zichtbaar voor klanten: ${draft.naam}`} />
         </label>
         {fout && (
           <p role="alert" className="text-sm font-medium text-destructive">
@@ -257,7 +257,7 @@ export function WerkzaamheidPaneel({
             <Input value={draft.naam} maxLength={120} enterKeyHint="done" aria-invalid={draft.naam.trim() === "" ? true : undefined} onChange={(e) => wijzig({ naam: e.target.value })} />
           </label>
           {draft.methode === null ? (
-            <p className="rounded-md bg-muted px-3 py-2 text-sm text-foreground">Deze werkzaamheid rekent op een eigen manier. Die instelling blijft zoals ze is.</p>
+            <p className="rounded-md bg-muted px-3 py-2 text-sm text-foreground">Dit onderdeel rekent op een eigen manier. Die instelling blijft zoals ze is.</p>
           ) : (
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-semibold text-foreground">Rekenmethode</span>
@@ -428,8 +428,8 @@ export function WerkzaamheidPaneel({
       </div>
 
       <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground">
-        Zichtbaar voor klanten
-        <Switch checked={actief} onChange={(e) => void wisselZichtbaar(e.target.checked)} aria-label="Zichtbaar voor klanten" />
+        Zichtbaar
+        <Switch checked={actief} onChange={(e) => void wisselZichtbaar(e.target.checked)} aria-label={`Zichtbaar voor klanten: ${draft.naam}`} />
       </label>
       {fout && (
         <p role="alert" className="text-sm font-medium text-destructive">
@@ -449,7 +449,7 @@ export function WerkzaamheidPaneel({
           />
           {draft.methode === null && (
             <p className="rounded-md bg-muted px-3 py-2 text-sm text-foreground">
-              Deze werkzaamheid rekent op een eigen manier. Die instelling blijft zoals ze is. Wijzigen kan in de{" "}
+              Dit onderdeel rekent op een eigen manier. Die instelling blijft zoals ze is. Wijzigen kan in de{" "}
               <Link href={`/dashboard/tools/${toolId}/producten/${product.id}/uitgebreid`} className="font-semibold underline">
                 uitgebreide weergave
               </Link>
