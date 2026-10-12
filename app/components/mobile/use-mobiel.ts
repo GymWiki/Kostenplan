@@ -28,8 +28,19 @@ export function useToetsenbordOpen(): boolean {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     const vv = window.visualViewport;
+    // Hoogte zonder toetsenbord: de grootste hoogte die we bij deze breedte
+    // zagen. Zo herkennen we het toetsenbord zowel als de visuele viewport
+    // krimpt (iOS, nieuwe Android) als wanneer de hele pagina krimpt (oudere Android).
+    let basis = window.innerHeight;
+    let breedte = window.innerWidth;
     function bepaal() {
-      const kleiner = vv ? window.innerHeight - vv.height > 140 : false;
+      if (window.innerWidth !== breedte) {
+        breedte = window.innerWidth;
+        basis = window.innerHeight;
+      }
+      const hoogte = vv ? vv.height : window.innerHeight;
+      basis = Math.max(basis, window.innerHeight);
+      const kleiner = basis - hoogte > 140;
       const el = document.activeElement;
       const opVeld =
         el instanceof HTMLElement &&
@@ -37,11 +48,13 @@ export function useToetsenbordOpen(): boolean {
       setOpen(kleiner || Boolean(opVeld && window.matchMedia(QUERY).matches && kleiner));
     }
     vv?.addEventListener("resize", bepaal);
+    window.addEventListener("resize", bepaal);
     document.addEventListener("focusin", bepaal);
     document.addEventListener("focusout", () => setTimeout(bepaal, 50));
     bepaal();
     return () => {
       vv?.removeEventListener("resize", bepaal);
+      window.removeEventListener("resize", bepaal);
       document.removeEventListener("focusin", bepaal);
     };
   }, []);

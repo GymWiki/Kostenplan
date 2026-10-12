@@ -140,8 +140,11 @@ const start = async (p, url) => { await p.goto(BASE + url, { waitUntil: "network
     await open();
     const handvat = p.getByRole("dialog").locator("div.touch-none").first();
     const box = await handvat.boundingBox();
-    await p.mouse.move(box.x + box.width / 2, box.y + 10);
-    await p.mouse.down(); await p.mouse.move(box.x + box.width / 2, box.y + 300, { steps: 8 }); await p.mouse.up();
+    const cdpT = await ctx.newCDPSession(p);
+    const x = box.x + box.width / 2, y = box.y + 10;
+    await cdpT.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+    for (let i = 1; i <= 8; i++) await cdpT.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y + i * 40 }] });
+    await cdpT.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await slaap(500);
     rapport("5. Sheet sluit door naar beneden te vegen (half → dicht)", (await p.getByRole("dialog").count()) === 0, "");
     await open();

@@ -3,5 +3,55 @@
     "naam": "1a. Lead openen en bellen: aantal tikken",
     "ok": true,
     "details": "2 tikken, tel:0612345611"
+  },
+  {
+    "naam": "1b. Prijs van een materiaal wijzigen: aantal tikken",
+    "ok": true,
+    "details": "3 tikken (kaart, Prijzen, prijsveld) + typen, automatisch opgeslagen"
+  },
+  {
+    "naam": "1c. Werkzaamheid verbergen op de website: aantal tikken",
+    "ok": true,
+    "details": "2 tikken (kaart, schakelaar), true → false"
+  },
+  {
+    "naam": "1d. Nieuwe werkzaamheid uit preset: aantal tikken",
+    "ok": true,
+    "details": "3 tikken (kaart, + Werkzaamheid, preset); scherm: Vlonder"
+  },
+  {
+    "naam": "1e. Offerte maken vanuit lead en versturen: aantal tikken",
+    "ok": true,
+    "details": "5 tikken (lead, Offerte maken, In Kostenplan, Controleren, \"Versturen\")"
+  },
+  {
+    "naam": "4. Toetsenbord open: actief veld zichtbaar",
+    "ok": true,
+    "details": ""
+  },
+  {
+    "naam": "4. Toetsenbord open: tabbalk verborgen",
+    "ok": true,
+    "details": "tabbalk aanwezig: 0"
+  },
+  {
+    "naam": "4. Toetsenbord open: actiebalk verdwijnt",
+    "ok": false,
+    "details": "voor 1, na 1"
+  },
+  {
+    "naam": "5. Sheet sluit met de terugknop (en blijft op dezelfde pagina)",
+    "ok": true,
+    "details": "http://localhost:3200/dashboard/tools/cmv4w1j8c0002pc7d9mooidkq"
+  },
+  {
+    "naam": "5. Sheet sluit met Escape/toetsenbord",
+    "ok": true,
+    "details": ""
+  },
+  {
+    "naam": "5. Sheet sluit door naar beneden te vegen (half → dicht)",
+    "ok": false,
+    "details": ""
   }
 ]
