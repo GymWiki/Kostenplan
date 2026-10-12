@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Headless Chromium voor de offerte-PDF (app/lib/offerte/pdf.ts): niet bundelen,
+  // wel de binaire bestanden meenemen in de serverless functie.
+  serverExternalPackages: ["@sparticuz/chromium", "playwright-core"],
+  outputFileTracingIncludes: {
+    "/api/offertes/**": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/offerte-v2/**": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/dashboard/**": ["./node_modules/@sparticuz/chromium/bin/**"],
+  },
   images: {
     // Performance-audit (Fase 2, P2.10): branding-logo's en offerte-
     // huisstijlafbeeldingen komen uit Supabase Storage (zie app/lib/
