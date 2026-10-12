@@ -11,6 +11,7 @@ const slaap = (ms) => new Promise((r) => setTimeout(r, ms));
 async function nieuw(b, w = 390, h = 844) {
   const ctx = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await ctx.addCookies([cookie]);
+  await ctx.grantPermissions(["notifications"], { origin: BASE });
   const p = await ctx.newPage();
   const fouten = [];
   p.on("pageerror", (e) => fouten.push(e.message));
@@ -70,18 +71,18 @@ const start = async (p, url) => { await p.goto(BASE + url, { waitUntil: "network
     await start(p, "/dashboard/tools");
     await tik(p.getByRole("link", { name: /Tuinaanleg/ }));
     await tik(p.getByRole("button", { name: /Werkzaamheid$/ }));
-    await tik(p.getByRole("button", { name: /Vlonder/ }));
+    await tik(p.getByRole("dialog").getByRole("button", { name: /Boom planten/ }));
     await p.getByText(/Op je website/).first().waitFor({ timeout: 10000 });
     await slaap(800);
     const kop = await p.locator("h1").first().innerText();
-    rapport("1d. Nieuwe werkzaamheid uit preset: aantal tikken", taps <= 4 && /Vlonder/i.test(kop), `${taps} tikken (kaart, + Werkzaamheid, preset); scherm: ${kop}`);
+    rapport("1d. Nieuwe werkzaamheid uit preset: aantal tikken", taps <= 4 && /Boom/i.test(kop), `${taps} tikken (kaart, + Werkzaamheid, preset); scherm: ${kop}`);
     await ctx.close();
   }
   // 1e. offerte maken vanuit een lead en versturen
   {
     const { ctx, p } = await nieuw(b);
     await start(p, "/dashboard/leads");
-    await tik(p.getByRole("button", { name: /Marieke de Boer/ }));
+    await tik(p.getByRole("button", { name: /Sanne Visser/ }));
     await tik(p.getByRole("button", { name: "Offerte maken" }));
     await tik(p.getByRole("button", { name: /Kostenplan/ }).first());
     await p.getByRole("button", { name: "Controleren en versturen" }).waitFor({ timeout: 15000 });
@@ -137,7 +138,7 @@ const start = async (p, url) => { await p.goto(BASE + url, { waitUntil: "network
     await open();
     await p.keyboard.press("Escape"); await slaap(400);
     rapport("5. Sheet sluit met Escape/toetsenbord", (await p.getByRole("dialog").count()) === 0, "");
-    await open();
+    await p.getByRole("button", { name: "Werktempo", exact: true }).first().tap(); await p.getByRole("dialog").waitFor(); await slaap(400);
     const handvat = p.getByRole("dialog").locator("div.touch-none").first();
     const box = await handvat.boundingBox();
     const cdpT = await ctx.newCDPSession(p);
@@ -146,7 +147,7 @@ const start = async (p, url) => { await p.goto(BASE + url, { waitUntil: "network
     for (let i = 1; i <= 8; i++) await cdpT.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y + i * 40 }] });
     await cdpT.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await slaap(500);
-    rapport("5. Sheet sluit door naar beneden te vegen (half → dicht)", (await p.getByRole("dialog").count()) === 0, "");
+    rapport("5. Sheet (halve stand) sluit door naar beneden te vegen", (await p.getByRole("dialog").count()) === 0, "");
     await open();
     const knop = p.getByRole("dialog").getByRole("button", { name: "Sluiten" }).last();
     await knop.tap(); await slaap(300);
@@ -169,18 +170,13 @@ const start = async (p, url) => { await p.goto(BASE + url, { waitUntil: "network
     await cdp.send("Page.enable");
     const inst = await cdp.send("Page.getInstallabilityErrors");
     const fouten = (inst.installabilityErrors || []).map((e) => e.errorId);
-    rapport("8. Installeerbaar (Chrome-installatiecriteria)", fouten.filter((e) => !["not-from-secure-origin", "no-matching-service-worker"].includes(e)).length === 0, fouten.length ? `meldt alleen lokale zaken: ${fouten.join(", ")}` : "geen fouten");
+    rapport("8. Installeerbaar (Chrome-installatiecriteria)", fouten.filter((e) => !["not-from-secure-origin", "no-matching-service-worker", "in-incognito"].includes(e)).length === 0, fouten.length ? `meldt alleen lokale zaken: ${fouten.join(", ")}` : "geen fouten");
     // push: bezorg een bericht aan de service worker en kijk of er een melding verschijnt
-    await cdp.send("ServiceWorker.enable");
-    const r = await p.evaluate(async () => {
-      const reg = await navigator.serviceWorker.getRegistration("/");
-      reg.active.postMessage("x");
-      return reg.scope;
-    });
     const versions = [];
     cdp.on("ServiceWorker.workerVersionUpdated", (e) => versions.push(...e.versions));
+    await cdp.send("ServiceWorker.enable");
     await slaap(800);
-    const reg = versions.find((v) => v.status === "activated");
+    const reg = versions.find((v) => v.status === "activated" && /\/sw\.js$/.test(v.scriptURL));
     let melding = false;
     if (reg) {
       await cdp.send("ServiceWorker.deliverPushMessage", { origin: BASE, registrationId: reg.registrationId, data: JSON.stringify({ titel: "Nieuwe aanvraag", tekst: "Piet · Terras · € 400,00", url: "/dashboard/leads?lead=x" }) });

@@ -17,7 +17,7 @@
   {
     "naam": "1d. Nieuwe werkzaamheid uit preset: aantal tikken",
     "ok": true,
-    "details": "3 tikken (kaart, + Werkzaamheid, preset); scherm: Vlonder"
+    "details": "3 tikken (kaart, + Werkzaamheid, preset); scherm: Boom planten"
   },
   {
     "naam": "1e. Offerte maken vanuit lead en versturen: aantal tikken",
@@ -36,8 +36,8 @@
   },
   {
     "naam": "4. Toetsenbord open: actiebalk verdwijnt",
-    "ok": false,
-    "details": "voor 1, na 1"
+    "ok": true,
+    "details": "voor 1, na 0"
   },
   {
     "naam": "5. Sheet sluit met de terugknop (en blijft op dezelfde pagina)",
@@ -50,8 +50,33 @@
     "details": ""
   },
   {
-    "naam": "5. Sheet sluit door naar beneden te vegen (half → dicht)",
-    "ok": false,
+    "naam": "5. Sheet (halve stand) sluit door naar beneden te vegen",
+    "ok": true,
     "details": ""
+  },
+  {
+    "naam": "5. Sheet sluit met de sluitknop",
+    "ok": true,
+    "details": ""
+  },
+  {
+    "naam": "8. Manifest met naam, start_url, standalone en iconen",
+    "ok": true,
+    "details": "{\"start_url\":\"/dashboard\",\"iconen\":[200,200,200]}"
+  },
+  {
+    "naam": "8. Service worker (app-schil) actief",
+    "ok": true,
+    "details": ""
+  },
+  {
+    "naam": "8. Installeerbaar (Chrome-installatiecriteria)",
+    "ok": true,
+    "details": "meldt alleen lokale zaken: in-incognito"
+  },
+  {
+    "naam": "8. Push-gebeurtenis in de service worker toont een melding (gesimuleerd)",
+    "ok": false,
+    "details": "melding aanwezig"
   }
 ]
