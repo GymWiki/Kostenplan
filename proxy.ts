@@ -20,6 +20,10 @@ export default async function proxy(request: NextRequest) {
   if (pad.startsWith("/embed/")) {
     return NextResponse.next({ request });
   }
+  // Online offerte voor de klant (/o/[token]) en de printpagina voor de PDF: publiek, geen sessie nodig.
+  if (pad.startsWith("/o/") || pad.startsWith("/offerte-print/")) {
+    return NextResponse.next({ request });
+  }
   if (pad.startsWith("/demo/") || ((pad === "/probeer" || pad.startsWith("/probeer/")) && !pad.startsWith("/probeer/importeren"))) {
     return NextResponse.next({ request });
   }

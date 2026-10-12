@@ -311,6 +311,16 @@ const leadSnapshotLineSchema = z.object({
   prijs: z.number().optional(),
   onderdeel: z.string().optional(),
   productId: z.string().max(40).optional(),
+  opbouw: z
+    .object({
+      materiaal: z.array(z.object({ naam: z.string().max(200), hoeveelheid: z.number(), eenheid: z.string().max(20).optional(), prijsPerEenheid: z.number(), bedrag: z.number() })).max(50).optional(),
+      artikelen: z.object({ bedrag: z.number() }).optional(),
+      arbeid: z.object({ tijd: z.number(), eenheid: z.enum(["uur", "dagdeel", "dag"]), tarief: z.number(), bedrag: z.number() }).optional(),
+      transport: z.object({ bedrag: z.number(), meeschalend: z.boolean(), dagen: z.number().optional() }).optional(),
+      voorrijkosten: z.object({ bedrag: z.number(), meeschalend: z.boolean() }).optional(),
+      extras: z.array(z.object({ naam: z.string().max(200), aantal: z.number(), bedrag: z.number() })).max(50).optional(),
+    })
+    .optional(),
 });
 
 // Vertrouwt de client-berekende bedragen (geen echte transactie, slechts een
@@ -325,6 +335,8 @@ export const leadSnapshotSchema = z.object({
   subtotaal: z.number(),
   btw: z.number(),
   totaal: z.number(),
+  btwPercentage: z.number().optional(),
+  bandbreedte: z.boolean().optional(),
 });
 
 export const leadContactSchema = z.object({

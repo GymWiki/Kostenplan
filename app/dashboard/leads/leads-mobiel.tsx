@@ -1,5 +1,7 @@
 "use client";
 
+import { OFFERTE_FILTER_OPTIES } from "@/app/lib/offerte/lead-status";
+import { OfferteStatusBadge } from "./offerte-status-badge";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Loader2, MessageCircle, Phone, Check, Users } from "lucide-react";
@@ -68,6 +70,8 @@ export function LeadsMobiel({
   tools,
   toolFilter,
   onToolFilter,
+  offerteFilter,
+  onOfferteFilter,
   onSelect,
 }: {
   leads: LeadWithNotes[];
@@ -76,6 +80,8 @@ export function LeadsMobiel({
   tools: { id: string; naam: string }[];
   toolFilter: string;
   onToolFilter: (id: string) => void;
+  offerteFilter: string;
+  onOfferteFilter: (v: string) => void;
   onSelect: (id: string) => void;
 }) {
   const { trek, bezig } = useTrekVernieuwen();
@@ -109,6 +115,14 @@ export function LeadsMobiel({
         </Select>
       )}
 
+      <Select aria-label="Filter op offertestatus" value={offerteFilter} onChange={(e) => onOfferteFilter(e.target.value)}>
+        {OFFERTE_FILTER_OPTIES.map((o) => (
+          <option key={o.waarde} value={o.waarde}>
+            {o.label}
+          </option>
+        ))}
+      </Select>
+
       {zichtbaar.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-8 text-center">
           <Users className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
@@ -128,7 +142,11 @@ export function LeadsMobiel({
                     <span className="block break-words text-sm text-muted-foreground">
                       {eersteRegelNaam(l.snapshot)} · {relatieveTijd(l.createdAt)}
                     </span>
-                    <span className={cn("mt-0.5 inline-block rounded-full px-2 py-0.5 text-xs font-semibold", nieuw ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground")}>{LEAD_STATUS_LABELS[l.status]}</span>
+                    <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                      <span className={cn("inline-block rounded-full px-2 py-0.5 text-xs font-semibold", nieuw ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground")}>{LEAD_STATUS_LABELS[l.status]}</span>
+                      {l.offerte && <OfferteStatusBadge offerte={l.offerte} />}
+                      {l.offerte && !l.offerte.reactieGezien && <span className="animate-soft-pulse h-2 w-2 rounded-full bg-accent" aria-label="Klant heeft gereageerd" />}
+                    </span>
                   </span>
                   <span className={cn("shrink-0 text-base tabular-nums text-foreground", nieuw ? "font-bold" : "font-semibold")}>{formatCurrency(l.totaalIndicatie)}</span>
                   <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />

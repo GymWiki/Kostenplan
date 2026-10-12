@@ -107,3 +107,22 @@ export async function uploadOffertePdf(
 export function isOwnStorageUrl(url: string): boolean {
   return url.includes(`/object/public/${BUCKET}/`);
 }
+
+// Algemene voorwaarden (PDF) van een bedrijf, meegestuurd als bijlage bij elke
+// offerte. Vast pad per bedrijf; een nieuwe upload overschrijft de vorige.
+export const MAX_VOORWAARDEN_BYTES = 10 * 1024 * 1024;
+export async function uploadVoorwaardenPdf(
+  companyId: string,
+  bestand: Buffer
+): Promise<{ url: string; error?: undefined } | { url?: undefined; error: string }> {
+  const supabase = await createClient();
+  const path = `${companyId}/voorwaarden/algemene-voorwaarden.pdf`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, bestand, { contentType: "application/pdf", upsert: true });
+  if (error) {
+    console.error("Supabase Storage upload (voorwaarden) failed:", error);
+    return { error: "Uploaden is mislukt. Probeer het opnieuw." };
+  }
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  // Versieparameter zodat een vervangen bestand niet uit de cache komt.
+  return { url: `${data.publicUrl}?v=${Date.now()}` };
+}

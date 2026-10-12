@@ -239,6 +239,9 @@ model CancellationFeedback {
 // meerdere companies (zie CompanyMember), elk met een eigen catalogus,
 // huisstijl en abonnement.
 model Company {
+  offerteGegevens OfferteGegevens?
+  offertesV2      OfferteV2[]
+  offerteStandaardRegels OfferteStandaardRegel[]
   id             String    @id @default(cuid())
   naam           String
   // Gezet voor een bedrijf van een gast (probeer-flow zonder account): tot
@@ -837,6 +840,7 @@ model Lead {
 
   notities LeadNote[]
   offerte  Offerte?
+  offertesV2 OfferteV2[]
 
   // Gezet door markExternAfgehandeldAction wanneer status EXTERN_AFGEHANDELD
   // wordt. Notitie is bewust optioneel — geen verplichte stap.
@@ -962,6 +966,211 @@ model PushAbonnement {
   p256dh    String
   auth      String
   createdAt DateTime @default(now())
+
+  @@index([companyId])
+}
+
+// ── Offerte v2 ────────────────────────────────────────────────────────────
+
+enum Rechtsvorm {
+  EENMANSZAAK
+  VOF
+  MAATSCHAP
+  BV
+  NV
+  ANDERS
+}
+
+// Gegevens die op elke offerte moeten staan (Profiel → Offertegegevens) plus
+// de standaardinstellingen voor nieuwe offertes. Alles optioneel in de
+// database; "verplicht om te versturen" wordt in code gecontroleerd
+// (app/lib/offerte/gegevens.ts) zodat het formulier tussentijds opslaat.
+model OfferteGegevens {
+  id        String  @id @default(cuid())
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  handelsnaam     String?
+  rechtsvorm      Rechtsvorm @default(EENMANSZAAK)
+  statutaireNaam  String?
+  statutaireZetel String?
+  kvkNummer       String?
+  adresRegel      String?
+  postcode        String?
+  plaats          String?
+  btwId           String?
+  korActief       Boolean    @default(false)
+  korTekst        String     @default("Btw niet van toepassing (kleineondernemersregeling)")
+  iban            String?
+  ibanTenaamstelling String?
+  telefoon        String?
+  email           String?
+  website         String?
+  logoUrl         String?
+  contactNaam     String?
+  contactFunctie  String?
+
+  voorwaardenPdfUrl  String?
+  voorwaardenPdfNaam String?
+
+  nummerPrefix    String  @default("")
+  geldigheidDagen Int     @default(30)
+  betaalPreset    String  @default("NA_OPLEVERING")
+  betaalTermijnen Json?
+  introTekst      String?
+  slotTekst       String?
+  voorwaardenBlokken Json?
+  herroepingTekst String?
+  // Standaard btw-tarief per regeltype, bijv. {"arbeid":21,"materiaal":21,"planten":9}.
+  btwStandaard    Json?
+  // Aantal dagen vóór het verlopen waarop de klant een herinnering krijgt; null = uit.
+  herinneringDagen Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Teller voor offertenummers per bedrijf en jaar. Eén atomaire upsert met
+// increment (zie app/lib/offerte/nummer.ts): nooit hergebruikt, ook niet bij
+// gelijktijdige aanvragen.
+model OfferteNummerTeller {
+  companyId String
+  jaar      Int
+  laatste   Int    @default(0)
+
+  @@id([companyId, jaar])
+}
+
+enum OfferteV2Status {
+  CONCEPT
+  VERSTUURD
+  BEKEKEN
+  GEACCEPTEERD
+  AFGEWEZEN
+  VERLOPEN
+  INGETROKKEN
+}
+
+enum OfferteGebeurtenisSoort {
+  VERZONDEN
+  BEKEKEN
+  VRAAG
+  AFGEWEZEN
+  AKKOORD
+  INGETROKKEN
+  HERINNERING
+}
+
+// Eén offerte (dossier) met een uniek nummer per bedrijf. De inhoud staat per
+// versie in OfferteVersie; een verstuurde versie is onveranderlijk.
+model OfferteV2 {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  leadId    String?
+  lead      Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  nummer String
+  // Onraadbare token voor de publieke pagina (192 bits); pas bruikbaar zodra de offerte is verstuurd.
+  token  String @unique
+  status OfferteV2Status @default(CONCEPT)
+  huidigeVersie Int @default(1)
+
+  verstuurdOp   DateTime?
+  // Einde van de geldigheid van de laatst verstuurde versie (voor het overzicht, verval en herinneringen).
+  geldigTot     DateTime?
+  eersteBekekenOp DateTime?
+  herinneringVerstuurdOp DateTime?
+  // false zodra de klant reageerde (bekeken telt niet): de hovenier ziet dan een stip tot hij de offerte opent.
+  reactieGezien Boolean @default(true)
+
+  versies       OfferteVersie[]
+  akkoorden     OfferteAkkoord[]
+  gebeurtenissen OfferteGebeurtenis[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, nummer])
+  @@index([leadId])
+  @@index([companyId, status])
+  @@index([status, geldigTot])
+}
+
+model OfferteVersie {
+  id         String    @id @default(cuid())
+  offerteId  String
+  offerte    OfferteV2 @relation(fields: [offerteId], references: [id], onDelete: Cascade)
+  versie     Int
+
+  // Volledige inhoud (klant, secties, regels, voorwaarden, afzendergegevens) — zie app/lib/offerte/model.ts.
+  inhoud            Json
+  totaalExclCenten  Int @default(0)
+  totaalInclCenten  Int @default(0)
+
+  // Vanaf het versturen onveranderlijk; wijzigen maakt een nieuwe versie.
+  vergrendeld Boolean   @default(false)
+  verstuurdOp DateTime?
+  // De PDF van deze versie zoals verstuurd (bytes), met SHA-256. Staat in de database
+  // zodat de klant hem ook zonder opslagrechten kan downloaden en de hash klopt.
+  pdfData     Bytes?
+  pdfHash     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  akkoorden OfferteAkkoord[]
+
+  @@unique([offerteId, versie])
+}
+
+// Audittrail van een akkoord door de klant.
+model OfferteAkkoord {
+  id        String        @id @default(cuid())
+  offerteId String
+  offerte   OfferteV2     @relation(fields: [offerteId], references: [id], onDelete: Cascade)
+  versieId  String
+  versie    OfferteVersie @relation(fields: [versieId], references: [id], onDelete: Cascade)
+
+  naam      String
+  tijdstip  DateTime @default(now())
+  ip        String?
+  userAgent String?
+  versieNummer Int
+  gekozenRegelIds Json
+  totaalInclCenten Int
+  // SHA-256 van de PDF van déze versie (zonder akkoordblok) en van de getekende PDF.
+  pdfHash          String
+  getekendePdfData Bytes?
+  getekendePdfHash String?
+
+  @@unique([versieId])
+  @@index([offerteId])
+}
+
+model OfferteGebeurtenis {
+  id        String    @id @default(cuid())
+  offerteId String
+  offerte   OfferteV2 @relation(fields: [offerteId], references: [id], onDelete: Cascade)
+  versieNummer Int?
+  soort     OfferteGebeurtenisSoort
+  tekst     String?
+  ip        String?
+  createdAt DateTime  @default(now())
+
+  @@index([offerteId, createdAt])
+}
+
+// Door de hovenier opgeslagen regels voor hergebruik ("Afvoer grond per m³").
+model OfferteStandaardRegel {
+  id          String  @id @default(cuid())
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  omschrijving String
+  eenheid     String
+  prijsCenten Int
+  btw         Int     @default(21)
+  soort       String  @default("overig")
+  createdAt   DateTime @default(now())
 
   @@index([companyId])
 }

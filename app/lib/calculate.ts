@@ -204,6 +204,17 @@ export type ProductRegel = {
   aantal: number;
   prijsPerEenheid: number;
   totaal: number;
+  // Uitsplitsing van `totaal` (excl. btw), voor offerteregels.
+  opbouw: ProductOpbouw;
+};
+
+export type ProductOpbouw = {
+  materiaal: { optieNaam: string; categorieNaam: string; hoeveelheid: number; prijsPerEenheid: number; bedrag: number }[];
+  extras: { id: string; aantal: number; bedrag: number }[];
+  artikelen: number;
+  arbeid: { tijd: number; eenheid: ArbeidStapEenheid; tarief: number; bedrag: number } | null;
+  transport: { bedrag: number; meeschalend: boolean; dagen?: number };
+  voorrijkosten: { bedrag: number; meeschalend: boolean };
 };
 
 // De kern van het nieuwe rekenmodel: de vier kostenblokken van één product,
@@ -322,17 +333,20 @@ export function calculateBreakdown({
     // Materiaalkosten (blok 1) — som over alle categorieën. De eerste
     // (primaire) categorie levert ook de eventuele productiviteitOverride
     // voor blok 2 hieronder — "productiviteit kan per materiaal afwijken".
-    const { totaal: materiaalCategorieenTotaal, primaireOptie } = berekenMateriaalRegels(
+    const { totaal: materiaalCategorieenTotaal, primaireOptie, regels: materiaalRegels } = berekenMateriaalRegels(
       product.materiaalCategorieen,
       qty,
       materialSelections
     );
     let productMateriaalkosten = materiaalCategorieenTotaal;
 
+    const extraRegels: ProductOpbouw["extras"] = [];
     for (const extra of product.extraOpties) {
       const aantal = extra.altijd ? 1 : (extraSelections[extra.id] ?? 0);
       if (aantal <= 0) continue;
-      productMateriaalkosten += (extra.type === "PER_STUK" ? aantal : qty) * extra.prijs;
+      const bedrag = (extra.type === "PER_STUK" ? aantal : qty) * extra.prijs;
+      productMateriaalkosten += bedrag;
+      extraRegels.push({ id: extra.id, aantal: extra.type === "PER_STUK" ? aantal : qty, bedrag });
     }
 
     if (regelsBedrag > 0) {
@@ -368,11 +382,30 @@ export function calculateBreakdown({
     transportkosten += kosten.transport;
     voorrijkosten += kosten.voorrijkosten;
 
+    const arbeidstijd = costSettings.arbeidEnabled && productiviteit != null && productiviteit > 0 ? qty / productiviteit : 0;
+    const transportDagen =
+      product.transportPerDag && arbeidstijd > 0
+        ? Math.max(1, ceilStep(dagenVoorArbeidstijd(arbeidstijd, costSettings.arbeidStapEenheid)))
+        : undefined;
+    const materiaalEnabled = costSettings.materiaalEnabled;
     productRegels.push({
       productId: product.id,
       aantal: qty,
       prijsPerEenheid: qty > 0 ? kosten.totaal / qty : 0,
       totaal: kosten.totaal,
+      opbouw: {
+        materiaal: materiaalEnabled
+          ? materiaalRegels.map((r) => ({ optieNaam: r.optieNaam, categorieNaam: r.categorieNaam, hoeveelheid: r.hoeveelheid, prijsPerEenheid: r.prijsPerEenheid, bedrag: r.bedrag }))
+          : [],
+        extras: materiaalEnabled ? extraRegels : [],
+        artikelen: materiaalEnabled ? regelsBedrag : 0,
+        arbeid:
+          kosten.arbeid > 0
+            ? { tijd: costSettings.arbeidAfronden ? ceilStep(arbeidstijd) : arbeidstijd, eenheid: costSettings.arbeidStapEenheid, tarief: arbeidTarief, bedrag: kosten.arbeid }
+            : null,
+        transport: { bedrag: kosten.transport, meeschalend: Boolean(product.transportMeeschalend || product.transportPerDag), dagen: transportDagen },
+        voorrijkosten: { bedrag: kosten.voorrijkosten, meeschalend: product.voorrijMeeschalend },
+      },
     });
   }
 

@@ -43,25 +43,8 @@ export async function omzettenNaarOfferteAction(leadId: string) {
     await prisma.lead.update({ where: { id: lead.id }, data: { status: "IN_BEHANDELING" } });
   }
 
-  if (!lead.offerte) {
-    const branding = await prisma.branding.findUnique({ where: { toolId: lead.toolId } });
-    const geldigheidsdagen = branding?.offerteGeldigheidsdagen ?? 30;
-    const geldigTot = new Date();
-    geldigTot.setDate(geldigTot.getDate() + geldigheidsdagen);
-
-    await prisma.offerte.create({
-      data: {
-        leadId,
-        regels: prefillOfferteRegels(lead.snapshot as unknown as LeadSnapshot),
-        introTekst: branding?.offerteIntroTekst ?? null,
-        voorwaardenTekst: branding?.offerteVoorwaardenTekst ?? null,
-        geldigTot,
-      },
-    });
-
-    revalidatePath("/dashboard/leads");
-  }
-
+  // Een nieuwe offerte wordt door de offerte-pagina zelf aangemaakt (v2); een bestaande
+  // oude offerte blijft gewoon bekijkbaar.
   redirect(`/dashboard/leads/${leadId}/offerte`);
 }
 

@@ -15,7 +15,8 @@ import { telItMeeVoorPipeline } from "@/app/lib/leads";
 import { LeadsTable } from "./leads-table";
 import { LeadDetailDrawer } from "./lead-detail-drawer";
 import { LeadsMobiel, type LeadFilter } from "./leads-mobiel";
-import type { Lead, LeadNote, LeadStatus, Offerte } from "@/app/generated/prisma/client";
+import type { Lead, LeadNote, LeadStatus, Offerte, OfferteV2Status } from "@/app/generated/prisma/client";
+import { OFFERTE_FILTER_OPTIES, leadOfferteStatus } from "@/app/lib/offerte/lead-status";
 import type { LeadSnapshot } from "@/app/lib/leads";
 import type { OfferteRegel } from "@/app/lib/offertes";
 import type { HelpContentKey } from "@/app/lib/helpContent";
@@ -23,7 +24,7 @@ import type { HelpContentKey } from "@/app/lib/helpContent";
 export type LeadWithNotes = Omit<Lead, "snapshot"> & {
   snapshot: LeadSnapshot;
   notities: LeadNote[];
-  offerte: (Omit<Offerte, "regels"> & { regels: OfferteRegel[] }) | null;
+  offerte: (Omit<Offerte, "regels"> & { regels: OfferteRegel[]; v2Status?: OfferteV2Status }) | null;
 };
 
 type View = "kanban" | "lijst";
@@ -90,6 +91,8 @@ export function LeadsView({
   // één rekentool ziet deze filter niet eens (zie de check bij het renderen
   // hieronder), voor hen is "alle" en "die ene tool" toch hetzelfde.
   const toolFilter = searchParams.get("tool") ?? "alle";
+  // Filter op offertestatus (?offerte=geaccepteerd, enz.).
+  const offerteFilter = searchParams.get("offerte") ?? "alle";
 
   const updateQuery = useCallback(
     (patch: Record<string, string | null>) => {
@@ -137,10 +140,10 @@ export function LeadsView({
 
   const selectedLead = optimisticLeads.find((lead) => lead.id === selectedLeadId) ?? null;
 
-  const zichtbareLeads = useMemo(
-    () => (toolFilter === "alle" ? optimisticLeads : optimisticLeads.filter((lead) => lead.toolId === toolFilter)),
-    [optimisticLeads, toolFilter]
-  );
+  const zichtbareLeads = useMemo(() => {
+    const opTool = toolFilter === "alle" ? optimisticLeads : optimisticLeads.filter((lead) => lead.toolId === toolFilter);
+    return offerteFilter === "alle" ? opTool : opTool.filter((lead) => leadOfferteStatus(lead).sleutel === offerteFilter);
+  }, [optimisticLeads, toolFilter, offerteFilter]);
 
   // Zelfde berekening als voorheen server-side in page.tsx, nu hier zodat de
   // KPI's direct meebewegen met een optimistische statuswijziging in plaats
@@ -189,6 +192,8 @@ export function LeadsView({
         tools={tools}
         toolFilter={toolFilter}
         onToolFilter={setToolFilter}
+        offerteFilter={offerteFilter}
+        onOfferteFilter={(v) => updateQuery({ offerte: v === "alle" ? null : v })}
         onSelect={setSelectedLeadId}
       />
       <div className="hidden flex-col gap-4 sm:flex-row sm:items-center sm:justify-between md:flex">
@@ -214,6 +219,18 @@ export function LeadsView({
               ))}
             </select>
           )}
+          <select
+            value={offerteFilter}
+            onChange={(e) => updateQuery({ offerte: e.target.value === "alle" ? null : e.target.value })}
+            aria-label="Filter op offertestatus"
+            className="h-10 rounded-md border border-input bg-card px-3 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {OFFERTE_FILTER_OPTIES.map((o) => (
+              <option key={o.waarde} value={o.waarde}>
+                {o.label}
+              </option>
+            ))}
+          </select>
           <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
             <button
               type="button"
