@@ -12,6 +12,7 @@
     "test:offerte-e2e": "node scripts/mobile-ux/offerte-e2e.js",
     "test:branding-extract": "tsx scripts/test-branding-extract.ts",
     "audit:onderdelen": "tsx scripts/audit-onderdelen.ts",
+    "prijzen:regressie": "tsx --conditions=react-server scripts/prijzen-regressie.ts",
     "postinstall": "prisma generate",
     "db:deploy": "prisma migrate deploy",
     "vercel-build": "prisma migrate deploy && next build",
