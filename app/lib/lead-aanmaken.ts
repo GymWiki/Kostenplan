@@ -3,6 +3,9 @@ import { prisma } from "@/app/lib/prisma";
 import { recordAnalyticsEvent } from "@/app/lib/actions/analytics";
 import { leadContactSchema, leadSnapshotSchema } from "@/app/lib/validation";
 import { effectiveTier } from "@/app/lib/subscription";
+import { planLeadPush } from "@/app/lib/push/versturen";
+import { eersteRegelNaam } from "@/app/lib/vandaag";
+import { formatCurrency } from "@/app/lib/format";
 
 export type LeadInvoer = {
   toolId: string;
@@ -97,5 +100,11 @@ export async function maakLead(invoer: LeadInvoer): Promise<LeadUitslag> {
   }
 
   await recordAnalyticsEvent(tool.companyId, tool.id, "LEAD");
+  planLeadPush(tool.companyId, {
+    id: leadId,
+    naam: contact.data.naam,
+    werk: eersteRegelNaam(snapshot.data),
+    bedrag: formatCurrency(snapshot.data.totaal),
+  });
   return { ok: true, leadId, dubbel: false };
 }
