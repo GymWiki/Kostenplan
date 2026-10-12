@@ -151,7 +151,7 @@ function SheetInhoud({
           type="button"
           onClick={onClose}
           aria-label="Sluiten"
-          className="absolute right-2 top-[18px] z-10 flex h-11 w-11 cursor-pointer items-center justify-center rounded-md text-foreground hover:bg-secondary active:bg-secondary"
+          className="absolute right-2 top-[18px] z-10 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm hover:bg-secondary active:bg-secondary"
         >
           <X className="h-5 w-5" aria-hidden="true" />
         </button>
