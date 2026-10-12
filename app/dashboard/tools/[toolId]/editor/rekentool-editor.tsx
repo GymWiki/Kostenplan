@@ -136,6 +136,8 @@ export function RekentoolEditor(props: EditorProps) {
   const [verwijderTool, setVerwijderTool] = useState(false);
   const [verwijderProduct, setVerwijderProduct] = useState<string | null>(null);
   const [weggaan, setWeggaan] = useState(false);
+  const kopRef = useRef<HTMLElement>(null);
+  const [sheetMaat, setSheetMaat] = useState(0);
   const [bezig, setBezig] = useState(false);
   const [resultaat, setResultaat] = useState(props.resultaat);
   const [aanvraag, setAanvraag] = useState(props.aanvraag);
@@ -159,6 +161,32 @@ export function RekentoolEditor(props: EditorProps) {
   useEffect(() => {
     if (!repo.gast) router.refresh();
   }, [router, repo]);
+
+  // Mobiel: meet de onderkant van de kopbalk (en de zichtbare hoogte, die met het
+  // toetsenbord krimpt) en zet ze als CSS-variabelen, zodat de bottom sheet
+  // altijd net onder de kopbalk begint.
+  useEffect(() => {
+    if (!isMobiel) return;
+    const kop = kopRef.current;
+    const root = document.documentElement;
+    function zet() {
+      if (kop) root.style.setProperty("--editor-header-bottom", `${Math.round(kop.getBoundingClientRect().bottom)}px`);
+      root.style.setProperty("--editor-vvh", `${Math.round(window.visualViewport?.height ?? window.innerHeight)}px`);
+    }
+    zet();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(zet) : null;
+    if (kop) ro?.observe(kop);
+    if (kop?.parentElement) ro?.observe(kop.parentElement);
+    window.visualViewport?.addEventListener("resize", zet);
+    window.addEventListener("resize", zet);
+    return () => {
+      ro?.disconnect();
+      window.visualViewport?.removeEventListener("resize", zet);
+      window.removeEventListener("resize", zet);
+      root.style.removeProperty("--editor-header-bottom");
+      root.style.removeProperty("--editor-vvh");
+    };
+  }, [isMobiel, gast]);
 
   const setPaneel = useCallback((p: string) => {
     if (p === "account") {
@@ -350,7 +378,7 @@ export function RekentoolEditor(props: EditorProps) {
         <button
           type="button"
           onClick={() => setPaneel("start")}
-          className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-1 text-sm font-semibold text-foreground hover:underline"
+          className={cn("inline-flex min-h-11 w-fit cursor-pointer items-center gap-1 text-sm font-semibold text-foreground hover:underline", paneel.startsWith("werkzaamheid:") && "max-md:hidden")}
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Terug naar overzicht
         </button>
@@ -430,6 +458,19 @@ export function RekentoolEditor(props: EditorProps) {
   );
 
   const nietOpgeslagen = opslag.status === "fout" || opslag.ongeldig;
+
+  // Terug (mobiel): eerst openstaande wijzigingen laten opslaan (het paneel
+  // slaat bij sluiten nog niet-opgeslagen werk zelf op), dan de sheet sluiten
+  // en teruggaan. Lukt opslaan niet, dan eerst de waarschuwing.
+  async function gaTerug(href: string) {
+    if (nietOpgeslagen) {
+      setWeggaan(true);
+      return;
+    }
+    setSheetOpen(false);
+    await new Promise((r) => setTimeout(r, 350));
+    router.push(href);
+  }
 
   const dialogen = (
     <>
@@ -583,7 +624,24 @@ export function RekentoolEditor(props: EditorProps) {
         </p>
       )}
       {/* Bovenbalk */}
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-2 sm:gap-3 sm:px-4">
+      <header
+        ref={kopRef}
+        className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-2 sm:gap-3 sm:px-4 max-md:relative max-md:z-50 max-md:touch-manipulation max-md:select-none max-md:[-webkit-tap-highlight-color:transparent] max-md:[-webkit-touch-callout:none]"
+      >
+        {/* Mobiel: pijl + titel zijn samen één knop over de volle hoogte van de kopbalk. */}
+        <Link
+          href={gast ? "/" : "/dashboard/tools"}
+          onClick={(e) => {
+            e.preventDefault();
+            void gaTerug(gast ? "/" : "/dashboard/tools");
+          }}
+          aria-label={gast ? `Naar de homepage van Kostenplan (${naam})` : `Terug naar Rekentools (${naam})`}
+          className="-ml-2 flex min-w-0 flex-1 cursor-pointer items-center gap-2 self-stretch rounded-md px-3 text-foreground [-webkit-touch-callout:none] active:bg-secondary md:hidden"
+          draggable={false}
+        >
+          {gast ? <Logo className="h-7 w-7 shrink-0 rounded-md p-1" /> : <ArrowLeft className="h-5 w-5 shrink-0" aria-hidden="true" />}
+          <span className="min-w-0 truncate text-base font-bold">{naam}</span>
+        </Link>
         <Link
           href={gast ? "/" : "/dashboard/tools"}
           onClick={(e) => {
@@ -592,13 +650,13 @@ export function RekentoolEditor(props: EditorProps) {
               setWeggaan(true);
             }
           }}
-          className="inline-flex h-11 shrink-0 items-center gap-1 rounded-md px-2 text-sm font-semibold text-foreground hover:bg-secondary"
+          className="hidden h-11 shrink-0 items-center gap-1 rounded-md px-2 text-sm font-semibold text-foreground hover:bg-secondary md:inline-flex"
           aria-label={gast ? "Naar de homepage van Kostenplan" : "Terug naar Rekentools"}
         >
           {gast ? <Logo className="h-7 w-7 rounded-md p-1" /> : <ArrowLeft className="h-4 w-4" aria-hidden="true" />}
           <span className="hidden sm:inline">{gast ? "Kostenplan" : "Rekentools"}</span>
         </Link>
-        <h1 className="min-w-0 flex-1 truncate text-base font-bold text-foreground sm:flex-none sm:max-w-[16rem]">{naam}</h1>
+        <h1 className="hidden min-w-0 flex-1 truncate text-base font-bold text-foreground sm:flex-none sm:max-w-[16rem] md:block">{naam}</h1>
         <Badge variant={props.toolStatus === "GEPUBLICEERD" ? "success" : "muted"} className={cn("hidden shrink-0", !gast && "sm:inline-flex")}>
           {props.toolStatus === "GEPUBLICEERD" ? "Live" : props.toolStatus === "GEPAUZEERD" ? "Gepauzeerd" : "Concept"}
         </Badge>
@@ -672,7 +730,7 @@ export function RekentoolEditor(props: EditorProps) {
       <div className="flex min-h-0 flex-1">
         {/* Canvas */}
         <div
-          style={isMobiel && sheetOpen && modus === "bewerken" ? { paddingBottom: "62dvh" } : undefined}
+          style={isMobiel && sheetOpen && modus === "bewerken" && sheetMaat > 0 ? { paddingBottom: `${sheetMaat}px` } : undefined}
           className={cn("relative min-w-0 flex-1 bg-muted", apparaat === "mobiel" && !isMobiel && "flex justify-center p-4")}
         >
           <iframe
@@ -713,7 +771,7 @@ export function RekentoolEditor(props: EditorProps) {
 
       {/* Bottom sheet (mobiel) */}
       {isMobiel && modus === "bewerken" && (
-        <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} titel={PANEEL_TITEL(paneel, producten)} className="h-[62dvh]">
+        <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} titel={PANEEL_TITEL(paneel, producten)} zonderTitel={paneel !== "start"} onMaat={setSheetMaat}>
           {paneelInhoud}
         </BottomSheet>
       )}

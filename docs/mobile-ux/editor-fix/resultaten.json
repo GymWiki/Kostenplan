@@ -1,0 +1,107 @@
+[
+  {
+    "naam": "390: sheet begint net onder de kopbalk",
+    "ok": true,
+    "d": "kopbalk onderkant 172, sheet top 180"
+  },
+  {
+    "naam": "390: kopbalk ligt boven de sheet en is klikbaar",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "naam": "390: naam staat één keer in de sheet",
+    "ok": true,
+    "d": "zichtbare koppen met de naam naast het naamveld: 0"
+  },
+  {
+    "naam": "390: slepen naar halverwege laat de sheet op de helft staan",
+    "ok": true,
+    "d": "hoogte 664 → 332"
+  },
+  {
+    "naam": "390: verder omlaag slepen sluit de sheet",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "naam": "390: toetsenbord open: sheet blijft onder de kopbalk",
+    "ok": true,
+    "d": "sheet 180–439, zichtbaar tot 439"
+  },
+  {
+    "naam": "390: toetsenbord open: actief veld in beeld",
+    "ok": true,
+    "d": "veld 297–341"
+  },
+  {
+    "naam": "390: lang drukken op de titel selecteert niets",
+    "ok": true,
+    "d": "selectie: \"\", stijl: none||manipulation"
+  },
+  {
+    "naam": "390: tikken op de titel gaat terug (sheet open: false)",
+    "ok": true,
+    "d": "http://localhost:3200/"
+  },
+  {
+    "naam": "390: geen uncaught fouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "naam": "360: sheet begint net onder de kopbalk",
+    "ok": true,
+    "d": "kopbalk onderkant 192, sheet top 200"
+  },
+  {
+    "naam": "360: kopbalk ligt boven de sheet en is klikbaar",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "naam": "360: naam staat één keer in de sheet",
+    "ok": true,
+    "d": "zichtbare koppen met de naam naast het naamveld: 0"
+  },
+  {
+    "naam": "360: slepen naar halverwege laat de sheet op de helft staan",
+    "ok": true,
+    "d": "hoogte 600 → 300"
+  },
+  {
+    "naam": "360: verder omlaag slepen sluit de sheet",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "naam": "360: toetsenbord open: sheet blijft onder de kopbalk",
+    "ok": true,
+    "d": "sheet 200–416, zichtbaar tot 416"
+  },
+  {
+    "naam": "360: toetsenbord open: actief veld in beeld",
+    "ok": true,
+    "d": "veld 295–339"
+  },
+  {
+    "naam": "360: lang drukken op de titel selecteert niets",
+    "ok": true,
+    "d": "selectie: \"\", stijl: none||manipulation"
+  },
+  {
+    "naam": "360: tikken op de titel gaat terug (sheet open: false)",
+    "ok": true,
+    "d": "http://localhost:3200/"
+  },
+  {
+    "naam": "360: geen uncaught fouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "naam": "360: lange titel: één regel met ellips, status en ⋯ zichtbaar",
+    "ok": true,
+    "d": "{\"afgekapt\":true,\"regels\":1,\"statusIn\":true,\"menuIn\":true}"
+  }
+]

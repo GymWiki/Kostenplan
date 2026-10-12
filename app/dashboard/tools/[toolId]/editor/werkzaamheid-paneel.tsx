@@ -403,7 +403,7 @@ export function WerkzaamheidPaneel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3 max-md:pr-12">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
           <Icoon className="h-5 w-5" aria-hidden="true" />
         </span>

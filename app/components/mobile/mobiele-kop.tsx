@@ -59,24 +59,34 @@ export function MobieleKop({ rechts }: { rechts?: React.ReactNode }) {
       <header
         data-mobiele-kop
         className={cn(
-          "sticky top-0 z-30 flex items-center gap-1 border-b border-border bg-background/90 px-2 backdrop-blur transition-[height] motion-reduce:transition-none md:hidden",
+          "sticky top-0 z-30 flex touch-manipulation select-none items-center gap-1 border-b border-border bg-background/90 px-2 backdrop-blur transition-[height] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] motion-reduce:transition-none md:hidden",
           klein ? "h-12" : "h-14"
         )}
       >
-        {onTerug ? (
-          <button type="button" onClick={onTerug} aria-label="Terug" className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-md text-foreground">
-            <ChevronLeft className="h-6 w-6" aria-hidden="true" />
-          </button>
-        ) : terug ? (
-          <Link href={terug} aria-label="Terug" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-foreground">
-            <ChevronLeft className="h-6 w-6" aria-hidden="true" />
-          </Link>
+        {/* Pijl en titel zijn samen één knop met een tikdoel over de volle hoogte. */}
+        {onTerug || terug ? <h1 className="sr-only">{titel}</h1> : null}
+        {onTerug || terug ? (
+          (() => {
+            const klas = "-ml-1 flex min-w-0 flex-1 cursor-pointer items-center gap-1 self-stretch rounded-md pl-2 pr-3 text-foreground [-webkit-touch-callout:none] active:bg-secondary";
+            const inhoud = (
+              <>
+                <ChevronLeft className="h-6 w-6 shrink-0" aria-hidden="true" />
+                <span className={cn("min-w-0 truncate font-bold transition-[font-size] motion-reduce:transition-none", klein ? "text-base" : "text-lg")}>{titel}</span>
+              </>
+            );
+            return onTerug ? (
+              <button type="button" onClick={onTerug} aria-label={`Terug (${titel})`} className={klas}>
+                {inhoud}
+              </button>
+            ) : (
+              <Link href={terug!} aria-label={`Terug (${titel})`} className={klas} draggable={false}>
+                {inhoud}
+              </Link>
+            );
+          })()
         ) : (
-          <span className="w-2 shrink-0" aria-hidden="true" />
+          <h1 className={cn("min-w-0 flex-1 truncate pl-2 font-bold text-foreground transition-[font-size] motion-reduce:transition-none", klein ? "text-base" : "text-lg")}>{titel}</h1>
         )}
-        <h1 className={cn("min-w-0 flex-1 truncate font-bold text-foreground transition-[font-size] motion-reduce:transition-none", klein ? "text-base" : "text-lg")}>
-          {titel}
-        </h1>
         <div id="kop-actie" className="flex shrink-0 items-center gap-1" />
         {rechts}
       </header>
