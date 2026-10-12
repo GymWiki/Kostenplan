@@ -27,8 +27,8 @@
     "afgekaptVoorbeelden": []
   },
   "390/werkzaamheid": {
-    "interactiefBovenVouw": 17,
-    "invoervelden": 6,
+    "interactiefBovenVouw": 11,
+    "invoervelden": 0,
     "kleineTikdoelen": 0,
     "kleineVoorbeelden": [],
     "horizontaalScrollen": false,
@@ -115,8 +115,8 @@
     "afgekaptVoorbeelden": []
   },
   "360/werkzaamheid": {
-    "interactiefBovenVouw": 17,
-    "invoervelden": 6,
+    "interactiefBovenVouw": 11,
+    "invoervelden": 0,
     "kleineTikdoelen": 0,
     "kleineVoorbeelden": [],
     "horizontaalScrollen": false,
@@ -170,149 +170,6 @@
       "a:Voorbeelden(81x36)",
       "a:Functionaliteiten(107x36)",
       "a:Prijzen(44x36)"
-    ],
-    "horizontaalScrollen": false,
-    "afgekapteTeksten": 0,
-    "afgekaptVoorbeelden": []
-  },
-  "1440/overzicht": {
-    "interactiefBovenVouw": 12,
-    "invoervelden": 0,
-    "kleineTikdoelen": 7,
-    "kleineVoorbeelden": [
-      "a:Overzicht(150x36)",
-      "a:Rekentools(150x36)",
-      "a:Leads(150x36)",
-      "a:Profiel(150x36)",
-      "button:Uitloggen(110x36)",
-      "a:Alle aanvragen(111x20)"
-    ],
-    "horizontaalScrollen": false,
-    "afgekapteTeksten": 0,
-    "afgekaptVoorbeelden": []
-  },
-  "1440/rekentools": {
-    "interactiefBovenVouw": 15,
-    "invoervelden": 0,
-    "kleineTikdoelen": 5,
-    "kleineVoorbeelden": [
-      "a:Overzicht(150x36)",
-      "a:Rekentools(150x36)",
-      "a:Leads(150x36)",
-      "a:Profiel(150x36)",
-      "button:Uitloggen(110x36)"
-    ],
-    "horizontaalScrollen": false,
-    "afgekapteTeksten": 0,
-    "afgekaptVoorbeelden": []
-  },
-  "1440/editor": {
-    "interactiefBovenVouw": 39,
-    "invoervelden": 0,
-    "kleineTikdoelen": 29,
-    "kleineVoorbeelden": [
-      "a:Overzicht(150x36)",
-      "a:Rekentools(150x36)",
-      "a:Leads(150x36)",
-      "a:Profiel(150x36)",
-      "button:Uitloggen(110x36)",
-      "button:Bewerken(87x36)"
-    ],
-    "horizontaalScrollen": false,
-    "afgekapteTeksten": 0,
-    "afgekaptVoorbeelden": []
-  },
-  "1440/werkzaamheid": {
-    "interactiefBovenVouw": 26,
-    "invoervelden": 7,
-    "kleineTikdoelen": 10,
-    "kleineVoorbeelden": [
-      "a:Overzicht(150x36)",
-      "a:Rekentools(150x36)",
-      "a:Leads(150x36)",
-      "a:Profiel(150x36)",
-      "button:Uitloggen(110x36)",
-      "button:Bewerken(87x36)"
-    ],
-    "horizontaalScrollen": false,
-    "afgekapteTeksten": 0,
-    "afgekaptVoorbeelden": []
-  },
-  "1440/leads": {
-    "interactiefBovenVouw": 22,
-    "invoervelden": 1,
-    "kleineTikdoelen": 10,
-    "kleineVoorbeelden": [
-      "a:Overzicht(150x36)",
-      "a:Rekentools(150x36)",
-      "a:Leads(150x36)",
-      "a:Profiel(150x36)",
-      "button:Uitloggen(110x36)",
-      "select:Filter op rekentool(139x40)"
-    ],
-    "horizontaalScrollen": false,
-    "afgekapteTeksten": 0,
-    "afgekaptVoorbeelden": []
-  },
-  "1440/lead-detail": {
-    "interactiefBovenVouw": 31,
-    "invoervelden": 3,
-    "kleineTikdoelen": 15,
-    "kleineVoorbeelden": [
-      "a:Overzicht(150x36)",
-      "a:Rekentools(150x36)",
-      "a:Leads(150x36)",
-      "a:Profiel(150x36)",
-      "button:Uitloggen(110x36)",
-      "select:Filter op rekentool(139x40)"
-    ],
-    "horizontaalScrollen": false,
-    "afgekapteTeksten": 0,
-    "afgekaptVoorbeelden": []
-  },
-  "1440/offerte": {
-    "interactiefBovenVouw": 22,
-    "invoervelden": 5,
-    "kleineTikdoelen": 15,
-    "kleineVoorbeelden": [
-      "a:Overzicht(150x36)",
-      "a:Rekentools(150x36)",
-      "a:Leads(150x36)",
-      "a:Profiel(150x36)",
-      "button:Uitloggen(110x36)",
-      "a:Terug naar aanvragen(397x20)"
-    ],
-    "horizontaalScrollen": false,
-    "afgekapteTeksten": 0,
-    "afgekaptVoorbeelden": []
-  },
-  "1440/profiel": {
-    "interactiefBovenVouw": 18,
-    "invoervelden": 2,
-    "kleineTikdoelen": 22,
-    "kleineVoorbeelden": [
-      "a:Overzicht(150x36)",
-      "a:Rekentools(150x36)",
-      "a:Leads(150x36)",
-      "a:Profiel(150x36)",
-      "button:Uitloggen(110x36)",
-      "button:Wachtwoord wijzigen(171x40)"
-    ],
-    "horizontaalScrollen": false,
-    "afgekapteTeksten": 0,
-    "afgekaptVoorbeelden": []
-  },
-  "1440/probeer": {
-    "interactiefBovenVouw": 11,
-    "invoervelden": 1,
-    "kleineTikdoelen": 24,
-    "kleineVoorbeelden": [
-      "a:Kostenplan(134x32)",
-      "a:Functionaliteiten(138x36)",
-      "a:Voor hoveniers(126x36)",
-      "a:Kennisbank(105x36)",
-      "a:Blog(58x36)",
-      "a:Prijzen(73x36)"
     ],
     "horizontaalScrollen": false,
     "afgekapteTeksten": 0,
