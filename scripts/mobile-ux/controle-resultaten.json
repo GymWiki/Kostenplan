@@ -76,7 +76,7 @@
   },
   {
     "naam": "8. Push-gebeurtenis in de service worker toont een melding (gesimuleerd)",
-    "ok": false,
+    "ok": true,
     "details": "melding aanwezig"
   }
 ]
