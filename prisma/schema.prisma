@@ -239,6 +239,7 @@ model CancellationFeedback {
 // meerdere companies (zie CompanyMember), elk met een eigen catalogus,
 // huisstijl en abonnement.
 model Company {
+  offerteGegevens OfferteGegevens?
   id             String    @id @default(cuid())
   naam           String
   // Gezet voor een bedrijf van een gast (probeer-flow zonder account): tot
@@ -964,4 +965,75 @@ model PushAbonnement {
   createdAt DateTime @default(now())
 
   @@index([companyId])
+}
+
+// ── Offerte v2 ────────────────────────────────────────────────────────────
+
+enum Rechtsvorm {
+  EENMANSZAAK
+  VOF
+  MAATSCHAP
+  BV
+  NV
+  ANDERS
+}
+
+// Gegevens die op elke offerte moeten staan (Profiel → Offertegegevens) plus
+// de standaardinstellingen voor nieuwe offertes. Alles optioneel in de
+// database; "verplicht om te versturen" wordt in code gecontroleerd
+// (app/lib/offerte/gegevens.ts) zodat het formulier tussentijds opslaat.
+model OfferteGegevens {
+  id        String  @id @default(cuid())
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  handelsnaam     String?
+  rechtsvorm      Rechtsvorm @default(EENMANSZAAK)
+  statutaireNaam  String?
+  statutaireZetel String?
+  kvkNummer       String?
+  adresRegel      String?
+  postcode        String?
+  plaats          String?
+  btwId           String?
+  korActief       Boolean    @default(false)
+  korTekst        String     @default("Btw niet van toepassing (kleineondernemersregeling)")
+  iban            String?
+  ibanTenaamstelling String?
+  telefoon        String?
+  email           String?
+  website         String?
+  logoUrl         String?
+  contactNaam     String?
+  contactFunctie  String?
+
+  voorwaardenPdfUrl  String?
+  voorwaardenPdfNaam String?
+
+  nummerPrefix    String  @default("")
+  geldigheidDagen Int     @default(30)
+  betaalPreset    String  @default("NA_OPLEVERING")
+  betaalTermijnen Json?
+  introTekst      String?
+  slotTekst       String?
+  voorwaardenBlokken Json?
+  herroepingTekst String?
+  // Standaard btw-tarief per regeltype, bijv. {"arbeid":21,"materiaal":21,"planten":9}.
+  btwStandaard    Json?
+  // Aantal dagen vóór het verlopen waarop de klant een herinnering krijgt; null = uit.
+  herinneringDagen Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Teller voor offertenummers per bedrijf en jaar. Eén atomaire upsert met
+// increment (zie app/lib/offerte/nummer.ts): nooit hergebruikt, ook niet bij
+// gelijktijdige aanvragen.
+model OfferteNummerTeller {
+  companyId String
+  jaar      Int
+  laatste   Int    @default(0)
+
+  @@id([companyId, jaar])
 }

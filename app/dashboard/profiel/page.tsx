@@ -4,6 +4,7 @@ import { prisma } from "@/app/lib/prisma";
 import { effectiveTier } from "@/app/lib/subscription";
 import { pushBeschikbaar } from "@/app/lib/push/versturen";
 import { ProfielView } from "./profiel-view";
+import { laadOfferteGegevens } from "@/app/lib/offerte/gegevens-server";
 
 export const metadata: Metadata = { title: "Profiel" };
 
@@ -19,6 +20,7 @@ export default async function ProfielPage({
     orderBy: { createdAt: "asc" },
     select: { id: true, naam: true, branding: { select: { logoUrl: true, primaireKleur: true } } },
   });
+  const offertegegevens = await laadOfferteGegevens(company);
   const kosten = tools[0] ? await getToolCostSettings(tools[0].id, company) : null;
   const eenheid = kosten?.arbeidStapEenheid ?? "DAGDEEL";
   const tarief = kosten
@@ -41,6 +43,7 @@ export default async function ProfielPage({
         voorrij: kosten?.voorrijTarief ?? company.standaardVoorrijTarief,
         transport: kosten?.transportTarief ?? 0,
       }}
+      offertegegevens={offertegegevens}
       branding={tools.map((t) => ({
         toolId: t.id,
         toolNaam: t.naam,

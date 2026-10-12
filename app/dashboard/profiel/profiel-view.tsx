@@ -4,6 +4,8 @@ import { LinkButton } from "@/app/components/ui/button";
 import { HelpTip } from "@/app/components/ui/help-tip";
 import { AbonnementView } from "@/app/dashboard/abonnement/abonnement-view";
 import { TarievenSectie } from "./tarieven-sectie";
+import { OfferteGegevensFormulier } from "./offertegegevens-formulier";
+import { ontbrekendeVerplichteGegevens, type OfferteGegevensWaarden } from "@/app/lib/offerte/gegevens";
 import { UiterlijkOverzicht, type BrandingRegel } from "./uiterlijk-overzicht";
 import { AccountForm } from "./account-form";
 import { CompanyCard } from "./company-card";
@@ -22,6 +24,7 @@ export function ProfielView({
   abonnement,
   tarieven,
   branding,
+  offertegegevens,
 }: {
   pushBeschikbaar?: boolean;
   email: string;
@@ -30,7 +33,9 @@ export function ProfielView({
   abonnement: React.ComponentProps<typeof AbonnementView>;
   tarieven: React.ComponentProps<typeof TarievenSectie>["start"];
   branding: BrandingRegel[];
+  offertegegevens: OfferteGegevensWaarden;
 }) {
+  const ontbreekt = ontbrekendeVerplichteGegevens(offertegegevens).length;
   // Alleen echt betaalde, actief lopende abonnementen tellen mee — een
   // handmatige overrideTier kost de gebruiker niets, en GEEN/CANCELED/
   // PENDING/SUSPENDED int niet daadwerkelijk (meer).
@@ -57,6 +62,7 @@ export function ProfielView({
       samenvattingen={{
         tarieven: `${formatCurrency(tarieven.tarief)} per ${eenheidWoord}`,
         bedrijf: actiefBedrijf?.naam ?? "Je bedrijf",
+        offertegegevens: ontbreekt === 0 ? "Compleet" : `${ontbreekt} ${ontbreekt === 1 ? "gegeven" : "gegevens"} ontbreken`,
         uiterlijk: branding.length === 1 ? "Logo en kleuren" : `${branding.length} rekentools`,
         abonnement: PLAN_LABELS?.[abonnement.effectivePlan] ?? String(abonnement.effectivePlan),
         meldingen: "Bij een nieuwe aanvraag",
@@ -80,6 +86,7 @@ export function ProfielView({
             </LinkButton>
           </section>
         ),
+        offertegegevens: <OfferteGegevensFormulier start={offertegegevens} />,
         uiterlijk: <UiterlijkOverzicht regels={branding} />,
         abonnement: <AbonnementView {...abonnement} />,
         meldingen: <MeldingenPaneel />,
@@ -144,6 +151,16 @@ export function ProfielView({
         <h2 id="tarieven" className="scroll-mt-20 text-lg font-semibold text-foreground">Tarieven</h2>
         <p className="-mt-2 text-sm text-muted-foreground">Eén keer instellen, geldt voor al je rekentools.</p>
         <TarievenSectie start={tarieven} />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 id="offertegegevens" className="scroll-mt-20 text-lg font-semibold text-foreground">Offertegegevens</h2>
+        <p className="-mt-2 text-sm text-muted-foreground">Deze gegevens staan op elke offerte. Zonder KvK-nummer, adres en IBAN kun je geen offerte versturen.</p>
+        <Card>
+          <CardContent>
+            <OfferteGegevensFormulier start={offertegegevens} />
+          </CardContent>
+        </Card>
       </section>
 
       <section className="flex flex-col gap-3">
