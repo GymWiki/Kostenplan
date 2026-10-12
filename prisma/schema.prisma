@@ -240,6 +240,8 @@ model CancellationFeedback {
 // huisstijl en abonnement.
 model Company {
   offerteGegevens OfferteGegevens?
+  offertesV2      OfferteV2[]
+  offerteStandaardRegels OfferteStandaardRegel[]
   id             String    @id @default(cuid())
   naam           String
   // Gezet voor een bedrijf van een gast (probeer-flow zonder account): tot
@@ -838,6 +840,7 @@ model Lead {
 
   notities LeadNote[]
   offerte  Offerte?
+  offertesV2 OfferteV2[]
 
   // Gezet door markExternAfgehandeldAction wanneer status EXTERN_AFGEHANDELD
   // wordt. Notitie is bewust optioneel — geen verplichte stap.
@@ -1036,4 +1039,131 @@ model OfferteNummerTeller {
   laatste   Int    @default(0)
 
   @@id([companyId, jaar])
+}
+
+enum OfferteV2Status {
+  CONCEPT
+  VERSTUURD
+  BEKEKEN
+  GEACCEPTEERD
+  AFGEWEZEN
+  VERLOPEN
+  INGETROKKEN
+}
+
+enum OfferteGebeurtenisSoort {
+  VERZONDEN
+  BEKEKEN
+  VRAAG
+  AFGEWEZEN
+  AKKOORD
+  INGETROKKEN
+  HERINNERING
+}
+
+// Eén offerte (dossier) met een uniek nummer per bedrijf. De inhoud staat per
+// versie in OfferteVersie; een verstuurde versie is onveranderlijk.
+model OfferteV2 {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  leadId    String?
+  lead      Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  nummer String
+  // Onraadbare token voor de publieke pagina (192 bits); pas bruikbaar zodra de offerte is verstuurd.
+  token  String @unique
+  status OfferteV2Status @default(CONCEPT)
+  huidigeVersie Int @default(1)
+
+  verstuurdOp   DateTime?
+  eersteBekekenOp DateTime?
+  herinneringVerstuurdOp DateTime?
+
+  versies       OfferteVersie[]
+  akkoorden     OfferteAkkoord[]
+  gebeurtenissen OfferteGebeurtenis[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, nummer])
+  @@index([leadId])
+  @@index([companyId, status])
+}
+
+model OfferteVersie {
+  id         String    @id @default(cuid())
+  offerteId  String
+  offerte    OfferteV2 @relation(fields: [offerteId], references: [id], onDelete: Cascade)
+  versie     Int
+
+  // Volledige inhoud (klant, secties, regels, voorwaarden, afzendergegevens) — zie app/lib/offerte/model.ts.
+  inhoud            Json
+  totaalExclCenten  Int @default(0)
+  totaalInclCenten  Int @default(0)
+
+  // Vanaf het versturen onveranderlijk; wijzigen maakt een nieuwe versie.
+  vergrendeld Boolean   @default(false)
+  verstuurdOp DateTime?
+  pdfUrl      String?
+  pdfHash     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  akkoorden OfferteAkkoord[]
+
+  @@unique([offerteId, versie])
+}
+
+// Audittrail van een akkoord door de klant.
+model OfferteAkkoord {
+  id        String        @id @default(cuid())
+  offerteId String
+  offerte   OfferteV2     @relation(fields: [offerteId], references: [id], onDelete: Cascade)
+  versieId  String
+  versie    OfferteVersie @relation(fields: [versieId], references: [id], onDelete: Cascade)
+
+  naam      String
+  tijdstip  DateTime @default(now())
+  ip        String?
+  userAgent String?
+  versieNummer Int
+  gekozenRegelIds Json
+  totaalInclCenten Int
+  // SHA-256 van de PDF van déze versie (zonder akkoordblok) en van de getekende PDF.
+  pdfHash          String
+  getekendePdfUrl  String?
+  getekendePdfHash String?
+
+  @@unique([versieId])
+  @@index([offerteId])
+}
+
+model OfferteGebeurtenis {
+  id        String    @id @default(cuid())
+  offerteId String
+  offerte   OfferteV2 @relation(fields: [offerteId], references: [id], onDelete: Cascade)
+  versieNummer Int?
+  soort     OfferteGebeurtenisSoort
+  tekst     String?
+  ip        String?
+  createdAt DateTime  @default(now())
+
+  @@index([offerteId, createdAt])
+}
+
+// Door de hovenier opgeslagen regels voor hergebruik ("Afvoer grond per m³").
+model OfferteStandaardRegel {
+  id          String  @id @default(cuid())
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  omschrijving String
+  eenheid     String
+  prijsCenten Int
+  btw         Int     @default(21)
+  soort       String  @default("overig")
+  createdAt   DateTime @default(now())
+
+  @@index([companyId])
 }
