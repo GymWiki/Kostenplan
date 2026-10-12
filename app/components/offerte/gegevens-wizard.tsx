@@ -26,7 +26,8 @@ export function OfferteGegevensWizard({
   const ontbreekt = ontbrekendeVerplichteGegevens(start);
   // Het formulier toont alleen de groepen die ontbreken; adres is één groep.
   const velden = Array.from(new Set(ontbreekt.map((o) => o.veld)));
-  const toonGroepen = velden.flatMap((v) => (v === "adres" ? ["adres"] : [v])).concat(velden.includes("handelsnaam") ? ["handelsnaam"] : []);
+  // IBAN en tenaamstelling horen bij elkaar; zo blijft het veld zichtbaar nadat het IBAN is ingevuld.
+  const toonGroepen = [...velden, ...(velden.includes("iban") ? ["ibanTenaamstelling"] : [])];
 
   return (
     <Overlay open={open} onClose={onSluit} ariaLabelledBy="og-wizard-titel" className="flex items-end justify-center p-0 sm:items-center sm:p-4">

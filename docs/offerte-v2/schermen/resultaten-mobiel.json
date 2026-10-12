@@ -1,0 +1,22 @@
+[
+  {
+    "n": "mobiel: blokken Klant, Onderdelen, Voorwaarden, Betaling en planning",
+    "ok": 1,
+    "d": ""
+  },
+  {
+    "n": "versturen onmogelijk met een regel van €0",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "controle gebruikt de bedrijfsgegevens uit de offerte (KvK nog aanwezig in concept)",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "geen uncaught fouten",
+    "ok": true,
+    "d": ""
+  }
+]

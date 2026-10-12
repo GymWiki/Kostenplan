@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@sparticuz/chromium", "playwright-core"],
   outputFileTracingIncludes: {
     "/api/offertes/**": ["./node_modules/@sparticuz/chromium/bin/**"],
-    "/offerte-v2/**": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/o/**": ["./node_modules/@sparticuz/chromium/bin/**"],
     "/dashboard/**": ["./node_modules/@sparticuz/chromium/bin/**"],
   },
   images: {

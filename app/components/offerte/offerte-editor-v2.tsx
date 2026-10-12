@@ -53,7 +53,14 @@ const PANEEL_TITEL: Record<Selectie["soort"], string> = {
   slot: "Slottekst",
 };
 
-export function OfferteEditorV2({ offerteId, status, vergrendeld, begin, versies, standaardRegels: startStandaard, btwStandaard }: Props) {
+// Buitenste laag: laat de editor opnieuw opbouwen met de verse serverdata nadat de
+// verzend-bevestiging is gesloten (zolang die open staat mag er niets verdwijnen).
+export function OfferteEditorV2(props: Props) {
+  const [opnieuw, setOpnieuw] = useState(0);
+  return <OfferteEditorBinnen key={`${props.offerteId}-${props.begin.versie}-${opnieuw}`} {...props} naVerzenden={() => setOpnieuw((n) => n + 1)} />;
+}
+
+function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, standaardRegels: startStandaard, btwStandaard, naVerzenden }: Props & { naVerzenden: () => void }) {
   const router = useRouter();
   const isMobiel = useIsMobiel();
   const [inhoud, setInhoud] = useState<OfferteInhoud>(begin);
@@ -67,6 +74,7 @@ export function OfferteEditorV2({ offerteId, status, vergrendeld, begin, versies
   const [regelSheet, setRegelSheet] = useState<{ sectieId: string; regelId: string } | null>(null);
   const [sectieSheet, setSectieSheet] = useState<string | null>(null);
   const [melding, setMelding] = useState<string | null>(null);
+  const [pasVerstuurd, setPasVerstuurd] = useState(false);
 
   const alleenLezen = vergrendeld || status === "GEACCEPTEERD";
   const laatste = useRef(inhoud);
@@ -131,6 +139,12 @@ export function OfferteEditorV2({ offerteId, status, vergrendeld, begin, versies
     await verwijderStandaardRegelAction(id);
     setStandaardRegels((l) => l.filter((x) => x.id !== id));
   }, []);
+
+  // De pagina pas verversen als de bevestiging is gesloten, anders verdwijnt die meteen.
+  function sluitControle() {
+    setControleOpen(false);
+    if (pasVerstuurd) naVerzenden();
+  }
 
   async function nieuweVersie() {
     const r = await nieuweVersieAction(offerteId);
@@ -442,7 +456,7 @@ export function OfferteEditorV2({ offerteId, status, vergrendeld, begin, versies
           {sectieSheet && <SectiePaneel inhoud={inhoud} sectieId={sectieSheet} wijzig={wijzig} standaardRegels={standaardRegels} onVerwijderStandaard={verwijderStandaard} onSelect={(s) => (s.soort === "regel" && s.id && s.sectieId ? setRegelSheet({ sectieId: s.sectieId, regelId: s.id }) : setSectieSheet(s.id ?? null))} btwStandaard={btwStandaard} />}
         </MobieleSheet>
 
-        <ControleDialoog open={controleOpen} onSluit={() => setControleOpen(false)} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => router.refresh()} />
+        <ControleDialoog open={controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} />
       </div>
     );
   }
@@ -488,7 +502,7 @@ export function OfferteEditorV2({ offerteId, status, vergrendeld, begin, versies
           {alleenLezen ? <p className="text-sm text-muted-foreground">Deze versie is verstuurd. Maak een nieuwe versie om te wijzigen.</p> : paneelInhoud(selectie)}
         </aside>
       </div>
-      <ControleDialoog open={controleOpen} onSluit={() => setControleOpen(false)} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => router.refresh()} />
+      <ControleDialoog open={controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} />
     </div>
   );
 }

@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:editor-mobiel": "node scripts/mobile-ux/editor-mobiel-test.js",
+    "test:offerte-e2e": "node scripts/mobile-ux/offerte-e2e.js",
     "test:branding-extract": "tsx scripts/test-branding-extract.ts",
     "audit:onderdelen": "tsx scripts/audit-onderdelen.ts",
     "postinstall": "prisma generate",

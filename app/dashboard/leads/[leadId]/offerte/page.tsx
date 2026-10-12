@@ -43,7 +43,6 @@ export default async function OffertePage({
     ]);
     return (
       <OfferteEditorV2
-        key={`${v2.id}-${huidig.versie}-${huidig.vergrendeld}`}
         offerteId={v2.id}
         status={v2.status}
         vergrendeld={huidig.vergrendeld}

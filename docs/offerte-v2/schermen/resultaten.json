@@ -1,0 +1,122 @@
+[
+  {
+    "n": "wizard verschijnt met alleen ontbrekende gegevens",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "editor opent met offertenummer 2026-0001",
+    "ok": true,
+    "d": "Offerte 2026-0001"
+  },
+  {
+    "n": "losse regels: materiaal, arbeid, voorrijkosten en transport",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "geen samengevoegde restpost",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "totaal gelijk aan wat de klant in de rekentool zag",
+    "ok": true,
+    "d": "4744.11 vs 4744.10"
+  },
+  {
+    "n": "wijziging is automatisch opgeslagen",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "controle: geen blokkerende punten, waarschuwing zonder algemene voorwaarden",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "offerte verstuurd, link naar online offerte",
+    "ok": true,
+    "d": "http://localhost:3200/o/xVZi4VqVuaF7bwZYCmXLRMnSVvhrISh-"
+  },
+  {
+    "n": "e-mail naar de klant met PDF-bijlage en link",
+    "ok": true,
+    "d": "Offerte 2026-0001 van Hoveniersbedrijf De Vries [\"Offerte 2026-0001 – Hoveniersbedrijf De Vries.pdf\"]"
+  },
+  {
+    "n": "afzendernaam is de handelsnaam, reply-to is de hovenier",
+    "ok": true,
+    "d": "{\"email\":\"jan@devries-hoveniers.nl\",\"name\":\"Jan de Vries\"}"
+  },
+  {
+    "n": "na sluiten is de offerte vergrendeld (nieuwe versie maken beschikbaar)",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "verstuurde versie is vergrendeld met PDF-hash",
+    "ok": true,
+    "d": "t|t"
+  },
+  {
+    "n": "online offerte toont onderwerp en totaal",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "eerste keer openen registreert 'Bekeken'",
+    "ok": true,
+    "d": "BEKEKEN"
+  },
+  {
+    "n": "akkoord zonder vinkje wordt geweigerd",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "akkoord op mobiel gelukt",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "audittrail: naam, IP, user-agent, versie, hash van de PDF, getekende PDF",
+    "ok": true,
+    "d": "A. Jansen|t|t|1|64|t|t"
+  },
+  {
+    "n": "status Geaccepteerd; lead Gewonnen",
+    "ok": true,
+    "d": "GEACCEPTEERD|GEWONNEN"
+  },
+  {
+    "n": "getekende PDF bevat naam en tijdstip van het akkoord",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "getekende PDF per e-mail naar de klant",
+    "ok": true,
+    "d": "[\"Offerte 2026-0001 – Hoveniersbedrijf De Vries – getekend.pdf\"]"
+  },
+  {
+    "n": "getekende PDF per e-mail naar de hovenier",
+    "ok": true,
+    "d": "jan@devries-hoveniers.nl"
+  },
+  {
+    "n": "na akkoord is de offerte vergrendeld in de editor",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "Leads toont de offertestatus 'Geaccepteerd'",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "geen uncaught fouten",
+    "ok": true,
+    "d": ""
+  }
+]

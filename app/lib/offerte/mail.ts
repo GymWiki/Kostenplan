@@ -15,7 +15,7 @@ export function bouwOfferteMail({ inhoud, link, herinnering = false }: { inhoud:
   const aanhef = naam ? `Geachte ${naam},` : "Geachte heer/mevrouw,";
   const regel = herinnering
     ? `Onze offerte ${inhoud.nummer} is nog tot ${formatDatum(inhoud.geldigTot)} geldig. Hieronder kunt u de offerte nog eens bekijken en akkoord geven.`
-    : `Hierbij ontvangt u onze offerte ${inhoud.nummer}${inhoud.onderwerp ? ` voor ${inhoud.onderwerp.charAt(0).toLowerCase()}${inhoud.onderwerp.slice(1)}` : ""}. U vindt de offerte als PDF in de bijlage, samen met onze algemene voorwaarden. U kunt de offerte ook online bekijken en akkoord geven.`;
+    : `Hierbij ontvangt u onze offerte ${inhoud.nummer}${inhoud.onderwerp ? ` voor ${inhoud.onderwerp.charAt(0).toLowerCase()}${inhoud.onderwerp.slice(1)}` : ""}. U vindt de offerte als PDF in de bijlage${inhoud.bijlagen.length > 0 ? ", samen met onze algemene voorwaarden" : ""}. U kunt de offerte ook online bekijken en akkoord geven.`;
   const onderwerp = herinnering ? `Herinnering: offerte ${inhoud.nummer} van ${a.handelsnaam}` : `Offerte ${inhoud.nummer} van ${a.handelsnaam}`;
   const tekst = [
     aanhef,

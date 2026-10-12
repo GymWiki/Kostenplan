@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
@@ -15,6 +15,8 @@ export function OfferteStarter({ leadId, gegevens, ontbreekt, kleur }: { leadId:
   const [wizardOpen, setWizardOpen] = useState(ontbreekt > 0);
   const [fout, setFout] = useState<string | null>(null);
   const gestart = useRef(false);
+  // De overlay gebruikt document: pas na het laden in de browser tonen.
+  const client = useSyncExternalStore(() => () => {}, () => true, () => false);
 
   const maak = useCallback(async () => {
     setFout(null);
@@ -45,7 +47,7 @@ export function OfferteStarter({ leadId, gegevens, ontbreekt, kleur }: { leadId:
         </>
       )}
       <OfferteGegevensWizard
-        open={wizardOpen}
+        open={client && wizardOpen}
         start={gegevens}
         kleur={kleur}
         onSluit={() => router.push("/dashboard/leads")}
