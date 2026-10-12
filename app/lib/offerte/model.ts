@@ -102,7 +102,7 @@ export type OfferteInhoud = {
   bijlagen: OfferteBijlage[];
   slottekst: string;
   // Alleen van belang voor de hovenier: afwijking t.o.v. de berekening in de rekentool.
-  bron?: { leadId: string; totaalRekentoolInclCenten: number; bandbreedte?: boolean };
+  bron?: { leadId: string; totaalRekentoolInclCenten: number; bandbreedte?: boolean; waarschuwingen?: string[] };
 };
 
 export const leegAdres = (): Adres => ({ straat: "", postcode: "", plaats: "" });

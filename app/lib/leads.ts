@@ -23,6 +23,21 @@ export type LeadSnapshotLine = {
   // Welke werkzaamheid (Product) deze regel opleverde — voor "Bekijk in
   // rekentool" bij een lead. Ontbreekt bij oudere leads en bij Aangepaste tools.
   productId?: string;
+  opbouw?: LeadSnapshotOpbouw;
+};
+
+// Uitsplitsing van het bedrag van één onderdeel (materiaal, arbeid, transport,
+// voorrijkosten, extra's), bevroren zodat een offerte losse regels met de
+// echte prijzen kan maken. Bedragen in euro's, excl. btw. Ontbreekt bij
+// oudere leads; de offerte valt dan terug op één regel per onderdeel.
+export type LeadSnapshotOpbouw = {
+  materiaal?: { naam: string; hoeveelheid: number; eenheid?: string; prijsPerEenheid: number; bedrag: number }[];
+  // Artikelregels (sjabloon ARTIKELREGELS): één samengesteld bedrag.
+  artikelen?: { bedrag: number };
+  arbeid?: { tijd: number; eenheid: "uur" | "dagdeel" | "dag"; tarief: number; bedrag: number };
+  transport?: { bedrag: number; meeschalend: boolean; dagen?: number };
+  voorrijkosten?: { bedrag: number; meeschalend: boolean };
+  extras?: { naam: string; aantal: number; bedrag: number }[];
 };
 
 // Vorm van Lead.snapshot (Json). Gebouwd client-side in de publieke
@@ -38,6 +53,10 @@ export type LeadSnapshot = {
   subtotaal: number;
   btw: number;
   totaal: number;
+  // Btw-percentage van de rekentool op het moment van aanvragen.
+  btwPercentage?: number;
+  // Prijs werd als bandbreedte getoond; de bedragen hierboven zijn het midden.
+  bandbreedte?: boolean;
 };
 
 export const LEAD_STATUSSEN: LeadStatus[] = [

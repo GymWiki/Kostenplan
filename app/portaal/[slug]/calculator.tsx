@@ -39,7 +39,8 @@ import { accessibleTextColor } from "@/app/lib/color";
 import { UitgesteldMelding, useLeadVersturen } from "./lead-versturen";
 import { Bewerkbaar, EditorProvider, WerkzaamheidToevoegen, useEditorHaak, type EditorHaken } from "./bewerkbaar";
 import { recordPublicAnalyticsEventAction } from "@/app/lib/actions/analytics";
-import type { LeadSnapshot, LeadSnapshotLine } from "@/app/lib/leads";
+import type { LeadSnapshot } from "@/app/lib/leads";
+import { bouwLeadSnapshot } from "@/app/lib/lead-snapshot";
 import type {
   Branding,
   CostSettings,
@@ -294,55 +295,10 @@ export function Calculator({
   // app/lib/leads.ts) — meegestuurd bij "Offerte aanvragen" zodat de vakman
   // later precies kan zien waarop de prijsindicatie was gebaseerd, ook als de
   // Producten zelf intussen gewijzigd zijn.
-  const snapshot: LeadSnapshot = useMemo(() => {
-    const regels: LeadSnapshotLine[] = [];
-
-    for (const product of products) {
-      const qty = effectiveProductQty[product.id] ?? 0;
-      if (qty <= 0 && (productRegelsBedrag[product.id] ?? 0) <= 0) continue;
-
-      const materiaalNamen = product.materiaalCategorieen
-        .map((category) => {
-          const selectedId = geselecteerdeMateriaalOptieId(category, materialSelections);
-          return category.materialen.find((m) => m.id === selectedId);
-        })
-        .filter((option): option is NonNullable<typeof option> => Boolean(option))
-        .map((option) => option.naam);
-
-      const extraNamen = product.extraOpties
-        .filter((extra) => extra.altijd || (extraSelections[extra.id] ?? 0) > 0)
-        .map((extra) => extra.naam);
-
-      // Eigen, volledig berekend bedrag van dit product (materiaal + arbeid
-      // + transport + voorrijkosten van dít product) — zodat een offerte die
-      // hieruit wordt opgebouwd elke regel zijn eigen prijs geeft in plaats
-      // van alles in één restpost te proppen (zie prefillOfferteRegels in
-      // app/lib/offertes.ts).
-      const productRegel = breakdown.productRegels.find((regel) => regel.productId === product.id);
-
-      regels.push({
-        productId: product.id,
-        naam: product.naam,
-        type: "product",
-        aantal: qty,
-        eenheid: product.eenheid,
-        materiaal: materiaalNamen.length > 0 ? materiaalNamen.join(", ") : undefined,
-        extras: extraNamen.length > 0 ? extraNamen : undefined,
-        prijs: productRegel?.totaal,
-      });
-    }
-
-    return {
-      regels,
-      arbeidskosten: bedragTop(breakdown.arbeidskosten),
-      materiaalkosten: bedragTop(breakdown.materiaalkosten),
-      transportkosten: bedragTop(breakdown.transportkosten),
-      voorrijkosten: bedragTop(breakdown.voorrijkosten),
-      subtotaal: bedragTop(breakdown.subtotaal),
-      btw: bedragTop(breakdown.btw),
-      totaal: bedragTop(breakdown.totaal),
-    };
-  }, [products, effectiveProductQty, productRegelsBedrag, materialSelections, extraSelections, breakdown]);
+  const snapshot: LeadSnapshot = useMemo(
+    () => bouwLeadSnapshot({ products, productQty: effectiveProductQty, productRegelsBedrag, materialSelections, extraSelections, breakdown, btwPercentage: costSettings.btwPercentage }),
+    [products, effectiveProductQty, productRegelsBedrag, materialSelections, extraSelections, breakdown, costSettings.btwPercentage]
+  );
 
   const isEmpty = products.length === 0;
 
