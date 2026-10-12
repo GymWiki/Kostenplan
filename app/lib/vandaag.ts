@@ -1,5 +1,7 @@
 import { prisma } from "@/app/lib/prisma";
-import type { LeadSnapshot } from "@/app/lib/leads";
+import { eersteRegelNaam } from "@/app/lib/lead-weergave";
+
+export { eersteRegelNaam };
 
 export type VandaagLead = { id: string; naam: string; werkzaamheid: string; bedrag: number; createdAt: Date };
 export type VandaagOfferte = { leadId: string; naam: string; bedrag: number; verstuurdOp: Date | null };
@@ -25,13 +27,6 @@ export function kiesHoofdactie(d: Pick<VandaagData, "nieuweLeads" | "checklist" 
   const open = d.checklist?.stappen.some((s) => !s.klaar);
   if (d.checklist && open) return { label: "Maak je rekentool af", href: `/dashboard/tools/${d.checklist.toolId}` };
   return { label: "Bekijk je aanvragen", href: "/dashboard/leads" };
-}
-
-export function eersteRegelNaam(snapshot: unknown): string {
-  const regels = (snapshot as Partial<LeadSnapshot> | null)?.regels;
-  const eerste = regels?.[0]?.naam;
-  if (!eerste) return "Aanvraag";
-  return regels && regels.length > 1 ? `${eerste} +${regels.length - 1}` : eerste;
 }
 
 // Alles voor het mobiele "Vandaag"-scherm.

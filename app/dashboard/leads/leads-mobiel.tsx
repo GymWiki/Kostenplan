@@ -8,7 +8,7 @@ import { Select } from "@/app/components/ui/input";
 import { SegmentedControl } from "@/app/components/mobile/segmented-control";
 import { formatCurrency } from "@/app/lib/format";
 import { LEAD_STATUS_LABELS, whatsappLink } from "@/app/lib/leads";
-import { eersteRegelNaam } from "@/app/lib/vandaag";
+import { eersteRegelNaam } from "@/app/lib/lead-weergave";
 import { relatieveTijd } from "@/app/components/dashboard/recente-aanvragen";
 import { cn } from "@/app/lib/cn";
 import { AfhandelKeuzeModal } from "./afhandel-keuze-modal";
