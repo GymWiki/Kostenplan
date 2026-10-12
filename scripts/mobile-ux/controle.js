@@ -27,7 +27,7 @@ const start = async (p, url) => { await p.goto(BASE + url, { waitUntil: "network
   {
     const { ctx, p, fouten } = await nieuw(b);
     await start(p, "/dashboard/leads");
-    await tik(p.getByRole("button", { name: /Piet Jansen/ }));
+    await tik(p.getByRole("button", { name: /Marieke de Boer/ }));
     const bel = p.getByRole("link", { name: "Bellen" });
     await bel.waitFor({ timeout: 8000 });
     const href = await bel.first().getAttribute("href");
@@ -40,7 +40,7 @@ const start = async (p, url) => { await p.goto(BASE + url, { waitUntil: "network
     const { ctx, p } = await nieuw(b);
     await start(p, "/dashboard/tools");
     await tik(p.getByRole("link", { name: /Tuinaanleg/ }));
-    await tik(p.getByRole("button", { name: "Prijzen" }));
+    await tik(p.getByRole("button", { name: "Prijzen", exact: true }));
     const veld = p.getByLabel(/Jouw prijs/).first();
     await veld.waitFor({ timeout: 8000 });
     await tik(veld);
@@ -101,7 +101,7 @@ const start = async (p, url) => { await p.goto(BASE + url, { waitUntil: "network
     const { ctx, p } = await nieuw(b);
     await start(p, "/dashboard/tools");
     await p.getByRole("link", { name: /Tuinaanleg/ }).first().tap();
-    await p.getByRole("button", { name: "Prijzen" }).first().tap();
+    await p.getByRole("button", { name: "Prijzen", exact: true }).first().tap();
     const veld = p.getByLabel(/Jouw prijs/).first();
     await veld.waitFor();
     await veld.tap();
@@ -128,7 +128,7 @@ const start = async (p, url) => { await p.goto(BASE + url, { waitUntil: "network
     const { ctx, p } = await nieuw(b);
     await start(p, "/dashboard/tools");
     await p.getByRole("link", { name: /Tuinaanleg/ }).first().tap();
-    const open = async () => { await p.getByRole("button", { name: "Prijzen" }).first().tap(); await p.getByRole("dialog").waitFor(); await slaap(300); };
+    const open = async () => { await p.getByRole("button", { name: "Prijzen", exact: true }).first().tap(); await p.getByRole("dialog").waitFor(); await slaap(300); };
     await open();
     await p.goBack(); await slaap(500);
     const naTerug = await p.getByRole("dialog").count();

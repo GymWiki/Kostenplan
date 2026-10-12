@@ -284,7 +284,7 @@ export function WerkzaamheidPaneel({
           id="materialen"
           titel="Materialen en prijzen"
           samenvatting={`${aantalMat} ${aantalMat === 1 ? "materiaal" : "materialen"}${range ? ` · ${bedragKort(range.min)}${range.max !== range.min ? `–${bedragKort(range.max)}` : ""} per ${eenheidKort}` : ""}`}
-          waarschuwing={voorbeeldAantal > 0 ? `${voorbeeldAantal} voorbeeldprijs${voorbeeldAantal > 1 ? "zen" : ""}` : null}
+          waarschuwing={voorbeeldAantal > 0 ? (voorbeeldAantal === 1 ? "1 voorbeeldprijs" : `${voorbeeldAantal} voorbeeldprijzen`) : null}
           open={openBlok === "materialen"}
           onToggle={() => wissel("materialen")}
         >

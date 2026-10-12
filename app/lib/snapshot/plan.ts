@@ -1,6 +1,6 @@
 import "server-only";
 import { after } from "next/server";
-import { prismaBasis } from "@/app/lib/prisma";
+import { prismaBasis, prismaHaak } from "@/app/lib/prisma";
 import { blobGeconfigureerd } from "./opslag";
 
 // Modellen waarvan een schrijfactie de gepubliceerde rekentool kan veranderen.
@@ -50,8 +50,10 @@ export function raaktSnapshot(model: string, operation: string, args: unknown): 
 
 // Zet een modelverwijzing om naar de tool-id's die erbij horen. Pure
 // zoekactie op de (niet-uitgebreide) client, dus zonder zelf weer te plannen.
-export async function toolIdsVoor({ model, where }: Beschrijving): Promise<string[]> {
-  const b = prismaBasis;
+export async function toolIdsVoor({ model, where }: Beschrijving, client = prismaHaak): Promise<string[]> {
+  // Standaard de aparte haak-verbinding: wordt ook tijdens een lopende
+  // transactie aangeroepen, waar prismaBasis zijn enige verbinding kwijt is.
+  const b = client;
   try {
     let ids: (string | undefined)[] = [];
     switch (model) {
@@ -158,21 +160,20 @@ export function planPublicatie(toolIds: string[]): void {
 // Haakt aan op een schrijfactie. `voorIds` zijn vooraf opgezocht (bij
 // bewerken/verwijderen); `naBeschrijvingen` pas na afloop opgelost, omdat
 // nieuwe rijen er voor het committen nog niet voor andere verbindingen zijn.
-export async function verwerkSchrijfactie(voorIds: string[], naBeschrijving: Beschrijving | null): Promise<void> {
+export function verwerkSchrijfactie(voorIds: string[], naBeschrijving: Beschrijving | null): void {
   if (!blobGeconfigureerd()) return;
-  await markeerVuil(voorIds);
-  planPublicatie(voorIds);
-  if (naBeschrijving) {
-    const werk = async () => {
-      await new Promise((r) => setTimeout(r, 300));
-      const ids = await toolIdsVoor(naBeschrijving);
-      await markeerVuil(ids);
-      await Promise.all(ids.map(plannenVoorTool));
-    };
-    try {
-      after(werk);
-    } catch {
-      void werk();
-    }
+  // Alles hieronder gebeurt ná het antwoord (of op een timer), los van een
+  // eventuele lopende transactie: de transactie mag hier nooit op wachten.
+  const werk = async () => {
+    await new Promise((r) => setTimeout(r, 300));
+    await markeerVuil(voorIds);
+    const ids = naBeschrijving ? await toolIdsVoor(naBeschrijving, prismaBasis) : [];
+    await markeerVuil(ids);
+    await Promise.all([...new Set([...voorIds, ...ids])].map(plannenVoorTool));
+  };
+  try {
+    after(werk);
+  } catch {
+    void werk();
   }
 }
