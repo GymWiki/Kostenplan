@@ -1,8 +1,7 @@
 "use client";
 
-import { createPortal } from "react-dom";
 import { cn } from "@/app/lib/cn";
-import { usePortalDoel, useToetsenbordOpen } from "./use-mobiel";
+import { useToetsenbordOpen } from "./use-mobiel";
 
 // Vaste balk onderin voor de hoofdactie van een scherm, alleen < 768 px.
 // `metTabbalk`: ligt boven de tabbalk (64 px); anders zit hij onderaan het
@@ -18,9 +17,10 @@ export function StickyActiebalk({
   className?: string;
 }) {
   const toetsenbord = useToetsenbordOpen();
-  const doel = usePortalDoel();
-  if (toetsenbord || !doel) return null;
-  return createPortal(
+  // Gewoon op de plek zelf (position: fixed), niet via een portal: zo staat de
+  // balk al in de server-HTML en hoeft de pagina er niet op te wachten.
+  if (toetsenbord) return null;
+  return (
     <div
       data-actiebalk
       className={cn(
@@ -30,7 +30,6 @@ export function StickyActiebalk({
       )}
     >
       <div className="mx-auto flex max-w-xl items-center gap-3">{children}</div>
-    </div>,
-    doel
+    </div>
   );
 }
