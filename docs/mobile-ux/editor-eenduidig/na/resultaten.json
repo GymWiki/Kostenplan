@@ -1,0 +1,132 @@
+[
+  {
+    "naam": "gast: a) midden van de titel ligt in <a>/<button>",
+    "ok": true,
+    "d": "{\"titel\":\"Mijn rekentool\",\"binnenKnop\":true,\"tag\":\"BUTTON\"}"
+  },
+  {
+    "naam": "gast: c) user-select van de titel is none",
+    "ok": true,
+    "d": "none|none"
+  },
+  {
+    "naam": "gast: d) sheet-top tussen kopbalk-onderkant en +16 px",
+    "ok": true,
+    "d": "{\"hb\":56,\"top\":64}"
+  },
+  {
+    "naam": "gast: e) terugknop is bovenste element terwijl werkzaamheid open is",
+    "ok": true,
+    "d": "{\"ok\":true,\"el\":\"svg:\"}"
+  },
+  {
+    "naam": "gast: f) \"Terug naar overzicht\" ontbreekt",
+    "ok": true,
+    "d": "{\"terug\":0,\"naam\":\"Bestrating / terras\",\"kopTekst\":1,\"invoer\":0}"
+  },
+  {
+    "naam": "gast: f) naam precies één keer zichtbaar (invoer + losse tekst)",
+    "ok": true,
+    "d": "{\"terug\":0,\"naam\":\"Bestrating / terras\",\"kopTekst\":1,\"invoer\":0}"
+  },
+  {
+    "naam": "gast: sheet half na slepen (rekentool zichtbaar erachter)",
+    "ok": true,
+    "d": "851 → 511"
+  },
+  {
+    "naam": "gast: verder omlaag slepen sluit de sheet",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "naam": "gast: toetsenbord: sheet blijft onder de kopbalk",
+    "ok": true,
+    "d": "sheet 64–520, kop 56, zichtbaar 520"
+  },
+  {
+    "naam": "gast: toetsenbord: actief veld in beeld",
+    "ok": true,
+    "d": "veld 301–345"
+  },
+  {
+    "naam": "gast: lang drukken op de titel selecteert niets",
+    "ok": true,
+    "d": "selectie: \"\""
+  },
+  {
+    "naam": "gast: b) tik op de titel navigeert naar Rekentools",
+    "ok": true,
+    "d": "http://localhost:3200/"
+  },
+  {
+    "naam": "gast: geen uncaught fouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "naam": "ingelogd: a) midden van de titel ligt in <a>/<button>",
+    "ok": true,
+    "d": "{\"titel\":\"Tuinaanleg\",\"binnenKnop\":true,\"tag\":\"BUTTON\"}"
+  },
+  {
+    "naam": "ingelogd: c) user-select van de titel is none",
+    "ok": true,
+    "d": "none|none"
+  },
+  {
+    "naam": "ingelogd: d) sheet-top tussen kopbalk-onderkant en +16 px",
+    "ok": true,
+    "d": "{\"hb\":56,\"top\":64}"
+  },
+  {
+    "naam": "ingelogd: e) terugknop is bovenste element terwijl werkzaamheid open is",
+    "ok": true,
+    "d": "{\"ok\":true,\"el\":\"svg:\"}"
+  },
+  {
+    "naam": "ingelogd: f) \"Terug naar overzicht\" ontbreekt",
+    "ok": true,
+    "d": "{\"terug\":0,\"naam\":\"Bestrating / terras\",\"kopTekst\":1,\"invoer\":0}"
+  },
+  {
+    "naam": "ingelogd: f) naam precies één keer zichtbaar (invoer + losse tekst)",
+    "ok": true,
+    "d": "{\"terug\":0,\"naam\":\"Bestrating / terras\",\"kopTekst\":1,\"invoer\":0}"
+  },
+  {
+    "naam": "ingelogd: sheet half na slepen (rekentool zichtbaar erachter)",
+    "ok": true,
+    "d": "851 → 511"
+  },
+  {
+    "naam": "ingelogd: verder omlaag slepen sluit de sheet",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "naam": "ingelogd: toetsenbord: sheet blijft onder de kopbalk",
+    "ok": true,
+    "d": "sheet 64–520, kop 56, zichtbaar 520"
+  },
+  {
+    "naam": "ingelogd: toetsenbord: actief veld in beeld",
+    "ok": true,
+    "d": "veld 301–345"
+  },
+  {
+    "naam": "ingelogd: lang drukken op de titel selecteert niets",
+    "ok": true,
+    "d": "selectie: \"\""
+  },
+  {
+    "naam": "ingelogd: b) tik op de titel navigeert naar Rekentools",
+    "ok": true,
+    "d": "http://localhost:3200/dashboard/tools"
+  },
+  {
+    "naam": "ingelogd: geen uncaught fouten",
+    "ok": true,
+    "d": ""
+  }
+]

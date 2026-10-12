@@ -57,6 +57,7 @@ export function MobieleEditor({
   voorbeeld,
   renderWerkzaamheid,
   gast,
+  onTerug,
   meldingNode,
 }: {
   naam: string;
@@ -78,6 +79,8 @@ export function MobieleEditor({
   voorbeeld: React.ReactNode;
   renderWerkzaamheid: (product: ProductMetRelaties, mobiel: "scherm" | SnelSoort) => React.ReactNode;
   gast: boolean;
+  // Terug naar Rekentools (of de homepage voor gasten); slaat eerst op.
+  onTerug: () => void;
   meldingNode?: React.ReactNode;
 }) {
   const { costSettings } = useTarieven();
@@ -112,20 +115,13 @@ export function MobieleEditor({
     [producten, costSettings]
   );
 
-  // Eigen scherm voor één werkzaamheid.
-  if (werkProduct) {
-    return (
-      <>
-        <KopInstellen titel={werkProduct.naam} onTerug={sluitPaneel} />
-        {renderWerkzaamheid(werkProduct, "scherm")}
-      </>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-4 md:hidden">
-      <KopInstellen titel={naam} terug="/dashboard/tools" />
+      <KopInstellen titel={naam} onTerug={onTerug} />
       <KopActie>
+        <span aria-live="polite" className="min-w-0 truncate text-xs text-muted-foreground">
+          {statusNode}
+        </span>
         <DropdownMenu
           ariaLabel="Meer acties voor deze rekentool"
           items={[{ label: "Volgorde wijzigen", icon: ArrowDownUp, disabled: producten.length < 2, onSelect: () => setVolgordeOpen(true) }, ...menu]}
@@ -159,10 +155,6 @@ export function MobieleEditor({
 
       {modus === "bewerken" && (
         <>
-          <div aria-live="polite" className="min-h-5 text-sm">
-            {statusNode}
-          </div>
-
           {isAangepast && (
             <button
               type="button"
@@ -263,6 +255,25 @@ export function MobieleEditor({
           </StickyActiebalk>
         </>
       )}
+
+      <MobieleSheet
+        open={Boolean(werkProduct) && modus === "bewerken"}
+        onClose={sluitPaneel}
+        titel={werkProduct?.naam ?? ""}
+        icoon={
+          werkProduct ? (
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+              {(() => {
+                const Icoon = (werkProduct.icoon && PRODUCT_ICONS[werkProduct.icoon]) || Ruler;
+                return <Icoon className="h-5 w-5" aria-hidden="true" />;
+              })()}
+            </span>
+          ) : null
+        }
+        beginStand="volledig"
+      >
+        {werkProduct && renderWerkzaamheid(werkProduct, "scherm")}
+      </MobieleSheet>
 
       <MobieleSheet open={sheetOpen && modus === "bewerken"} onClose={sluitPaneel} titel={paneelTitel} beginStand="volledig">
         {paneelInhoud}
