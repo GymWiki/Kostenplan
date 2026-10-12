@@ -196,7 +196,7 @@ function DeleteForm({ company }: { company: Company }) {
       className="flex flex-col gap-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm"
     >
       <p className="text-foreground">
-        Dit verwijdert <strong>{company.naam}</strong> definitief, inclusief alle werkzaamheden,
+        Dit verwijdert <strong>{company.naam}</strong> definitief, inclusief alle onderdelen,
         leads en instellingen. Dit kan niet ongedaan worden gemaakt.
       </p>
       <div className="flex flex-col gap-1.5">

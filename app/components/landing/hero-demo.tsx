@@ -136,7 +136,7 @@ export function HeroDemo() {
           {kant === "beheer" && (
             <div className="absolute inset-0 overflow-y-auto overscroll-contain bg-lp-staal p-4 sm:p-5">
               <p className="font-lp-maat text-[11px] tracking-wide text-lp-inkt-2">Zo stel jij het in · alleen zichtbaar voor jou</p>
-              <div role="group" aria-label="Werkzaamheid" className="mt-3 flex flex-wrap gap-2">
+              <div role="group" aria-label="Onderdeel" className="mt-3 flex flex-wrap gap-2">
                 {draft.calculator.werkzaamheden.map((x, i) => (
                   <button
                     key={x.id}

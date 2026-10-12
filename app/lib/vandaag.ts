@@ -83,9 +83,9 @@ export async function laadVandaag(companyId: string): Promise<VandaagData> {
     const aantal = aantalPerTool.get(t.id) ?? 0;
     const stappen: ChecklistStap[] = [
       { id: "logo", label: "Logo instellen", klaar: Boolean(logoPerTool.get(t.id)), href: `/dashboard/tools/${t.id}?paneel=uiterlijk` },
-      { id: "werk", label: "Minstens één werkzaamheid", klaar: aantal > 0, href: `/dashboard/tools/${t.id}?paneel=toevoegen` },
+      { id: "werk", label: "Minstens één onderdeel", klaar: aantal > 0, href: `/dashboard/tools/${t.id}?paneel=toevoegen` },
       { id: "prijzen", label: "Voorbeeldprijzen vervangen", klaar: aantal > 0 && (voorbeeldPerTool.get(t.id) ?? 0) === 0, href: `/dashboard/tools/${t.id}` },
-      { id: "website", label: "Op je website gezet", klaar: t.status === "GEPUBLICEERD", href: `/dashboard/tools/${t.id}?paneel=website` },
+      { id: "website", label: "Staat op je website", klaar: t.status === "GEPUBLICEERD", href: `/dashboard/tools/${t.id}?paneel=website` },
     ];
     if (!stappen.every((x) => x.klaar)) {
       checklist = { toolId: t.id, toolNaam: t.naam, stappen };

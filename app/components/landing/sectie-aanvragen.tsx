@@ -73,7 +73,7 @@ export function SectieAanvragen() {
             </div>
             <dl className="mt-4 divide-y divide-lp-lijn border-y border-lp-lijn text-sm">
               {[
-                ["Werkzaamheid", eerste.naam],
+                ["Onderdeel", eerste.naam],
                 ["Afmetingen", "5 × 4 m = 20 m²"],
                 ["Materiaal", eerste.materiaal],
                 ["Berekende prijs", `${formatCurrency(rijen[0].opbouw.totaal)} excl. btw`],

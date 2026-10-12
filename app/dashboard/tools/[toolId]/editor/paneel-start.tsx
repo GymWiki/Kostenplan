@@ -85,9 +85,9 @@ export function PaneelStart({
                   {w.heeftVoorbeeld && (
                     <span className="shrink-0 rounded-full border border-example bg-example/20 px-2 py-0.5 text-xs font-semibold">voorbeeld</span>
                   )}
-                  {!w.actief && <span className="shrink-0 text-xs font-normal text-muted-foreground">verborgen</span>}
+                  {!w.actief && <span className="shrink-0 text-xs font-normal text-muted-foreground">Verborgen voor klanten</span>}
                 </button>
-                <Switch checked={w.actief} onChange={(e) => onZichtbaar(w.id, e.target.checked)} aria-label={`${w.naam} zichtbaar voor klanten`} />
+                <Switch checked={w.actief} onChange={(e) => onZichtbaar(w.id, e.target.checked)} aria-label={`Zichtbaar voor klanten: ${w.naam}`} />
                 <button
                   type="button"
                   aria-label={`${w.naam} omhoog`}

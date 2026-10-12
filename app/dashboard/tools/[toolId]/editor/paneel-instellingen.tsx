@@ -194,7 +194,7 @@ export function PaneelWebsite({
       )}
       <section aria-labelledby="embed-titel" className="flex flex-col gap-3">
         <h3 id="embed-titel" className="font-bold text-foreground">
-          Op je website plaatsen
+          Plaatsen op je website
         </h3>
         {magEmbedden && embedCode ? (
           <>

@@ -28,12 +28,12 @@ export function SectieWerkzaamheden() {
     <section id="werkzaamheden" aria-labelledby="h-wz" className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
         <div>
-          <Positie nr="07" label="Werkzaamheden" />
+          <Positie nr="07" label="Onderdelen" />
           <h2 id="h-wz" className="mt-4 text-4xl font-semibold leading-[1.02] sm:text-5xl">
             Wat je kunt laten uitrekenen
           </h2>
           <p className="mt-5 max-w-md text-lg text-lp-inkt-2">
-            Elke werkzaamheid rekent op zijn eigen manier, met jouw materialen en jouw werktempo. Dit zijn de werkzaamheden waarmee je begint; je past ze aan of voegt er zelf een toe.
+            Elk onderdeel rekent op zijn eigen manier, met jouw materialen en jouw werktempo. Dit zijn de onderdelen waarmee je begint; je past ze aan of voegt er zelf een toe.
           </p>
           <p className="mt-4 text-base">
             <Link href="/voorbeelden-rekentools" className="font-semibold underline decoration-lp-bos-700 decoration-2 underline-offset-4">
@@ -49,12 +49,12 @@ export function SectieWerkzaamheden() {
         <div>
           <MaatH label="bestek · begin hier" />
           <table className="mt-3 w-full border-t border-lp-lijn text-left">
-            <caption className="sr-only">Werkzaamheden met rekenmethode en een voorbeeld</caption>
+            <caption className="sr-only">Onderdelen met rekenmethode en een voorbeeld</caption>
             <thead className="sr-only md:table-header-group md:not-sr-only">
               <tr className="border-b border-lp-lijn font-lp-maat text-[11px] tracking-wide text-lp-inkt-2">
                 <th scope="col" className="w-10 py-2 pr-2 font-medium">Pos.</th>
                 <th scope="col" className="w-14 py-2 font-medium">Staal</th>
-                <th scope="col" className="py-2 font-medium">Werkzaamheid</th>
+                <th scope="col" className="py-2 font-medium">Onderdeel</th>
                 <th scope="col" className="py-2 font-medium">Rekenmethode</th>
                 <th scope="col" className="py-2 font-medium">Voorbeeld</th>
               </tr>

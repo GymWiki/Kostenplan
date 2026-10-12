@@ -8,7 +8,7 @@ import { SearchDialog } from "@/app/components/marketing/search-dialog";
 // de hoofdnavigatie van de site, met zoeken.
 const PAGINA_LINKS: MenuLink[] = [
   { href: "/#zo-werkt-het", label: "Zo werkt het" },
-  { href: "/#werkzaamheden", label: "Werkzaamheden" },
+  { href: "/#werkzaamheden", label: "Onderdelen" },
   { href: "/#prijzen", label: "Prijzen" },
   { href: "/#vragen", label: "Vragen" },
 ];

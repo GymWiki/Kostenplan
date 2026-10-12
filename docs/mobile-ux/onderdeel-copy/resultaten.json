@@ -1,0 +1,167 @@
+[
+  {
+    "n": "ingelogd 390 lijst: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "ingelogd 390: onderbalk bevat alleen \"+ Onderdeel\"",
+    "ok": true,
+    "d": "[{\"tekst\":\"Onderdeel\",\"l\":16,\"r\":374,\"afgekapt\":false}]"
+  },
+  {
+    "n": "ingelogd 390 lijst met verborgen onderdeel: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "ingelogd 390: verborgen onderdeel heeft label \"Verborgen voor klanten\"",
+    "ok": true,
+    "d": "1"
+  },
+  {
+    "n": "ingelogd 390 toevoegen: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "ingelogd 390 onderdeel-sheet: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "ingelogd 390 rekentools-overzicht: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "ingelogd 360 lijst: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "ingelogd 360: onderbalk bevat alleen \"+ Onderdeel\"",
+    "ok": true,
+    "d": "[{\"tekst\":\"Onderdeel\",\"l\":16,\"r\":344,\"afgekapt\":false}]"
+  },
+  {
+    "n": "ingelogd 360 lijst met verborgen onderdeel: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "ingelogd 360: verborgen onderdeel heeft label \"Verborgen voor klanten\"",
+    "ok": true,
+    "d": "2"
+  },
+  {
+    "n": "ingelogd 360 toevoegen: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "ingelogd 360 onderdeel-sheet: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "ingelogd 360 rekentools-overzicht: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "ingelogd 1440 start: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "ingelogd 1440: verborgen onderdeel heeft label \"Verborgen voor klanten\"",
+    "ok": true,
+    "d": "2"
+  },
+  {
+    "n": "ingelogd 1440 onderdeel-paneel: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "ingelogd 1440 rekentools-overzicht: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "gast 390 lijst: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "gast 390: onderbalk bevat alleen \"+ Onderdeel\"",
+    "ok": true,
+    "d": "[{\"tekst\":\"Onderdeel\",\"l\":16,\"r\":374,\"afgekapt\":false}]"
+  },
+  {
+    "n": "gast 390 lijst met verborgen onderdeel: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "gast 390: verborgen onderdeel heeft label \"Verborgen voor klanten\"",
+    "ok": true,
+    "d": "1"
+  },
+  {
+    "n": "gast 390 toevoegen: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "gast 390 onderdeel-sheet: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "gast 360 lijst: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "gast 360: onderbalk bevat alleen \"+ Onderdeel\"",
+    "ok": true,
+    "d": "[{\"tekst\":\"Onderdeel\",\"l\":16,\"r\":344,\"afgekapt\":false}]"
+  },
+  {
+    "n": "gast 360 lijst met verborgen onderdeel: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "gast 360: verborgen onderdeel heeft label \"Verborgen voor klanten\"",
+    "ok": true,
+    "d": "1"
+  },
+  {
+    "n": "gast 360 toevoegen: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "gast 360 onderdeel-sheet: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "gast 1440 start: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "gast 1440: verborgen onderdeel heeft label \"Verborgen voor klanten\"",
+    "ok": true,
+    "d": "1"
+  },
+  {
+    "n": "gast 1440 onderdeel-paneel: geen verboden woorden in zichtbare tekst/labels",
+    "ok": true,
+    "d": ""
+  }
+]

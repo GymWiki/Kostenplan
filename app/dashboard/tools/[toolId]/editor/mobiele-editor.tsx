@@ -124,7 +124,11 @@ export function MobieleEditor({
         </span>
         <DropdownMenu
           ariaLabel="Meer acties voor deze rekentool"
-          items={[{ label: "Volgorde wijzigen", icon: ArrowDownUp, disabled: producten.length < 2, onSelect: () => setVolgordeOpen(true) }, ...menu]}
+          items={[
+            { label: "Volgorde wijzigen", icon: ArrowDownUp, disabled: producten.length < 2, onSelect: () => setVolgordeOpen(true) },
+            { label: gast ? "Account maken" : "Op website zetten", icon: Globe, onSelect: () => setPaneel(gast ? "account" : "website") },
+            ...menu,
+          ]}
           className="h-11 w-11"
         />
       </KopActie>
@@ -168,15 +172,16 @@ export function MobieleEditor({
 
           <section aria-labelledby="mk-werk" className="flex flex-col gap-2">
             <h2 id="mk-werk" className="text-base font-bold text-foreground">
-              Werkzaamheden
+              Onderdelen
             </h2>
-            {rijen.length === 0 && <p className="rounded-xl border border-border bg-card p-4 text-base text-foreground">Je hebt nog geen werkzaamheden. Voeg er een toe.</p>}
+            {rijen.length === 0 && <p className="rounded-xl border border-border bg-card p-4 text-base text-foreground">Je hebt nog geen onderdelen. Voeg er een toe.</p>}
             <ul className="flex flex-col gap-3">
               {rijen.map(({ p, eenheid, hoeveelheid, klantPrijs, samenvatting, voorbeeldAantal }) => {
                 const Icoon = (p.icoon && PRODUCT_ICONS[p.icoon]) || Ruler;
                 const blokkade = waarschuwingen[`werkzaamheid:${p.id}`]?.soort === "blokkade";
                 return (
                   <li key={p.id} className="overflow-hidden rounded-xl border border-border bg-card">
+                    <div className={p.actief ? undefined : "opacity-60"}>
                     <button
                       type="button"
                       onClick={() => setPaneel(`werkzaamheid:${p.id}`)}
@@ -208,9 +213,13 @@ export function MobieleEditor({
                         Werktempo
                       </button>
                     </div>
+                    </div>
                     <label className="flex min-h-12 cursor-pointer items-center justify-between gap-2 border-t border-border px-4 text-sm font-semibold text-foreground">
-                      Op je website
-                      <Switch checked={p.actief} onChange={(e) => zetZichtbaar(p.id, e.target.checked)} aria-label={`${p.naam} op je website`} />
+                      <span className="flex min-w-0 flex-wrap items-center gap-x-2">
+                        Zichtbaar
+                        {!p.actief && <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-foreground">Verborgen voor klanten</span>}
+                      </span>
+                      <Switch checked={p.actief} onChange={(e) => zetZichtbaar(p.id, e.target.checked)} aria-label={`Zichtbaar voor klanten: ${p.naam}`} />
                     </label>
                   </li>
                 );
@@ -246,11 +255,8 @@ export function MobieleEditor({
           </section>
 
           <StickyActiebalk>
-            <Button type="button" variant="outline" size="lg" className="shrink-0 px-4" aria-label={gast ? "Account maken" : "Zet op mijn website"} onClick={() => setPaneel(gast ? "account" : "website")}>
-              <Globe className="h-5 w-5" aria-hidden="true" />
-            </Button>
             <Button type="button" size="lg" className="flex-1" onClick={() => setPaneel("toevoegen")}>
-              <Plus className="h-5 w-5" aria-hidden="true" /> Werkzaamheid
+              <Plus className="h-5 w-5" aria-hidden="true" /> Onderdeel
             </Button>
           </StickyActiebalk>
         </>

@@ -107,7 +107,7 @@ function Beeld3() {
 const STAPPEN = [
   {
     nr: "01",
-    titel: "Kies je werkzaamheden",
+    titel: "Kies je onderdelen",
     tekst: "Vink aan wat je doet: schutting, bestrating, graszoden, vlonder. Je krijgt meteen een werkende rekentool met voorbeeldprijzen, zonder iets te hoeven bouwen.",
     beeld: <Beeld1 />,
   },

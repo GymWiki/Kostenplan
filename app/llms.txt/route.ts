@@ -12,14 +12,14 @@ export function GET() {
 Laatst bijgewerkt: ${LAATST_BIJGEWERKT.tekst}. Taal: Nederlands. Doelgroep: hoveniers (ondernemers), niet particulieren.
 
 ## Wat het is
-- Een hovenier bouwt een rekentool met zijn eigen werkzaamheden (schutting, bestrating en terras, graszoden, kunstgras, vlonder, haag, grondwerk en afvoer, bomen), materiaalprijzen, werktempo en dagdeeltarief.
+- Een hovenier bouwt een rekentool met zijn eigen onderdelen (schutting, bestrating en terras, graszoden, kunstgras, vlonder, haag, grondwerk en afvoer, bomen), materiaalprijzen, werktempo en dagdeeltarief.
 - Zijn klanten berekenen op zijn website zelf de prijs en sturen een aanvraag; de hovenier past een conceptofferte aan en verstuurt die.
 - Logo en kleuren kunnen automatisch van de website van de hovenier worden gehaald.
 - Starten kan gratis en zonder account op ${SITE_URL}/probeer.
 - Werkt met elke website; de rekentool kan ingesloten worden (Pro) of via een link gedeeld worden. Uitleg voor ${WEBSITEBOUWERS.join(", ")}.
 
 ## Prijzen (EUR)
-${PAKKETTEN.map((p) => (p.maand === 0 ? `- Gratis: ${eur(0)}. Tot ${PLAN_LIMITS.GRATIS.maxProductsPerCompany} werkzaamheden, ${PLAN_LIMITS.GRATIS.maxActiveTools} rekentool, delen via een link.` : `- ${p.naam}: ${eur(p.maand)} per maand of ${eur(p.jaar)} per jaar.`)).join("\n")}
+${PAKKETTEN.map((p) => (p.maand === 0 ? `- Gratis: ${eur(0)}. Tot ${PLAN_LIMITS.GRATIS.maxProductsPerCompany} onderdelen, ${PLAN_LIMITS.GRATIS.maxActiveTools} rekentool, delen via een link.` : `- ${p.naam}: ${eur(p.maand)} per maand of ${eur(p.jaar)} per jaar.`)).join("\n")}
 - Eigen logo en kleuren en aanvragen/offertes: vanaf Plus. Insluiten in een eigen pagina: Pro.
 
 ## Belangrijkste pagina's

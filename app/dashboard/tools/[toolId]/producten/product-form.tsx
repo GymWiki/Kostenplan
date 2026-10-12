@@ -387,7 +387,7 @@ export function ProductForm({
       <div className="flex flex-col gap-1.5">
         <Label>Btw</Label>
         <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
-          {pricingSettings.btwPercentage}% — geldt voor alle werkzaamheden van deze rekentool, in te stellen bij{" "}
+          {pricingSettings.btwPercentage}% — geldt voor alle onderdelen van deze rekentool, in te stellen bij{" "}
           <Link href={`/dashboard/tools/${toolId}/prijzen`} className="underline hover:text-foreground">
             Prijzen
           </Link>
