@@ -1,4 +1,6 @@
 import type { LeadStatus } from "@/app/generated/prisma/client";
+import type { PricingResult } from "@/app/lib/pricing/engine";
+import type { PricingInput } from "@/app/lib/pricing/schema";
 
 // Eén regel in een LeadSnapshot — wat de consument had aangevinkt/ingevuld
 // voor één dienst of product, bevroren op het moment van aanvragen.
@@ -40,10 +42,23 @@ export type LeadSnapshotOpbouw = {
   extras?: { naam: string; aantal: number; bedrag: number }[];
 };
 
-// Vorm van Lead.snapshot (Json). Gebouwd client-side in de publieke
-// calculator (die de volledige, leesbare namen al in context heeft) en
-// ongewijzigd opgeslagen — dit is een prijsindicatie voor de consument,
-// geen factuur, dus er is geen noodzaak dit server-side te herberekenen.
+// Momentopname van de rekenkern (app/lib/pricing): wat de klant invulde, met welke configuratie er
+// is gerekend en de volledige opbouw (regels in centen). De offerte bouwt haar regels hieruit.
+export type LeadSnapshotRekenkern = {
+  versie: 1;
+  // "server": de server heeft opnieuw gerekend uit de invoer en de configuratie van dat moment.
+  // "client": de invoer ontbrak (oudere browser, reserve-ingest), de bedragen zijn die van de browser.
+  bron: "server" | "client";
+  // Vingerafdruk van de PricingConfig waarmee is gerekend (zie app/lib/pricing/hash.ts).
+  configHash: string;
+  invoer: PricingInput;
+  resultaat: PricingResult;
+  // Alleen gezet als het servertotaal afwijkt van wat de klant zag (in centen incl. btw).
+  afwijking?: { klantCenten: number; serverCenten: number };
+};
+
+// Vorm van Lead.snapshot (Json). De browser bouwt hem met de rekenkern en stuurt hem mee; de server
+// rekent opnieuw uit `rekenkern.invoer` en slaat zijn eigen uitkomst op (zie lead-aanmaken.ts).
 export type LeadSnapshot = {
   regels: LeadSnapshotLine[];
   arbeidskosten: number;
@@ -57,6 +72,10 @@ export type LeadSnapshot = {
   btwPercentage?: number;
   // Prijs werd als bandbreedte getoond; de bedragen hierboven zijn het midden.
   bandbreedte?: boolean;
+  // Aanwezig bij aanvragen vanaf de rekenkern; oudere snapshots hebben alleen de velden hierboven.
+  rekenkern?: LeadSnapshotRekenkern;
+  // Idem voor formule-gebaseerde ("Aangepaste") rekentools: de ingevulde waarden, zodat de server kan narekenen.
+  modulair?: { versie: 1; bron: "server" | "client"; configHash: string; waarden: Record<string, unknown>; afwijking?: { klantCenten: number; serverCenten: number } };
 };
 
 export const LEAD_STATUSSEN: LeadStatus[] = [

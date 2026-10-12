@@ -8,9 +8,8 @@ import {
   updateMaterialOptionAction,
   type MaterialOptionFormState,
 } from "@/app/lib/actions/material-options";
-import { berekenProductKosten, type MateriaalRegel } from "@/app/lib/calculate";
-import { formatCurrency } from "@/app/lib/format";
-import { unitLabel } from "@/app/lib/units";
+import { formatAantal, formatEenheid, formatEuro } from "@/app/lib/pricing/format";
+import type { KostenOpbouw } from "@/app/lib/werkzaamheid-kosten";
 import { cn } from "@/app/lib/cn";
 import type { MaterialOption } from "@/app/generated/prisma/client";
 
@@ -57,7 +56,7 @@ export function OverrideVeld({
   children?: React.ReactNode;
 }) {
   const [wijktAf, setWijktAf] = useState(defaultOverrideValue != null);
-  const standaardTekst = `${formatCurrency(companyWaarde)} ${companyWaardeTekst}`;
+  const standaardTekst = `${formatEuro(companyWaarde)} ${companyWaardeTekst}`;
 
   function toggle(nieuw: boolean) {
     setWijktAf(nieuw);
@@ -171,7 +170,7 @@ function MateriaalPrijsForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-1.5">
-      <Label htmlFor="materiaalkosten-prijs">Wat vraag je per {unitLabel(eenheid)}?</Label>
+      <Label htmlFor="materiaalkosten-prijs">Wat vraag je per {formatEenheid(eenheid)}?</Label>
       <input type="hidden" name="naam" value={optie.naam} />
       <input type="hidden" name="prijsType" value="VAST" />
       <input type="hidden" name="stapgrootte" value={optie.stapgrootte ?? ""} />
@@ -205,109 +204,64 @@ function MateriaalPrijsForm({
 
 // De permanente, doorlopend bijgewerkte uitsplitsing — het belangrijkste
 // onderdeel van deze kostenopbouw: hier controleert de vakman of het klopt.
-// Gedeeld door het bewerkscherm en de wizard, dezelfde berekening als
-// calculate.ts's calculateBreakdown() voor dit ene product gebruikt.
+// Gedeeld door het bewerkscherm en de wizard. Rekent niets zelf: de opbouw komt uit de
+// rekenkern (berekenKostenOpbouw), dezelfde berekening als de klant-rekentool.
 export function KostenUitsplitsing({
   naam,
-  hoeveelheid,
   eenheid,
-  materiaalRegels,
-  materiaalEnabled,
-  productiviteit,
-  arbeidTarief,
-  arbeidEnabled,
-  arbeidAfronden,
-  transportBedrag,
-  transportMeeschalend,
-  transportEnabled,
-  voorrijBedrag,
-  voorrijMeeschalend,
-  voorrijEnabled,
+  opbouw,
 }: {
   naam: string;
-  hoeveelheid: number;
   eenheid: string;
-  // Eén regel per materiaalcategorie — nooit maar de eerste (zie
-  // berekenMateriaalRegels in calculate.ts, dezelfde functie die
-  // calculateBreakdown() ook gebruikt voor de echte klant-berekening).
-  materiaalRegels: MateriaalRegel[];
-  materiaalEnabled: boolean;
-  productiviteit: number | null;
-  arbeidTarief: number;
-  arbeidEnabled: boolean;
-  arbeidAfronden: boolean;
-  transportBedrag: number;
-  transportMeeschalend: boolean;
-  transportEnabled: boolean;
-  voorrijBedrag: number;
-  voorrijMeeschalend: boolean;
-  voorrijEnabled: boolean;
+  opbouw: KostenOpbouw;
 }) {
-  const materiaalTotaal = materiaalRegels.reduce((som, regel) => som + regel.bedrag, 0);
-  const kosten = berekenProductKosten({
-    materiaalkosten: materiaalTotaal,
-    materiaalEnabled,
-    hoeveelheid,
-    productiviteit,
-    arbeidTarief,
-    arbeidEnabled,
-    arbeidAfronden,
-    transportBedrag,
-    transportMeeschalend,
-    transportEnabled,
-    voorrijBedrag,
-    voorrijMeeschalend,
-    voorrijEnabled,
-  });
-
-  const prijsPerEenheid = hoeveelheid > 0 ? kosten.totaal / hoeveelheid : 0;
+  const hoeveelheid = opbouw.hoeveelheid;
+  const prijsPerEenheid = hoeveelheid > 0 ? opbouw.totaal / hoeveelheid : 0;
 
   const regels: { label: string; omschrijving: string; bedrag: number }[] = [];
-  if (materiaalEnabled) {
-    for (const materiaalRegel of materiaalRegels) {
-      regels.push({
-        label: materiaalRegels.length > 1 ? `Materiaal — ${materiaalRegel.categorieNaam}` : "Materiaal",
-        omschrijving: `${materiaalRegel.hoeveelheid} ${unitLabel(eenheid)} × ${formatCurrency(materiaalRegel.prijsPerEenheid)}`,
-        bedrag: materiaalRegel.bedrag,
-      });
-    }
+  for (const m of opbouw.materiaalRegels) {
+    regels.push({
+      label: opbouw.materiaalRegels.length > 1 ? `Materiaal — ${m.categorie}` : "Materiaal",
+      omschrijving: `${formatAantal(m.aantal)} ${formatEenheid(eenheid)} × ${formatEuro(m.prijsPerEenheid)}`,
+      bedrag: m.bedrag,
+    });
   }
-  if (arbeidEnabled && kosten.arbeid > 0) {
-    regels.push({ label: "Arbeid", omschrijving: "", bedrag: kosten.arbeid });
-  }
-  if (transportEnabled && kosten.transport > 0) {
-    regels.push({ label: "Transport", omschrijving: "", bedrag: kosten.transport });
-  }
-  if (voorrijEnabled && kosten.voorrijkosten > 0) {
-    regels.push({ label: "Voorrijkosten", omschrijving: "", bedrag: kosten.voorrijkosten });
-  }
+  for (const e of opbouw.extraRegels) regels.push({ label: e.omschrijving, omschrijving: "", bedrag: e.bedrag });
+  if (opbouw.arbeid > 0) regels.push({ label: "Arbeid", omschrijving: "", bedrag: opbouw.arbeid });
+  if (opbouw.transport > 0) regels.push({ label: "Transport", omschrijving: "", bedrag: opbouw.transport });
+  if (opbouw.voorrijkosten > 0) regels.push({ label: "Voorrijkosten", omschrijving: "", bedrag: opbouw.voorrijkosten });
 
   return (
     <div className="flex flex-col gap-3 rounded-md border border-dashed border-primary/40 bg-primary/5 p-4">
       <p className="text-sm font-medium text-foreground">
-        {naam || "Dit onderdeel"} van {hoeveelheid} {unitLabel(eenheid)}
+        {naam || "Dit onderdeel"} van {formatAantal(hoeveelheid)} {formatEenheid(eenheid)}
       </p>
       <div className="flex flex-col gap-1 text-sm tabular-nums">
         {regels.map((regel, index) => (
           <div key={`${regel.label}-${index}`} className="flex items-center justify-between gap-3">
             <span className="text-muted-foreground">
               {regel.label}
-              {regel.omschrijving && (
-                <span className="ml-1.5 text-xs">({regel.omschrijving})</span>
-              )}
+              {regel.omschrijving && <span className="ml-1.5 text-xs">({regel.omschrijving})</span>}
             </span>
-            <span className="font-medium text-foreground">{formatCurrency(regel.bedrag)}</span>
+            <span className="font-medium text-foreground">{formatEuro(regel.bedrag)}</span>
           </div>
         ))}
         <div className="my-1 border-t border-border" />
         <div className="flex items-center justify-between gap-3">
           <span className="font-semibold text-foreground">Totaal</span>
-          <span className="font-semibold text-foreground">{formatCurrency(kosten.totaal)}</span>
+          <span className="font-semibold text-foreground">{formatEuro(opbouw.totaal)}</span>
         </div>
       </div>
+      {opbouw.waarschuwingen.length > 0 && (
+        <ul className="flex flex-col gap-1 text-xs text-warning">
+          {opbouw.waarschuwingen.map((w) => (
+            <li key={w}>{w}</li>
+          ))}
+        </ul>
+      )}
       <p className="text-sm text-foreground">
-        Dat komt neer op <span className="font-semibold">{formatCurrency(prijsPerEenheid)}</span> per{" "}
-        {unitLabel(eenheid)}. Klopt dat ongeveer met wat je normaal rekent?
+        Dat komt neer op <span className="font-semibold">{formatEuro(prijsPerEenheid)}</span> per {formatEenheid(eenheid)}.
+        Klopt dat ongeveer met wat je normaal rekent?
       </p>
     </div>
   );

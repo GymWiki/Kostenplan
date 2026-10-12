@@ -1,5 +1,6 @@
 import { applyPrijsAfronding } from "@/app/lib/tools";
-import { round2, berekenBtw } from "@/app/lib/money";
+import { rondCenten } from "@/app/lib/pricing/rond";
+import { totalenVanRegels } from "@/app/lib/pricing/totalen";
 import type { CalculatorResultSettings } from "./types";
 import type { EvaluatedLineItem, PriceRuleEvaluationResult } from "./pricing";
 
@@ -39,49 +40,30 @@ export function bouwResultaat(
     heeftGeldigeInvoer,
   }: { btwPercentage: number; resultaatInstellingen: CalculatorResultSettings; heeftGeldigeInvoer: boolean }
 ): EngineResult {
-  let materiaal = 0;
-  let arbeid = 0;
-  let transport = 0;
-  let toeslagen = 0;
-  let kortingen = 0;
-  let overig = 0;
-
-  for (const item of evaluatie.lineItems) {
-    switch (item.categorie) {
-      case "MATERIAAL":
-        materiaal += item.bedrag;
-        break;
-      case "ARBEID":
-        arbeid += item.bedrag;
-        break;
-      case "TRANSPORT":
-        transport += item.bedrag;
-        break;
-      case "TOESLAG":
-        toeslagen += item.bedrag;
-        break;
-      case "KORTING":
-        kortingen += Math.abs(item.bedrag);
-        break;
-      case "OVERIG":
-        overig += item.bedrag;
-        break;
-    }
-  }
-
-  const subtotaal = round2(evaluatie.subtotaal);
-  const btw = round2(berekenBtw(subtotaal, btwPercentage));
-  const totaalOnafgerond = subtotaal + btw;
+  // Zelfde afrondingsregel als de rekenkern (app/lib/pricing): elke regel op hele centen, de btw per
+  // regel, het totaal is de som van de regels.
+  const cents = (euro: number) => rondCenten(euro * 100);
+  const som = { MATERIAAL: 0, ARBEID: 0, TRANSPORT: 0, TOESLAG: 0, KORTING: 0, OVERIG: 0 };
+  const regels = evaluatie.lineItems.map((item) => {
+    const bedrag = cents(item.bedrag);
+    som[item.categorie] += item.categorie === "KORTING" ? Math.abs(bedrag) : bedrag;
+    return { bedragExclCenten: bedrag, btwPercentage };
+  });
+  const totalen = totalenVanRegels(regels);
+  const subtotaal = totalen.subtotaalExclCenten / 100;
+  const btw = totalen.btwCenten / 100;
+  const totaalOnafgerond = Math.max(0, totalen.totaalInclCenten) / 100;
   const totaal = applyPrijsAfronding(totaalOnafgerond, resultaatInstellingen.afronding);
+  const [materiaal, arbeid, transport, toeslagen, kortingen, overig] = [som.MATERIAAL, som.ARBEID, som.TRANSPORT, som.TOESLAG, som.KORTING, som.OVERIG].map((c) => c / 100);
 
   const basis: EngineResult = {
     lineItems: evaluatie.lineItems,
-    materiaal: round2(materiaal),
-    arbeid: round2(arbeid),
-    transport: round2(transport),
-    toeslagen: round2(toeslagen),
-    kortingen: round2(kortingen),
-    overig: round2(overig),
+    materiaal,
+    arbeid,
+    transport,
+    toeslagen,
+    kortingen,
+    overig,
     subtotaal,
     btw,
     totaal,

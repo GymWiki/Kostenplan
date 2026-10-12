@@ -1,87 +1,71 @@
-import { bedragTop, geselecteerdeMateriaalOptieId, type BreakdownRange, type CalcProduct, type ProductRegel } from "@/app/lib/calculate";
 import type { LeadSnapshot, LeadSnapshotLine, LeadSnapshotOpbouw } from "@/app/lib/leads";
+import { totaalTopCenten } from "@/app/lib/pricing/weergave";
+import { hashConfig } from "@/app/lib/pricing/hash";
+import type { OnderdeelUitkomst, PricingResult } from "@/app/lib/pricing/engine";
+import type { PricingConfig, PricingInput } from "@/app/lib/pricing/schema";
 
-export type SnapshotProduct = Omit<CalcProduct, "extraOpties" | "materiaalCategorieen"> & {
-  naam: string;
-  eenheid: string;
-  extraOpties: (CalcProduct["extraOpties"][number] & { naam: string })[];
-  materiaalCategorieen: (CalcProduct["materiaalCategorieen"][number] & { naam: string })[];
-};
+const euro = (c: number) => c / 100;
 
-// Zet de uitsplitsing uit calculateBreakdown om naar de vorm in de lead-snapshot
-// (extra's krijgen hun naam mee); zie LeadSnapshotOpbouw in app/lib/leads.ts.
-export function opbouwVoorSnapshot(opbouw: ProductRegel["opbouw"], extraOpties: { id: string; naam: string }[], heeftArtikelen: boolean): LeadSnapshotOpbouw {
+// De uitsplitsing per onderdeel in de oude vorm van de snapshot (euro's), voor schermen en
+// offerte-code die daar nog van uitgaan. De bron is altijd de rekenkern.
+function opbouwVan(o: OnderdeelUitkomst): LeadSnapshotOpbouw {
+  const arbeid = o.regels.find((r) => r.soort === "arbeid");
+  const transport = o.regels.find((r) => r.soort === "transport");
+  const voorrij = o.regels.find((r) => r.soort === "voorrijkosten");
+  const artikelen = o.regels.filter((r) => r.soort === "artikel").reduce((s, r) => s + r.bedragExclCenten, 0);
   return {
-    materiaal: opbouw.materiaal.map((m) => ({ naam: m.optieNaam, hoeveelheid: m.hoeveelheid, prijsPerEenheid: m.prijsPerEenheid, bedrag: m.bedrag })),
-    artikelen: heeftArtikelen && opbouw.artikelen > 0 ? { bedrag: opbouw.artikelen } : undefined,
-    arbeid: opbouw.arbeid
-      ? { tijd: opbouw.arbeid.tijd, eenheid: opbouw.arbeid.eenheid === "UUR" ? "uur" : opbouw.arbeid.eenheid === "DAG" ? "dag" : "dagdeel", tarief: opbouw.arbeid.tarief, bedrag: opbouw.arbeid.bedrag }
-      : undefined,
-    transport: opbouw.transport.bedrag > 0 ? opbouw.transport : undefined,
-    voorrijkosten: opbouw.voorrijkosten.bedrag > 0 ? opbouw.voorrijkosten : undefined,
-    extras: opbouw.extras.map((e) => ({ naam: extraOpties.find((x) => x.id === e.id)?.naam ?? "Extra", aantal: e.aantal, bedrag: e.bedrag })),
+    materiaal: o.regels.filter((r) => r.soort === "materiaal").map((m) => ({ naam: m.omschrijving, hoeveelheid: m.aantal, eenheid: o.eenheid, prijsPerEenheid: euro(m.prijsPerEenheidCenten), bedrag: euro(m.bedragExclCenten) })),
+    artikelen: artikelen > 0 ? { bedrag: euro(artikelen) } : undefined,
+    arbeid: arbeid ? { tijd: arbeid.aantal, eenheid: arbeid.eenheid === "uur" ? "uur" : arbeid.eenheid === "dag" ? "dag" : "dagdeel", tarief: euro(arbeid.prijsPerEenheidCenten), bedrag: euro(arbeid.bedragExclCenten) } : undefined,
+    transport: transport ? { bedrag: euro(transport.bedragExclCenten), meeschalend: transport.eenheid !== "post", dagen: transport.eenheid === "dag" ? transport.aantal : undefined } : undefined,
+    voorrijkosten: voorrij ? { bedrag: euro(voorrij.bedragExclCenten), meeschalend: voorrij.eenheid !== "post" } : undefined,
+    extras: o.regels.filter((r) => r.soort === "extra").map((e) => ({ naam: e.omschrijving, aantal: e.aantal, bedrag: euro(e.bedragExclCenten) })),
   };
 }
 
-// Bevroren "wat had de klant aangevinkt" voor de leads-CRM — meegestuurd bij
-// "Offerte aanvragen" zodat de hovenier later precies kan zien waarop de
-// prijsindicatie was gebaseerd, ook als de onderdelen intussen gewijzigd zijn.
+// Bevroren "wat had de klant aangevinkt" voor de leads-CRM en de offerte. Gebouwd uit het resultaat van
+// de rekenkern: de browser bouwt hem met dezelfde functie als de server (die opnieuw rekent).
 export function bouwLeadSnapshot({
-  products,
-  productQty,
-  productRegelsBedrag,
-  materialSelections,
-  extraSelections,
-  breakdown,
-  btwPercentage,
+  config,
+  invoer,
+  resultaat,
+  bron = "client",
+  afwijking,
 }: {
-  products: SnapshotProduct[];
-  productQty: Record<string, number>;
-  productRegelsBedrag: Record<string, number>;
-  materialSelections: Record<string, string>;
-  extraSelections: Record<string, number>;
-  breakdown: BreakdownRange;
-  btwPercentage: number;
+  config: PricingConfig;
+  invoer: PricingInput;
+  resultaat: PricingResult;
+  bron?: "server" | "client";
+  afwijking?: { klantCenten: number; serverCenten: number };
 }): LeadSnapshot {
-  const regels: LeadSnapshotLine[] = [];
-  for (const product of products) {
-    const qty = productQty[product.id] ?? 0;
-    if (qty <= 0 && (productRegelsBedrag[product.id] ?? 0) <= 0) continue;
-
-    const materiaalNamen = product.materiaalCategorieen
-      .map((category) => {
-        const selectedId = geselecteerdeMateriaalOptieId(category, materialSelections);
-        return category.materialen.find((m) => m.id === selectedId);
-      })
-      .filter((option): option is NonNullable<typeof option> => Boolean(option))
-      .map((option) => option.naam);
-    const extraNamen = product.extraOpties.filter((extra) => extra.altijd || (extraSelections[extra.id] ?? 0) > 0).map((extra) => extra.naam);
-
-    // Eigen, volledig berekend bedrag van dit product (materiaal + arbeid +
-    // transport + voorrijkosten) en de uitsplitsing daarvan.
-    const productRegel = breakdown.productRegels.find((regel) => regel.productId === product.id);
-    regels.push({
-      productId: product.id,
-      naam: product.naam,
-      type: "product",
-      aantal: qty,
-      eenheid: product.eenheid,
-      materiaal: materiaalNamen.length > 0 ? materiaalNamen.join(", ") : undefined,
-      extras: extraNamen.length > 0 ? extraNamen : undefined,
-      prijs: productRegel?.totaal,
-      opbouw: productRegel ? opbouwVoorSnapshot(productRegel.opbouw, product.extraOpties, (productRegelsBedrag[product.id] ?? 0) > 0) : undefined,
-    });
-  }
+  const regels: LeadSnapshotLine[] = resultaat.onderdelen.map((o) => {
+    const materiaal = o.regels.filter((r) => r.soort === "materiaal").map((r) => r.omschrijving);
+    // De kern geeft alleen gekozen extra's en toeslagen terug, dus elke extra-regel telt.
+    const extras = o.regels.filter((r) => r.soort === "extra").map((r) => r.omschrijving);
+    return {
+      productId: o.id,
+      naam: o.naam,
+      type: "product" as const,
+      aantal: o.hoeveelheid,
+      eenheid: o.eenheid,
+      materiaal: materiaal.length > 0 ? materiaal.join(", ") : undefined,
+      extras: extras.length > 0 ? extras : undefined,
+      prijs: euro(o.subtotaalExclCenten),
+      opbouw: opbouwVan(o),
+    };
+  });
+  const top = resultaat.bandbreedte?.max;
   return {
     regels,
-    arbeidskosten: bedragTop(breakdown.arbeidskosten),
-    materiaalkosten: bedragTop(breakdown.materiaalkosten),
-    transportkosten: bedragTop(breakdown.transportkosten),
-    voorrijkosten: bedragTop(breakdown.voorrijkosten),
-    subtotaal: bedragTop(breakdown.subtotaal),
-    btw: bedragTop(breakdown.btw),
-    totaal: bedragTop(breakdown.totaal),
-    btwPercentage,
-    bandbreedte: breakdown.modus !== "GEEN" && typeof breakdown.totaal !== "number" ? true : undefined,
+    arbeidskosten: euro(top ? top.kosten.arbeid : resultaat.kosten.arbeid),
+    materiaalkosten: euro(top ? top.kosten.materiaal + top.kosten.extra + top.kosten.artikel : resultaat.kosten.materiaal + resultaat.kosten.extra + resultaat.kosten.artikel),
+    transportkosten: euro(top ? top.kosten.transport : resultaat.kosten.transport),
+    voorrijkosten: euro(top ? top.kosten.voorrijkosten : resultaat.kosten.voorrijkosten),
+    subtotaal: euro(top ? top.subtotaalExclCenten : resultaat.subtotaalExclCenten),
+    btw: euro(top ? top.btwCenten : resultaat.btwCenten),
+    totaal: euro(totaalTopCenten(resultaat)),
+    btwPercentage: config.tarieven.btwPercentage,
+    bandbreedte: resultaat.bandbreedte ? true : undefined,
+    rekenkern: { versie: 1, bron, configHash: hashConfig(config), invoer, resultaat, afwijking },
   };
 }

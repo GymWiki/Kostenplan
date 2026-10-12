@@ -1,11 +1,14 @@
 import "server-only";
 import { prisma } from "@/app/lib/prisma";
+import type { Prisma } from "@/app/generated/prisma/client";
 import { recordAnalyticsEvent } from "@/app/lib/actions/analytics";
 import { leadContactSchema, leadSnapshotSchema } from "@/app/lib/validation";
 import { effectiveTier } from "@/app/lib/subscription";
 import { planLeadPush } from "@/app/lib/push/versturen";
 import { eersteRegelNaam } from "@/app/lib/vandaag";
 import { formatCurrency } from "@/app/lib/format";
+import { herberekenAanvraag } from "@/app/lib/pricing/server";
+import type { LeadSnapshot } from "@/app/lib/leads";
 
 export type LeadInvoer = {
   toolId: string;
@@ -69,6 +72,11 @@ export async function maakLead(invoer: LeadInvoer): Promise<LeadUitslag> {
     return { ok: false, permanent: true, error: "Offertes aanvragen is niet beschikbaar voor dit bedrijf." };
   }
 
+  // De server rekent zelf na (zelfde rekenkern als de browser) en bewaart zijn eigen uitkomst als
+  // momentopname; het bedrag van de browser wordt nooit vertrouwd.
+  const gerekend = await herberekenAanvraag(tool.id, snapshot.data as unknown as LeadSnapshot);
+  const bewaard = gerekend.snapshot;
+
   let leadId: string;
   try {
     const lead = await prisma.lead.create({
@@ -83,8 +91,8 @@ export async function maakLead(invoer: LeadInvoer): Promise<LeadUitslag> {
         naam: contact.data.naam,
         email: contact.data.email,
         telefoonnummer: contact.data.telefoonnummer || null,
-        snapshot: snapshot.data,
-        totaalIndicatie: snapshot.data.totaal,
+        snapshot: bewaard as unknown as Prisma.InputJsonValue,
+        totaalIndicatie: bewaard.totaal,
         idempotentieSleutel: sleutel,
       },
       select: { id: true },
@@ -103,8 +111,8 @@ export async function maakLead(invoer: LeadInvoer): Promise<LeadUitslag> {
   planLeadPush(tool.companyId, {
     id: leadId,
     naam: contact.data.naam,
-    werk: eersteRegelNaam(snapshot.data),
-    bedrag: formatCurrency(snapshot.data.totaal),
+    werk: eersteRegelNaam(bewaard),
+    bedrag: formatCurrency(bewaard.totaal),
   });
   return { ok: true, leadId, dubbel: false };
 }

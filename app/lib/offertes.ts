@@ -1,5 +1,5 @@
-import { unitLabel } from "@/app/lib/units";
-import { round2, berekenBtw } from "@/app/lib/money";
+import { berekenBtw } from "@/app/lib/money";
+import { bouwOfferteUitLead } from "@/app/lib/offerte/uit-lead";
 import type { LeadSnapshot } from "@/app/lib/leads";
 import type { OfferteStatus } from "@/app/generated/prisma/client";
 
@@ -37,52 +37,21 @@ export function berekenOfferteTotalen(regels: OfferteRegel[], btwPercentage: num
   return { subtotaal, btw, totaal: subtotaal + btw };
 }
 
-// Vult een nieuw offerteconcept met één regel per item uit de bevroren
-// aanvraag-snapshot. Elke regel krijgt zijn eigen, al berekende prijs (zie
-// LeadSnapshotLine.prijs in app/lib/leads.ts — het volledige, onafhankelijk
-// per product berekende bedrag uit calculate.ts). Het restant (subtotaal
-// minus de som van alle regels) hoort er normaal gesproken niet meer te
-// zijn — die blijft alleen als vangnet staan voor het zeldzame geval dat een
-// regel toch geen prijs heeft (bijv. een oudere, vóór deze fix bevroren
-// snapshot) of voor een centverschil door afronding, in plaats van geld
-// stilzwijgend te laten verdwijnen.
+// Vult een nieuw (oud type) offerteconcept uit de bevroren aanvraag-snapshot, met dezelfde regels als de
+// nieuwe offerte: per onderdeel losse regels voor elke materiaalcategorie, arbeid, extra's, transport en
+// voorrijkosten, elk met de echte prijs per eenheid. Nooit een regel op €0 en nooit een restpost: de som
+// van de regels is het subtotaal uit de rekenkern. De bouwlogica staat in app/lib/offerte/uit-lead.ts.
 export function prefillOfferteRegels(snapshot: LeadSnapshot): OfferteRegel[] {
-  const regels: OfferteRegel[] = snapshot.regels.map((lijn, i) => {
-    // `lijn.aantal ?? 1` alleen is niet genoeg: nullish coalescing vervangt
-    // enkel null/undefined, niet een letterlijke 0. Een regel met een echt
-    // bekende prijs maar aantal 0 (bijv. een ARTIKELREGELS-sjabloonproduct,
-    // dat volledig via regelsBedrag geprijsd wordt in plaats van via een
-    // schaal-hoeveelheid — zie productRegelsBedrag in calculate.ts) kreeg
-    // hierdoor alsnog prijsPerEenheid 0, met exact hetzelfde symptoom als de
-    // oorspronkelijke bug. Elk aantal <= 0 telt daarom ook als "geen
-    // betekenisvolle hoeveelheid" en valt terug op één post (aantal 1).
-    const aantal = lijn.aantal != null && lijn.aantal > 0 ? lijn.aantal : 1;
-    const details = [
-      lijn.materiaal,
-      lijn.extras && lijn.extras.length > 0 ? lijn.extras.join(", ") : null,
-    ].filter(Boolean);
-    return {
-      id: `snapshot-${i}`,
-      omschrijving: details.length > 0 ? `${lijn.naam} (${details.join(", ")})` : lijn.naam,
-      aantal,
-      eenheid: lijn.eenheid ? unitLabel(lijn.eenheid) : "stuk",
-      prijsPerEenheid: lijn.prijs != null ? lijn.prijs / aantal : 0,
-    };
-  });
-
-  const bekendTotaal = offerteSubtotaal(regels);
-  const restant = round2(snapshot.subtotaal - bekendTotaal);
-  if (restant > 0.01) {
-    regels.push({
-      id: "snapshot-restant",
-      omschrijving: "Materiaal- en overige kosten",
-      aantal: 1,
-      eenheid: "post",
-      prijsPerEenheid: restant,
-    });
-  }
-
-  return regels;
+  const bouw = bouwOfferteUitLead(snapshot);
+  return bouw.secties.flatMap((sectie, s) =>
+    sectie.regels.map((r, i) => ({
+      id: `snapshot-${s}-${i}`,
+      omschrijving: bouw.secties.length > 1 && sectie.productId ? `${r.omschrijving} (${sectie.titel.split(" – ")[0]})` : r.omschrijving,
+      aantal: r.aantal,
+      eenheid: r.eenheid,
+      prijsPerEenheid: r.prijsCenten / 100,
+    }))
+  );
 }
 
 // Signaleert een concept dat is voorgevuld tegen een aanvraag-snapshot van

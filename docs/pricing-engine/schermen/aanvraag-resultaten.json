@@ -1,0 +1,52 @@
+[
+  {
+    "n": "de rekentool toont een totaal",
+    "ok": true,
+    "d": "6909.1 (Jouw kostenraming Arbeidskosten € 900,00 Materiaalkosten € 4)"
+  },
+  {
+    "n": "de aanvraag staat in de database met een momentopname van de rekenkern",
+    "ok": true,
+    "d": "cmv5qnqbv00055g7dz4cqnasf | 6909.1 | server | d5f0c2d06d63259f | 690910"
+  },
+  {
+    "n": "totaal in de database = totaal dat de klant zag (op de cent)",
+    "ok": true,
+    "d": "6909.1 vs 6909.1"
+  },
+  {
+    "n": "de momentopname bevat de volledige opbouw (regels in centen)",
+    "ok": true,
+    "d": "6 regels"
+  },
+  {
+    "n": "een aanvraag met een verknoeid bedrag wordt wel geaccepteerd",
+    "ok": true,
+    "d": "200"
+  },
+  {
+    "n": "de server bewaart zijn eigen bedrag, niet dat van de browser",
+    "ok": true,
+    "d": "6909.1 | server | 100 | 690910"
+  },
+  {
+    "n": "de afwijking staat in de momentopname",
+    "ok": true,
+    "d": "6909.1 | server | 100 | 690910"
+  },
+  {
+    "n": "de afwijking is gelogd met details",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "een aanvraag zonder invoer wordt opgeslagen (niet nagerekend)",
+    "ok": true,
+    "d": "200"
+  },
+  {
+    "n": "geen uncaught fouten in de browser",
+    "ok": true,
+    "d": ""
+  }
+]

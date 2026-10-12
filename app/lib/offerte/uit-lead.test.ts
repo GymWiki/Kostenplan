@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import { bouwOfferteUitLead } from "./uit-lead";
 import { berekenTotalen } from "./bereken";
 import type { LeadSnapshot } from "@/app/lib/leads";
-import { calculateBreakdownRange, type CalcCostSettings } from "@/app/lib/calculate";
-import { bouwLeadSnapshot, type SnapshotProduct } from "@/app/lib/lead-snapshot";
+import type { CalcCostSettings } from "@/app/lib/calculate";
+import { bouwLeadSnapshot } from "@/app/lib/lead-snapshot";
+import { configVanProducten, invoerVanKlant } from "@/app/lib/pricing/adapters";
+import { berekenPrijs } from "@/app/lib/pricing/engine";
+import { optie, product, type TestProduct } from "@/app/lib/pricing/test-helpers";
 import type { OfferteInhoud } from "./model";
 
 // Regressie €0-regel: een lead wordt omgezet naar een offerte met per onderdeel
@@ -61,6 +64,12 @@ describe("bouwOfferteUitLead (regressie €0-regel)", () => {
     expect(regels[0].prijsCenten).toBe(4000);
   });
 
+  it("maakt voor een snapshot met alleen kloppende totalen losse regels per kostensoort", () => {
+    const alleenTotalen: LeadSnapshot = { ...snapshotMetOpbouw, subtotaal: 2400, regels: [{ naam: "Schutting", type: "product", aantal: 20, eenheid: "m1" }] };
+    const regels = bouwOfferteUitLead(alleenTotalen).secties.flatMap((s) => s.regels);
+    expect(regels.map((r) => [r.omschrijving, r.prijsCenten])).toEqual([["Materiaal", 186500], ["Arbeid", 44000], ["Transport", 6000], ["Voorrijkosten", 3500]]);
+  });
+
   it("schat de prijs (met waarschuwing) als een regel geen prijs heeft, nooit €0", () => {
     const zonderPrijs: LeadSnapshot = { ...snapshotMetOpbouw, regels: [{ naam: "Terras", type: "product", aantal: 10, eenheid: "m2" }], subtotaal: 1000, btw: 210, totaal: 1210 };
     const o = bouwOfferteUitLead(zonderPrijs);
@@ -69,7 +78,7 @@ describe("bouwOfferteUitLead (regressie €0-regel)", () => {
   });
 });
 
-// ── Het offertetotaal is gelijk aan het totaal dat de klant in de rekentool zag ──
+// ── Het offertetotaal is gelijk aan het totaal dat de klant in de rekentool zag: exact ──
 
 const kosten: CalcCostSettings = {
   arbeidEnabled: true,
@@ -89,36 +98,26 @@ const kosten: CalcCostSettings = {
   bandbreedteMargeOmhoog: 0,
 };
 
-type P = SnapshotProduct;
-const product = (o: Partial<P> & Pick<P, "id" | "naam" | "eenheid">): P => ({
-  productiviteit: 10,
-  arbeidTariefOverride: null,
-  transportkostenOverride: null,
-  transportMeeschalend: false,
-  voorrijkostenOverride: null,
-  voorrijMeeschalend: false,
-  materiaalCategorieen: [],
-  extraOpties: [],
-  ...o,
-});
-const optie = (id: string, naam: string, prijs: number, extra: Partial<P["materiaalCategorieen"][number]["materialen"][number]> = {}) => ({ id, naam, prijs, prijsType: "VAST" as const, prijsMin: null, prijsMax: null, stapgrootte: null, productiviteitOverride: null, ...extra });
+type P = TestProduct;
 
-function offerteTotaal(products: P[], qty: Record<string, number>, sel: Record<string, string> = {}, extras: Record<string, number> = {}, k: CalcCostSettings = kosten, regelsBedrag: Record<string, number> = {}) {
-  const breakdown = calculateBreakdownRange({ products, productQty: qty, productRegelsBedrag: regelsBedrag, materialSelections: sel, extraSelections: extras, costSettings: k });
-  const snapshot = bouwLeadSnapshot({ products, productQty: qty, productRegelsBedrag: regelsBedrag, materialSelections: sel, extraSelections: extras, breakdown, btwPercentage: k.btwPercentage });
-  const o = bouwOfferteUitLead(snapshot);
-  const inhoud = { secties: o.secties, klant: { type: "particulier" }, afzender: { korActief: false } } as Pick<OfferteInhoud, "secties" | "klant" | "afzender">;
+function offerteTotaal(products: P[], invoerArgs: { hoeveelheden?: Record<string, number>; sjabloonInvoer?: Record<string, Record<string, unknown>>; materiaalKeuzes?: Record<string, string>; extraKeuzes?: Record<string, number> }, k: CalcCostSettings = kosten, opties: { btwStandaard?: Record<string, number> } = {}) {
+  const config = configVanProducten(products, k);
+  const invoer = invoerVanKlant({ producten: products, ...invoerArgs });
+  const resultaat = berekenPrijs(config, invoer);
+  const snapshot = bouwLeadSnapshot({ config, invoer, resultaat });
+  const o = bouwOfferteUitLead(snapshot, opties);
+  const inhoud = { secties: o.secties, klant: { type: "particulier" }, afzender: { korActief: false }, rekenregel: 2 } as Pick<OfferteInhoud, "secties" | "klant" | "afzender" | "rekenregel">;
   const t = berekenTotalen(inhoud);
   const regels = o.secties.flatMap((s) => s.regels);
-  return { t, o, rekentool: o.totaalRekentoolInclCenten, regels };
+  return { t, o, rekentool: o.totaalRekentoolInclCenten, klant: resultaat.totaalInclCenten, regels };
 }
 
 describe("offertetotaal = totaal in de rekentool", () => {
-  const cases: { naam: string; products: P[]; qty: Record<string, number>; sel?: Record<string, string>; extras?: Record<string, number> }[] = [
+  const cases: { naam: string; products: P[]; invoer: Parameters<typeof offerteTotaal>[1]; k?: CalcCostSettings }[] = [
     {
       naam: "per meter (schutting), één materiaalcategorie",
       products: [product({ id: "a", naam: "Schutting", eenheid: "m1", productiviteit: 8, materiaalCategorieen: [{ id: "c1", naam: "Hout", materialen: [optie("m1", "Douglas", 85.5)] }] })],
-      qty: { a: 20 },
+      invoer: { hoeveelheden: { a: 20 } },
     },
     {
       naam: "per m² (bestrating) met twee materiaalcategorieën en stapgrootte",
@@ -134,11 +133,10 @@ describe("offertetotaal = totaal in de rekentool", () => {
           ],
         }),
       ],
-      qty: { b: 37.5 },
-      sel: { c1: "t1" },
+      invoer: { hoeveelheden: { b: 37.5 }, materiaalKeuzes: { c1: "t1" } },
     },
     {
-      naam: "lengte × breedte (gazon) met extra's per eenheid en per stuk, transport meeschalend",
+      naam: "gazon met extra's per eenheid en per stuk, transport meeschalend",
       products: [
         product({
           id: "g",
@@ -153,8 +151,7 @@ describe("offertetotaal = totaal in de rekentool", () => {
           ],
         }),
       ],
-      qty: { g: 6 * 4.5 },
-      extras: { e1: 1, e2: 2 },
+      invoer: { hoeveelheden: { g: 6 * 4.5 }, extraKeuzes: { e1: 1, e2: 2 } },
     },
     {
       naam: "per stuk (lantaarn plaatsen) met toeslag en eigen arbeidstarief",
@@ -170,8 +167,7 @@ describe("offertetotaal = totaal in de rekentool", () => {
           extraOpties: [{ id: "t1", naam: "Afvoer", prijs: 45, altijd: true, type: "PER_STUK" }],
         }),
       ],
-      qty: { p: 3 },
-      sel: { c1: "b1" },
+      invoer: { hoeveelheden: { p: 3 }, materiaalKeuzes: { c1: "b1" } },
     },
     {
       naam: "meerdere onderdelen: voorrijkosten en transport",
@@ -179,59 +175,69 @@ describe("offertetotaal = totaal in de rekentool", () => {
         product({ id: "a", naam: "Schutting", eenheid: "m1", productiviteit: 8, materiaalCategorieen: [{ id: "c1", naam: "Hout", materialen: [optie("m1", "Douglas", 85)] }] }),
         product({ id: "b", naam: "Terras", eenheid: "m2", productiviteit: 6, materiaalCategorieen: [{ id: "c2", naam: "Tegel", materialen: [optie("t1", "Klinker", 45)] }] }),
       ],
-      qty: { a: 14, b: 22 },
+      invoer: { hoeveelheden: { a: 14, b: 22 } },
+    },
+    {
+      naam: "arbeid afronden op hele dagdelen en transport per dag",
+      products: [product({ id: "a", naam: "Vlonder", eenheid: "m2", productiviteit: 3, transportPerDag: true, materiaalCategorieen: [{ id: "c1", naam: "Hout", materialen: [optie("m1", "Hardhout", 120)] }] })],
+      invoer: { hoeveelheden: { a: 10 } },
+      k: { ...kosten, arbeidAfronden: true },
+    },
+    {
+      naam: "lengte × breedte met een prijs met een deel van een cent per eenheid",
+      products: [product({ id: "l", naam: "Gazon", eenheid: "m2", sjabloon: "AFMETINGEN", sjabloonConfig: { metDiepte: false }, productiviteit: 17, materiaalCategorieen: [{ id: "c1", naam: "Zoden", materialen: [optie("z", "Zoden", 12.345)] }] })],
+      invoer: { sjabloonInvoer: { l: { lengte: 7.3, breedte: 4.1 } } },
+    },
+    {
+      naam: "artikelregels (sjabloon Per stuk): elk artikeltype een eigen regel",
+      products: [
+        product({
+          id: "r",
+          naam: "Verlichting",
+          eenheid: "stuks",
+          sjabloon: "ARTIKELREGELS",
+          sjabloonConfig: { artikelTypes: [{ id: "spot", naam: "Grondspot", prijsPerEenheid: 63.5, berekening: "stuk" }, { id: "paal", naam: "Tuinpaal", prijsPerEenheid: 118.75, berekening: "stuk" }] },
+          productiviteit: null,
+          materiaalCategorieen: [],
+        }),
+      ],
+      invoer: { sjabloonInvoer: { r: { regels: [{ artikelTypeId: "spot", aantal: 7, breedte: 0, hoogte: 0 }, { artikelTypeId: "paal", aantal: 3, breedte: 0, hoogte: 0 }] } } },
     },
   ];
 
   for (const c of cases) {
     it(c.naam, () => {
-      const r = offerteTotaal(c.products, c.qty, c.sel, c.extras);
+      const r = offerteTotaal(c.products, c.invoer, c.k);
       expect(r.regels.length).toBeGreaterThan(1);
       expect(r.regels.every((x) => x.prijsCenten > 0)).toBe(true);
       expect(r.regels.some((x) => /Materiaal- en overige kosten/.test(x.omschrijving))).toBe(false);
-      // Gelijk aan wat de klant zag (afrondingsverschil per regel hoogstens enkele centen).
-      expect(Math.abs(r.t.totaalIncl - r.rekentool)).toBeLessThanOrEqual(5);
+      // Exact gelijk aan wat de klant zag, tot op de cent.
+      expect(r.t.totaalIncl).toBe(r.klant);
+      expect(r.t.totaalIncl).toBe(r.rekentool);
     });
   }
 
-  it("levering van planten krijgt standaard 9% btw, arbeid 21% (configureerbaar)", () => {
+  it("de offerte volgt het btw-tarief van de rekentool; een eigen instelling in het Profiel gaat voor", () => {
     const p = product({ id: "h", naam: "Haag planten", eenheid: "m1", productiviteit: 12, materiaalCategorieen: [{ id: "c1", naam: "Planten", materialen: [optie("h1", "Beuk", 18)] }] });
-    const r = offerteTotaal([p], { h: 10 });
+    const r = offerteTotaal([p], { hoeveelheden: { h: 10 } });
     const beuk = r.regels.find((x) => /Beuk/.test(x.omschrijving))!;
-    const arbeid = r.regels.find((x) => x.omschrijving === "Arbeid")!;
     expect(beuk.soort).toBe("planten");
-    expect(beuk.btw).toBe(9);
-    expect(arbeid.btw).toBe(21);
-    expect(r.t.btwGroepen.map((g) => g.tarief)).toEqual([21, 9]);
-    // Met een eigen instelling (bijv. 21% vanaf 2028) volgt de offerte die instelling.
-    const p2 = bouwOfferteUitLead(
-      bouwLeadSnapshot({ products: [p], productQty: { h: 10 }, productRegelsBedrag: {}, materialSelections: {}, extraSelections: {}, breakdown: calculateBreakdownRange({ products: [p], productQty: { h: 10 }, materialSelections: {}, extraSelections: {}, costSettings: kosten }), btwPercentage: 21 }),
-      { btwStandaard: { planten: 21 } }
-    );
-    expect(p2.secties.flatMap((x) => x.regels).every((x) => x.btw === 21)).toBe(true);
-  });
-
-  it("arbeid afronden op hele dagdelen en transport per dag", () => {
-    const k: CalcCostSettings = { ...kosten, arbeidAfronden: true };
-    const p = product({ id: "a", naam: "Vlonder", eenheid: "m2", productiviteit: 3, transportPerDag: true, materiaalCategorieen: [{ id: "c1", naam: "Hout", materialen: [optie("m1", "Hardhout", 120)] }] });
-    const r = offerteTotaal([p], { a: 10 }, {}, {}, k);
-    expect(r.regels.find((x) => x.omschrijving === "Arbeid")!.aantal).toBe(4);
-    expect(Math.abs(r.t.totaalIncl - r.rekentool)).toBeLessThanOrEqual(5);
+    expect(r.regels.every((x) => x.btw === 21)).toBe(true);
+    expect(r.t.totaalIncl).toBe(r.klant);
+    // Wel een melding: planten vallen vaak onder 9%.
+    expect(r.o.waarschuwingen.join(" ")).toMatch(/9%/);
+    // Met een eigen instelling (planten 9%) volgt de offerte die instelling.
+    const p2 = offerteTotaal([p], { hoeveelheden: { h: 10 } }, kosten, { btwStandaard: { planten: 9 } });
+    expect(p2.regels.find((x) => /Beuk/.test(x.omschrijving))!.btw).toBe(9);
+    expect(p2.regels.find((x) => x.omschrijving === "Arbeid")!.btw).toBe(21);
   });
 
   it("bandbreedte: gebruikt het midden en meldt dit aan de hovenier", () => {
     const k: CalcCostSettings = { ...kosten, bandbreedteModus: "PER_PRODUCT" };
     const p = product({ id: "a", naam: "Terras", eenheid: "m2", productiviteit: 6, materiaalCategorieen: [{ id: "c1", naam: "Tegel", materialen: [optie("t1", "Klinker", 45, { prijsType: "BANDBREEDTE" as never, prijsMin: 40, prijsMax: 50 })] }] });
-    const r = offerteTotaal([p], { a: 10 }, {}, {}, k);
+    const r = offerteTotaal([p], { hoeveelheden: { a: 10 } }, k);
     expect(r.o.bandbreedte).toBe(true);
     expect(r.o.waarschuwingen.join(" ")).toMatch(/midden/);
     expect(r.regels.find((x) => /Klinker/.test(x.omschrijving))!.prijsCenten).toBe(4500);
-  });
-
-  it("artikelregels (sjabloon ARTIKELREGELS) worden één echte regel", () => {
-    const p = product({ id: "r", naam: "Verlichting", eenheid: "stuks", productiviteit: null });
-    const r = offerteTotaal([p], { r: 4 }, {}, {}, kosten, { r: 520 });
-    expect(r.regels.some((x) => /artikelen/.test(x.omschrijving) && x.prijsCenten * x.aantal === 52000)).toBe(true);
-    expect(Math.abs(r.t.totaalIncl - r.rekentool)).toBeLessThanOrEqual(5);
   });
 });

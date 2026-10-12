@@ -13,3 +13,4 @@ export * from "./modulair-types";
 export * from "./modulair";
 export * from "./config";
 export * from "./validate";
+export * from "./rekenen";

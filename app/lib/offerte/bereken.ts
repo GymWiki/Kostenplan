@@ -1,3 +1,4 @@
+import { rondCenten } from "@/app/lib/pricing/rond";
 import type { OfferteInhoud, OfferteRegel } from "./model";
 
 // Berekening van een offerte, puur en in centen. Wordt server-side gebruikt
@@ -9,7 +10,8 @@ import type { OfferteInhoud, OfferteRegel } from "./model";
 // de som van de regelbedragen incl. btw teruggerekend, zodat wat op het document
 // staat altijd optelt. Zakelijk: btw per tarief over de som excl. btw.
 
-const round = (x: number) => Math.round(x + (x >= 0 ? 1e-9 : -1e-9));
+// Dezelfde afrondingsregel als de rekenkern (half omhoog op hele centen; negatieve bedragen spiegelen).
+const round = (x: number) => (x >= 0 ? rondCenten(x) : -rondCenten(-x));
 
 export function regelBedragExcl(r: Pick<OfferteRegel, "aantal" | "prijsCenten" | "kortingPct" | "type">): number {
   if (r.type === "tekst") return 0;
@@ -43,7 +45,7 @@ export type Totalen = {
 };
 
 export function berekenTotalen(
-  inhoud: Pick<OfferteInhoud, "secties" | "klant" | "afzender">,
+  inhoud: Pick<OfferteInhoud, "secties" | "klant" | "afzender"> & { rekenregel?: OfferteInhoud["rekenregel"] },
   gekozenOptioneel: ReadonlySet<string> | readonly string[] = []
 ): Totalen {
   const gekozen = gekozenOptioneel instanceof Set ? gekozenOptioneel : new Set(gekozenOptioneel);
@@ -76,9 +78,17 @@ export function berekenTotalen(
     secties.push({ id: sectie.id, excl: sExcl, incl: sIncl });
   }
 
+  // Rekenregel 2 (nieuwe offertes, gelijk aan de rekenkern in app/lib/pricing): de btw is de som van de btw
+  // per regel, zodat de getoonde regels altijd optellen tot het totaal. Offertes zonder `rekenregel` rekenen
+  // zoals ze verstuurd zijn: de btw per tarief over de som van de regels.
+  const perRegel = inhoud.rekenregel === 2;
   const btwGroepen: BtwGroep[] = [...groepExcl.keys()]
     .sort((a, b) => b - a)
     .map((tarief) => {
+      if (perRegel) {
+        const excl = groepExcl.get(tarief) ?? 0;
+        return { tarief, grondslag: excl, btw: (groepIncl.get(tarief) ?? 0) - excl };
+      }
       if (toonIncl) {
         const incl = groepIncl.get(tarief) ?? 0;
         const btw = tarief === 0 ? 0 : round((incl * tarief) / (100 + tarief));

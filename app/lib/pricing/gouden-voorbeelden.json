@@ -1,0 +1,215 @@
+{
+  "_toelichting": "Met de hand uitgerekende voorbeelden voor de rekenkern. Alle bedragen in centen. Regel: elke regel wordt op hele centen afgerond (half omhoog) en de btw wordt per regel berekend over het bedrag in centen; het totaal is de som van de regels. Standaard: arbeid € 200 per dagdeel (continu, niet afronden), transport € 0, voorrijkosten € 35, btw 21%. Elk voorbeeld zegt wat er anders is.",
+  "voorbeelden": [
+    {
+      "id": "schutting-per-meter",
+      "titel": "Schutting, 20 m, Douglas € 85/m, werktempo 8 m per dagdeel, transport € 60",
+      "uitleg": [
+        "materiaal 20 × 85 = 1.700,00 → btw 357,00",
+        "arbeid 20 / 8 = 2,5 dagdeel × 200 = 500,00 → btw 105,00",
+        "voorrijkosten 35,00 → btw 7,35",
+        "transport 60,00 → btw 12,60",
+        "subtotaal 2.295,00; btw 481,95; totaal 2.776,95"
+      ],
+      "kosten": { "transportTarief": 60 },
+      "producten": [{ "id": "schutting", "eenheid": "m1", "productiviteit": 8, "materialen": [{ "id": "douglas", "naam": "Douglas", "prijs": 85 }] }],
+      "invoer": { "hoeveelheden": { "schutting": 20 } },
+      "verwacht": { "subtotaalExclCenten": 229500, "btwCenten": 48195, "totaalInclCenten": 277695 }
+    },
+    {
+      "id": "schutting-kor",
+      "titel": "Dezelfde schutting onder de kleineondernemersregeling (geen btw)",
+      "uitleg": ["subtotaal 2.295,00; geen btw; totaal 2.295,00"],
+      "kosten": { "transportTarief": 60 },
+      "opties": { "kor": true },
+      "producten": [{ "id": "schutting", "eenheid": "m1", "productiviteit": 8, "materialen": [{ "id": "douglas", "naam": "Douglas", "prijs": 85 }] }],
+      "invoer": { "hoeveelheden": { "schutting": 20 } },
+      "verwacht": { "subtotaalExclCenten": 229500, "btwCenten": 0, "totaalInclCenten": 229500 }
+    },
+    {
+      "id": "terras-twee-categorieen",
+      "titel": "Terras 37 m², klinker € 55 + zand € 8 (stapgrootte 2), werktempo 6, arbeid naar boven afgerond",
+      "uitleg": [
+        "klinker 37 × 55 = 2.035,00 → btw 427,35",
+        "zand: 37 m² naar boven op een veelvoud van 2 = 38 × 8 = 304,00 → btw 63,84",
+        "arbeid 37 / 6 = 6,17 dagdeel → 7 × 200 = 1.400,00 → btw 294,00",
+        "voorrijkosten 35,00 → btw 7,35",
+        "subtotaal 3.774,00; btw 792,54; totaal 4.566,54"
+      ],
+      "kosten": { "arbeidAfronden": true },
+      "producten": [
+        {
+          "id": "terras",
+          "eenheid": "m2",
+          "productiviteit": 6,
+          "categorieen": [
+            { "id": "tegel", "naam": "Tegel", "materialen": [{ "id": "klinker", "naam": "Klinker", "prijs": 55 }] },
+            { "id": "zand", "naam": "Zand", "materialen": [{ "id": "straatzand", "naam": "Straatzand", "prijs": 8, "stapgrootte": 2 }] }
+          ]
+        }
+      ],
+      "invoer": { "hoeveelheden": { "terras": 37 } },
+      "verwacht": { "subtotaalExclCenten": 377400, "btwCenten": 79254, "totaalInclCenten": 456654, "regels": [["materiaal", 203500], ["materiaal", 30400], ["arbeid", 140000], ["voorrijkosten", 3500]] }
+    },
+    {
+      "id": "gazon-lengte-breedte-extras",
+      "titel": "Gazon 12 × 4,5 m, zoden € 9, werktempo 25, bemesting € 1,25/m², 2 beregeningssets € 49,90, transport € 0,50/m²",
+      "uitleg": [
+        "54 m²: zoden 486,00 → btw 102,06",
+        "bemesting 54 × 1,25 = 67,50 → btw 14,175 → 14,18",
+        "beregeningssets 2 × 49,90 = 99,80 → btw 20,958 → 20,96",
+        "arbeid 54 / 25 = 2,16 dagdeel × 200 = 432,00 → btw 90,72",
+        "transport 54 × 0,50 = 27,00 → btw 5,67",
+        "voorrijkosten 35,00 → btw 7,35",
+        "subtotaal 1.147,30; btw 240,94; totaal 1.388,24"
+      ],
+      "producten": [
+        {
+          "id": "gazon",
+          "eenheid": "m2",
+          "sjabloon": "AFMETINGEN",
+          "sjabloonConfig": { "metDiepte": false },
+          "productiviteit": 25,
+          "transportMeeschalend": true,
+          "transportkostenOverride": 0.5,
+          "materialen": [{ "id": "zoden", "naam": "Zoden", "prijs": 9 }],
+          "extras": [
+            { "id": "bemesting", "naam": "Bemesting", "prijs": 1.25, "type": "PER_EENHEID" },
+            { "id": "beregening", "naam": "Beregeningsset", "prijs": 49.9, "type": "PER_STUK" }
+          ]
+        }
+      ],
+      "invoer": { "sjabloonInvoer": { "gazon": { "lengte": 12, "breedte": 4.5 } }, "extraKeuzes": { "bemesting": 1, "beregening": 2 } },
+      "verwacht": { "subtotaalExclCenten": 114730, "btwCenten": 24094, "totaalInclCenten": 138824 }
+    },
+    {
+      "id": "bomen-per-stuk-btw-9",
+      "titel": "3 bomen (Linde € 189), werktempo 1,5 per dagdeel, eigen arbeidstarief € 150, voorrijkosten € 25, toeslag afvoer € 45, btw 9%",
+      "uitleg": [
+        "materiaal 3 × 189 = 567,00 → btw 51,03",
+        "toeslag afvoer 45,00 (altijd) → btw 4,05",
+        "arbeid 3 / 1,5 = 2 dagdeel × 150 = 300,00 → btw 27,00",
+        "voorrijkosten 25,00 → btw 2,25",
+        "subtotaal 937,00; btw 84,33; totaal 1.021,33"
+      ],
+      "kosten": { "btwPercentage": 9 },
+      "producten": [
+        {
+          "id": "boom",
+          "eenheid": "stuks",
+          "productiviteit": 1.5,
+          "arbeidTariefOverride": 150,
+          "voorrijkostenOverride": 25,
+          "materialen": [{ "id": "linde", "naam": "Linde", "prijs": 189 }, { "id": "els", "naam": "Els", "prijs": 140 }],
+          "extras": [{ "id": "afvoer", "naam": "Afvoer", "prijs": 45, "type": "PER_STUK", "altijd": true }]
+        }
+      ],
+      "invoer": { "hoeveelheden": { "boom": 3 }, "materiaalKeuzes": { "boom-cat": "linde" } },
+      "verwacht": { "subtotaalExclCenten": 93700, "btwCenten": 8433, "totaalInclCenten": 102133 }
+    },
+    {
+      "id": "terras-bandbreedte-per-product",
+      "titel": "Terras 20 m², klinker € 50 – € 60 (midden € 55), werktempo 10, bandbreedte per product",
+      "uitleg": [
+        "midden: materiaal 1.100,00 + arbeid 400,00 + voorrijkosten 35,00 = 1.535,00; btw 322,35; totaal 1.857,35",
+        "laagste prijs: 1.000,00 + 400,00 + 35,00 = 1.435,00; btw 301,35; totaal 1.736,35",
+        "hoogste prijs: 1.200,00 + 400,00 + 35,00 = 1.635,00; btw 343,35; totaal 1.978,35"
+      ],
+      "kosten": { "bandbreedteModus": "PER_PRODUCT" },
+      "producten": [{ "id": "terras", "eenheid": "m2", "productiviteit": 10, "materialen": [{ "id": "klinker", "naam": "Klinker", "prijs": 55, "prijsType": "BANDBREEDTE", "prijsMin": 50, "prijsMax": 60 }] }],
+      "invoer": { "hoeveelheden": { "terras": 20 } },
+      "verwacht": { "subtotaalExclCenten": 153500, "btwCenten": 32235, "totaalInclCenten": 185735, "bandbreedte": { "minInclCenten": 173635, "maxInclCenten": 197835 } }
+    },
+    {
+      "id": "schutting-bandbreedte-totaal",
+      "titel": "De schutting met een indicatie van −10% / +15% over het totaal",
+      "uitleg": ["totaal 2.776,95: laag 2.499,255 → 2.499,26; hoog 3.193,4925 → 3.193,49"],
+      "kosten": { "transportTarief": 60, "bandbreedteModus": "TOTAAL", "bandbreedteMargeOmlaag": 10, "bandbreedteMargeOmhoog": 15 },
+      "producten": [{ "id": "schutting", "eenheid": "m1", "productiviteit": 8, "materialen": [{ "id": "douglas", "naam": "Douglas", "prijs": 85 }] }],
+      "invoer": { "hoeveelheden": { "schutting": 20 } },
+      "verwacht": { "subtotaalExclCenten": 229500, "btwCenten": 48195, "totaalInclCenten": 277695, "bandbreedte": { "minInclCenten": 249926, "maxInclCenten": 319349 } }
+    },
+    {
+      "id": "twee-onderdelen-vaste-kosten-per-onderdeel",
+      "titel": "Schutting 20 m (als hierboven) + terras 22 m² (klinker € 45, werktempo 6), vaste kosten per onderdeel, transport € 60",
+      "uitleg": [
+        "schutting: zoals het eerste voorbeeld, subtotaal 2.295,00; btw 481,95",
+        "terras: materiaal 990,00 (btw 207,90), arbeid 22 / 6 = 3,6667 × 200 = 733,33 (btw 154,00), voorrijkosten 35,00 (btw 7,35), transport 60,00 (btw 12,60)",
+        "terras subtotaal 1.818,33; btw 381,85",
+        "samen: subtotaal 4.113,33; btw 863,80; totaal 4.977,13"
+      ],
+      "kosten": { "transportTarief": 60 },
+      "producten": [
+        { "id": "schutting", "eenheid": "m1", "productiviteit": 8, "materialen": [{ "id": "douglas", "naam": "Douglas", "prijs": 85 }] },
+        { "id": "terras", "eenheid": "m2", "productiviteit": 6, "materialen": [{ "id": "klinker", "naam": "Klinker", "prijs": 45 }] }
+      ],
+      "invoer": { "hoeveelheden": { "schutting": 20, "terras": 22 } },
+      "verwacht": { "subtotaalExclCenten": 411333, "btwCenten": 86380, "totaalInclCenten": 497713 }
+    },
+    {
+      "id": "twee-onderdelen-vaste-kosten-per-aanvraag",
+      "titel": "Dezelfde twee onderdelen, voorrijkosten en transport één keer per aanvraag",
+      "uitleg": [
+        "materiaal 1.700,00 + 990,00; arbeid 500,00 + 733,33; voorrijkosten 35,00 en transport 60,00 één keer",
+        "subtotaal 4.018,33; btw 843,85; totaal 4.862,18"
+      ],
+      "kosten": { "transportTarief": 60 },
+      "opties": { "vasteKosten": "PER_AANVRAAG" },
+      "producten": [
+        { "id": "schutting", "eenheid": "m1", "productiviteit": 8, "materialen": [{ "id": "douglas", "naam": "Douglas", "prijs": 85 }] },
+        { "id": "terras", "eenheid": "m2", "productiviteit": 6, "materialen": [{ "id": "klinker", "naam": "Klinker", "prijs": 45 }] }
+      ],
+      "invoer": { "hoeveelheden": { "schutting": 20, "terras": 22 } },
+      "verwacht": { "subtotaalExclCenten": 401833, "btwCenten": 84385, "totaalInclCenten": 486218 }
+    },
+    {
+      "id": "werktempo-per-materiaal",
+      "titel": "Terras 20 m² in natuursteen (€ 90, werktempo 5 in plaats van 10)",
+      "uitleg": [
+        "materiaal 20 × 90 = 1.800,00 → btw 378,00",
+        "arbeid 20 / 5 = 4 dagdeel × 200 = 800,00 → btw 168,00",
+        "voorrijkosten 35,00 → btw 7,35",
+        "subtotaal 2.635,00; btw 553,35; totaal 3.188,35"
+      ],
+      "producten": [{ "id": "terras", "eenheid": "m2", "productiviteit": 10, "materialen": [{ "id": "beton", "naam": "Betontegel", "prijs": 40 }, { "id": "natuursteen", "naam": "Natuursteen", "prijs": 90, "productiviteitOverride": 5 }] }],
+      "invoer": { "hoeveelheden": { "terras": 20 }, "materiaalKeuzes": { "terras-cat": "natuursteen" } },
+      "verwacht": { "subtotaalExclCenten": 263500, "btwCenten": 55335, "totaalInclCenten": 318835 }
+    },
+    {
+      "id": "transport-per-dag",
+      "titel": "45 m² met werktempo 10 per dagdeel en transport € 60 per begonnen werkdag",
+      "uitleg": [
+        "arbeid 45 / 10 = 4,5 dagdeel = 2,25 werkdag → 3 begonnen dagen",
+        "materiaal 45 × 20 = 900,00 → btw 189,00; arbeid 4,5 × 200 = 900,00 → btw 189,00",
+        "transport 3 × 60 = 180,00 → btw 37,80; voorrijkosten 35,00 → btw 7,35",
+        "subtotaal 2.015,00; btw 423,15; totaal 2.438,15"
+      ],
+      "kosten": { "transportTarief": 60 },
+      "producten": [{ "id": "vlonder", "eenheid": "m2", "productiviteit": 10, "transportPerDag": true, "materialen": [{ "id": "hout", "naam": "Hout", "prijs": 20 }] }],
+      "invoer": { "hoeveelheden": { "vlonder": 45 } },
+      "verwacht": { "subtotaalExclCenten": 201500, "btwCenten": 42315, "totaalInclCenten": 243815 }
+    },
+    {
+      "id": "artikelregels-per-stuk",
+      "titel": "Verlichting: 7 grondspots à € 63,50 en 3 tuinpalen à € 118,75, zonder arbeid",
+      "uitleg": [
+        "7 × 63,50 = 444,50 → btw 93,345 → 93,35",
+        "3 × 118,75 = 356,25 → btw 74,8125 → 74,81",
+        "voorrijkosten 35,00 → btw 7,35",
+        "subtotaal 835,75; btw 175,51; totaal 1.011,26"
+      ],
+      "producten": [
+        {
+          "id": "licht",
+          "eenheid": "stuks",
+          "sjabloon": "ARTIKELREGELS",
+          "sjabloonConfig": { "artikelTypes": [{ "id": "spot", "naam": "Grondspot", "prijsPerEenheid": 63.5, "berekening": "stuk" }, { "id": "paal", "naam": "Tuinpaal", "prijsPerEenheid": 118.75, "berekening": "stuk" }] },
+          "productiviteit": null,
+          "categorieen": []
+        }
+      ],
+      "invoer": { "sjabloonInvoer": { "licht": { "regels": [{ "artikelTypeId": "spot", "aantal": 7, "breedte": 0, "hoogte": 0 }, { "artikelTypeId": "paal", "aantal": 3, "breedte": 0, "hoogte": 0 }] } } },
+      "verwacht": { "subtotaalExclCenten": 83575, "btwCenten": 17551, "totaalInclCenten": 101126 }
+    }
+  ]
+}

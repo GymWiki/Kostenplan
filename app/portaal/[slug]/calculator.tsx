@@ -3,19 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Minus, Plus, Printer, Mail, Phone, Image as ImageIcon, Check } from "lucide-react";
+import { bedragTop, type Bedrag, type BreakdownRange } from "@/app/lib/calculate";
+import { configVanProducten, invoerVanKlant } from "@/app/lib/pricing/adapters";
+import { berekenPrijs } from "@/app/lib/pricing/engine";
+import { formatEuro } from "@/app/lib/pricing/format";
+import { breakdownRangeVan } from "@/app/lib/pricing/weergave";
 import {
-  arbeidTariefVoorStapEenheid,
-  bedragTop,
-  berekenMateriaalRegels,
-  berekenProductKosten,
-  calculateBreakdownRange,
-  geselecteerdeMateriaalOptieId,
-  type Bedrag,
-} from "@/app/lib/calculate";
-import {
-  berekenHoeveelheidVoorSjabloon,
-  coerceVeldWaarden,
-  hoeveelheidUitResultaat,
   klantVeldenVoorSjabloon,
   parseGetal,
   type GetalVeld,
@@ -24,7 +17,7 @@ import {
   type RegelgroepVeld,
   type TekstVeld,
 } from "@/app/lib/sjablonen";
-import { formatCurrency, formatCurrencyRange } from "@/app/lib/format";
+import { formatCurrencyRange } from "@/app/lib/format";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Logo } from "@/app/components/ui/logo";
 import { DecimalInput, Input, Label, Select } from "@/app/components/ui/input";
@@ -148,33 +141,6 @@ export function Calculator({
   );
   const [extraSelections, setExtraSelections] = useState<Record<string, number>>({});
 
-  // Leidt voor elk niet-ENKELE_HOEVEELHEID product de hoeveelheid (voor
-  // arbeidskosten) en, alleen bij Artikelregels, het al-geprijsde
-  // regelsbedrag af uit de ruwe klantinvoer — zie calculate.ts's
-  // productRegelsBedrag-parameter. ENKELE_HOEVEELHEID-producten komen
-  // ongewijzigd uit productQty (de QuantityStepper).
-  const { effectiveProductQty, productRegelsBedrag } = useMemo(() => {
-    const qtyMap: Record<string, number> = { ...productQty };
-    const regelsMap: Record<string, number> = {};
-    for (const product of products) {
-      if (product.sjabloon === "ENKELE_HOEVEELHEID") continue;
-      const config = (product.sjabloonConfig as Record<string, unknown> | null) ?? {};
-      const velden = klantVeldenVoorSjabloon(product.sjabloon, config);
-      const invoer = coerceVeldWaarden(velden, productSjabloonInvoer[product.id] ?? {});
-      const resultaat = berekenHoeveelheidVoorSjabloon(product.sjabloon, config, invoer);
-      if (resultaat.soort === "hoeveelheid") {
-        qtyMap[product.id] = resultaat.waarde;
-      } else {
-        qtyMap[product.id] = hoeveelheidUitResultaat(resultaat);
-        regelsMap[product.id] = resultaat.regels.reduce(
-          (som, regel) => som + regel.aantal * regel.prijsPerEenheid,
-          0
-        );
-      }
-    }
-    return { effectiveProductQty: qtyMap, productRegelsBedrag: regelsMap };
-  }, [products, productQty, productSjabloonInvoer]);
-
   // Kleuren en lettertype zijn een Plus/Pro-feature — opnieuw afdwingen bij
   // het renderen (niet alleen in het dashboard), zodat een Gratis-tenant
   // nooit gepersonaliseerde kleuren te zien krijgt, wat er ook is opgeslagen.
@@ -244,33 +210,20 @@ export function Calculator({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const breakdown = useMemo(
-    () =>
-      calculateBreakdownRange({
-        products,
-        productQty: effectiveProductQty,
-        productRegelsBedrag,
-        materialSelections,
-        extraSelections,
-        costSettings,
-      }),
-    [products, effectiveProductQty, productRegelsBedrag, materialSelections, extraSelections, costSettings]
+  // De ene rekenkern (app/lib/pricing): dezelfde berekening als de server bij het versturen van de
+  // aanvraag en als de offerte. Hier alleen de configuratie en de keuzes van de klant erin stoppen.
+  const config = useMemo(() => configVanProducten(products, costSettings), [products, costSettings]);
+  const invoer = useMemo(
+    () => invoerVanKlant({ producten: products, hoeveelheden: productQty, sjabloonInvoer: productSjabloonInvoer, materiaalKeuzes: materialSelections, extraKeuzes: extraSelections }),
+    [products, productQty, productSjabloonInvoer, materialSelections, extraSelections]
   );
+  const resultaat = useMemo(() => berekenPrijs(config, invoer), [config, invoer]);
+  const breakdown = useMemo(() => breakdownRangeVan(resultaat), [resultaat]);
+  const onderdeelPerId = useMemo(() => new Map(resultaat.onderdelen.map((o) => [o.id, o])), [resultaat]);
 
   // Een verplichte materiaalcategorie zonder keuze houdt de prijsindicatie
-  // onvolledig (materiaalkosten blijven stil op €0) — de klant mag dan geen
-  // offerte aanvragen totdat dit is opgelost.
-  const heeftOntbrekendeVerplichteMaterialen = useMemo(
-    () =>
-      products.some((product) => {
-        const qty = effectiveProductQty[product.id] ?? 0;
-        if (qty <= 0 && (productRegelsBedrag[product.id] ?? 0) <= 0) return false;
-        return product.materiaalCategorieen.some(
-          (category) => category.verplicht && !geselecteerdeMateriaalOptieId(category, materialSelections)
-        );
-      }),
-    [products, effectiveProductQty, productRegelsBedrag, materialSelections]
-  );
+  // onvolledig — de klant mag dan geen offerte aanvragen totdat dit is opgelost.
+  const heeftOntbrekendeVerplichteMaterialen = resultaat.waarschuwingen.some((w) => w.code === "ontbrekende-keuze");
 
   // START — zodra de klant voor het eerst iets selecteert (heeftSelectie
   // wordt al elders berekend, zie calculate.ts). COMPLETE — zodra dat leidt
@@ -295,10 +248,7 @@ export function Calculator({
   // app/lib/leads.ts) — meegestuurd bij "Offerte aanvragen" zodat de vakman
   // later precies kan zien waarop de prijsindicatie was gebaseerd, ook als de
   // Producten zelf intussen gewijzigd zijn.
-  const snapshot: LeadSnapshot = useMemo(
-    () => bouwLeadSnapshot({ products, productQty: effectiveProductQty, productRegelsBedrag, materialSelections, extraSelections, breakdown, btwPercentage: costSettings.btwPercentage }),
-    [products, effectiveProductQty, productRegelsBedrag, materialSelections, extraSelections, breakdown, costSettings.btwPercentage]
-  );
+  const snapshot: LeadSnapshot = useMemo(() => bouwLeadSnapshot({ config, invoer, resultaat }), [config, invoer, resultaat]);
 
   const isEmpty = products.length === 0;
 
@@ -387,8 +337,8 @@ export function Calculator({
                       <ProductCard
                         key={product.id}
                         product={product}
-                        costSettings={costSettings}
-                        qty={effectiveProductQty[product.id] ?? 0}
+                        eigenPrijs={(onderdeelPerId.get(product.id)?.subtotaalExclCenten ?? 0) / 100}
+                        qty={onderdeelPerId.get(product.id)?.hoeveelheid ?? 0}
                         onQtyChange={(qty) =>
                           setProductQty((prev) => ({ ...prev, [product.id]: qty }))
                         }
@@ -396,7 +346,7 @@ export function Calculator({
                         onSjabloonInvoerChange={(waarden) =>
                           setProductSjabloonInvoer((prev) => ({ ...prev, [product.id]: waarden }))
                         }
-                        regelsBedrag={productRegelsBedrag[product.id] ?? 0}
+                        regelsBedrag={(onderdeelPerId.get(product.id)?.kosten.artikel ?? 0) / 100}
                         materialSelections={materialSelections}
                         onMaterialSelect={(categoryId, materialOptionId) =>
                           setMaterialSelections((prev) => ({
@@ -498,7 +448,7 @@ function materiaalPrijsWeergave(material: MaterialOption): Bedrag {
 
 export function ProductCard({
   product,
-  costSettings,
+  eigenPrijs,
   qty,
   onQtyChange,
   sjabloonInvoer,
@@ -510,7 +460,8 @@ export function ProductCard({
   onExtraChange,
 }: {
   product: ProductWithDetails;
-  costSettings: CostSettings;
+  // Het bedrag van dit onderdeel (excl. btw) uit de rekenkern: hetzelfde als in het totaal hiernaast.
+  eigenPrijs: number;
   qty: number;
   onQtyChange: (qty: number) => void;
   sjabloonInvoer: Record<string, unknown>;
@@ -532,8 +483,6 @@ export function ProductCard({
   const ProductIcon = getProductIcon(product.icoon);
   // Toeslagen (altijd) hebben geen keuze en staan dus niet in de lijst.
   const keuzeExtras = product.extraOpties.filter((extra) => !extra.altijd);
-
-  const eigenPrijs = eigenProductPrijs(product, qty, regelsBedrag, materialSelections, costSettings);
 
   return (
     <Card
@@ -567,7 +516,7 @@ export function ProductCard({
           ) : (
             eigenPrijs > 0 && (
               <span className="shrink-0 text-sm font-semibold text-foreground">
-                ≈ {formatCurrency(eigenPrijs)}
+                ≈ {formatEuro(eigenPrijs)}
               </span>
             )
           )}
@@ -693,7 +642,7 @@ export function ProductCard({
                           <span className="block text-muted-foreground">{extra.omschrijving}</span>
                         )}
                         <span className="block text-muted-foreground">
-                          {formatCurrency(extra.prijs)} / stuk
+                          {formatEuro(extra.prijs)} / stuk
                         </span>
                       </div>
                       <QuantityStepper
@@ -731,7 +680,7 @@ export function ProductCard({
                         )}
                       </span>
                       <span className="shrink-0 text-muted-foreground">
-                        + {formatCurrency(extra.prijs)} / {klantEenheidLabel(product.eenheid)}
+                        + {formatEuro(extra.prijs)} / {klantEenheidLabel(product.eenheid)}
                       </span>
                     </label>
                   )
@@ -743,54 +692,6 @@ export function ProductCard({
       </CardContent>
     </Card>
   );
-}
-
-// Prijsindicatie van dit ene product — bij Artikelregels is het regelsbedrag
-// al kant-en-klaar geprijsd per artikeltype (zie sjablonen.ts), bij de
-// andere sjablonen zijn het de vier kostenblokken, net als calculate.ts
-// zelf toepast (zonder stapgrootte-afronding — bewust een lichte
-// benadering, puur een indicatie op de kaart zelf; de Summary hiernaast
-// blijft de bron van waarheid).
-function eigenProductPrijs(
-  product: ProductWithDetails,
-  qty: number,
-  regelsBedrag: number,
-  materialSelections: Record<string, string>,
-  costSettings: CostSettings
-): number {
-  if (regelsBedrag > 0) return regelsBedrag;
-  if (qty <= 0) return 0;
-
-  const { totaal: materiaalkosten, primaireOptie } = berekenMateriaalRegels(
-    product.materiaalCategorieen,
-    qty,
-    materialSelections
-  );
-
-  const productiviteit = primaireOptie?.productiviteitOverride ?? product.productiviteit;
-  const arbeidTarief =
-    product.arbeidTariefOverride ?? arbeidTariefVoorStapEenheid(costSettings, costSettings.arbeidStapEenheid);
-  const transportBedrag = product.transportkostenOverride ?? costSettings.transportTarief;
-  const voorrijBedrag = product.voorrijkostenOverride ?? costSettings.voorrijTarief;
-
-  const kosten = berekenProductKosten({
-    materiaalkosten,
-    materiaalEnabled: costSettings.materiaalEnabled,
-    hoeveelheid: qty,
-    productiviteit,
-    arbeidTarief,
-    arbeidEnabled: costSettings.arbeidEnabled,
-    arbeidAfronden: costSettings.arbeidAfronden,
-    transportBedrag,
-    transportMeeschalend: product.transportMeeschalend,
-    transportPerDag: product.transportPerDag,
-    arbeidStapEenheid: costSettings.arbeidStapEenheid,
-    transportEnabled: costSettings.transportEnabled,
-    voorrijBedrag,
-    voorrijMeeschalend: product.voorrijMeeschalend,
-    voorrijEnabled: costSettings.voorrijEnabled,
-  });
-  return kosten.totaal;
 }
 
 // Rendert de klantvelden van het gekozen sjabloon (Afmetingen/Ruimtes/
@@ -1066,7 +967,7 @@ function Summary({
   toolId: string;
   bedrijfsnaam: string;
   contact: { telefoonnummer: string | null; email: string | null };
-  breakdown: ReturnType<typeof calculateBreakdownRange>;
+  breakdown: BreakdownRange;
   snapshot: LeadSnapshot;
   costSettings: CostSettings;
   bedankTekst: string;

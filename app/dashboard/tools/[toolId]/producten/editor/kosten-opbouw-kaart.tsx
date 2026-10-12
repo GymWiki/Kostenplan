@@ -1,10 +1,8 @@
 import { cn } from "@/app/lib/cn";
-import { formatCurrency } from "@/app/lib/format";
-import { kortEenheid, STAP_WOORD } from "@/app/lib/werkzaamheid";
+import { formatAantal, formatEenheid, formatEuro } from "@/app/lib/pricing/format";
+import { STAP_WOORD } from "@/app/lib/werkzaamheid";
 import type { KostenOpbouw } from "@/app/lib/werkzaamheid-kosten";
 import type { ArbeidStapEenheid } from "@/app/generated/prisma/client";
-
-const getal = (n: number) => new Intl.NumberFormat("nl-NL", { maximumFractionDigits: 1 }).format(n);
 
 // "Opbouw · alleen voor jou": wat jij verdient en waaruit de prijs bestaat.
 // Nooit zichtbaar voor de klant.
@@ -20,12 +18,17 @@ export function KostenOpbouwKaart({
   className?: string;
 }) {
   const woord = STAP_WOORD[stap].enkelvoud;
+  const materiaal: { label: string; bedrag: number }[] =
+    opbouw.materiaalRegels.length > 1
+      ? opbouw.materiaalRegels.map((m) => ({ label: `${m.omschrijving} (${formatAantal(m.aantal)} ${formatEenheid(eenheid)} × ${formatEuro(m.prijsPerEenheid)})`, bedrag: m.bedrag }))
+      : [{ label: `Materiaal (${formatAantal(opbouw.hoeveelheid)} ${formatEenheid(eenheid)})`, bedrag: opbouw.materiaalRegels[0]?.bedrag ?? 0 }];
   const regels: { label: string; bedrag: number }[] = [
-    { label: `Materiaal (${getal(opbouw.hoeveelheid)} ${kortEenheid(eenheid)})`, bedrag: opbouw.materiaal },
+    ...materiaal,
+    ...opbouw.extraRegels.map((e) => ({ label: e.omschrijving, bedrag: e.bedrag })),
     {
       label:
         opbouw.arbeidstijd > 0
-          ? `Arbeid (${getal(opbouw.arbeidstijd)} ${woord} × ${formatCurrency(opbouw.arbeidTarief)})`
+          ? `Arbeid (${formatAantal(opbouw.arbeidstijd)} ${woord} × ${formatEuro(opbouw.arbeidTarief)})`
           : "Arbeid",
       bedrag: opbouw.arbeid,
     },
@@ -44,12 +47,12 @@ export function KostenOpbouwKaart({
         {regels.map((r) => (
           <div key={r.label} className="flex items-baseline justify-between gap-3 border-b border-dashed border-border py-1.5">
             <dt className="min-w-0 break-words text-muted-foreground">{r.label}</dt>
-            <dd className="shrink-0 font-semibold tabular-nums text-foreground">{formatCurrency(r.bedrag)}</dd>
+            <dd className="shrink-0 font-semibold tabular-nums text-foreground">{formatEuro(r.bedrag)}</dd>
           </div>
         ))}
         <div className="flex items-baseline justify-between gap-3 pt-2 font-bold text-foreground">
           <dt>Totaal</dt>
-          <dd className="tabular-nums">{formatCurrency(opbouw.totaal)}</dd>
+          <dd className="tabular-nums">{formatEuro(opbouw.totaal)}</dd>
         </div>
       </dl>
       <p className="mt-1 text-xs text-muted-foreground">Excl. btw.</p>

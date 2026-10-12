@@ -22,15 +22,14 @@ import {
   type ProductMetRelaties,
 } from "@/app/lib/werkzaamheid";
 import { berekenKostenOpbouw, prijsRange } from "@/app/lib/werkzaamheid-kosten";
+import { formatEuroKort } from "@/app/lib/pricing/format";
 import { useTarieven } from "../tarieven-context";
 import type { Waarschuwing } from "@/app/portaal/[slug]/bewerkbaar";
 
 export type SnelSoort = "prijzen" | "tempo";
 
 // Korte bedragen voor samenvattingen: €28 of €28,50.
-export function bedragKort(n: number) {
-  return `€${Number.isInteger(n) ? n : n.toFixed(2).replace(".", ",")}`;
-}
+export const bedragKort = formatEuroKort;
 
 // Mobiele weergave van de rekentool-editor (< 768 px): één ding per scherm.
 // Bewerken = lijst met werkzaamheden (aan/uit, snel prijzen of werktempo

@@ -101,6 +101,9 @@ export type OfferteInhoud = {
   planning: OffertePlanning;
   bijlagen: OfferteBijlage[];
   slottekst: string;
+  // Hoe de btw is afgerond: 2 = per regel, gelijk aan de rekenkern (nieuwe offertes). Ontbreekt bij offertes
+  // van vóór de rekenkern, die rekenen zoals ze verstuurd zijn.
+  rekenregel?: 2;
   // Alleen van belang voor de hovenier: afwijking t.o.v. de berekening in de rekentool.
   bron?: { leadId: string; totaalRekentoolInclCenten: number; bandbreedte?: boolean; waarschuwingen?: string[] };
 };

@@ -57,7 +57,7 @@ describe("prefillOfferteRegels", () => {
     expect(offerteSubtotaal(regels)).toBeCloseTo(snapshot.subtotaal, 6);
   });
 
-  it("valt terug op een restpost als een regel toch geen prijs heeft (vangnet, bijv. oude snapshots)", () => {
+  it("geeft een regel zonder prijs een geschatte prijs (nooit €0 en geen samengevoegde restpost)", () => {
     const snapshot: LeadSnapshot = {
       regels: [{ naam: "Schutting", type: "product", aantal: 10, eenheid: "m1", prijs: undefined }],
       arbeidskosten: 0,
@@ -71,10 +71,9 @@ describe("prefillOfferteRegels", () => {
 
     const regels = prefillOfferteRegels(snapshot);
 
-    expect(regels).toHaveLength(2);
-    expect(regels[0].prijsPerEenheid).toBe(0);
-    expect(regels[1].omschrijving).toBe("Materiaal- en overige kosten");
-    expect(regels[1].prijsPerEenheid).toBe(500);
+    expect(regels).toHaveLength(1);
+    expect(regels[0].prijsPerEenheid).toBe(50);
+    expect(regels.some((r) => r.omschrijving === "Materiaal- en overige kosten")).toBe(false);
     expect(offerteSubtotaal(regels)).toBeCloseTo(snapshot.subtotaal, 6);
   });
 
