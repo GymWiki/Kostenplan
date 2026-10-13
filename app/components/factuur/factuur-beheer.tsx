@@ -73,24 +73,37 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
     setBetaalOpen(true);
   }
   function betaal() {
-    const p = parseBedrag(bedrag, { maxCenten: data.openstaandCenten });
-    if (!p.ok) return setBedragFout(p.fout.startsWith("Vul maximaal") ? `Dit is meer dan het openstaande bedrag (${formatCents(data.openstaandCenten)}).` : p.fout);
+    // Alleen de vorm wordt hier gecontroleerd; of het bedrag past bij het openstaande bedrag bepaalt de server op de actuele stand
+    // (dit scherm kan verouderd zijn, bijvoorbeeld door een betaling in een ander tabblad).
+    const p = parseBedrag(bedrag);
+    if (!p.ok) return setBedragFout(p.fout);
     if (p.centen < 1) return setBedragFout("Vul een bedrag boven € 0,00 in.");
     const c = p.centen;
     start(async () => {
-      const r = await registreerBetalingAction({ factuurId: data.id, bedragCenten: c, datum, methode: methode as "OVERBOEKING", notitie });
-      if (r.ok) {
-        setBetaalOpen(false);
-        setNotitie("");
-        router.refresh();
-      } else setFout(r.error);
+      try {
+        const r = await registreerBetalingAction({ factuurId: data.id, bedragCenten: c, datum, methode: methode as "OVERBOEKING", notitie });
+        if (r.ok) {
+          setBetaalOpen(false);
+          setNotitie("");
+          router.refresh();
+        } else {
+          setFout(r.error);
+          router.refresh(); // toon meteen het actuele openstaande bedrag
+        }
+      } catch {
+        setFout("Geen verbinding. De betaling is niet opgeslagen; probeer het opnieuw zodra je weer online bent.");
+      }
     });
   }
   function crediteer() {
     start(async () => {
-      const r = await maakCreditnotaAction(data.id, gekozen.length > 0 ? gekozen : undefined);
-      if (r.ok) router.push(`/dashboard/facturen/${r.id}`);
-      else setFout(r.error);
+      try {
+        const r = await maakCreditnotaAction(data.id, gekozen.length > 0 ? gekozen : undefined);
+        if (r.ok) router.push(`/dashboard/facturen/${r.id}`);
+        else setFout(r.error);
+      } catch {
+        setFout("Geen verbinding. De creditnota is niet gemaakt; probeer het opnieuw zodra je weer online bent.");
+      }
     });
   }
 
@@ -184,10 +197,15 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
         description="Gebruik dit alleen als de betaling per ongeluk is geregistreerd. Het staat in de tijdlijn."
         onConfirm={() =>
           start(async () => {
-            const r = await verwijderBetalingAction(data.id, weg!);
-            setWeg(null);
-            if (r.ok) router.refresh();
-            else setFout(r.error);
+            try {
+              const r = await verwijderBetalingAction(data.id, weg!);
+              setWeg(null);
+              if (r.ok) router.refresh();
+              else setFout(r.error);
+            } catch {
+              setWeg(null);
+              setFout("Geen verbinding. De betaling is niet verwijderd; probeer het opnieuw zodra je weer online bent.");
+            }
           })
         }
       />

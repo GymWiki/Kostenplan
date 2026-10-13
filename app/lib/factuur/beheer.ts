@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@/app/generated/prisma/client";
-import { statusNaMutatie, valideerBetaling, BETALING_FOUT_TEKST, type BetalingsStand } from "./betaling";
+import { formatCents } from "@/app/lib/offerte/weergave";
+import { openstaandCenten, statusNaMutatie, valideerBetaling, BETALING_FOUT_TEKST, type BetalingsStand } from "./betaling";
 import { creditnotaUitFactuur, type FactuurInstellingen } from "./maak";
 import type { FactuurInhoud } from "./model";
 import { maakFactuurConcept } from "./opslag";
@@ -51,7 +52,7 @@ export async function registreerBetaling(
     await vergrendel(tx, factuurId, companyId);
     const s = await laadStand(tx, factuurId, companyId);
     const fout = valideerBetaling({ bedragCenten, datum }, s, s.status as Parameters<typeof valideerBetaling>[2]);
-    if (fout) throw new BeheerFout(BETALING_FOUT_TEKST[fout]);
+    if (fout) throw new BeheerFout(fout === "te-hoog" ? `Dit is meer dan het openstaande bedrag (${formatCents(openstaandCenten(s))}). Controleer het bedrag: de factuur is intussen aangepast.` : BETALING_FOUT_TEKST[fout]);
     await tx.factuurBetaling.create({ data: { factuurId, datum: new Date(`${datum}T00:00:00Z`), bedragCenten, methode, notitie: notitie?.trim() || null } });
     await tx.factuurGebeurtenis.create({ data: { factuurId, soort: "BETALING", bedragCenten, tekst: notitie?.trim() || null } });
     await herberekenFactuurStatus(tx, factuurId, companyId);

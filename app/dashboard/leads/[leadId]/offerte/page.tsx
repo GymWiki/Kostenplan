@@ -50,6 +50,7 @@ export default async function OffertePage({
     return (
       <OfferteEditorV2
         offerteId={v2.id}
+        revisie={huidig.revisie}
         status={weergaveStatusV2({ status: v2.status, geldigTot: v2.geldigTot })}
         vergrendeld={huidig.vergrendeld}
         deelklaar={!huidig.vergrendeld && Boolean(huidig.pdfHash)}

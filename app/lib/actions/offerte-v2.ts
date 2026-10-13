@@ -7,7 +7,7 @@ import { effectiveTier } from "@/app/lib/subscription";
 import { laadOfferteGegevens } from "@/app/lib/offerte/gegevens-server";
 import { ontbrekendeVerplichteGegevens } from "@/app/lib/offerte/gegevens";
 import { bouwInhoudUitLead } from "@/app/lib/offerte/nieuw";
-import { bewaarConcept, bewaarDeelklaarPdf, maakNieuweVersie, maakOfferte, OfferteVergrendeldFout, vergrendelVersie } from "@/app/lib/offerte/opslag";
+import { RevisieConflictFout, bewaarConcept, bewaarDeelklaarPdf, maakNieuweVersie, maakOfferte, OfferteVergrendeldFout, vergrendelVersie } from "@/app/lib/offerte/opslag";
 import { parseOfferteInhoud } from "@/app/lib/offerte/schema";
 import { getBaseUrl } from "@/app/lib/url";
 import { controleerOfferte } from "@/app/lib/offerte/controle";
@@ -53,21 +53,34 @@ export async function maakOfferteV2Action(leadId: string): Promise<MaakOfferteRe
 
 // ── Bewerken ─────────────────────────────────────────────────────────────
 
-export type BewaarResultaat = { ok: true } | { ok: false; vergrendeld?: boolean; error: string };
+export type BewaarResultaat = { ok: true; revisie: number } | { ok: false; vergrendeld?: boolean; conflict?: boolean; error: string };
 
 // Autosave van het concept. Een verstuurde versie wordt nooit overschreven.
-export async function bewaarOfferteAction(offerteId: string, inhoud: unknown): Promise<BewaarResultaat> {
+// `revisie` is de stand waarop deze wijziging is gebaseerd: is het concept intussen elders opgeslagen, dan weigert de server.
+export async function bewaarOfferteAction(offerteId: string, inhoud: unknown, revisie: number): Promise<BewaarResultaat> {
   const { company } = await requireActiveCompany();
   const p = parseOfferteInhoud(inhoud);
   if (!p.ok) return { ok: false, error: p.error };
+  if (!Number.isInteger(revisie) || revisie < 0) return { ok: false, error: "Opslaan is niet gelukt." };
   try {
-    await bewaarConcept(prismaBasis, { offerteId, companyId: company.id, inhoud: p.inhoud });
-    return { ok: true };
+    const nieuw = await bewaarConcept(prismaBasis, { offerteId, companyId: company.id, inhoud: p.inhoud, verwachteRevisie: revisie });
+    return { ok: true, revisie: nieuw };
   } catch (e) {
+    if (e instanceof RevisieConflictFout) return { ok: false, conflict: true, error: e.message };
     if (e instanceof OfferteVergrendeldFout) return { ok: false, vergrendeld: true, error: e.message };
     console.error("[offerte] bewaren mislukt", e);
     return { ok: false, error: "Opslaan is niet gelukt." };
   }
+}
+
+// De nieuwste opgeslagen stand van het concept (na "Nieuwste versie laden" bij een conflict).
+export async function laadOfferteConceptAction(offerteId: string): Promise<{ ok: true; inhoud: OfferteInhoud; revisie: number } | { ok: false; error: string }> {
+  const { company } = await requireActiveCompany();
+  const o = await prismaBasis.offerteV2.findFirst({ where: { id: offerteId, companyId: company.id }, select: { huidigeVersie: true } });
+  if (!o) return { ok: false, error: "Offerte niet gevonden." };
+  const v = await prismaBasis.offerteVersie.findFirst({ where: { offerteId, versie: o.huidigeVersie }, select: { inhoud: true, revisie: true } });
+  if (!v) return { ok: false, error: "Offerte niet gevonden." };
+  return { ok: true, inhoud: v.inhoud as unknown as OfferteInhoud, revisie: v.revisie };
 }
 
 // Wijzigen na versturen: een nieuwe versie (concept) naast de verstuurde.
