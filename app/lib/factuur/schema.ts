@@ -19,7 +19,7 @@ export const factuurInhoudSchema = offerteInhoudSchema.extend({
     btwModus: z.enum(["normaal", "verlegd"]),
     klantBtwId: z.string().max(20),
     betaallink: z.string().max(500),
-    termijn: z.object({ label: z.string().max(80), percentage: z.number() }).optional(),
+    termijn: z.object({ label: z.string().max(80), percentage: z.number(), offerteTotaalInclCenten: z.number().int() }).optional(),
     creditVoor: z.object({ nummer: z.string().max(40), datum: z.string().max(10) }).optional(),
     notitie: z.string().max(2000),
   }),

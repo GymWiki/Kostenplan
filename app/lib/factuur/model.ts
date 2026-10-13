@@ -24,7 +24,7 @@ export type FactuurMeta = {
   klantBtwId: string;
   betaallink: string;
   // Bij een termijnfactuur: welk deel van de offerte dit is.
-  termijn?: { label: string; percentage: number };
+  termijn?: { label: string; percentage: number; offerteTotaalInclCenten: number };
   // Bij een creditnota: de oorspronkelijke factuur.
   creditVoor?: { nummer: string; datum: string };
   notitie: string;

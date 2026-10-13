@@ -15,6 +15,8 @@ import {
 } from "@/app/lib/offerte/weergave";
 import { heeftStatutaireGegevens } from "@/app/lib/offerte/gegevens";
 import { OFFERTE_CSS } from "./offerte-css";
+import { FactuurBetaalBlok, FactuurKlantExtra, FactuurMetaRijen, FactuurTermijnBlok, FactuurWatermerk } from "@/app/components/factuur/factuur-blokken";
+import { BTW_VERLEGD_TEKST, titelVan, type FactuurInhoud } from "@/app/lib/factuur/model";
 import { brandingFontVariables, fontFamilyFor } from "@/app/lib/fonts";
 import type { Lettertype } from "@/app/generated/prisma/client";
 
@@ -74,7 +76,11 @@ function Wijzigbaar({ sel, bewerk, children, className = "", as: Tag = "div" }: 
 
 export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [], bewerk, optioneelKeuze, akkoord, className = "" }: OfferteDocumentProps) {
   const a = inhoud.afzender;
+  // Een factuur is een offerte-inhoud met factuurgegevens; dezelfde pagina, tabel en totalen.
+  const factuur = (inhoud as Partial<FactuurInhoud>).factuur;
+  const fInhoud = factuur ? (inhoud as FactuurInhoud) : null;
   const t: Totalen = berekenTotalen(inhoud, gekozenOptioneel);
+  const geenBtw = t.kor || t.verlegd;
   const gekozen = new Set(gekozenOptioneel);
   const toonIncl = t.toonIncl;
   const particulier = inhoud.klant.type === "particulier";
@@ -91,6 +97,7 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
   return (
     <div className={`og-doc ${modus === "pdf" ? "og-pdf" : "og-scherm"} ${brandingFontVariables()} ${className}`} style={stijl} data-offerte-document>
       <style dangerouslySetInnerHTML={{ __html: OFFERTE_CSS }} />
+      {fInhoud ? <FactuurWatermerk inhoud={fInhoud} /> : null}
 
       <Wijzigbaar sel={{ soort: "afzender" }} bewerk={bewerk} className="og-kop">
         <div>
@@ -118,22 +125,29 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
           <div style={{ fontWeight: 600 }}>{klantNaam || "Naam klant"}</div>
           {inhoud.klant.bedrijfsnaam && inhoud.klant.naam ? <div>t.a.v. {inhoud.klant.naam}</div> : null}
           {adresKlant.length > 0 ? adresKlant.map((r, i) => <div key={i}>{r}</div>) : bewerk ? <div style={{ color: "#9ca3af" }}>Adres klant</div> : null}
+          {fInhoud ? <FactuurKlantExtra inhoud={fInhoud} /> : null}
         </Wijzigbaar>
         <Wijzigbaar sel={{ soort: "meta" }} bewerk={bewerk} className="og-meta">
           <dl>
-            <dt>Offertenummer</dt>
-            <dd>{inhoud.nummer}</dd>
-            <dt>Datum</dt>
-            <dd>{formatDatum(inhoud.datum)}</dd>
-            <dt>Geldig tot</dt>
-            <dd>{formatDatum(inhoud.geldigTot)}</dd>
+            {fInhoud ? (
+              <FactuurMetaRijen inhoud={fInhoud} />
+            ) : (
+              <>
+                <dt>Offertenummer</dt>
+                <dd>{inhoud.nummer}</dd>
+                <dt>Datum</dt>
+                <dd>{formatDatum(inhoud.datum)}</dd>
+                <dt>Geldig tot</dt>
+                <dd>{formatDatum(inhoud.geldigTot)}</dd>
+              </>
+            )}
             {projectRegels.length > 0 ? (
               <>
                 <dt>Projectadres</dt>
                 <dd style={{ fontWeight: 500 }}>{projectRegels.join(", ")}</dd>
               </>
             ) : null}
-            {inhoud.versie > 1 ? (
+            {!fInhoud && inhoud.versie > 1 ? (
               <>
                 <dt>Versie</dt>
                 <dd>{inhoud.versie}</dd>
@@ -143,24 +157,26 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
         </Wijzigbaar>
       </div>
 
-      <h1 className="og-titel">Offerte</h1>
+      <h1 className="og-titel">{factuur ? titelVan(factuur.soort) : "Offerte"}</h1>
       <Wijzigbaar sel={{ soort: "onderwerp" }} bewerk={bewerk}>
         {bewerk ? (
-          <input className="og-invoer og-onderwerp" aria-label="Onderwerp" value={inhoud.onderwerp} onChange={(e) => bewerk.onTekst("onderwerp", e.target.value)} placeholder="Onderwerp van de offerte" />
+          <input className="og-invoer og-onderwerp" aria-label="Onderwerp" value={inhoud.onderwerp} onChange={(e) => bewerk.onTekst("onderwerp", e.target.value)} placeholder={factuur ? "Onderwerp van de factuur" : "Onderwerp van de offerte"} />
         ) : (
           <p className="og-onderwerp">{inhoud.onderwerp}</p>
         )}
       </Wijzigbaar>
       <div className="og-lijn" />
 
-      <Wijzigbaar sel={{ soort: "intro" }} bewerk={bewerk}>
-        <p>{aanhef}</p>
-        {bewerk ? (
-          <AutoTekst label="Introductie" waarde={inhoud.introductie} onChange={(v) => bewerk.onTekst("introductie", v)} />
-        ) : (
-          <p className="og-tekst">{inhoud.introductie}</p>
-        )}
-      </Wijzigbaar>
+      {!factuur || inhoud.introductie.trim() || bewerk ? (
+        <Wijzigbaar sel={{ soort: "intro" }} bewerk={bewerk}>
+          {factuur ? null : <p>{aanhef}</p>}
+          {bewerk ? (
+            <AutoTekst label="Introductie" waarde={inhoud.introductie} onChange={(v) => bewerk.onTekst("introductie", v)} />
+          ) : (
+            <p className="og-tekst">{inhoud.introductie}</p>
+          )}
+        </Wijzigbaar>
+      ) : null}
 
       <table className="og-tabel" style={{ marginTop: "7mm" }}>
         <colgroup>
@@ -221,6 +237,8 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
                         {r.type === "stelpost" ? <span className="og-toelichting">{r.toelichting || "Geschat bedrag, wordt op nacalculatie afgerekend."}</span> : null}
                         {r.type === "optioneel" ? <span className="og-toelichting">{gekozen.has(r.id) ? "Gekozen: telt mee in het totaal." : "Telt alleen mee in het totaal als u deze regel kiest."}</span> : null}
                         {r.toelichting && r.type !== "stelpost" ? <span className="og-toelichting">{r.toelichting}</span> : null}
+                        {r.label === "meerwerk" ? <span className="og-label opt">Meerwerk</span> : null}
+                        {r.label === "stelpost-open" ? <span className="og-label stel">Te bepalen</span> : null}
                         {r.kortingPct ? <span className="og-toelichting">Korting {formatAantal(r.kortingPct)}%: −{formatCents(u.korting)}</span> : null}
                       </td>
                       {r.type === "tekst" ? (
@@ -234,7 +252,7 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
                             {bewerk ? <input className="og-invoer" aria-label="Eenheid" value={r.eenheid} onChange={(e) => bewerk.onRegel(s.id, r.id, { eenheid: e.target.value })} /> : r.eenheid}
                           </td>
                           <td className="r">{formatCents(prijsPerEenheidWeergave(r, toonIncl, t.kor))}</td>
-                          <td className="r">{t.kor ? "–" : `${r.btw}%`}</td>
+                          <td className="r">{geenBtw ? "–" : `${r.btw}%`}</td>
                           <td className="r">{formatCents(toonIncl ? u.incl : u.excl)}</td>
                         </>
                       )}
@@ -248,7 +266,7 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
 
       <Wijzigbaar sel={{ soort: "totaal" }} bewerk={bewerk} className="og-totaal">
         <dl>
-          {t.kor ? null : (
+          {geenBtw ? null : (
             <>
               <dt>Totaal excl. btw</dt>
               <dd>{formatCents(t.totaalExcl)}</dd>
@@ -264,13 +282,17 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
           )}
         </dl>
         <div className="eind">
-          <span>{t.kor ? "Totaal" : toonIncl ? "Totaal incl. btw" : "Totaal excl. btw"}</span>
+          <span>{geenBtw ? "Totaal" : toonIncl ? "Totaal incl. btw" : "Totaal excl. btw"}</span>
           <span>{formatCents(eindTotaal)}</span>
         </div>
-        {!t.kor && !toonIncl ? <p className="klein">Totaal incl. btw: {formatCents(t.totaalIncl)}</p> : null}
+        {!geenBtw && !toonIncl ? <p className="klein">Totaal incl. btw: {formatCents(t.totaalIncl)}</p> : null}
         {t.kor ? <p className="klein">{a.korTekst}</p> : null}
+        {t.verlegd ? <p className="klein">{BTW_VERLEGD_TEKST}</p> : null}
         {t.optioneelNietGekozenIncl > 0 ? <p className="klein">Niet meegeteld: optionele regels (samen {formatCents(toonIncl || t.kor ? t.optioneelNietGekozenIncl : Math.round(t.optioneelNietGekozenIncl / 1.21))}).</p> : null}
       </Wijzigbaar>
+
+      {fInhoud ? <FactuurTermijnBlok inhoud={fInhoud} /> : null}
+      {fInhoud ? <FactuurBetaalBlok inhoud={fInhoud} totalen={t} /> : null}
 
       {termijnen.length > 0 && (
         <Wijzigbaar sel={{ soort: "betaling" }} bewerk={bewerk} className="og-blok">
@@ -321,7 +343,7 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
         </Wijzigbaar>
       )}
 
-      {particulier && inhoud.herroeping.aan && inhoud.herroeping.tekst.trim() && (
+      {!factuur && particulier && inhoud.herroeping.aan && inhoud.herroeping.tekst.trim() && (
         <Wijzigbaar sel={{ soort: "herroeping" }} bewerk={bewerk} className="og-blok">
           <h3>Herroepingsrecht</h3>
           <p className="og-klein" style={{ whiteSpace: "pre-line" }}>
@@ -342,7 +364,7 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
             <div>{[a.contactFunctie, a.handelsnaam].filter(Boolean).join(", ")}</div>
           </div>
         </div>
-        <div className={`og-akkoord ${akkoord ? "og-getekend" : ""}`}>
+        {factuur ? null : <div className={`og-akkoord ${akkoord ? "og-getekend" : ""}`}>
           <h3>Akkoord opdrachtgever</h3>
           <p className="og-klein">Ik ga akkoord met deze offerte{eindTotaal > 0 ? ` van ${formatCents(eindTotaal)}` : ""} en de algemene voorwaarden.</p>
           <div className="velden">
@@ -356,7 +378,7 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
             </div>
             {!akkoord ? <div className="veld" style={{ gridColumn: "1 / -1", minHeight: "14mm" }}>Handtekening</div> : null}
           </div>
-        </div>
+        </div>}
       </div>
 
       <div className="og-voet">

@@ -117,7 +117,7 @@ export function termijnFactuurUitOfferte(bron: OfferteBron, termijn: { label: st
     soort: "overig",
   }));
   const vandaag = vandaagAmsterdam(i.nu);
-  const meta = metaBasis("termijn", bron, i, { termijn: { label: termijn.label, percentage: termijn.percentage }, uitvoeringVan: vandaag });
+  const meta = metaBasis("termijn", bron, i, { termijn: { label: termijn.label, percentage: termijn.percentage, offerteTotaalInclCenten: t.totaalIncl }, uitvoeringVan: vandaag });
   return basisUitOfferte(bron.inhoud, [{ id: nieuwId("s"), titel: `${termijn.label} ${termijn.percentage}%`, regels }], meta, bron.inhoud.onderwerp);
 }
 
@@ -182,4 +182,22 @@ export function creditnotaUitFactuur(orig: { nummer: string; inhoud: FactuurInho
   });
   meta.vervaldatum = meta.factuurdatum;
   return { ...orig.inhoud, nummer: "", datum: meta.factuurdatum, geldigTot: meta.vervaldatum, onderwerp: `Creditnota bij factuur ${orig.nummer}`, secties, factuur: meta };
+}
+
+
+// Na elke wijziging in de editor: een stelpost waarvan de hoeveelheid of de prijs is aangepast, is niet langer "te bepalen";
+// en de vervaldatum volgt de betaaltermijn zolang de hovenier die niet zelf aanpast.
+export function normaliseerFactuur(oud: FactuurInhoud, nieuw: FactuurInhoud): FactuurInhoud {
+  const oudeRegels = new Map(oud.secties.flatMap((s) => s.regels).map((r) => [r.id, r]));
+  const secties = nieuw.secties.map((s) => ({
+    ...s,
+    regels: s.regels.map((r) => {
+      const was = oudeRegels.get(r.id);
+      if (r.label === "stelpost-open" && was && (was.aantal !== r.aantal || was.prijsCenten !== r.prijsCenten)) {
+        return { ...r, label: undefined, toelichting: "Werkelijke hoeveelheid (nacalculatie)" };
+      }
+      return r;
+    }),
+  }));
+  return { ...nieuw, secties, datum: nieuw.factuur.factuurdatum, geldigTot: nieuw.factuur.vervaldatum, herroeping: { aan: false, tekst: "" } };
 }

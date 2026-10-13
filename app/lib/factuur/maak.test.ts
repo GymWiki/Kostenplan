@@ -78,7 +78,7 @@ describe("termijnfacturen en eindfactuur", () => {
     expect(regels[0].omschrijving).toMatch(/Aanbetaling 30% – offerte 2026-0012 \(btw 21%\)/);
     const totaal = factuurTotalen(eenFactuurUitOfferte(bron, inst)).totaalInclCenten;
     expect(Math.abs(factuurTotalen(f).totaalInclCenten - Math.round(totaal * 0.3))).toBeLessThanOrEqual(2);
-    expect(f.factuur).toMatchObject({ soort: "termijn", termijn: { label: "Aanbetaling", percentage: 30 }, uitvoeringVan: "2026-10-20" });
+    expect(f.factuur).toMatchObject({ soort: "termijn", termijn: { label: "Aanbetaling", percentage: 30, offerteTotaalInclCenten: expect.any(Number) }, uitvoeringVan: "2026-10-20" });
   });
 
   it("de eindfactuur trekt eerder gefactureerde termijnen af: samen is het exact het offertetotaal", () => {
