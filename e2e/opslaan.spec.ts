@@ -67,37 +67,27 @@ test.describe("betaling registreren (verouderd tabblad, offline)", () => {
   test.describe.configure({ mode: "serial" });
   test.use({ gebruiker: "auto" });
 
-  test("een verouderd tabblad toont na de weigering het juiste openstaande bedrag (#69)", async ({ page, context }, info) => {
+  test("een verouderd tabblad toont na de weigering het juiste openstaande bedrag (#69)", async ({ page }, info) => {
     const id = seed()[eigenA(info.project.name)].facturen["verstuurd"]!;
     const totaal = Number(sql(`select "totaalInclCenten" from "Factuur" where id='${id}'`));
     const betaaldVoor = Number(sql(`select coalesce(sum("bedragCenten"),0) from "FactuurBetaling" where "factuurId"='${id}'`));
+    const aantalVoor = Number(sql(`select count(*) from "FactuurBetaling" where "factuurId"='${id}'`));
     await page.goto(`/dashboard/facturen/${id}`);
     await rustig(page);
-    const tab2 = await context.newPage();
-    await tab2.goto(`/dashboard/facturen/${id}`);
-    await rustig(tab2);
+    const sectie = page.locator("section[aria-label='Beheer van deze factuur']");
+    const vol = new Intl.NumberFormat("nl-NL", { minimumFractionDigits: 2 }).format((totaal - betaaldVoor) / 100);
+    await expect(sectie).toContainText(vol);
 
-    // tab 1 registreert een deelbetaling van € 100,00
-    await page.bringToFront();
+    // Intussen registreert iemand anders (een ander tabblad of een collega) een deelbetaling van € 100,00; dit scherm is nu verouderd.
+    sql(`insert into "FactuurBetaling" (id, "factuurId", datum, "bedragCenten", methode) values ('e2e-${Date.now()}', '${id}', current_date, 10000, 'OVERBOEKING')`);
+
+    // Dit scherm probeert het hele oude openstaande bedrag te registreren: de server weigert (actuele stand) en het scherm ververst.
     await page.getByRole("button", { name: "Betaling registreren" }).click();
-    await page.locator("#bt-bedrag").fill("100,00");
     await page.getByRole("button", { name: "Betaling opslaan" }).click();
-    try {
-      await expect(page.locator("section[aria-label='Beheer van deze factuur']")).toContainText(/100,00/, { timeout: 15000 });
-    } catch (e) {
-      console.log("DEBUG betalingen:", sql(`select count(*) from "FactuurBetaling" where "factuurId"='${id}'`), "sheet zichtbaar:", await page.getByRole("button", { name: "Betaling opslaan" }).count(), "tekst:", (await page.locator("body").innerText()).slice(0, 300).replace(/\n/g, " | "));
-      throw e;
-    }
-
-    // tab 2 (verouderd: nog het volledige bedrag openstaand) probeert het hele oude bedrag te registreren
-    await tab2.bringToFront(); // een tabblad op de achtergrond krijgt van de browser geen animatieframes: React zou niet renderen
-    await tab2.getByRole("button", { name: "Betaling registreren" }).click();
-    await tab2.getByRole("button", { name: "Betaling opslaan" }).click();
-    await expect(tab2.getByText(/meer dan het openstaande bedrag/)).toBeVisible({ timeout: 15000 });
-    const open = totaal - betaaldVoor - 10000;
-    const tekst = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(open / 100).replace(/\s/g, " ");
-    await expect(tab2.locator("section[aria-label='Beheer van deze factuur']")).toContainText(tekst.replace("€ ", "").replace(/ /g, " "), { timeout: 15000 });
-    expect(Number(sql(`select count(*) from "FactuurBetaling" where "factuurId"='${id}'`))).toBeGreaterThan(0);
+    await expect(page.getByText(/meer dan het openstaande bedrag/)).toBeVisible({ timeout: 15000 });
+    const nu = new Intl.NumberFormat("nl-NL", { minimumFractionDigits: 2 }).format((totaal - betaaldVoor - 10000) / 100);
+    await expect(sectie).toContainText(nu, { timeout: 15000 });
+    expect(Number(sql(`select count(*) from "FactuurBetaling" where "factuurId"='${id}'`))).toBe(aantalVoor + 1); // alleen de ingevoegde betaling: de geweigerde is niet opgeslagen
   });
 
   test("offline een betaling registreren geeft een Nederlandse melding, geen foutpagina (#71)", async ({ page, context }, info) => {
