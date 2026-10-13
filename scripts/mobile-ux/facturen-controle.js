@@ -32,7 +32,7 @@ const tekst = async (p) => (await p.locator("body").innerText()).replace(/\s+/g,
   const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] });
   ruim();
   const ids = seed();
-  const doc = (p) => p.locator("[data-offerte-document]").first();
+  const doc = (p) => ({ innerText: () => p.locator("[data-offerte-document]").first().evaluate((el) => el.innerText + " " + [...el.querySelectorAll("input,textarea")].map((i) => i.value).join(" ")) });
 
   // ── Concept in de editor ──
   for (const [vn, vp] of VP) {
@@ -56,6 +56,7 @@ const tekst = async (p) => (await p.locator("body").innerText()).replace(/\s+/g,
     const p = await pagina(b, VP[1][1], `/dashboard/facturen/${ids.totaal}`);
     await p.getByRole("button", { name: /Definitief maken/ }).click();
     await p.getByRole("dialog").waitFor();
+    await p.getByRole("dialog").getByText(/nummer F2026-0001/).waitFor({ timeout: 8000 }).catch(() => {});
     const t = await tekst(p);
     rapport("definitief maken: de controle blokkeert (stelpost, uitvoeringsdatum)", /stelpost/i.test(t) && /uitvoeringsdatum/i.test(t));
     rapport("definitief maken: de knop is uitgeschakeld zolang er blokkades zijn", await p.getByRole("dialog").getByRole("button", { name: "Definitief maken" }).isDisabled());
@@ -65,8 +66,9 @@ const tekst = async (p) => (await p.locator("body").innerText()).replace(/\s+/g,
     // oplossen: uitvoeringsdatum invullen en de hoeveelheid van de stelpost
     await p.locator("[data-offerte-document] .og-meta").click();
     await p.locator("#fm-uitv").fill("2026-10-22");
-    await p.locator("[data-offerte-document] tr", { hasText: "Grondwerk en afvoer" }).click();
-    const aantal = p.locator("[data-offerte-document] tr", { hasText: "Grondwerk en afvoer" }).locator('input[aria-label="Aantal"]');
+    const rij = p.locator("[data-offerte-document] tr").filter({ has: p.locator('input[value="Grondwerk en afvoer"]') });
+    await rij.locator("td").first().click({ position: { x: 4, y: 4 } });
+    const aantal = rij.locator('input[aria-label="Aantal"]');
     await aantal.fill("1,5");
     await p.waitForTimeout(1500);
     const st = await p.getByRole("status").filter({ hasText: /opgeslagen|Opslaan/i }).first().innerText().catch(() => "");
