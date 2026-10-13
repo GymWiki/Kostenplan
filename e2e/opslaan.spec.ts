@@ -5,6 +5,7 @@ const sql = (q: string) => execFileSync("psql", [process.env.DATABASE_URL ?? "po
 
 // #71: offline bewerken bleef "Opslaan…" en ging verloren. #69: twee tabbladen overschreven elkaar stilzwijgend.
 test.describe("opslaan van de offerte-editor", () => {
+  test.describe.configure({ mode: "serial" }); // beide tests bewerken dezelfde offerte
   test.use({ gebruiker: "auto" });
   test.beforeEach(({}, info) => {
     test.skip(info.project.name === "mobiel", "regels bewerken gaat op mobiel via een sheet; de opslaglogica is dezelfde en staat hier op desktop");
@@ -39,8 +40,10 @@ test.describe("opslaan van de offerte-editor", () => {
     await opEditor(tab2, "offerte-concept", info);
 
     // volgorde 1: tab 1 slaat op, tab 2 (verouderd) wordt geweigerd
+    await page.bringToFront();
     await omschrijving(page).fill("Van tabblad één");
     await expect(page.getByText("Alles opgeslagen")).toBeVisible({ timeout: 10000 });
+    await tab2.bringToFront();
     await omschrijving(tab2).fill("Van tabblad twee");
     await expect(tab2.getByRole("alert").filter({ hasText: "in een ander tabblad of door iemand anders gewijzigd" })).toBeVisible({ timeout: 10000 });
     await expect(omschrijving(tab2)).toHaveValue("Van tabblad twee"); // eigen wijziging blijft zichtbaar
@@ -49,8 +52,10 @@ test.describe("opslaan van de offerte-editor", () => {
     await expect(tab2.getByRole("alert").filter({ hasText: "ander tabblad" })).toHaveCount(0);
 
     // volgorde 2: nu slaat tab 2 op (op de nieuwste stand); tab 1 is verouderd en wordt geweigerd
+    await tab2.bringToFront();
     await omschrijving(tab2).fill("Tweede ronde van tabblad twee");
     await expect(tab2.getByText("Alles opgeslagen")).toBeVisible({ timeout: 10000 });
+    await page.bringToFront();
     await omschrijving(page).fill("Tweede ronde van tabblad één");
     await expect(page.getByRole("alert").filter({ hasText: "in een ander tabblad of door iemand anders gewijzigd" })).toBeVisible({ timeout: 10000 });
     await page.getByRole("button", { name: "Nieuwste versie laden" }).click();
@@ -59,6 +64,7 @@ test.describe("opslaan van de offerte-editor", () => {
 });
 
 test.describe("betaling registreren (verouderd tabblad, offline)", () => {
+  test.describe.configure({ mode: "serial" });
   test.use({ gebruiker: "auto" });
 
   test("een verouderd tabblad toont na de weigering het juiste openstaande bedrag (#69)", async ({ page, context }, info) => {
@@ -72,12 +78,14 @@ test.describe("betaling registreren (verouderd tabblad, offline)", () => {
     await rustig(tab2);
 
     // tab 1 registreert een deelbetaling van € 100,00
+    await page.bringToFront();
     await page.getByRole("button", { name: "Betaling registreren" }).click();
     await page.locator("#bt-bedrag").fill("100,00");
     await page.getByRole("button", { name: "Betaling opslaan" }).click();
     await expect(page.locator("section[aria-label='Beheer van deze factuur']")).toContainText(/100,00/, { timeout: 15000 });
 
     // tab 2 (verouderd: nog het volledige bedrag openstaand) probeert het hele oude bedrag te registreren
+    await tab2.bringToFront(); // een tabblad op de achtergrond krijgt van de browser geen animatieframes: React zou niet renderen
     await tab2.getByRole("button", { name: "Betaling registreren" }).click();
     await tab2.getByRole("button", { name: "Betaling opslaan" }).click();
     await expect(tab2.getByText(/meer dan het openstaande bedrag/)).toBeVisible({ timeout: 15000 });
