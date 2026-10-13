@@ -86,7 +86,12 @@ test.describe("betaling registreren (verouderd tabblad, offline)", () => {
     await page.getByRole("button", { name: "Betaling opslaan" }).click();
     await expect(page.getByText(/meer dan het openstaande bedrag/)).toBeVisible({ timeout: 15000 });
     const nu = new Intl.NumberFormat("nl-NL", { minimumFractionDigits: 2 }).format((totaal - betaaldVoor - 10000) / 100);
-    await expect(sectie).toContainText(nu, { timeout: 15000 });
+    try {
+      await expect(sectie).toContainText(nu, { timeout: 15000 });
+    } catch (e) {
+      console.log("DEBUG sectie:", (await sectie.innerText()).replace(/\n/g, " | ").slice(0, 200), "| verwacht:", nu, "| sheet:", (await page.locator("[role=dialog]").innerText().catch(() => "geen")).replace(/\n/g, " | ").slice(0, 300));
+      throw e;
+    }
     expect(Number(sql(`select count(*) from "FactuurBetaling" where "factuurId"='${id}'`))).toBe(aantalVoor + 1); // alleen de ingevoegde betaling: de geweigerde is niet opgeslagen
   });
 
