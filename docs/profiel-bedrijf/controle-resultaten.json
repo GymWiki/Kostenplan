@@ -1,0 +1,178 @@
+[
+  {
+    "n": "1-een-bedrijf-pro-actief mobiel-412: 'Bedrijf verwijderen' is nergens zichtbaar",
+    "ok": true,
+    "d": "0"
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief mobiel-412: geen label 'Actief bedrijf'",
+    "ok": true
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief mobiel-412: alle tikdoelen ≥ 44 px",
+    "ok": true,
+    "d": "[]"
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief mobiel-412: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief desktop-1440: 'Bedrijf verwijderen' is nergens zichtbaar",
+    "ok": true,
+    "d": "0"
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief desktop-1440: geen label 'Actief bedrijf'",
+    "ok": true
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief desktop-1440: alle tikdoelen ≥ 44 px",
+    "ok": true,
+    "d": "[]"
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief desktop-1440: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief desktop: kolom is maximaal 640 px breed",
+    "ok": true,
+    "d": "640"
+  },
+  {
+    "n": "2-een-bedrijf-pro-opgezegd mobiel-412: 'Bedrijf verwijderen' is nergens zichtbaar",
+    "ok": true,
+    "d": "0"
+  },
+  {
+    "n": "2-een-bedrijf-pro-opgezegd mobiel-412: geen label 'Actief bedrijf'",
+    "ok": true
+  },
+  {
+    "n": "2-een-bedrijf-pro-opgezegd mobiel-412: alle tikdoelen ≥ 44 px",
+    "ok": true,
+    "d": "[]"
+  },
+  {
+    "n": "2-een-bedrijf-pro-opgezegd mobiel-412: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "2-een-bedrijf-pro-opgezegd desktop-1440: 'Bedrijf verwijderen' is nergens zichtbaar",
+    "ok": true,
+    "d": "0"
+  },
+  {
+    "n": "2-een-bedrijf-pro-opgezegd desktop-1440: geen label 'Actief bedrijf'",
+    "ok": true
+  },
+  {
+    "n": "2-een-bedrijf-pro-opgezegd desktop-1440: alle tikdoelen ≥ 44 px",
+    "ok": true,
+    "d": "[]"
+  },
+  {
+    "n": "2-een-bedrijf-pro-opgezegd desktop-1440: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "2-een-bedrijf-pro-opgezegd desktop: kolom is maximaal 640 px breed",
+    "ok": true,
+    "d": "640"
+  },
+  {
+    "n": "3-een-bedrijf-gratis mobiel-412: 'Bedrijf verwijderen' is nergens zichtbaar",
+    "ok": true,
+    "d": "0"
+  },
+  {
+    "n": "3-een-bedrijf-gratis mobiel-412: geen label 'Actief bedrijf'",
+    "ok": true
+  },
+  {
+    "n": "3-een-bedrijf-gratis mobiel-412: alle tikdoelen ≥ 44 px",
+    "ok": true,
+    "d": "[]"
+  },
+  {
+    "n": "3-een-bedrijf-gratis mobiel-412: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "3-een-bedrijf-gratis desktop-1440: 'Bedrijf verwijderen' is nergens zichtbaar",
+    "ok": true,
+    "d": "0"
+  },
+  {
+    "n": "3-een-bedrijf-gratis desktop-1440: geen label 'Actief bedrijf'",
+    "ok": true
+  },
+  {
+    "n": "3-een-bedrijf-gratis desktop-1440: alle tikdoelen ≥ 44 px",
+    "ok": true,
+    "d": "[]"
+  },
+  {
+    "n": "3-een-bedrijf-gratis desktop-1440: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "3-een-bedrijf-gratis desktop: kolom is maximaal 640 px breed",
+    "ok": true,
+    "d": "640"
+  },
+  {
+    "n": "4-twee-bedrijven mobiel-412: 'Bedrijf verwijderen' is zichtbaar bij twee bedrijven",
+    "ok": true,
+    "d": "1"
+  },
+  {
+    "n": "4-twee-bedrijven mobiel-412: geen label 'Actief bedrijf'",
+    "ok": true
+  },
+  {
+    "n": "4-twee-bedrijven mobiel-412: alle tikdoelen ≥ 44 px",
+    "ok": true,
+    "d": "[]"
+  },
+  {
+    "n": "4-twee-bedrijven mobiel-412: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "4-twee-bedrijven: bevestiging noemt rekentools, leads, offertes en het abonnement",
+    "ok": true
+  },
+  {
+    "n": "4-twee-bedrijven desktop-1440: 'Bedrijf verwijderen' is zichtbaar bij twee bedrijven",
+    "ok": true,
+    "d": "1"
+  },
+  {
+    "n": "4-twee-bedrijven desktop-1440: geen label 'Actief bedrijf'",
+    "ok": true
+  },
+  {
+    "n": "4-twee-bedrijven desktop-1440: alle tikdoelen ≥ 44 px",
+    "ok": true,
+    "d": "[]"
+  },
+  {
+    "n": "4-twee-bedrijven desktop-1440: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "4-twee-bedrijven desktop: kolom is maximaal 640 px breed",
+    "ok": true,
+    "d": "638"
+  }
+]

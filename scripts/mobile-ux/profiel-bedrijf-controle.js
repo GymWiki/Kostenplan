@@ -11,7 +11,7 @@ const res = [];
 const rapport = (n, ok, d) => { res.push({ n, ok: Boolean(ok), d }); console.log(`${ok ? "PASS" : "FAIL"}  ${n}  ${d || ""}`); };
 fs.mkdirSync(UIT, { recursive: true });
 const C1 = "cmv4w1j7x0000pc7dmll5gban";
-const LOGO = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96'><rect width='96' height='96' rx='16' fill='#15803d'/><text x='48' y='62' font-size='44' text-anchor='middle' fill='white' font-family='sans-serif'>DV</text></svg>");
+const LOGO = "data:image/svg+xml;base64," + Buffer.from("<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96'><rect width='96' height='96' rx='16' fill='#15803d'/><text x='48' y='62' font-size='44' text-anchor='middle' fill='white' font-family='sans-serif'>DV</text></svg>").toString("base64");
 
 const zet = (tier, status, extra = "") => sql(`update "Company" set "subscriptionTier"='${tier}', "subscriptionStatus"='${status}', "billingInterval"=${tier === "GRATIS" ? "null" : "'MAANDELIJKS'"}, "huidigePeriodeEind"=${status === "ACTIVE" ? "'2026-11-12'" : "null"}, "gepauzeerdTot"=${status === "CANCELED" ? "'2026-11-12'" : "null"} ${extra} where id='${C1}'`);
 
