@@ -38,7 +38,7 @@ export function WerkgebiedKaart({
     (async () => {
       const L = (await import("leaflet")).default;
       if (weg || !ref.current) return;
-      kaart = L.map(ref.current, { zoomControl: true, attributionControl: true, scrollWheelZoom: false });
+      kaart = L.map(ref.current, { zoomControl: true, attributionControl: true, scrollWheelZoom: false, zoomAnimation: false, fadeAnimation: false, markerZoomAnimation: false });
       L.tileLayer(PDOK_TEGELS, { minZoom: 6, maxZoom: 19, attribution: "Kaartgegevens © Kadaster" }).addTo(kaart);
       const groep: import("leaflet").LatLngExpression[] = [];
       const kleur = "#15803d";
@@ -63,12 +63,14 @@ export function WerkgebiedKaart({
         L.circleMarker(p, { radius: 7, color: "#ffffff", weight: 2, fillColor: "#b45309", fillOpacity: 1 }).bindTooltip(klant.label ?? "Klant", { permanent: true, direction: "top" }).addTo(kaart);
         if (start) L.polyline([[start.lat, start.lon], p], { color: "#b45309", weight: 2, dashArray: "6 6" }).addTo(kaart);
       }
-      if (groep.length > 1) kaart.fitBounds(L.latLngBounds(groep), { padding: [24, 24], maxZoom: 13 });
+      if (groep.length > 1) kaart.fitBounds(L.latLngBounds(groep), { padding: [24, 24], maxZoom: 13, animate: false });
       else if (groep.length === 1) kaart.setView(groep[0], 11);
       else kaart.setView([52.2, 5.3], 7); // Nederland
     })();
     return () => {
       weg = true;
+      kaart?.stop();
+      kaart?.off();
       kaart?.remove();
     };
   }, [sleutel]);

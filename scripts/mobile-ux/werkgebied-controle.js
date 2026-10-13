@@ -94,6 +94,7 @@ async function vulKlus(p, meter = "20") {
     await p.waitForTimeout(1200);
     await f.getByLabel("Minimale opdracht gebruiken").click({ force: true });
     await p.waitForTimeout(400);
+    await f.locator("#wg-minimum").fill("1500");
     await f.scrollIntoViewIfNeeded();
     await f.screenshot({ path: `${UIT}/instellingen-${naam}.png` });
     if (naam.startsWith("desktop")) {
@@ -265,7 +266,7 @@ async function vulKlus(p, meter = "20") {
     rapport(`leads ${naam}: afstand in km`, /\d+(,\d)? km/.test(tekst));
     await p.screenshot({ path: `${UIT}/leads-${naam}.png`, fullPage: true });
     // filter
-    const filter = p.getByLabel("Filter op werkgebied en minimum").last();
+    const filter = p.getByLabel("Filter op werkgebied en minimum").locator("visible=true").first();
     await filter.selectOption("buiten");
     await p.waitForTimeout(800);
     const gefilterd = await lees(p);
