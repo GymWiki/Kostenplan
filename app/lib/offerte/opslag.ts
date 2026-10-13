@@ -14,6 +14,13 @@ export class OfferteVergrendeldFout extends Error {
   }
 }
 
+// Iemand anders (of een ander tabblad) heeft dit concept intussen opgeslagen.
+export class RevisieConflictFout extends Error {
+  constructor(public huidigeRevisie: number) {
+    super("Deze offerte is in een ander tabblad of door iemand anders gewijzigd.");
+  }
+}
+
 export const nieuweToken = () => randomBytes(24).toString("base64url");
 
 function totalenVan(inhoud: OfferteInhoud) {
@@ -43,16 +50,24 @@ export async function maakOfferte(
 }
 
 // Slaat de inhoud van de huidige versie op — alleen zolang die niet is verstuurd.
-export async function bewaarConcept(db: PrismaClient, { offerteId, companyId, inhoud }: { offerteId: string; companyId: string; inhoud: OfferteInhoud }) {
+// Met `verwachteRevisie` (de editor stuurt die altijd mee) wordt een opslag op een verouderde stand geweigerd.
+// Geeft de nieuwe revisie terug.
+export async function bewaarConcept(db: PrismaClient, { offerteId, companyId, inhoud, verwachteRevisie }: { offerteId: string; companyId: string; inhoud: OfferteInhoud; verwachteRevisie?: number }): Promise<number> {
   const o = await db.offerteV2.findFirst({ where: { id: offerteId, companyId }, select: { huidigeVersie: true, status: true } });
   if (!o) throw new Error("Offerte niet gevonden.");
   if (isDefinitief(o.status)) throw new OfferteVergrendeldFout();
   const r = await db.offerteVersie.updateMany({
-    where: { offerteId, versie: o.huidigeVersie, vergrendeld: false },
+    where: { offerteId, versie: o.huidigeVersie, vergrendeld: false, ...(verwachteRevisie !== undefined ? { revisie: verwachteRevisie } : {}) },
     // Een wijziging maakt een eerder klaargezette PDF ongeldig: die wordt opnieuw gemaakt bij het delen.
-    data: { inhoud: { ...inhoud, versie: o.huidigeVersie } as object, ...totalenVan(inhoud), pdfData: null, pdfHash: null },
+    data: { inhoud: { ...inhoud, versie: o.huidigeVersie } as object, ...totalenVan(inhoud), pdfData: null, pdfHash: null, revisie: { increment: 1 } },
   });
-  if (r.count === 0) throw new OfferteVergrendeldFout();
+  if (r.count === 0) {
+    const nu = await db.offerteVersie.findFirst({ where: { offerteId, versie: o.huidigeVersie }, select: { vergrendeld: true, revisie: true } });
+    if (nu && !nu.vergrendeld && verwachteRevisie !== undefined && nu.revisie !== verwachteRevisie) throw new RevisieConflictFout(nu.revisie);
+    throw new OfferteVergrendeldFout();
+  }
+  if (verwachteRevisie !== undefined) return verwachteRevisie + 1; // de update was voorwaardelijk op precies deze stand
+  return (await db.offerteVersie.findFirstOrThrow({ where: { offerteId, versie: o.huidigeVersie }, select: { revisie: true } })).revisie;
 }
 
 // Wijzigen na versturen: maakt een nieuwe versie (concept) op basis van de laatste.

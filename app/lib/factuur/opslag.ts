@@ -14,6 +14,11 @@ export class FactuurVergrendeldFout extends Error {
     super("Deze factuur is definitief en kan niet meer worden gewijzigd of verwijderd. Maak een creditnota om te corrigeren.");
   }
 }
+export class FactuurRevisieConflictFout extends Error {
+  constructor(public huidigeRevisie: number) {
+    super("Deze factuur is in een ander tabblad of door iemand anders gewijzigd.");
+  }
+}
 export class FactuurControleFout extends Error {
   constructor(public punten: FactuurControlePunt[]) {
     super(punten[0]?.bericht ?? "De factuur kan nog niet definitief worden.");
@@ -63,12 +68,18 @@ export async function maakFactuurConcept(
 }
 
 // Slaat het concept op — alleen zolang de factuur een concept is.
-export async function bewaarFactuurConcept(db: PrismaClient, { factuurId, companyId, inhoud, notities }: { factuurId: string; companyId: string; inhoud: FactuurInhoud; notities?: string | null }) {
+// Met `verwachteRevisie` (de editor stuurt die altijd mee) wordt een opslag op een verouderde stand geweigerd. Geeft de nieuwe revisie terug.
+export async function bewaarFactuurConcept(db: PrismaClient, { factuurId, companyId, inhoud, notities, verwachteRevisie }: { factuurId: string; companyId: string; inhoud: FactuurInhoud; notities?: string | null; verwachteRevisie?: number }): Promise<number> {
   const r = await db.factuur.updateMany({
-    where: { id: factuurId, companyId, status: "CONCEPT" },
-    data: { inhoud: { ...inhoud, nummer: "", factuur: { ...inhoud.factuur, nummer: null } } as object, ...kolommen(inhoud), ...(notities !== undefined ? { notities } : {}) },
+    where: { id: factuurId, companyId, status: "CONCEPT", ...(verwachteRevisie !== undefined ? { revisie: verwachteRevisie } : {}) },
+    data: { inhoud: { ...inhoud, nummer: "", factuur: { ...inhoud.factuur, nummer: null } } as object, ...kolommen(inhoud), ...(notities !== undefined ? { notities } : {}), revisie: { increment: 1 } },
   });
-  if (r.count === 0) throw new FactuurVergrendeldFout();
+  if (r.count === 0) {
+    const nu = await db.factuur.findFirst({ where: { id: factuurId, companyId }, select: { status: true, revisie: true } });
+    if (nu && nu.status === "CONCEPT" && verwachteRevisie !== undefined && nu.revisie !== verwachteRevisie) throw new FactuurRevisieConflictFout(nu.revisie);
+    throw new FactuurVergrendeldFout();
+  }
+  return (await db.factuur.findFirstOrThrow({ where: { id: factuurId, companyId }, select: { revisie: true } })).revisie;
 }
 
 // Een concept mag worden weggegooid (het had nog geen nummer, dus er ontstaat geen gat); een definitieve factuur nooit.
