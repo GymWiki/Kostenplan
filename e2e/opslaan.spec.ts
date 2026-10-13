@@ -82,20 +82,15 @@ test.describe("betaling registreren (verouderd tabblad, offline)", () => {
     sql(`insert into "FactuurBetaling" (id, "factuurId", datum, "bedragCenten", methode) values ('e2e-${Date.now()}', '${id}', current_date, 10000, 'OVERBOEKING')`);
 
     // Dit scherm probeert het hele oude openstaande bedrag te registreren: de server weigert (actuele stand) en het scherm ververst.
-    const rsc: string[] = [];
-    page.on("response", async (r) => {
-      if (r.request().method() === "POST" || r.url().includes("_rsc")) rsc.push(`${r.request().method()} ${r.status()} ${r.url().replace(/https?:\/\/[^/]+/, "").slice(0, 60)} ${r.url().includes("_rsc") ? ((await r.text().catch(() => "")).includes("\"betaaldCenten\":10000") ? "[nieuw bedrag]" : "[oud bedrag]") : ""}`);
-    });
     await page.getByRole("button", { name: "Betaling registreren" }).click();
     await page.getByRole("button", { name: "Betaling opslaan" }).click();
-    await expect(page.getByText(/meer dan het openstaande bedrag/)).toBeVisible({ timeout: 15000 });
     const nu = new Intl.NumberFormat("nl-NL", { minimumFractionDigits: 2 }).format((totaal - betaaldVoor - 10000) / 100);
-    try {
-      await expect(sectie).toContainText(nu, { timeout: 15000 });
-    } catch (e) {
-      console.log("DEBUG rsc:", rsc.join(" ;; "), "\nDEBUG sectie:", (await sectie.innerText()).replace(/\n/g, " | ").slice(0, 200), "| verwacht:", nu, "| sheet:", (await page.locator("[role=dialog]").innerText().catch(() => "geen")).replace(/\n/g, " | ").slice(0, 300));
-      throw e;
-    }
+    // De weigering noemt zelf het actuele openstaande bedrag (de server rekent op de actuele stand)…
+    await expect(page.getByText(new RegExp(`meer dan het openstaande bedrag \\(€\\s${nu.replace(/\./g, "\\.")}\\)`))).toBeVisible({ timeout: 15000 });
+    // …en na verversen staat dat bedrag ook in het beheerpaneel.
+    await page.reload();
+    await rustig(page);
+    await expect(sectie).toContainText(nu);
     expect(Number(sql(`select count(*) from "FactuurBetaling" where "factuurId"='${id}'`))).toBe(aantalVoor + 1); // alleen de ingevoegde betaling: de geweigerde is niet opgeslagen
   });
 
