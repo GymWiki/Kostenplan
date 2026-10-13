@@ -30,9 +30,9 @@ export async function definitiefMakenAction(factuurId: string): Promise<Definiti
   try {
     const { nummer } = await maakFactuurDefinitief(prismaBasis, { factuurId, companyId: company.id, afzender, prefix: { factuur: gegevens.factuurPrefix, credit: gegevens.creditPrefix } });
     // Een definitieve creditnota verlaagt wat er op de oorspronkelijke factuur openstaat (of crediteert hem geheel).
-    const credit = await prismaBasis.factuur.findUnique({ where: { id: factuurId }, select: { creditVoorId: true } });
+    const credit = await prismaBasis.factuur.findFirst({ where: { id: factuurId, companyId: company.id }, select: { creditVoorId: true } });
     if (credit?.creditVoorId) {
-      await herberekenFactuurStatus(prismaBasis, credit.creditVoorId);
+      await herberekenFactuurStatus(prismaBasis, credit.creditVoorId, company.id);
       await prismaBasis.factuurGebeurtenis.create({ data: { factuurId: credit.creditVoorId, soort: "CREDITNOTA", tekst: `Creditnota ${nummer}` } });
       revalidatePath(`/dashboard/facturen/${credit.creditVoorId}`);
     }

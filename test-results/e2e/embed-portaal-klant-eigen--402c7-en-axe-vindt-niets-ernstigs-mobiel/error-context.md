@@ -1,0 +1,41 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Direct naar de inhoud" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e7]:
+          - paragraph [ref=e8]: Kostencalculator van
+          - heading "Hoveniersbedrijf De Vries" [level=1] [ref=e9]
+        - button "Schakel naar donkere modus" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+    - generic [ref=e15]:
+      - link "06 12345678" [ref=e16] [cursor=pointer]:
+        - /url: tel:0612345678
+        - img [ref=e17]
+        - text: 06 12345678
+      - link "hovenier-a1@test.kostenplan.nl" [ref=e19] [cursor=pointer]:
+        - /url: mailto:hovenier-a1@test.kostenplan.nl
+        - img [ref=e20]
+        - text: hovenier-a1@test.kostenplan.nl
+    - main [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - heading "Stel je project samen" [level=2] [ref=e27]
+            - paragraph [ref=e28]: Geef bij de onderdelen de gewenste hoeveelheid op. Je ziet direct een schatting van de kosten hiernaast.
+          - generic [ref=e31]:
+            - generic [ref=e32]:
+              - img [ref=e33]
+              - text: Wat is je postcode en huisnummer?
+            - paragraph [ref=e36]: Dan weten we meteen of we bij jou in de buurt werken. Je hoeft je adres straks niet opnieuw in te vullen.
+            - combobox "Wat is je postcode en huisnummer?" [ref=e38]
+        - generic [ref=e42]:
+          - heading "Jouw kostenraming" [level=3] [ref=e43]
+          - paragraph [ref=e44]: Vul eerst je postcode en huisnummer in om een schatting te zien.
+    - contentinfo [ref=e45]: Deze berekening is een indicatie. Aan dit overzicht kunnen geen rechten worden ontleend.
+  - alert [ref=e46]
+```

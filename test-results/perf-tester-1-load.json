@@ -1,0 +1,79 @@
+[
+  {
+    "naam": "landing",
+    "pad": "/",
+    "tot_netwerk_rustig_ms": 1188,
+    "requests": 48,
+    "js_requests": 29,
+    "js_kb": 1418,
+    "totaal_kb": 2124,
+    "fout": null,
+    "url_eind": "/"
+  },
+  {
+    "naam": "probeer",
+    "pad": "/probeer",
+    "tot_netwerk_rustig_ms": 1027,
+    "requests": 45,
+    "js_requests": 19,
+    "js_kb": 1207,
+    "totaal_kb": 1666,
+    "fout": null,
+    "url_eind": "/probeer"
+  },
+  {
+    "naam": "embed",
+    "pad": "/embed/cmv6yly170003tn7du5nfpi8d",
+    "tot_netwerk_rustig_ms": 957,
+    "requests": 27,
+    "js_requests": 18,
+    "js_kb": 792,
+    "totaal_kb": 1060,
+    "fout": null,
+    "url_eind": "/embed/cmv6yly170003tn7du5nfpi8d"
+  },
+  {
+    "naam": "dashboard",
+    "pad": "/dashboard",
+    "tot_netwerk_rustig_ms": 1429,
+    "requests": 28,
+    "js_requests": 14,
+    "js_kb": 617,
+    "totaal_kb": 987,
+    "fout": null,
+    "url_eind": "/dashboard"
+  },
+  {
+    "naam": "leads",
+    "pad": "/dashboard/leads",
+    "tot_netwerk_rustig_ms": 1150,
+    "requests": 27,
+    "js_requests": 15,
+    "js_kb": 696,
+    "totaal_kb": 1059,
+    "fout": null,
+    "url_eind": "/dashboard/leads"
+  },
+  {
+    "naam": "facturen",
+    "pad": "/dashboard/facturen",
+    "tot_netwerk_rustig_ms": 1033,
+    "requests": 22,
+    "js_requests": 13,
+    "js_kb": 612,
+    "totaal_kb": 922,
+    "fout": null,
+    "url_eind": "/dashboard/facturen"
+  },
+  {
+    "naam": "calculator",
+    "pad": "/dashboard/tools/cmv6yly170003tn7du5nfpi8d/calculator",
+    "tot_netwerk_rustig_ms": 1594,
+    "requests": 101,
+    "js_requests": 67,
+    "js_kb": 3513,
+    "totaal_kb": 4568,
+    "fout": null,
+    "url_eind": "/dashboard/tools/cmv6yly170003tn7du5nfpi8d"
+  }
+]

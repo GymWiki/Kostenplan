@@ -1,0 +1,91 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Direct naar de inhoud" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - navigation [ref=e5]:
+        - link "Kostenplan" [ref=e6] [cursor=pointer]:
+          - /url: /dashboard
+          - text: Kostenplan
+        - link "Overzicht" [ref=e8] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e9]
+          - text: Overzicht
+        - link "Rekentools" [ref=e14] [cursor=pointer]:
+          - /url: /dashboard/tools
+          - img [ref=e16]
+          - text: Rekentools
+        - link "Leads" [ref=e18] [cursor=pointer]:
+          - /url: /dashboard/leads
+          - img [ref=e19]
+          - text: Leads
+        - link "Profiel" [ref=e24] [cursor=pointer]:
+          - /url: /dashboard/profiel
+          - img [ref=e25]
+          - text: Profiel
+    - generic [ref=e29]:
+      - banner [ref=e30]:
+        - generic [ref=e31]:
+          - button "Bedrijf wisselen" [ref=e32] [cursor=pointer]:
+            - generic [ref=e33]: Hoveniersbedrijf De Vries
+            - img [ref=e34]
+          - 'button "Uitleg: Bedrijf wisselen" [ref=e37]':
+            - img [ref=e38]
+        - button "Schakel naar donkere modus" [ref=e41] [cursor=pointer]:
+          - img [ref=e42]
+        - button "Uitloggen" [ref=e45] [cursor=pointer]:
+          - img [ref=e46]
+          - generic [ref=e49]: Uitloggen
+      - main [ref=e50]:
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - generic [ref=e54]:
+              - heading "Rekentools" [level=1] [ref=e55]
+              - paragraph [ref=e56]: Elke rekentool heeft zijn eigen onderdelen, uiterlijk en link.
+            - button "Nieuwe rekentool" [ref=e57] [cursor=pointer]:
+              - img [ref=e58]
+              - text: Nieuwe rekentool
+          - generic [ref=e59]:
+            - generic [ref=e61]:
+              - generic [ref=e62]:
+                - heading "Tuinaanleg" [level=2] [ref=e63]
+                - button "Meer acties voor Tuinaanleg" [ref=e64] [cursor=pointer]:
+                  - img [ref=e65]
+              - generic [ref=e69]:
+                - generic [ref=e70]:
+                  - img [ref=e71]
+                  - text: 6 items
+                - generic [ref=e75]: Live op je website
+              - link "14 nieuwe leads deze maand" [ref=e76] [cursor=pointer]:
+                - /url: /dashboard/leads?tool=cmv6w7xwx0003fg7dwbtefy9g
+              - generic [ref=e77]:
+                - link "Openen" [ref=e78] [cursor=pointer]:
+                  - /url: /dashboard/tools/cmv6w7xwx0003fg7dwbtefy9g
+                - link "Bekijken" [ref=e79] [cursor=pointer]:
+                  - /url: http://localhost:3200/t/devries-a1/tuinaanleg-a1
+                  - img [ref=e80]
+                  - text: Bekijken
+            - generic [ref=e85]:
+              - generic [ref=e86]:
+                - heading "Onderhoud" [level=2] [ref=e87]
+                - button "Meer acties voor Onderhoud" [ref=e88] [cursor=pointer]:
+                  - img [ref=e89]
+              - generic [ref=e93]:
+                - generic [ref=e94]:
+                  - img [ref=e95]
+                  - text: 3 items
+                - generic [ref=e99]: Live op je website
+              - link "0 nieuwe leads deze maand" [ref=e100] [cursor=pointer]:
+                - /url: /dashboard/leads?tool=cmv6w7y03000yfg7dux0ahv3k
+              - generic [ref=e101]:
+                - link "Openen" [ref=e102] [cursor=pointer]:
+                  - /url: /dashboard/tools/cmv6w7y03000yfg7dux0ahv3k
+                - link "Bekijken" [ref=e103] [cursor=pointer]:
+                  - /url: http://localhost:3200/t/devries-a1/onderhoud-a1
+                  - img [ref=e104]
+                  - text: Bekijken
+  - alert [ref=e108]
+```

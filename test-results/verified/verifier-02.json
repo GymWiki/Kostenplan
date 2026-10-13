@@ -1,0 +1,190 @@
+{
+ "bevestigd": [
+  {
+   "id": "a11y-auditor-2-mv6y4twj-fmws",
+   "agent": "a11y-auditor-2",
+   "area": "a11y",
+   "title": "Focus lekt uit Bedrijf wisselen (bottom sheet) op mobiel",
+   "url": "http://localhost:3200/dashboard/profiel",
+   "viewport": "412x915",
+   "user": "a1",
+   "steps": [
+    "Open /dashboard/profiel op 412x915 met a1",
+    "Focus op \"Bedrijf wisselen\", Enter (dialoog opent)",
+    "Zes keer Tab met toetsenbord",
+    "Escape"
+   ],
+   "expected": "Focus gaat naar de dialoog (bv. de sluitknop of eerste veld) en blijft erin (focus-trap); na Escape gaat focus terug naar de knop die de dialoog opende.",
+   "actual": "Na Enter staat focus nog op de knop (\"button \"Bedrijf wisselen, huidig: Hoveniersbedri\" (in dialoog: false)\"). Tab 1-6 gaan naar de pagina ACHTER de dialoog: a \"Bedrijfsgegevens Naam, adres, KvK, conta\" (in dialoog: false) | a \"Huisstijl & logo\" (in dialoog: false) | a \"Tarieven € 45 per uur · voorrijkosten € \" (in dialoog: false) | a \"Werkgebied en minimum 30 km rond Zwolle \" (in dialoog: false) | a \"Offerte-instellingen Nummering, geldighe\" (in dialoog: false) | a \"Abonnement Pro · actief\" (in dialoog: false). Na Escape staat focus op: a \"Abonnement Pro · actief\" (in dialoog: false).",
+   "screenshot": "test-results/screens/a11y-auditor-2/01-sheet-focus.png",
+   "console_errors": [],
+   "confidence": 0.9,
+   "status": "bevestigd",
+   "priority": "P1",
+   "reden": "Eigen herhaling op 412x915 als a1: na Enter blijft focus op de knop, 6x Tab loopt over de pagina achter de dialoog (4 dialogen getest, zie repro). Geen focus-trap, geen focus-verplaatsing naar de dialoog, geen focus-herstel na Escape. Betreft alle role=dialog-sheets via Overlay.",
+   "merged_ids": [
+    "a11y-auditor-2-mv6y4vf1-iwzf",
+    "a11y-auditor-2-mv6y588t-2ban",
+    "a11y-auditor-2-mv6y65ic-o484"
+   ],
+   "root_cause_hint": "app/components/ui/overlay.tsx (Overlay): alleen Escape-handler en body overflow hidden; geen focus naar dialoog bij openen, geen focus-trap, geen inert/aria-hidden op de rest, geen focus-restore. Variant Factuur maken (o484): sheet staat bovenop de lead-drawer (2 role=dialog); Tab blijft dan wel binnen de drawer maar niet in de sheet; na Escape focus op body.",
+   "repro_script": "test-results/repro/verifier-02-focus.js"
+  },
+  {
+   "id": "a11y-auditor-2-mv6y4xj3-7lc4",
+   "agent": "a11y-auditor-2",
+   "area": "a11y",
+   "title": "Contrast te laag op publieke rekentool-pagina (/t/)",
+   "url": "http://localhost:3200/t/devries-a1/tuinaanleg-a1",
+   "viewport": "412x915",
+   "user": "anoniem",
+   "steps": [
+    "Open /t/devries-a1/tuinaanleg-a1 anoniem op 412x915",
+    "axe color-contrast"
+   ],
+   "expected": "Tekst van minstens 4,5:1 contrast (WCAG AA).",
+   "actual": "axe: \"Kostencalculator van\" (text-[var(--brand-primary-foreground)]/80) heeft contrast 3.81:1 (voorgrond #d0e6d8 op #15803d); vereist 4.5:1. Dezelfde tekst op /embed/ (cmv6xylj1...) geeft hetzelfde resultaat.",
+   "screenshot": "test-results/screens/a11y-auditor-2/01-vondst-Contrast-te-laag-op-publieke-rekentool-pagi.png",
+   "console_errors": [],
+   "confidence": 0.95,
+   "status": "bevestigd",
+   "priority": "P3",
+   "reden": "axe color-contrast serious op /t/ en /embed/ (412x915, anoniem): 'Kostencalculator van' met brand-primary-foreground/80; zelfde resultaat. Contrast hangt van merkkleur af (hier #15803d seed).",
+   "merged_ids": [],
+   "root_cause_hint": "Tekstklasse text-[var(--brand-primary-foreground)]/80 in de kop van de publieke rekentool; opacity 80% op de merkkleur verlaagt contrast, kleine tekst text-sm.",
+   "repro_script": "test-results/repro/verifier-02-ui.js"
+  },
+  {
+   "id": "ui-auditor-1-mv6wj4o9-3sbw",
+   "agent": "ui-auditor-1",
+   "area": "bug",
+   "title": "Pagina-fout React #418/#419 op leads, offertes, facturen en profiel",
+   "url": "about:blank",
+   "viewport": "412x915",
+   "user": "a1",
+   "steps": [
+    "Log in als a1 en open /dashboard/leads?lead=cmv6wdxaj001eq47dw1q5cdqh op 360, 412, 768 en 1440",
+    "Lees de console-uitvoer",
+    "Herhaal voor /dashboard/leads/<offerte-id>/offerte, /dashboard/facturen, /dashboard/facturen/<id>, /dashboard/profiel"
+   ],
+   "expected": "Geen uncaught pagina-fouten in de console.",
+   "actual": "Op elk van de vier viewports geeft elke leaddetail-, offerte-editor-, factuurlijst-, factuurdetail- en profielpagina een uncaught 'pageerror: Minified React error #419' of '#418'. De pagina's worden wel getoond. De dashboard-overzichtspagina en de rekentool-pagina gaven deze fout niet.",
+   "screenshot": "test-results/screens/ui-auditor-1/08-360--dashboard-leads-lead-cmv6wdxaj001eq47dw.png",
+   "console_errors": [
+    "pageerror: Minified React error #419 (leads detail, offerte, facturen)",
+    "pageerror: Minified React error #418 (factuur-detail, profiel)"
+   ],
+   "confidence": 0.75,
+   "status": "bevestigd",
+   "priority": "P2",
+   "reden": "Eigen schone sessies, mobiel en desktop. #418 treedt op (met elk viewport) op: /o/<token> status ingepland en akkoord (anoniem; NIET verstuurd), /dashboard/leads/<id>/offerte (offerte-verstuurd), /dashboard/facturen/<verstuurd> (ingelogd). #419 treedt op op /dashboard/leads?lead=<id> (ingelogd). GEEN fout: /login, /probeer, /t/..., /o/ (verstuurd), /f/..., /dashboard, /dashboard/leads (zonder ?lead), /dashboard/facturen (lijst), /dashboard/facturen/<concept>, /dashboard/profiel, /dashboard/tools(+tool). De melding klopt dus gedeeltelijk niet: factuurlijst en profiel gaven geen fout; ook is /o/ (verstuurd) schoon. Met browser-tijdzone UTC (= servertijdzone) verdwijnt #418 op alle vijf, behalve #419 op lead. Met Europe/Amsterdam komt #418 terug. Pagina's blijven werken.",
+   "merged_ids": [
+    "a11y-auditor-2-mv6y4z9v-zfec"
+   ],
+   "root_cause_hint": "#418 (tekst-mismatch): server (UTC) rendert tijden anders dan browser (Europe/Amsterdam): Intl.DateTimeFormat/toLocaleDateString zonder timeZone, o.a. formatDatumTijd in app/lib/offerte/weergave.ts (hour:'2-digit'), dateFormatter in app/dashboard/leads/lead-detail-drawer.tsx, offerte-editor-v2.tsx r.330/413 (toLocaleDateString met hour/minute), factuur-beheer.tsx r.143, offerte-presentatie.tsx. Oplossing richting: vaste timeZone 'Europe/Amsterdam' meegeven. Treedt ook op in productie als server UTC draait en gebruiker NL-tijd heeft (dus niet alleen productiebuild; in dev toont React een leesbare hydratie-waarschuwing); kans dat het alleen in de productiebuild optreedt: laag, de oorzaak zit in de code. Datum zonder tijd verschilt alleen rond middernacht UTC. #419 op ?lead= is een andere oorzaak (ook in UTC): React heeft Suspense-grens client-side gerenderd; kandidaten lead-detail-drawer.tsx (dynamic WerkgebiedKaart) / useSearchParams in leads-view.tsx; niet bewezen.",
+   "repro_script": "test-results/repro/verifier-02-hydratie.js ; test-results/repro/verifier-02-tz.js"
+  },
+  {
+   "id": "ui-auditor-1-mv6wj4o8-9lp8",
+   "agent": "ui-auditor-1",
+   "area": "bug",
+   "title": "Factuur-editor mobiel: Definitief maken onder tabbalk",
+   "url": "about:blank",
+   "viewport": "412x915",
+   "user": "a1",
+   "steps": [
+    "Log in als a1, open /dashboard/facturen/cmv6wdxgz002hq47dvwumrrkr op 412x915",
+    "Scroll naar onder",
+    "Kijk naar de vaste balk met 'Totaal incl. btw' en 'Definitief maken'"
+   ],
+   "expected": "De vaste actiebalk met 'Definitief maken' is zichtbaar en klikbaar boven de onderste tabbalk.",
+   "actual": "De balk (top 842 px) ligt achter de tabbalk (NAV top 850 px). De knop 'Definitief maken' (855-903 px) is niet zichtbaar; op het middelpunt van de knop geeft elementFromPoint de tab 'Profiel' terug. Zichtbaar zijn alleen de vier tabs. Zelfde op 360x780 (knop 720-768 px, bedekt door '2 Leads'/'Profiel').",
+   "screenshot": "test-results/screens/ui-auditor-1/01-mobiel-factuur-concept-editor-onderaan.png",
+   "console_errors": [],
+   "confidence": 0.9,
+   "status": "bevestigd",
+   "priority": "P1",
+   "reden": "Gemeten op 412x915 en 360x780 als a1 na scrollen: 'Definitief maken' (concept) top 855 bot 903 (412) resp. 720-768 (360); elementFromPoint in het midden geeft A:Profiel resp. A:2Leads; knop dus onbereikbaar. Zelfde voor 'Versturen' bij verstuurde factuur (A:Profiel). Hoofdactie van factuur niet bruikbaar op mobiel.",
+   "merged_ids": [
+    "ui-auditor-1-mv6wj4o8-53od"
+   ],
+   "root_cause_hint": "app/components/mobile/tabbalk.tsx verbergtTabbalk() verbergt de tabbalk alleen voor /dashboard/tools/<id> en /dashboard/leads/<id>/offerte; /dashboard/facturen/<id> ontbreekt, dus fixed nav (z-40, bottom-0, top 850) ligt over de StickyActiebalk in offerte-editor-v2.tsx (r.548/ r.564/657). Ook Herinnering sturen/Betaling/Crediteren (kop) wel bereikbaar.",
+   "repro_script": "test-results/repro/verifier-02-balk.js"
+  },
+  {
+   "id": "ui-auditor-1-mv6wj4o9-00d4",
+   "agent": "ui-auditor-1",
+   "area": "ui",
+   "title": "Leaddetail 360: knop 'Offerte maken' breekt op twee regels",
+   "url": "about:blank",
+   "viewport": "412x915",
+   "user": "a1",
+   "steps": [
+    "Log in als a1, open leaddetail van een nieuwe lead op 360x780",
+    "Kijk naar de actierij onder de totaalprijs"
+   ],
+   "expected": "De actieknoppen (Bellen, WhatsApp, Offerte maken) hebben een gelijke, leesbare labelregel.",
+   "actual": "Het label 'Offerte maken' staat op twee regels; de andere twee knoppen op een. Geen afkapping.",
+   "screenshot": "test-results/screens/ui-auditor-1/08-360--dashboard-leads-lead-cmv6wdxaj001eq47dw.png",
+   "console_errors": [],
+   "confidence": 0.4,
+   "status": "bevestigd",
+   "priority": "P3",
+   "reden": "360x780, nieuwe lead: 'Offerte maken' 104x48 op twee regels, Bellen (102) en WhatsApp (104) een regel; screenshot test-results/screens/verifier-02/01-lead-360.png. Cosmetisch, niets afgekapt.",
+   "merged_ids": [],
+   "root_cause_hint": "Drie knoppen in lead-detail-drawer actierij met gelijke breedte (~104 px); label past niet, whitespace wrap.",
+   "repro_script": "test-results/repro/verifier-02-ui.js"
+  },
+  {
+   "id": "a11y-auditor-2-mv6y4whf-xvs8",
+   "agent": "a11y-auditor-2",
+   "area": "a11y",
+   "title": "Login: knoppen en links onder 44 px hoog op mobiel",
+   "url": "http://localhost:3200/login",
+   "viewport": "412x915",
+   "user": "anoniem",
+   "steps": [
+    "Open /login anoniem op 412x915",
+    "Meet boundingBox van knoppen en links"
+   ],
+   "expected": "Tikdoelen van minstens 44 x 44 px (aanbevolen voor mobiel, WCAG 2.5.5).",
+   "actual": "Gemeten: \"Kostenplan\" 137.4x32px; \"Doorgaan met Google\" 338x40px; \"Wachtwoord vergeten?\" 130.1x16px; \"Inloggen\" 338x40px; \"Registreer je bedrijf\" 129.5x18px. \"Doorgaan met Google\" en \"Inloggen\" zijn 338x40; de tekstlinks zijn 16-18 px hoog.",
+   "screenshot": "test-results/screens/a11y-auditor-2/01-vondst-Login-knoppen-en-links-onder-44-px-hoog-op-.png",
+   "console_errors": [],
+   "confidence": 0.85,
+   "status": "bevestigd",
+   "priority": "P3",
+   "reden": "Gemeten /login 412x915: Doorgaan met Google 338x40, Inloggen 338x40, Wachtwoord vergeten? 130x16, Registreer je bedrijf 129x18, logo 137x32. Klopt. Let op: WCAG 2.5.5 (44px) is AAA; 2.5.8 (AA) vraagt 24px, daaraan voldoen de tekstlinks (16-18px) niet, de knoppen (40px) wel. Aanbeveling, niet kritiek.",
+   "merged_ids": [],
+   "root_cause_hint": "Links zonder min-h-11 (elders in de app wel gebruikt, bijv. lead-voortgang-blok); knoppen h-10.",
+   "repro_script": "test-results/repro/verifier-02-ui.js"
+  }
+ ],
+ "verworpen": [
+  {
+   "id": "ui-auditor-1-mv6wj4o9-tubx",
+   "agent": "ui-auditor-1",
+   "area": "ux",
+   "title": "Rekentool-editor 360: vaste balk 'Onderdeel' nauwelijks zichtbaar onderaan",
+   "url": "about:blank",
+   "viewport": "412x915",
+   "user": "a1",
+   "steps": [
+    "Log in als a1, open /dashboard/tools/cmv6wdx6q0003q47dbyk4lv4v op 360x780",
+    "Scroll naar onder"
+   ],
+   "expected": "De vaste balk met de onderdeel-actie is volledig zichtbaar.",
+   "actual": "De vaste balk ligt op 707-780 px. In de schermafbeelding is alleen een groene rand onderaan zichtbaar; het label is niet zichtbaar.",
+   "screenshot": "test-results/screens/ui-auditor-1/03-360-rekentool-editor-onderaan.png",
+   "console_errors": [],
+   "confidence": 0.4,
+   "status": "verworpen",
+   "priority": "P3",
+   "reden": "Op 360x780 staat de vaste balk op 707-780 px met een volledig zichtbare, leesbare knop '+ Onderdeel' (screenshot test-results/screens/verifier-02/01-tool-360.png). De bevinding had zelf confidence 0.4 en is niet reproduceerbaar.",
+   "merged_ids": [],
+   "root_cause_hint": null,
+   "repro_script": "test-results/repro/verifier-02-ui.js"
+  }
+ ],
+ "onzeker": []
+}

@@ -1,0 +1,118 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Direct naar de inhoud" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - banner [ref=e5]:
+        - heading "Abonnement" [level=1] [ref=e6]
+        - link "Terug (Abonnement)" [ref=e7] [cursor=pointer]:
+          - /url: /dashboard/profiel
+          - img [ref=e8]
+          - generic [ref=e10]: Abonnement
+      - main [ref=e11]:
+        - generic [ref=e14]:
+          - list [ref=e17]:
+            - listitem [ref=e18]:
+              - generic [ref=e19]:
+                - img [ref=e21]
+                - generic [ref=e23]:
+                  - generic [ref=e24]: Abonnement
+                  - generic [ref=e25]: Pro · actief
+          - 'heading "Kies je pakket Uitleg: Wisselen van abonnement" [level=2] [ref=e26]':
+            - text: Kies je pakket
+            - 'button "Uitleg: Wisselen van abonnement" [ref=e28]':
+              - img [ref=e29]
+          - generic [ref=e32]:
+            - generic [ref=e33]:
+              - button "Maandelijks" [ref=e34] [cursor=pointer]
+              - button "Jaarlijks tot 16% korting" [ref=e35] [cursor=pointer]:
+                - text: Jaarlijks
+                - generic [ref=e36]: tot 16% korting
+            - generic [ref=e37]:
+              - generic [ref=e38]:
+                - generic [ref=e39]:
+                  - heading "Gratis" [level=3] [ref=e40]
+                  - generic [ref=e42]: € 0,00
+                  - paragraph [ref=e43]: Altijd gratis, geen creditcard nodig
+                - list [ref=e44]:
+                  - listitem [ref=e45]:
+                    - img [ref=e46]
+                    - text: Eigen rekentool voor je klantenportaal
+                  - listitem [ref=e48]:
+                    - img [ref=e49]
+                    - text: Tot 10 onderdelen
+                  - listitem [ref=e51]:
+                    - img [ref=e52]
+                    - text: Alle kosteninstellingen (arbeid, transport, materiaal, btw)
+                  - listitem [ref=e54]:
+                    - img [ref=e55]
+                    - text: “Powered by Kostenplan”-badge op je portaal
+                - button "Downgrade naar Gratis" [ref=e57] [cursor=pointer]
+              - generic [ref=e58]:
+                - generic [ref=e59]: Meest gekozen
+                - generic [ref=e60]:
+                  - heading "Plus" [level=3] [ref=e61]
+                  - generic [ref=e62]:
+                    - generic [ref=e63]: € 29,00
+                    - generic [ref=e64]: / maand
+                - list [ref=e65]:
+                  - listitem [ref=e66]:
+                    - img [ref=e67]
+                    - text: Alles van Gratis
+                  - listitem [ref=e69]:
+                    - img [ref=e70]
+                    - text: Onbeperkt aantal onderdelen
+                  - listitem [ref=e72]:
+                    - img [ref=e73]
+                    - text: Eigen logo en merkkleuren, geen badge
+                  - listitem [ref=e75]:
+                    - img [ref=e76]
+                    - text: “Vraag offerte aan”-knop voor leads
+                - button "Kies Plus" [ref=e79] [cursor=pointer]
+              - generic [ref=e80]:
+                - generic [ref=e81]: Jouw pakket
+                - generic [ref=e82]:
+                  - heading "Pro" [level=3] [ref=e83]
+                  - generic [ref=e84]:
+                    - generic [ref=e85]: € 69,00
+                    - generic [ref=e86]: / maand
+                - list [ref=e87]:
+                  - listitem [ref=e88]:
+                    - img [ref=e89]
+                    - text: Alles van Plus
+                  - listitem [ref=e91]:
+                    - img [ref=e92]
+                    - text: Rekentool insluiten via iframe op je eigen website
+                  - listitem [ref=e94]:
+                    - img [ref=e95]
+                    - text: Prioriteit bij support
+                - button "Wijzig naar maandelijks" [ref=e98] [cursor=pointer]
+    - navigation "Hoofdmenu" [ref=e99]:
+      - list [ref=e100]:
+        - listitem [ref=e101]:
+          - link "Overzicht" [ref=e102] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e104]
+            - generic [ref=e109]: Overzicht
+        - listitem [ref=e110]:
+          - link "Rekentools" [ref=e111] [cursor=pointer]:
+            - /url: /dashboard/tools
+            - img [ref=e113]
+            - generic [ref=e115]: Rekentools
+        - listitem [ref=e116]:
+          - link "2 nieuwe leads Leads" [ref=e117] [cursor=pointer]:
+            - /url: /dashboard/leads
+            - generic [ref=e118]:
+              - img [ref=e119]
+              - generic "2 nieuwe leads" [ref=e124]: "2"
+            - generic [ref=e125]: Leads
+        - listitem [ref=e126]:
+          - link "Profiel" [ref=e127] [cursor=pointer]:
+            - /url: /dashboard/profiel
+            - img [ref=e129]
+            - generic [ref=e133]: Profiel
+  - alert [ref=e134]
+```

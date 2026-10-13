@@ -1,0 +1,20 @@
+const c = require("/home/user/Kostenplan/test-results/persona-particulier/common.js");
+(async () => {
+  const s = await c.open(); const p = s.page;
+  await c.vul(s);
+  const y = await p.evaluate(() => { const e=[...document.querySelectorAll("*")].filter(x=>x.children.length && x.innerText?.startsWith("Jouw kostenraming")).sort((a,b)=>a.innerText.length-b.innerText.length)[0]; return { top: Math.round(e.getBoundingClientRect().top + scrollY), docH: document.body.scrollHeight, vh: innerHeight }; });
+  console.log("RAMING POSITIE", JSON.stringify(y));
+  await p.getByRole("button", { name: "Offerte aanvragen" }).click(); s.stap();
+  await p.getByRole("button", { name: "Versturen" }).click(); s.stap();
+  await p.waitForTimeout(800);
+  console.log("LEEG VERSTUREN:", (await p.evaluate(() => [...document.querySelectorAll("[role=alert], [aria-invalid=true], .text-destructive, p")].map(e=>e.innerText).filter(t=>t&&/verplicht|ongeldig|vul|geldig|naam|e-mail/i.test(t)).slice(0,6))));
+  console.log("SCHERM leeg", await s.scherm("leeg-versturen"));
+  await p.getByLabel("Naam").fill("Test Particulier"); s.stap();
+  await p.getByLabel("E-mailadres").fill("geen-mail"); s.stap();
+  await p.getByRole("button", { name: "Versturen" }).click(); s.stap();
+  await p.waitForTimeout(800);
+  console.log("ONGELDIG MAIL:", (await p.evaluate(() => document.body.innerText.match(/.{0,60}(geldig|e-mail|ongeldig).{0,60}/gi) || ["(geen)"])).join(" || "));
+  console.log("SCHERM mail", await s.scherm("ongeldig-mail"));
+  console.log("CONSOLE", s.consoleFouten, "NET", s.netwerkFouten);
+  await s.sluit();
+})().catch((e) => { console.error("FOUT", e.message.slice(0,400)); process.exit(1); });

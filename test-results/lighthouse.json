@@ -1,0 +1,115 @@
+[
+  {
+    "naam": "landing",
+    "url": "http://localhost:3200/",
+    "gebruiker": "anoniem",
+    "scores": {
+      "performance": 93,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "fcp_ms": 1373,
+      "lcp_ms": 2580,
+      "tbt_ms": 210,
+      "cls": 0,
+      "speedIndex_ms": 1513
+    },
+    "js_kb": 506,
+    "slechtste": [
+      "Minimize main-thread work",
+      "Reduce JavaScript execution time",
+      "Reduce unused JavaScript",
+      "Forced reflow",
+      "Network dependency tree",
+      "Render-blocking requests"
+    ],
+    "problemen": []
+  },
+  {
+    "naam": "probeer",
+    "url": "http://localhost:3200/probeer",
+    "gebruiker": "anoniem",
+    "scores": {
+      "performance": 92,
+      "accessibility": 96,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "fcp_ms": 1236,
+      "lcp_ms": 2953,
+      "tbt_ms": 193,
+      "cls": 0,
+      "speedIndex_ms": 1236
+    },
+    "js_kb": 550,
+    "slechtste": [
+      "Max Potential First Input Delay",
+      "Minimize main-thread work",
+      "ARIA `progressbar` elements do not have accessible names.",
+      "Reduce unused JavaScript",
+      "Page prevented back/forward cache restoration",
+      "Forced reflow"
+    ],
+    "problemen": []
+  },
+  {
+    "naam": "embed",
+    "url": "http://localhost:3200/embed/cmv6yly170003tn7du5nfpi8d",
+    "gebruiker": "anoniem",
+    "scores": {
+      "performance": 86,
+      "accessibility": 96,
+      "best-practices": 100,
+      "seo": 66
+    },
+    "metrics": {
+      "fcp_ms": 1086,
+      "lcp_ms": 1536,
+      "tbt_ms": 539,
+      "cls": 0,
+      "speedIndex_ms": 1086
+    },
+    "js_kb": 406,
+    "slechtste": [
+      "Max Potential First Input Delay",
+      "Minimize main-thread work",
+      "Background and foreground colors do not have a sufficient contrast ratio.",
+      "Page is blocked from indexing",
+      "Render-blocking requests"
+    ],
+    "problemen": []
+  },
+  {
+    "naam": "overzicht",
+    "url": "http://localhost:3200/dashboard",
+    "gebruiker": "a1",
+    "scores": {
+      "performance": 84,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 63
+    },
+    "metrics": {
+      "fcp_ms": 1230,
+      "lcp_ms": 4137,
+      "tbt_ms": 170,
+      "cls": 0,
+      "speedIndex_ms": 1583
+    },
+    "js_kb": 420,
+    "slechtste": [
+      "Largest Contentful Paint",
+      "Minimize main-thread work",
+      "Reduce JavaScript execution time",
+      "Reduce unused JavaScript",
+      "Page is blocked from indexing",
+      "Page prevented back/forward cache restoration"
+    ],
+    "problemen": [
+      "LCP 4137 ms > 4000"
+    ]
+  }
+]

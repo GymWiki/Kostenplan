@@ -1,0 +1,331 @@
+{
+ "bevestigd": [
+  {
+   "id": "edge-case-tester-2-mv6yexvr-hvo0",
+   "agent": "edge-case-tester-2",
+   "area": "bug",
+   "title": "Offerte: wijziging in verouderd tabblad overschrijft stil de wijziging van het andere tabblad",
+   "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+   "viewport": "1440x900",
+   "user": "a2",
+   "steps": [
+    "Open concept-offerte a2 (Offerte 2026-0114) in tab A en tab B",
+    "Tab A: Onderwerp wijzigen naar 'Tab A onderwerp', blur; status 'Alles opgeslagen'",
+    "Tab B (nog met oud onderwerp 'Aanleg tuin'): Aantal van regel 2 wijzigen naar 7, blur; status 'Alles opgeslagen'",
+    "Tab A herladen"
+   ],
+   "expected": "Wijziging van tab A blijft staan, of de gebruiker krijgt een melding dat de offerte in een ander tabblad is gewijzigd",
+   "actual": "Na herladen staat Onderwerp op 'Aanleg tuin' (tab A-wijziging weg), aantal regel 2 is 7 (tab B-wijziging wel). Geen melding in een van beide tabbladen.",
+   "screenshot": "test-results/screens/edge-case-tester-2/01-tab-a.png",
+   "console_errors": [
+    "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+   ],
+   "confidence": 0.9,
+   "status": "bevestigd",
+   "priority": "P1",
+   "reden": "Herhaald in schone sessie, twee tabbladen: tab A onderwerp 'Tab A onderwerp' (Alles opgeslagen), tab B aantal regel 2 = 7 (Alles opgeslagen); na herladen tab A: onderwerp 'Aanleg tuin', aantal 7. Geen melding in een tabblad. Hele document wordt per autosave overschreven (last-writer-wins).",
+   "merged_ids": [],
+   "root_cause_hint": "bewaarOfferteAction(offerteId, laatste.current) in app/components/offerte/offerte-editor-v2.tsx stuurt de volledige inhoud zonder versie/updatedAt-controle; geen optimistic locking.",
+   "repro_script": "test-results/repro/verifier-07-tabs.js"
+  },
+  {
+   "id": "edge-case-tester-2-mv6yexvs-5y2f",
+   "agent": "edge-case-tester-2",
+   "area": "bug",
+   "title": "Offerte: prijs '12.50' wordt opgeslagen als 1.250,00 (100x te hoog)",
+   "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+   "viewport": "1440x900",
+   "user": "a2",
+   "steps": [
+    "Offerte a2 concept: 'Sectie toevoegen', dan 'Regel toevoegen'",
+    "Prijsveld: typen '12.50', blur",
+    "Herladen"
+   ],
+   "expected": "Prijs 12,50 (of melding dat punt niet als decimaal wordt gezien)",
+   "actual": "Veld toont direct '1250,00'; na herladen regel-prijs € 1.512,50 incl. btw (= 1.250 excl.). Totaal van offerte verspringt met ruim € 1.500.",
+   "screenshot": "test-results/screens/edge-case-tester-2/01-voor-reload-12-50.png",
+   "console_errors": [
+    "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+   ],
+   "confidence": 0.9,
+   "status": "bevestigd",
+   "priority": "P1",
+   "reden": "Echte parse-oorzaak, geen afkap- of willekeurige bug: BedragVeld (app/components/offerte/offerte-paneel.tsx r.36) doet replace(/\\./g,'') en dan ','->'.': punt wordt altijd als duizendtalscheiding gezien. Gezien op #rg-prijs: '12.50' -> 1250,00 (factor 100, na herladen regel € 1.512,50 incl btw); '1.5' -> 15,00; '1,234.56' -> 1,23 (Alles opgeslagen, geen waarschuwing); '12,50' en '1.234,56' correct. Deels NL-conventie, maar punt-decimaal (gangbaar bij toetsenborden/telefoon) geeft stil 100x te hoge prijs zonder waarschuwing. Zelfde parse in document-inline prijsveld niet apart getest.",
+   "merged_ids": [
+    "edge-case-tester-2-mv6yexvs-bezr"
+   ],
+   "root_cause_hint": "offerte-paneel.tsx BedragVeld onChange: Number(v.replace(/\\./g,'').replace(',','.')). Oplossing: bij exact een punt en max 2 decimalen erachter als decimaal lezen, of waarschuwing tonen bij ambigue invoer; bij meerdere scheidingstekens het laatste als decimaal.",
+   "repro_script": "test-results/repro/verifier-07-prijs2.js"
+  },
+  {
+   "id": "edge-case-tester-2-mv6yexvt-85e2",
+   "agent": "edge-case-tester-2",
+   "area": "ux",
+   "title": "Offerte: foutmelding bij aantal -5 is technisch Engels en het totaal toont een niet-opgeslagen waarde",
+   "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+   "viewport": "1440x900",
+   "user": "a2",
+   "steps": [
+    "Offerte a2 concept, Aantal regel 1 typen '-5', blur",
+    "Wacht 2,5 s"
+   ],
+   "expected": "Nederlandse, begrijpelijke melding bij het veld; opgeslagen waarde en getoonde waarde gelijk",
+   "actual": "Status 'Niet opgeslagen / Opnieuw proberen' met tekst 'Ongeldige offerte: secties.0.regels.0.aantal Too small: expected number to be >=0'. Totaal toont € 1.916,11 terwijl de opgeslagen waarde 24 is (na herladen € 4.493,47).",
+   "screenshot": "test-results/screens/edge-case-tester-2/01-min5-melding.png",
+   "console_errors": [
+    "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+   ],
+   "confidence": 0.9,
+   "status": "bevestigd",
+   "priority": "P2",
+   "reden": "Herhaald in document-inline invoer (aria-label Aantal): '-5' geeft 'Niet opgeslagen' met 'Ongeldige offerte: secties.0.regels.0.aantal Too small: expected number to be >=0'; totaal toont intussen 3.428,61 terwijl opgeslagen waarde anders is. Samengevoegd met onderwerp van 495 tekens: 'Ongeldige offerte: onderwerp Too big: expected string to have <=200 characters', geen maxlength op het veld, na herladen weer 'Aanleg tuin'.",
+   "merged_ids": [
+    "edge-case-tester-2-mv6yexvt-vq9o"
+   ],
+   "root_cause_hint": "app/lib/offerte/schema.ts parseOfferteInhoud bouwt de foutmelding uit ruwe zod-issue (path + English message); client (offerte-document.tsx num()) valideert niet en input heeft geen maxLength.",
+   "repro_script": "test-results/repro/verifier-07-edge.js"
+  },
+  {
+   "id": "edge-case-tester-2-mv6yexvt-9iv4",
+   "agent": "edge-case-tester-2",
+   "area": "bug",
+   "title": "Offerte en factuur: tekst 'abc' in aantal wordt stil 0 en opgeslagen",
+   "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+   "viewport": "1440x900",
+   "user": "a2",
+   "steps": [
+    "Offerte a2 (en factuur F-concept), Aantal regel 1 typen 'abc', blur"
+   ],
+   "expected": "Weigering of melding dat alleen getallen mogen",
+   "actual": "Veld toont '0', status 'Alles opgeslagen'; na herladen blijft 0 staan. Offerte: totaal € 2.360,48 na herladen. Factuur: totaal € 4.311,97 na herladen. Geen melding.",
+   "screenshot": "test-results/screens/edge-case-tester-2/04-aantal-abc.png",
+   "console_errors": [
+    "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+   ],
+   "confidence": 0.85,
+   "status": "bevestigd",
+   "priority": "P2",
+   "reden": "Offerte herhaald: inline Aantal 'abc' -> veld 0, 'Alles opgeslagen', na herladen 0, totaal gedaald van 3.428,61 naar 3.872,98 zonder melding. Factuur-variant niet zelf herhaald (zelfde editor/num(), niet apart bewezen).",
+   "merged_ids": [],
+   "root_cause_hint": "app/components/offerte/offerte-document.tsx r.56 num(): Number.isFinite(v) ? v : 0 maakt ongeldige invoer stil 0 (anders dan GetalVeld in offerte-paneel dat ongeldige invoer negeert).",
+   "repro_script": "test-results/repro/verifier-07-edge.js"
+  },
+  {
+   "id": "edge-case-tester-2-mv6yexvu-n6of",
+   "agent": "edge-case-tester-2",
+   "area": "bug",
+   "title": "Offerte: offline bewerken blijft 'Opslaan…' hangen zonder melding; wijziging is na weer online en herladen weg",
+   "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+   "viewport": "1440x900",
+   "user": "a2",
+   "steps": [
+    "Offerte a2 geopend, ctx offline",
+    "Aantal regel 1 naar 31 en Onderwerp naar 'Aanleg tuin offline', blur",
+    "Wacht 6 s, daarna weer online en 8 s wachten",
+    "Herladen"
+   ],
+   "expected": "Duidelijke melding 'geen verbinding, wijziging niet opgeslagen' en opnieuw proberen na online komen; of wijziging blijft behouden",
+   "actual": "Status blijft 'Opslaan…' (spinner), geen foutmelding; na online blijft 'Opslaan…'. Na herladen: aantal 30 (oude waarde), onderwerp 'Aanleg tuin'. Console: 'pageerror: Failed to fetch'. Wijziging verloren.",
+   "screenshot": "test-results/screens/edge-case-tester-2/02-offline-bewerkt.png",
+   "console_errors": [
+    "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+   ],
+   "confidence": 0.85,
+   "status": "bevestigd",
+   "priority": "P1",
+   "reden": "Herhaald met ctx.setOffline(true): Aantal 31 + onderwerp wijzigen, 6 s later status 'Opslaan…', na weer online (8 s) nog steeds 'Opslaan…', console 'pageerror: Failed to fetch'; na herladen waren wijzigingen weg (onderwerp 'Aanleg tuin'). Stille dataverlies, geen foutmelding of retry.",
+   "merged_ids": [],
+   "root_cause_hint": "bewaar() in offerte-editor-v2.tsx r.~105: await bewaarOfferteAction heeft geen try/catch, dus bij fetch-fout blijft opslag='opslaan' en wordt niets herhaald.",
+   "repro_script": "test-results/repro/verifier-07-edge.js"
+  },
+  {
+   "id": "edge-case-tester-2-mv6yexvu-wtsq",
+   "agent": "edge-case-tester-2",
+   "area": "bug",
+   "title": "Factuur: betaling registreren terwijl offline geeft Engelse foutpagina en de betaling wordt niet opgeslagen",
+   "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+   "viewport": "1440x900",
+   "user": "a2",
+   "steps": [
+    "Factuur F2026-0005 (definitief), 'Betaling registreren', bedrag 100",
+    "ctx offline",
+    "'Betaling opslaan' klikken",
+    "Wacht 6 s, online, herladen"
+   ],
+   "expected": "Melding dat de betaling niet is opgeslagen; formulier blijft open met de ingevoerde gegevens",
+   "actual": "Dialoog verdwijnt, pagina toont 'This page couldn't load / Reload to try again, or go back.' (Engelse generieke foutpagina). Na herladen geen betaling van 100 (Betaald blijft € 3.000,00). Console: 'pageerror: Failed to fetch'.",
+   "screenshot": "test-results/screens/edge-case-tester-2/01-offline-betaling.png",
+   "console_errors": [
+    "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+   ],
+   "confidence": 0.9,
+   "status": "bevestigd",
+   "priority": "P2",
+   "reden": "Herhaald op a2 factuur 'verstuurd' met bedrag 100, offline, 'Betaling opslaan': hele pagina vervangen door 'This page couldn’t load / Reload to try again, or go back.' (Reload / Back); na herladen Betaald € 0,00, geen betaling opgeslagen. Console 'pageerror: Failed to fetch'.",
+   "merged_ids": [],
+   "root_cause_hint": "factuur-beheer.tsx betaal(): start(async()=>{await registreerBetalingAction...}) zonder try/catch; rejected server action gaat naar error boundary (Next-standaard Engelse tekst).",
+   "repro_script": "test-results/repro/verifier-07-betaal.js"
+  },
+  {
+   "id": "edge-case-tester-2-mv6yexvu-evu1",
+   "agent": "edge-case-tester-2",
+   "area": "ux",
+   "title": "Factuur: verouderd tabblad toont openstaand € 3.037,97 maar weigert betaling van precies dat bedrag",
+   "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+   "viewport": "1440x900",
+   "user": "a2",
+   "steps": [
+    "Factuur F2026-0005 in tab A en B, beide 'Betaling registreren' geopend (openstaand € 3.037,97 in beide)",
+    "Tab A: 1000 betalen, opslaan (Betaald € 3.000,00)",
+    "Tab B: 3037,97 invullen, 'Betaling opslaan'"
+   ],
+   "expected": "Betaling wordt geweigerd met duidelijke uitleg dat de openstaande post is gewijzigd (of geaccepteerd als wat er nog openstaat)",
+   "actual": "Tab B blijft open met melding 'Dit is meer dan het openstaande bedrag.' terwijl het veld 'Openstaand: € 3.037,97' toont. Geen dubbele betaling gezien (na herladen één betaling van € 1.000 bovenop de eerste). Verwarrende melding.",
+   "screenshot": "test-results/screens/edge-case-tester-2/01-B-stale-betaling.png",
+   "console_errors": [
+    "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+   ],
+   "confidence": 0.6,
+   "status": "bevestigd",
+   "priority": "P2",
+   "reden": "Herhaald op a2 factuur 'te-laat' in twee tabbladen: tab B toont 'Openstaand: € 5.037,97' (verouderd), na 1000 in tab A en 5037,97 in B volgt 'Dit is meer dan het openstaande bedrag.'; na herladen Betaald € 1.000, openstaand 4.037,97. Geen dubbele betaling; weigering is juist maar de melding noemt niet dat het getoonde openstaande bedrag verouderd is.",
+   "merged_ids": [],
+   "root_cause_hint": "factuur-beheer.tsx opent met data.openstaandCenten uit props (niet ververst); server-melding 'te-hoog' (app/lib/factuur/betaling.ts r.38) geeft het actuele bedrag niet.",
+   "repro_script": "test-results/repro/verifier-07-betaal.js"
+  },
+  {
+   "agent": "pricing-checker-2",
+   "viewport": "1440x900",
+   "user": "a3",
+   "console_errors": [],
+   "id": "pricing-checker-2-C-leadkop",
+   "area": "pricing",
+   "title": "Leaddetail Boom C: kopbedrag € 428,75 past niet bij Subtotaal € 1.239,67 op dezelfde kaart",
+   "url": "http://localhost:3200/dashboard/leads",
+   "steps": [
+    "Log als a3 in (desktop). Embed /t/devries-a3/tuinaanleg-a3: postcode 8011AB 5, Boom planten 3 stuks, materiaal Boom 200 cm. Embed toont Arbeid € 33,75, Materiaal € 360,00, Voorrijkosten € 35,00, Aanvulling tot minimumtarief € 810,92, Subtotaal € 1.239,67, TOTAAL (INCL. BTW) € 1.500,00.",
+    "Dien de aanvraag in als PC2 Boom C.",
+    "Open de lead op /dashboard/leads (Bord, kaart PC2 Boom C). Lees 'Wat de klant koos'."
+   ],
+   "expected": "Kopbedrag van de leadkaart gelijk aan het subtotaal (excl. btw), zoals bij de andere twee leads (Schutting: € 1.915,00 = subtotaal; Bestrating: € 1.463,00 = subtotaal).",
+   "actual": "Kopbedrag € 428,75 (= arbeid 33,75 + materiaal 360,00 + voorrij 35,00, zonder de minimum-aanvulling). Daaronder staat Materiaalkosten € 1.170,92 (incl. aanvulling), Subtotaal € 1.239,67, Btw € 260,33, Totaal (incl. btw) € 1.500,00.",
+   "screenshot": "test-results/screens/pricing-checker-2/01-lead-C.png",
+   "confidence": 0.7,
+   "status": "bevestigd",
+   "priority": "P1",
+   "reden": "Herhaald op a2 (embed /t/devries-a2/tuinaanleg-a2, 8011AB 5, 3 bomen, Boom 200 cm, aanvraag 'V07 Boom C'): raming 1.239,67 subtotaal / 1.500,00 totaal met 'Aanvulling tot minimumtarief € 810,92'. Leaddrawer toont kop € 428,75 bij onderdeel, Materiaalkosten € 1.170,92 (= 360 + 810,92 aanvulling), Subtotaal € 1.239,67, Totaal € 1.500,00. Minimum-aanvulling wordt dus in Materiaalkosten gestopt en ontbreekt in onderdeelkop.",
+   "merged_ids": [],
+   "root_cause_hint": "Snapshot-velden in lead-detail-drawer.tsx (r.287 materiaalkosten) tellen de projectregel 'minimum' (engine.ts r.353) mee in materiaal; onderdeelkop somt alleen onderdeelregels.",
+   "repro_script": "test-results/repro/verifier-07-minimum.js + verifier-07-minimum2.js"
+  },
+  {
+   "agent": "pricing-checker-2",
+   "viewport": "1440x900",
+   "user": "a3",
+   "console_errors": [],
+   "id": "pricing-checker-2-C-minimum-label",
+   "area": "pricing",
+   "title": "Offerte Boom C: minimumaanvulling heet 'Transport' (€ 981,21 incl. btw) i.p.v. 'Aanvulling tot minimumtarief' (€ 810,92 excl. btw)",
+   "url": "http://localhost:3200/dashboard/leads/cmv6y5cbt00cu7b7drqb2x67p/offerte",
+   "steps": [
+    "Zelfde aanvraag als hierboven (PC2 Boom C, 3 bomen, minimum € 1.500,00).",
+    "Open 'Offerte maken in Kostenplan' vanuit de lead. Lees de editor en de offerte-PDF (pdftotext -layout)."
+   ],
+   "expected": "Het minimumbedrag staat op de offerte onder dezelfde naam als in de rekentool ('Aanvulling tot minimumtarief', € 810,92 excl. btw).",
+   "actual": "Offerte-PDF en editor tonen de post 'Voorrijkosten en transport € 1.023,56' met een regel 'Transport, 1 post, € 981,21 (21%)'. Totaal excl. btw € 1.239,67, incl. btw € 1.500,00 (de totalen kloppen wel).",
+   "screenshot": "test-results/screens/pricing-checker-2/01-offerte-C.png",
+   "confidence": 0.6,
+   "status": "bevestigd",
+   "priority": "P2",
+   "reden": "Herhaald: offerte uit lead toont sectie 'Voorrijkosten en transport' met regels 'Voorrijkosten' en 'Transport' (1 post, € 981,21, 21%); de minimum-aanvulling (€ 810,92 excl.) heet nergens 'Aanvulling tot minimumtarief'. Totalen kloppen (1.239,67 excl / 1.500,00 incl).",
+   "merged_ids": [],
+   "root_cause_hint": "app/lib/offerte/uit-lead.ts r.~101-109: projectRegels met soort anders dan 'voorrijkosten' (dus ook 'minimum' en 'afstand') vallen in vasteTransport en worden regel 'Transport'.",
+   "repro_script": "test-results/repro/verifier-07-minimum2.js"
+  },
+  {
+   "agent": "pricing-checker-2",
+   "viewport": "1440x900",
+   "user": "a3",
+   "console_errors": [],
+   "id": "pricing-checker-2-A-voorwaarden",
+   "area": "bug",
+   "title": "Offerte-versturen blijft geblokkeerd na upload van algemene voorwaarden in Profiel",
+   "url": "http://localhost:3200/dashboard/leads/cmv6y1yv500c97b7drc6bmq9j/offerte",
+   "steps": [
+    "Log als a3 in (desktop). Open offerte 2026-0001 (lead PC2 Schutting A) en klik Versturen.",
+    "Zie blokkade: 'Let op: Er zijn geen algemene voorwaarden bijgevoegd'; de knop 'Verder naar versturen' gaat niet verder.",
+    "Ga naar /dashboard/profiel/offerte-instellingen#og-voorwaarden en upload een PDF (voorwaarden.pdf). Het profiel toont daarna voorwaarden.pdf.",
+    "Open de offerte opnieuw, klik Versturen en daarna Verder naar versturen."
+   ],
+   "expected": "Na upload van de voorwaarden is de blokkade weg en kan de offerte verder naar versturen.",
+   "actual": "Het profiel toont voorwaarden.pdf, maar in de offerte staat nog steeds 'Er zijn geen algemene voorwaarden bijgevoegd' en 'Verder naar versturen' gaat niet verder.",
+   "screenshot": "test-results/screens/pricing-checker-2/01-verstuur-A-na-voorwaarden.png",
+   "confidence": 0.6,
+   "status": "bevestigd",
+   "priority": "P2",
+   "reden": "GEDEELTELIJK: de claim dat 'Verder naar versturen' niet verder gaat is NIET reproduceerbaar (knop actief, ook met 'Let op'; doorgang naar 'Offerte ... versturen' gelukt, voor en na upload). Wel reproduceerbaar: na upload van voorwaarden.pdf in Profiel blijft een bestaande offerte 'Er zijn geen algemene voorwaarden bijgevoegd' tonen. Het is een waarschuwing, geen blokkade. Titel is dus onjuist; echte bevinding: bestaande offerte pakt nieuw geüploade voorwaarden niet op, terwijl de melding juist hiernaartoe verwijst.",
+   "merged_ids": [],
+   "root_cause_hint": "Bijlagen worden bij aanmaken gekopieerd (offerte-v2.ts r.138, nieuw.ts r.69) en controle.ts r.48 leest alleen inhoud.bijlagen; geen sync met profiel.",
+   "repro_script": "test-results/repro/verifier-07-voorwaarden.js"
+  }
+ ],
+ "verworpen": [
+  {
+   "id": "edge-case-tester-2-mv6yexvs-qke8",
+   "agent": "edge-case-tester-2",
+   "area": "bug",
+   "title": "Offerte: negatieve prijs (-3) wordt zonder melding opgeslagen en verlaagt het totaal",
+   "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+   "viewport": "1440x900",
+   "user": "a2",
+   "steps": [
+    "Nieuwe regel in offerte a2, prijsveld typen '-3', blur"
+   ],
+   "expected": "Negatieve prijs geweigerd of melding; geen korting via een prijsregel zonder bedoeling",
+   "actual": "Veld toont '-3,00', status 'Alles opgeslagen', totaal daalt. Na herladen staat de regel nog op € -3,63 incl. btw. Het Controleren-scherm vond dit niet (alleen 'bedrag van €0' gecontroleerd).",
+   "screenshot": "test-results/screens/edge-case-tester-2/01-prijs-tests.png",
+   "console_errors": [
+    "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+   ],
+   "confidence": 0.85,
+   "status": "verworpen",
+   "priority": "P3",
+   "reden": "Bedoeld gedrag: schema (app/lib/offerte/schema.ts) staat prijsCenten vanaf -100.000.000 expliciet toe (kortingsregels). Herhaald: -3 wordt als -3,00 opgeslagen. Eventueel UX-wens (waarschuwing bij negatieve regel), geen bug.",
+   "merged_ids": [],
+   "root_cause_hint": null,
+   "repro_script": "test-results/repro/verifier-07-prijs2.js"
+  },
+  {
+   "id": "edge-case-tester-2-mv6yexvu-b8di",
+   "agent": "edge-case-tester-2",
+   "area": "ux",
+   "title": "Offerte: 'Sectie toevoegen' en 'Regel toevoegen' slaan lege secties en prijs-0-regels direct op",
+   "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+   "viewport": "1440x900",
+   "user": "a2",
+   "steps": [
+    "Offerte a2, 'Sectie toevoegen' klikken, 'Regel toevoegen' klikken",
+    "Herladen"
+   ],
+   "expected": "Lege sectie pas opslaan na invullen, of duidelijk als concept",
+   "actual": "Na herladen staan 8 secties 'Nieuwe sectie' (met € 0,00-regels) in de offerte; Controleren-scherm blokkeert versturen met 'Dit moet eerst kloppen'. Handmatig verwijderd via 'Sectie verwijderen'.",
+   "screenshot": "test-results/screens/edge-case-tester-2/01-sectie-toegevoegd.png",
+   "console_errors": [
+    "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+   ],
+   "confidence": 0.5,
+   "status": "verworpen",
+   "priority": "P3",
+   "reden": "Bedoeld autosave-gedrag: toevoegen wordt direct opgeslagen; de lege sectie en prijs-0-regel worden vervolgens door het Controleren-scherm geblokkeerd ('Dit moet eerst kloppen' / 'bedrag van €0'), en 8 secties waren het gevolg van herhaald klikken van de agent. Zelf herhaald: sectie en regel blijven staan na herladen, zichtbaar met 'Nieuwe sectie' en verwijderbaar.",
+   "merged_ids": [],
+   "root_cause_hint": null,
+   "repro_script": "test-results/repro/verifier-07-prijs.js"
+  }
+ ],
+ "onzeker": [],
+ "notities": {
+  "slow3g": "Niet in deze batch als bevinding; alleen in tmp-edge2/net1.js (agent-lib netwerk:'slow3g' via CDP). Geen bewijs van een productfout: een uitblijvende throttle-effect is een testgereedschapsbeperking (lokale server, kleine payloads), dus verworpen/niet gemeld.",
+  "react418": "Alle edge-meldingen bevatten 'Minified React error #418' (hydratiemismatch); dit is nergens bevestigd als eigen bevinding en hier niet apart beoordeeld; het verscheen ook in mijn herhalingen (factuurpagina).",
+  "mutaties": "Herhalingen op a2: offerte-concept kreeg extra 'Nieuwe sectie'-regels, aantal 0, voorwaarden.pdf geüpload in profiel, nieuwe lead 'V07 Boom C' + offerte 2026-0001 aangemaakt, factuur verstuurd/te-laat: betaling van 1000 geregistreerd."
+ }
+}

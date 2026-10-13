@@ -1,0 +1,234 @@
+{
+ "bevestigd": [
+  {
+   "id": "a11y-auditor-1-mv6wg8lq-6tfh",
+   "agent": "a11y-auditor-1",
+   "area": "a11y",
+   "title": "axe label-content-name-mismatch op dashboard (desktop)",
+   "url": "http://localhost:3200/dashboard",
+   "viewport": "1440x900",
+   "user": "a1",
+   "steps": [
+    "Open /dashboard",
+    "Voer axe-core uit (wcag2a/wcag2aa/wcag21a/wcag21aa)"
+   ],
+   "expected": "Geen serious/critical axe-schendingen",
+   "actual": "label-content-name-mismatch (serious): 1 knoop(en). Voorbeeld: <button type=\"button\" aria-label=\"Bedrijf wisselen\" class=\"flex min-w-0 flex-1 ...\"> | doel: .gap-1\\.5",
+   "screenshot": "test-results/screens/a11y-auditor-1/01-vondst-axe-label-content-name-mismatch-op-dashboar.png",
+   "console_errors": [],
+   "confidence": 0.9,
+   "status": "bevestigd",
+   "priority": "P2",
+   "reden": "Zelf opnieuw gezien met axe (a1, desktop, schone sessie) op dashboard, leads, offerte-editor, facturen, factuur-detail, tools, rekentool-bouwer, profiel, werkgebied en offerte-instellingen. Knop met aria-label 'Bedrijf wisselen' toont zichtbaar de bedrijfsnaam; die tekst zit niet in de toegankelijke naam (WCAG 2.5.3). Spraakbesturing ('klik Hoveniersbedrijf De Vries') en naam-herkenning falen. Zelfde oorzaak op elke dashboardpagina, dus samengevoegd. Extra knopen die ik zelf zag: profiel-kop-trigger (aria-label 'Bedrijf wisselen, huidig: <naam>', .min-h-[72px]) en de offerte-editor-link a[aria-label='Terug'] met zichtbare tekst 'Leads'.",
+   "merged_ids": [
+    "a11y-auditor-1-mv6wgam3-8m80",
+    "a11y-auditor-1-mv6wgd8h-afxs",
+    "a11y-auditor-1-mv6wgezf-xiut",
+    "a11y-auditor-1-mv6wgh51-xzyq",
+    "a11y-auditor-1-mv6wgisc-p64u",
+    "a11y-auditor-1-mv6wgl6x-jm05",
+    "a11y-auditor-1-mv6wgn5q-1iia",
+    "a11y-auditor-1-mv6wgq6e-8jh2",
+    "a11y-auditor-1-mv6wgt3u-6hqm"
+   ],
+   "root_cause_hint": "app/components/dashboard/company-switcher.tsx:35 (aria-label=\"Bedrijf wisselen\" op knop met zichtbare bedrijfsnaam); profiel-kop.tsx:140; offerte-editor-v2.tsx:642 (aria-label=\"Terug\" vs zichtbare tekst). Oplossing: aria-label weglaten of zichtbare tekst opnemen (bv. 'Hoveniersbedrijf De Vries, bedrijf wisselen').",
+   "repro_script": "test-results/repro/verifier-01-axe.js"
+  },
+  {
+   "id": "a11y-auditor-1-mv6wgd50-iqc4",
+   "agent": "a11y-auditor-1",
+   "area": "a11y",
+   "title": "axe color-contrast op offerte-editor (desktop)",
+   "url": "http://localhost:3200/dashboard/leads/cmv6wdxau001gq47d7dzdiijk/offerte",
+   "viewport": "1440x900",
+   "user": "a1",
+   "steps": [
+    "Open /dashboard/leads/cmv6wdxau001gq47d7dzdiijk/offerte",
+    "Voer axe-core uit (wcag2a/wcag2aa/wcag21a/wcag21aa)"
+   ],
+   "expected": "Geen serious/critical axe-schendingen",
+   "actual": "color-contrast (serious): 1 knoop(en). Voorbeeld: <span class=\"pagina\">Offerte 2026-0101<!-- --> · Pagina 1 van 1</span> | doel: .pagina",
+   "screenshot": "test-results/screens/a11y-auditor-1/03-vondst-axe-color-contrast-op-offerte-editor-deskto.png",
+   "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "confidence": 0.9,
+   "status": "bevestigd",
+   "priority": "P3",
+   "reden": "Zelf gezien: span.pagina ('Offerte 2026-0101 · Pagina 1 van 1', 9.33px, #9ca3af op #ffffff) heeft contrast 2.53:1 (< 4.5). Zelfde element op factuur-detail ('Factuur (concept) · Pagina 1 van 1'). Klein voetregeltje in de documentweergave. Het tweede axe-knooppunt bij factuur-detail, .og-watermerk (aria-hidden, #f5e9df op wit, 1.19:1), is bewust decoratief watermerk 'Concept – nog geen nummer' en tel ik niet als bevinding.",
+   "merged_ids": [
+    "a11y-auditor-1-mv6wggys-irsw"
+   ],
+   "root_cause_hint": "Gedeelde stijl voor .pagina in de offerte/factuur-documentweergave (kleur #9ca3af, ~7pt); donkerder grijs gebruiken.",
+   "repro_script": "test-results/repro/verifier-01-axe.js"
+  },
+  {
+   "id": "a11y-auditor-1-mv6wgo8y-adm9",
+   "agent": "a11y-auditor-1",
+   "area": "a11y",
+   "title": "Focus in dialoog op profiel (desktop)",
+   "url": "http://localhost:3200/dashboard/profiel",
+   "viewport": "1440x900",
+   "user": "a1",
+   "steps": [
+    "Open /dashboard/profiel",
+    "Activeer de eerste dialoog-trigger met Enter",
+    "Tab 8x, daarna Escape"
+   ],
+   "expected": "Focus in dialoog, blijft erin, Escape sluit en geeft focus terug aan trigger",
+   "actual": "{\"label\":\"profiel\",\"trigger\":\"HD\\nHoveniersbedrijf De Vries\",\"open\":true,\"focusInDialog\":false,\"focusBlijftInDialog\":false,\"escapeSluit\":true,\"focusTerug\":false}",
+   "screenshot": "test-results/screens/a11y-auditor-1/13-vondst-Focus-in-dialoog-op-profiel-desktop-.png",
+   "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "confidence": 0.6,
+   "status": "bevestigd",
+   "priority": "P3",
+   "reden": "Gedeeltelijk bevestigd in schone sessie: na Enter op de bedrijfswissel-trigger op /dashboard/profiel opent role=dialog 'Bedrijf wisselen' (aria-expanded=true) maar focus blijft op de trigger (focusInDialog=false). Het is een niet-modale uitklapper: Tab loopt door de 3 items en verlaat daarna de dialoog (focus blijft er niet in). Escape sluit direct na openen wel en geeft focus terug aan de trigger; 'focusTerug=false' uit de melding kwam doordat focus eerst uit de dialoog was getabt. Dus de rol 'dialog' belooft focusbeheer dat er niet is; echte impact beperkt (Escape werkt).",
+   "merged_ids": [],
+   "root_cause_hint": "app/dashboard/profiel/profiel-kop.tsx:140-160: desktop-variant is een absolute div role=\"dialog\" zonder focus-verplaatsing of -val; role=\"menu\"/listbox of focus naar eerste item verbetert dit.",
+   "repro_script": "test-results/repro/verifier-01-focus.js ; test-results/repro/verifier-01-focus2.js"
+  },
+  {
+   "id": "a11y-auditor-1-mv6wgq9g-01ni",
+   "agent": "a11y-auditor-1",
+   "area": "a11y",
+   "title": "axe nested-interactive op profiel-werkgebied (desktop)",
+   "url": "http://localhost:3200/dashboard/profiel/werkgebied",
+   "viewport": "1440x900",
+   "user": "a1",
+   "steps": [
+    "Open /dashboard/profiel/werkgebied",
+    "Voer axe-core uit (wcag2a/wcag2aa/wcag21a/wcag21aa)"
+   ],
+   "expected": "Geen serious/critical axe-schendingen",
+   "actual": "nested-interactive (serious): 1 knoop(en). Voorbeeld: <div role=\"img\" aria-label=\"Kaart van je werkgebied\" class=\"z-0 w-full overflow-hidden rounded-xl border border-border bg-muted leaflet-container leaflet-touch  | doel: .z-0",
+   "screenshot": "test-results/screens/a11y-auditor-1/15-vondst-axe-nested-interactive-op-profiel-werkgebie.png",
+   "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   ],
+   "confidence": 0.9,
+   "status": "bevestigd",
+   "priority": "P3",
+   "reden": "Zelf gezien met axe: div role=\"img\" aria-label=\"Kaart van je werkgebied\" (Leaflet-container) heeft focusbare kinderen (nested-interactive, serious). Screenreaders verbergen de bedieningselementen/kaart-controls binnen role=img. De ERR_TUNNEL-consolefouten zijn externe kaarttegels (sandbox) en geen productbevinding.",
+   "merged_ids": [],
+   "root_cause_hint": "app/components/werkgebied/werkgebied-formulier.tsx:204 (ariaLabel op kaart-container met role=img); role=img weghalen en als role=group/region labelen.",
+   "repro_script": "test-results/repro/verifier-01-axe.js"
+  },
+  {
+   "id": "a11y-auditor-1-mv6wgtsj-mozm",
+   "agent": "a11y-auditor-1",
+   "area": "a11y",
+   "title": "axe label op profiel-offerte-instellingen (desktop)",
+   "url": "http://localhost:3200/dashboard/profiel/offerte-instellingen",
+   "viewport": "1440x900",
+   "user": "a1",
+   "steps": [
+    "Open /dashboard/profiel/offerte-instellingen",
+    "Voer axe-core uit (wcag2a/wcag2aa/wcag21a/wcag21aa)"
+   ],
+   "expected": "Geen serious/critical axe-schendingen",
+   "actual": "label (critical): 1 knoop(en). Voorbeeld: <input type=\"file\" accept=\"application/pdf,.pdf\" class=\"sr-only\" id=\"og-voorwaarden\"> | doel: #og-voorwaarden",
+   "screenshot": "test-results/screens/a11y-auditor-1/17-vondst-axe-label-op-profiel-offerte-instellingen-d.png",
+   "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   ],
+   "confidence": 0.9,
+   "status": "bevestigd",
+   "priority": "P2",
+   "reden": "Zelf gezien met axe (critical): input#og-voorwaarden (type=file, class sr-only) heeft geen label. De input blijft met Tab bereikbaar, een schermlezer-gebruiker hoort een naamloos bestandsveld; de zichtbare knop 'PDF uploaden' roept de input alleen via click() aan.",
+   "merged_ids": [],
+   "root_cause_hint": "app/dashboard/profiel/offertegegevens-formulier.tsx:272: <input id=\"og-voorwaarden\" class=\"sr-only\"> zonder label/aria-label; voeg aria-label toe ('Algemene voorwaarden (PDF)') of tabIndex={-1} + aria-hidden.",
+   "repro_script": "test-results/repro/verifier-01-axe.js"
+  },
+  {
+   "id": "a11y-auditor-1-mv6wh0ch-092r",
+   "agent": "a11y-auditor-1",
+   "area": "a11y",
+   "title": "axe label-content-name-mismatch op probeer (desktop)",
+   "url": "http://localhost:3200/probeer",
+   "viewport": "1440x900",
+   "user": "anoniem",
+   "steps": [
+    "Open /probeer",
+    "Voer axe-core uit (wcag2a/wcag2aa/wcag21a/wcag21aa)"
+   ],
+   "expected": "Geen serious/critical axe-schendingen",
+   "actual": "label-content-name-mismatch (serious): 1 knoop(en). Voorbeeld: <button type=\"button\" aria-label=\"Doorzoek de kennisbank\" class=\"flex h-10 w-10 items-center justify-center gap-2 rounded-full border border-border bg-secondary | doel: .h-10",
+   "screenshot": "test-results/screens/a11y-auditor-1/01-vondst-axe-label-content-name-mismatch-op-probeer-.png",
+   "console_errors": [],
+   "confidence": 0.9,
+   "status": "bevestigd",
+   "priority": "P3",
+   "reden": "Zelf gezien op /probeer (anoniem): zoekknop met aria-label 'Doorzoek de kennisbank' toont zichtbaar 'Zoeken…' (vanaf sm); label bevat de zichtbare tekst niet (WCAG 2.5.3). Aparte oorzaak dan de bedrijfswisselaar.",
+   "merged_ids": [],
+   "root_cause_hint": "app/components/marketing/search-dialog.tsx:25: aria-label vervangen door 'Zoeken in de kennisbank' of weglaten.",
+   "repro_script": "test-results/repro/verifier-01-axe.js"
+  }
+ ],
+ "verworpen": [
+  {
+   "id": "a11y-auditor-1-mv6wgdht-clcz",
+   "agent": "a11y-auditor-1",
+   "area": "a11y",
+   "title": "Geen zichtbare focus op offerte-editor",
+   "url": "http://localhost:3200/dashboard/leads/cmv6wdxau001gq47d7dzdiijk/offerte",
+   "viewport": "1440x900",
+   "user": "a1",
+   "steps": [
+    "Open /dashboard/leads/cmv6wdxau001gq47d7dzdiijk/offerte",
+    "Druk 14x Tab",
+    "Let op focusring op het actieve element"
+   ],
+   "expected": "Het actieve element heeft een zichtbare focusindicator (:focus-visible)",
+   "actual": "Zonder outline en box-shadow: INPUT \"Onderwerp\"",
+   "screenshot": "test-results/screens/a11y-auditor-1/05-vondst-Geen-zichtbare-focus-op-offerte-editor.png",
+   "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "confidence": 0.6,
+   "status": "verworpen",
+   "priority": "P3",
+   "reden": "Technisch klopt 'geen outline/box-shadow' op INPUT Onderwerp, maar de inline-bewerkvelden in de offertepreview tonen bij focus een zichtbare indicator: lichtgroene vulling, gestippelde groene onderrand (border-bottom wordt #15803d) en geselecteerde tekst (schermafbeelding test-results/screens/verifier-01-input-focus.png). Knoppen hebben een 2px+4px ring. Geen ontbrekende focus.",
+   "merged_ids": [],
+   "root_cause_hint": "",
+   "repro_script": "test-results/repro/verifier-01-focus2.js"
+  },
+  {
+   "id": "a11y-auditor-1-mv6wghg7-l982",
+   "agent": "a11y-auditor-1",
+   "area": "a11y",
+   "title": "Geen zichtbare focus op factuur-detail",
+   "url": "http://localhost:3200/dashboard/facturen/cmv6wdxgz002hq47dvwumrrkr",
+   "viewport": "1440x900",
+   "user": "a1",
+   "steps": [
+    "Open /dashboard/facturen/cmv6wdxgz002hq47dvwumrrkr",
+    "Druk 14x Tab",
+    "Let op focusring op het actieve element"
+   ],
+   "expected": "Het actieve element heeft een zichtbare focusindicator (:focus-visible)",
+   "actual": "Zonder outline en box-shadow: INPUT \"Onderwerp\"; TEXTAREA \"Introductie\"",
+   "screenshot": "test-results/screens/a11y-auditor-1/09-vondst-Geen-zichtbare-focus-op-factuur-detail.png",
+   "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "confidence": 0.6,
+   "status": "verworpen",
+   "priority": "P3",
+   "reden": "Zelfde als de offerte-editor: Onderwerp/Introductie op factuur-detail hebben bij Tab een groene onderrand/vulling als focusstijl (outline none is bewust vervangen). Niet 'zonder zichtbare focus'.",
+   "merged_ids": [],
+   "root_cause_hint": "",
+   "repro_script": "test-results/repro/verifier-01-focus.js"
+  }
+ ],
+ "onzeker": []
+}

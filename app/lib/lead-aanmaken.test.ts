@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/app/lib/actions/analytics", () => ({ recordAnalyticsEvent: vi.fn(async () => {}) }));
+vi.mock("@/app/lib/analytics-opslag", () => ({ recordAnalyticsEvent: vi.fn(async () => {}) }));
 
 const leads = new Map<string, { id: string }>();
 const aangemaakt = vi.fn();

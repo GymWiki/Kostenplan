@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/app/lib/prisma";
 import type { Prisma } from "@/app/generated/prisma/client";
-import { recordAnalyticsEvent } from "@/app/lib/actions/analytics";
+import { recordAnalyticsEvent } from "@/app/lib/analytics-opslag";
 import { leadContactSchema, leadSnapshotSchema } from "@/app/lib/validation";
 import { effectiveTier } from "@/app/lib/subscription";
 import { planLeadPush } from "@/app/lib/push/versturen";

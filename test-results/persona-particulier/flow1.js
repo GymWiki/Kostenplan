@@ -1,0 +1,25 @@
+const k = require("/home/user/Kostenplan/scripts/test/agent-lib.js");
+const fk = require("/home/user/Kostenplan/scripts/mobile-ux/fake-pdok.js");
+const raming = async (s) => s.page.evaluate(() => { const h = [...document.querySelectorAll("h2,h3,h4,p,div")].find((e) => e.innerText?.trim() === "Jouw kostenraming"); return (h?.closest("section,aside,div[class]")?.parentElement?.innerText || "").slice(0, 1500); });
+(async () => {
+  const s = await k.open({ agent: "persona-particulier", viewport: "mobiel", pad: null, maxStappen: 200 });
+  await s.ctx.route("https://api.pdok.nl/**", (route) => { const r = fk.antwoord(route.request().url()); return route.fulfill({ status: r.status, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(r.body) }); });
+  await s.ctx.route("https://service.pdok.nl/**", (route) => route.fulfill({ status: 200, contentType: "image/png", body: fk.TEGEL }));
+  await s.goto("/t/devries-a1/tuinaanleg-a1");
+  const p = s.page;
+  await p.getByPlaceholder(/bijv/).first().fill("8011AB 5"); s.stap();
+  await p.waitForTimeout(800);
+  await p.getByRole("button", { name: /Voorstraat 5/ }).first().click().catch(()=>{}); s.stap();
+  await p.waitForTimeout(500);
+  await p.getByRole("textbox", { name: "Aantal Schutting" }).fill("12").catch(async()=>{ await p.getByLabel("Aantal Schutting").fill("12"); }); s.stap();
+  await p.waitForTimeout(700);
+  console.log("NA SCHUTTING 12:", await raming(s));
+  console.log("SCHERM", await s.scherm("schutting-12"));
+  await p.locator("#sv-lengte").fill("5"); s.stap();
+  await p.locator("#sv-breedte").fill("4"); s.stap();
+  await p.waitForTimeout(700);
+  console.log("NA TERRAS 5x4:", await raming(s));
+  console.log("SCHERM", await s.scherm("terras-5x4"));
+  console.log("CONSOLE", s.consoleFouten, "NET", s.netwerkFouten, "STAPPEN~", "ok");
+  await s.sluit();
+})().catch((e) => { console.error("FOUT", e.message); process.exit(1); });
