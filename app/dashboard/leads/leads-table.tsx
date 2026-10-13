@@ -8,6 +8,7 @@ import { cn } from "@/app/lib/cn";
 import { StatusSelect } from "./status-select";
 import { LocatieLabels } from "./locatie-labels";
 import { OfferteStatusBadge } from "./offerte-status-badge";
+import { FASE_LABEL } from "@/app/lib/lead-fase";
 import type { LeadWithNotes } from "./leads-view";
 import type { LeadStatus } from "@/app/generated/prisma/client";
 
@@ -74,6 +75,7 @@ export function LeadsTable({
               <tr className="border-b border-border text-left text-muted-foreground">
                 <SorteerbareKolom label="Naam" kolom="naam" sortering={sortering} onClick={wisselSortering} />
                 {showTool && <th className="px-4 py-3 font-medium">Rekentool</th>}
+                <th className="px-4 py-3 font-medium">Fase en volgende stap</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Offerte</th>
                 <SorteerbareKolom label="Pipeline waarde" kolom="waarde" sortering={sortering} onClick={wisselSortering} />
@@ -101,6 +103,10 @@ export function LeadsTable({
                     <LocatieLabels snapshot={lead.snapshot} className="mt-1" />
                   </td>
                   {showTool && <td className="px-4 py-3 text-muted-foreground">{lead.toolNaamSnapshot}</td>}
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-foreground">{FASE_LABEL[lead.voortgang.fase]}{lead.voortgang.teLaatDagen ? <span className="ml-1.5 text-xs font-semibold text-destructive">{lead.voortgang.teLaatDagen} d te laat</span> : null}</p>
+                    {lead.voortgang.actie && <p className="text-xs text-muted-foreground">{lead.voortgang.actie.label}</p>}
+                  </td>
                   <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                     <StatusSelect leadId={lead.id} status={lead.status} className="h-9 w-auto min-w-40" onStatusChange={onUpdateStatus} />
                   </td>

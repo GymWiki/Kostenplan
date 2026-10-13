@@ -11,6 +11,14 @@ import { MobieleSheet } from "@/app/components/mobile/mobiele-sheet";
 import { SegmentedControl } from "@/app/components/mobile/segmented-control";
 import { StickyActiebalk } from "@/app/components/mobile/sticky-actiebalk";
 import { useIsMobiel } from "@/app/components/mobile/use-mobiel";
+import { FactuurBeheerPaneel, type BeheerData } from "@/app/components/factuur/factuur-beheer";
+import { HERINNERING_LABEL, type HerinneringStap } from "@/app/lib/factuur/betaling";
+import type { BerichtSoort } from "@/app/lib/factuur/berichten";
+import { bewaarFactuurAction } from "@/app/lib/actions/facturen-bewerken";
+import { controleerFactuur } from "@/app/lib/factuur/controle";
+import { FACTUUR_STATUS_LABEL, type FactuurInhoud } from "@/app/lib/factuur/model";
+import { normaliseerFactuur, voegMeerwerkToe } from "@/app/lib/factuur/maak";
+import { FactuurMetaPaneel } from "@/app/components/factuur/factuur-paneel";
 import { bevestigVerstuurdAction, bewaarOfferteAction, nieuweVersieAction, slaStandaardRegelOpAction, verwijderStandaardRegelAction, type StandaardRegelDto } from "@/app/lib/actions/offerte-v2";
 import { berekenTotalen } from "@/app/lib/offerte/bereken";
 import { controleerOfferte, type ControlePunt } from "@/app/lib/offerte/controle";
@@ -19,11 +27,12 @@ import type { OfferteInhoud, OfferteRegel } from "@/app/lib/offerte/model";
 import { OFFERTE_V2_STATUS_LABEL, type HerinneringReden } from "@/app/lib/offerte/status";
 import { formatCents } from "@/app/lib/offerte/weergave";
 import * as w from "@/app/lib/offerte/wijzig";
-import { DeelDialoog } from "./deel-dialoog";
+import { DeelDialoog, type DeelOps } from "./deel-dialoog";
+import { bevestigFactuurVerstuurdAction, definitiefMakenAction, maakFactuurDeelklaarAction, volgendFactuurnummerAction } from "@/app/lib/actions/facturen-versturen";
 import { OfferteDocument, type Selectie } from "./offerte-document";
 import { BetalingPaneel, KlantPaneel, MetaPaneel, PlanningPaneel, RegelPaneel, SectiePaneel, TekstPaneel, VoorwaardenPaneel, type Wijzig } from "./offerte-paneel";
 import { VelSchaal } from "./vel-schaal";
-import type { OfferteV2Status } from "@/app/generated/prisma/client";
+import type { FactuurStatus, OfferteV2Status } from "@/app/generated/prisma/client";
 
 type Props = {
   offerteId: string;
@@ -39,6 +48,8 @@ type Props = {
   herinnering?: HerinneringReden | null;
   activiteit?: { id: string; soort: string; tekst: string | null; op: string }[];
   heeftGetekend?: boolean;
+  // Factuur in plaats van offerte: dezelfde editor, het document en de panelen, met factuurspecifieke velden.
+  factuur?: { id: string; status: FactuurStatus; terug: string; beheer?: BeheerData };
 };
 
 const ACTIVITEIT_LABEL: Record<string, string> = {
@@ -76,7 +87,7 @@ export function OfferteEditorV2(props: Props) {
   return <OfferteEditorBinnen key={`${props.offerteId}-${props.begin.versie}-${opnieuw}`} {...props} naVerzenden={() => setOpnieuw((n) => n + 1)} />;
 }
 
-function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, standaardRegels: startStandaard, btwStandaard, deelklaar = false, startHerinnering = false, herinnering = null, activiteit = [], heeftGetekend = false, naVerzenden }: Props & { naVerzenden: () => void }) {
+function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, standaardRegels: startStandaard, btwStandaard, deelklaar = false, startHerinnering = false, herinnering = null, activiteit = [], heeftGetekend = false, factuur: factuurCfg, naVerzenden }: Props & { naVerzenden: () => void }) {
   const router = useRouter();
   const isMobiel = useIsMobiel();
   const [inhoud, setInhoud] = useState<OfferteInhoud>(begin);
@@ -94,21 +105,23 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
   const [melding, setMelding] = useState<string | null>(null);
   const [pasVerstuurd, setPasVerstuurd] = useState(false);
 
-  const alleenLezen = vergrendeld || status === "GEACCEPTEERD";
+  const isFactuur = Boolean(factuurCfg);
+  const alleenLezen = isFactuur ? factuurCfg!.status !== "CONCEPT" : vergrendeld || status === "GEACCEPTEERD";
   const laatste = useRef(inhoud);
   const teller = useRef(0);
   const eerste = useRef(true);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const wijzig: Wijzig = useCallback((fn) => {
-    setInhoud((i) => fn(i));
+    // Factuur: een stelpost waarvan de hoeveelheid of prijs is ingevuld, is niet langer "te bepalen".
+    setInhoud((i) => (isFactuur ? normaliseerFactuur(i as FactuurInhoud, fn(i) as FactuurInhoud) : fn(i)));
     setOpslag("wijzigingen");
-  }, []);
+  }, [isFactuur]);
 
   const bewaar = useCallback(async () => {
     const mijn = ++teller.current;
     setOpslag("opslaan");
-    const r = await bewaarOfferteAction(offerteId, laatste.current);
+    const r = factuurCfg ? await bewaarFactuurAction(factuurCfg.id, laatste.current) : await bewaarOfferteAction(offerteId, laatste.current);
     if (mijn !== teller.current) return; // er is intussen iets nieuwers gewijzigd
     if (r.ok) {
       setOpslag("klaar");
@@ -117,7 +130,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
       setOpslag("fout");
       setOpslagFout(r.error);
     }
-  }, [offerteId]);
+  }, [offerteId, factuurCfg]);
 
   useEffect(() => {
     laatste.current = inhoud;
@@ -142,7 +155,10 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
   }, [opslag]);
 
   const totalen = useMemo(() => berekenTotalen(inhoud), [inhoud]);
-  const controle = useMemo(() => controleerOfferte(inhoud), [inhoud]);
+  const controle: { blokkerend: { id: string; bericht: string; actie?: ControlePunt["actie"]; href?: string }[]; waarschuwingen: { id: string; bericht: string; actie?: ControlePunt["actie"]; href?: string }[] } = useMemo(
+    () => (isFactuur ? controleerFactuur(inhoud as FactuurInhoud) : controleerOfferte(inhoud)),
+    [inhoud, isFactuur]
+  );
   const eind = totalen.toonIncl || totalen.kor ? totalen.totaalIncl : totalen.totaalExcl;
   const aantalProblemen = controle.blokkerend.length;
 
@@ -194,6 +210,53 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
     }
   }
 
+  // Factuur: eerst definitief maken (controle, nummer, vastleggen), daarna delen; een definitieve factuur gaat direct naar het delen.
+  const [verwachtNummer, setVerwachtNummer] = useState<string | null>(null);
+  const [nieuwNummer, setNieuwNummer] = useState<string | null>(null);
+  const [berichtSoort, setBerichtSoort] = useState<BerichtSoort>("factuur");
+  const stuurHerinnering = (stap: HerinneringStap) => {
+    setBerichtSoort(stap);
+    openDelen("offerte");
+  };
+  const isHerinnering = berichtSoort !== "factuur" && berichtSoort !== "creditnota";
+  useEffect(() => {
+    if (!factuurCfg || factuurCfg.status !== "CONCEPT" || !controleOpen) return;
+    let weg = false;
+    void volgendFactuurnummerAction(factuurCfg.id).then((n) => !weg && setVerwachtNummer(n));
+    return () => {
+      weg = true;
+    };
+  }, [factuurCfg, controleOpen]);
+  const fSoort = isFactuur ? (inhoud as FactuurInhoud).factuur.soort : "factuur";
+  const woord = fSoort === "creditnota" ? "creditnota" : "factuur";
+  const factuurOps: DeelOps | undefined = factuurCfg
+    ? {
+        startStap: factuurCfg.status === "CONCEPT" ? "controle" : "delen",
+        controle: { blokkerend: controle.blokkerend, waarschuwingen: controle.waarschuwingen, ok: [] },
+        controleTitel: `${woord === "creditnota" ? "Creditnota" : "Factuur"} definitief maken`,
+        controleToelichting: `Na definitief maken krijgt deze ${woord} ${verwachtNummer ? `nummer ${verwachtNummer}` : "een nummer"} en kun je hem niet meer wijzigen. Correcties gaan via een creditnota.`,
+        controleKnop: "Definitief maken",
+        terugKnop: "Terug naar de factuur",
+        naControle: async () => {
+          const r = await definitiefMakenAction(factuurCfg.id);
+          if (r.ok) {
+            setPasVerstuurd(true);
+            setNieuwNummer(r.nummer);
+          }
+          return r.ok ? { ok: true } : { ok: false, error: r.error };
+        },
+        titelDelen: isHerinnering ? `${HERINNERING_LABEL[berichtSoort as HerinneringStap].replace(" sturen", "").replace(" (14 dagen)", "")} voor factuur ${(inhoud as FactuurInhoud).factuur.nummer} versturen` : `${woord === "creditnota" ? "Creditnota" : "Factuur"} ${(inhoud as FactuurInhoud).factuur.nummer ?? nieuwNummer ?? ""} van ${formatCents(Math.abs(totalen.totaalIncl))} versturen`.replace("  ", " "),
+        maakKlaar: () => maakFactuurDeelklaarAction(factuurCfg.id, berichtSoort),
+        bevestig: (kanaal) => bevestigFactuurVerstuurdAction(factuurCfg.id, kanaal, berichtSoort),
+        woord: isHerinnering ? "herinnering" : woord,
+        vraag: `Is de ${isHerinnering ? "herinnering" : woord} verstuurd?`,
+        verstuurdTitel: isHerinnering ? "Herinnering is vastgelegd in de tijdlijn" : `${woord === "creditnota" ? "Creditnota" : "Factuur"} staat op Verstuurd`,
+        verstuurdTekst: `Verstuurd op ${new Date().toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}. Je ziet in de tijdlijn wanneer de klant de ${woord} bekijkt. Registreer een betaling zodra het geld binnen is.`,
+        neeTekst: `De ${woord} is niet als verstuurd gemarkeerd. Je kunt hem later opnieuw delen via Versturen.`,
+        wachtTekst: `Even geduld, de ${woord} wordt klaargezet…`,
+      }
+    : undefined;
+
   const statusBlok = (
     <span role="status" aria-live="polite" className="flex items-center gap-1.5 text-sm text-muted-foreground">
       {alleenLezen ? (
@@ -220,7 +283,15 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
     </span>
   );
 
-  const banner = alleenLezen && (
+  const banner = alleenLezen && isFactuur && (
+    <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-accent px-4 py-2.5 text-sm text-foreground">
+      <span>Deze factuur is definitief en kan niet meer worden gewijzigd. Correcties gaan via een creditnota.</span>
+    </div>
+  );
+  const beheerPaneel = alleenLezen && isFactuur && factuurCfg?.beheer && (
+    <FactuurBeheerPaneel data={factuurCfg.beheer} onHerinnering={stuurHerinnering} />
+  );
+  const offerteBanner = alleenLezen && !isFactuur && (
     <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-accent px-4 py-2.5 text-sm text-foreground">
       <span>
         {status === "GEACCEPTEERD"
@@ -234,7 +305,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
       )}
     </div>
   );
-  const toonKlaar = deelklaar && !alleenLezen && inhoud === begin;
+  const toonKlaar = !isFactuur && deelklaar && !alleenLezen && inhoud === begin;
   const klaarBanner = toonKlaar && (
     <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-accent px-4 py-2.5 text-sm text-foreground">
       <span>De PDF staat klaar om te delen, maar de offerte is nog niet als verstuurd gemarkeerd.</span>
@@ -244,7 +315,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
       </span>
     </div>
   );
-  const herinneringBanner = alleenLezen && herinnering && status !== "GEACCEPTEERD" && (
+  const herinneringBanner = !isFactuur && alleenLezen && herinnering && status !== "GEACCEPTEERD" && (
     <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-warning/10 px-4 py-2.5 text-sm text-foreground">
       <span>{herinnering === "verloopt-binnenkort" ? "Deze offerte verloopt binnenkort." : "De klant heeft al een week niet gereageerd."}</span>
       <Button type="button" size="sm" onClick={() => openDelen("herinnering")}>Herinnering sturen</Button>
@@ -274,29 +345,49 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
     if (!sel) {
       return (
         <div className="flex flex-col gap-4 text-sm">
-          <p className="rounded-lg bg-accent px-3 py-2.5 text-foreground">Klik op een deel van de offerte om het aan te passen. Wijzigingen worden automatisch opgeslagen.</p>
+          <p className="rounded-lg bg-accent px-3 py-2.5 text-foreground">Klik op een deel van de {isFactuur ? "factuur" : "offerte"} om het aan te passen. Wijzigingen worden automatisch opgeslagen.</p>
           <div>
-            <h3 className="mb-2 font-bold text-foreground">Voor je verstuurt</h3>
+            <h3 className="mb-2 font-bold text-foreground">{isFactuur ? "Voor je definitief maakt" : "Voor je verstuurt"}</h3>
             {controle.blokkerend.length === 0 && controle.waarschuwingen.length === 0 ? (
-              <p className="text-muted-foreground">Alles klopt. Je kunt de offerte controleren en versturen.</p>
+              <p className="text-muted-foreground">{isFactuur ? "Alles klopt. Je kunt de factuur definitief maken." : "Alles klopt. Je kunt de offerte controleren en versturen."}</p>
             ) : (
               <ul className="flex flex-col gap-1.5">
                 {controle.blokkerend.map((p) => (
                   <li key={p.id} className="flex gap-2 text-foreground">
                     <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
-                    {p.bericht}
+                    <span>
+                      {p.bericht}
+                      {p.href ? (
+                        <>
+                          {" "}
+                          <Link href={p.href} className="font-semibold underline">
+                            Aanpassen
+                          </Link>
+                        </>
+                      ) : null}
+                    </span>
                   </li>
                 ))}
                 {controle.waarschuwingen.map((p) => (
                   <li key={p.id} className="flex gap-2 text-foreground">
                     <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
-                    {p.bericht}
+                    <span>
+                      {p.bericht}
+                      {p.href ? (
+                        <>
+                          {" "}
+                          <Link href={p.href} className="font-semibold underline">
+                            Aanpassen
+                          </Link>
+                        </>
+                      ) : null}
+                    </span>
                   </li>
                 ))}
               </ul>
             )}
           </div>
-          {inhoud.bron?.totaalRekentoolInclCenten ? (
+          {!isFactuur && inhoud.bron?.totaalRekentoolInclCenten ? (
             <p className="text-muted-foreground">
               In de rekentool zag de klant {formatCents(inhoud.bron.totaalRekentoolInclCenten)} incl. btw. Deze offerte: {formatCents(totalen.totaalIncl)}.
             </p>
@@ -305,10 +396,15 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
             <Button type="button" variant="outline" size="sm" onClick={() => { const r = w.voegSectieToe(inhoud); wijzig(() => r.inhoud); setSelectie({ soort: "sectie", id: r.id }); }}>
               <Plus className="h-4 w-4" aria-hidden="true" /> Sectie toevoegen
             </Button>
+            {isFactuur && (
+              <Button type="button" variant="outline" size="sm" onClick={() => { const r = voegMeerwerkToe(inhoud as FactuurInhoud, { omschrijving: "", aantal: 1, eenheid: "post", prijsCenten: 0, btw: 21 }); const sectie = r.secties.find((s) => s.titel === "Meerwerk")!; const regel = sectie.regels[sectie.regels.length - 1]; wijzig(() => r); setSelectie({ soort: "regel", id: regel.id, sectieId: sectie.id }); }}>
+                <Plus className="h-4 w-4" aria-hidden="true" /> Meerwerk toevoegen
+              </Button>
+            )}
           </div>
           {getekendLink}
           {activiteitLijst}
-          {versies.length > 1 && (
+          {!isFactuur && versies.length > 1 && (
             <div>
               <h3 className="mb-1 font-bold text-foreground">Versies</h3>
               <ul className="text-muted-foreground">
@@ -336,7 +432,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
       case "klant":
         return <KlantPaneel inhoud={inhoud} wijzig={wijzig} />;
       case "meta":
-        return <MetaPaneel inhoud={inhoud} wijzig={wijzig} />;
+        return isFactuur ? <FactuurMetaPaneel inhoud={inhoud as FactuurInhoud} wijzig={wijzig} /> : <MetaPaneel inhoud={inhoud} wijzig={wijzig} />;
       case "onderwerp":
         return <TekstPaneel inhoud={inhoud} wijzig={wijzig} veld="onderwerp" />;
       case "intro":
@@ -348,12 +444,12 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
       case "regel":
         return sel.id && sel.sectieId ? <RegelPaneel inhoud={inhoud} sectieId={sel.sectieId} regelId={sel.id} wijzig={wijzig} standaardRegels={standaardRegels} onSlaStandaardOp={slaStandaardOp} onKlaar={(s) => (isMobiel ? (s ? setRegelSheet(s.soort === "regel" && s.id && s.sectieId ? { sectieId: s.sectieId, regelId: s.id } : null) : setRegelSheet(null)) : setSelectie(s))} /> : null;
       case "betaling":
-        return <BetalingPaneel inhoud={inhoud} wijzig={wijzig} />;
+        return isFactuur ? null : <BetalingPaneel inhoud={inhoud} wijzig={wijzig} />;
       case "planning":
-        return <PlanningPaneel inhoud={inhoud} wijzig={wijzig} />;
+        return isFactuur ? null : <PlanningPaneel inhoud={inhoud} wijzig={wijzig} />;
       case "voorwaarden":
       case "herroeping":
-        return <VoorwaardenPaneel inhoud={inhoud} wijzig={wijzig} toonHerroeping={inhoud.klant.type === "particulier"} />;
+        return isFactuur ? null : <VoorwaardenPaneel inhoud={inhoud} wijzig={wijzig} toonHerroeping={inhoud.klant.type === "particulier"} />;
       case "totaal":
         return (
           <div className="flex flex-col gap-2 text-sm text-foreground">
@@ -391,8 +487,10 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
     />
   );
 
-  const statusBadge = <Badge variant={status === "GEACCEPTEERD" ? "success" : "muted"}>{OFFERTE_V2_STATUS_LABEL[status]}</Badge>;
-  const pdfHref = `/api/offertes/${offerteId}/pdf?versie=${inhoud.versie}`;
+  const statusBadge = factuurCfg ? <Badge variant={factuurCfg.status === "BETAALD" ? "success" : "muted"}>{FACTUUR_STATUS_LABEL[factuurCfg.status]}</Badge> : <Badge variant={status === "GEACCEPTEERD" ? "success" : "muted"}>{OFFERTE_V2_STATUS_LABEL[status]}</Badge>;
+  const pdfHref = factuurCfg ? `/api/facturen/${factuurCfg.id}/pdf` : `/api/offertes/${offerteId}/pdf?versie=${inhoud.versie}`;
+  const titelTekst = isFactuur ? `${(inhoud as FactuurInhoud).factuur.soort === "creditnota" ? "Creditnota" : "Factuur"} ${(inhoud as FactuurInhoud).factuur.nummer ?? "(concept)"}` : `Offerte ${inhoud.nummer}`;
+  const terug = factuurCfg?.terug ?? "/dashboard/leads";
 
   // ── Mobiel ──
   if (isMobiel) {
@@ -411,9 +509,11 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
     );
     return (
       <div className="flex flex-col gap-4 pb-28 md:hidden">
-        <KopInstellen titel={`Offerte ${inhoud.nummer}`} terug="/dashboard/leads" />
+        <KopInstellen titel={titelTekst} terug={terug} />
         <KopActie>{statusBlok}</KopActie>
         {banner}
+        {beheerPaneel}
+        {offerteBanner}
         {klaarBanner}
         {herinneringBanner}
         {fouttekst}
@@ -430,9 +530,11 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
               {rij("Klant", klantSamenvatting, () => setSheet("klant"), controle.blokkerend.some((p) => p.id === "klant"))}
               {rij("Onderdelen", `${inhoud.secties.length} ${inhoud.secties.length === 1 ? "sectie" : "secties"} · ${aantalRegels} regels · ${formatCents(eind)}`, () => setSheet("onderdelen"), controle.blokkerend.some((p) => p.id === "nulregels" || p.id === "geenregels"))}
               {rij("Onderwerp en teksten", inhoud.onderwerp || "Nog geen onderwerp", () => setSheet("teksten"))}
-              {rij("Voorwaarden", `${inhoud.voorwaarden.length} voorwaarden${inhoud.klant.type === "particulier" && inhoud.herroeping.aan ? " · herroepingsrecht" : ""}`, () => setSheet("voorwaarden"))}
-              {rij("Betaling en planning", inhoud.betaaltermijnen.map((t) => `${t.percentage}%`).join(" / ") + (inhoud.planning.startweek ? " · start gepland" : ""), () => setSheet("betaling"))}
-              {rij("Nummer en datums", `Geldig tot ${inhoud.geldigTot.split("-").reverse().join("-")}`, () => setSheet("meta"), controle.blokkerend.some((p) => p.id === "geldig"))}
+              {!isFactuur && rij("Voorwaarden", `${inhoud.voorwaarden.length} voorwaarden${inhoud.klant.type === "particulier" && inhoud.herroeping.aan ? " · herroepingsrecht" : ""}`, () => setSheet("voorwaarden"))}
+              {!isFactuur && rij("Betaling en planning", inhoud.betaaltermijnen.map((t) => `${t.percentage}%`).join(" / ") + (inhoud.planning.startweek ? " · start gepland" : ""), () => setSheet("betaling"))}
+              {isFactuur
+                ? rij("Datums en btw", `Vervalt ${(inhoud as FactuurInhoud).factuur.vervaldatum.split("-").reverse().join("-")}${(inhoud as FactuurInhoud).factuur.btwModus === "verlegd" ? " · btw verlegd" : ""}`, () => setSheet("meta"), controle.blokkerend.some((p) => ["datum", "uitvoering", "uitvoering-periode", "vervaldatum", "verlegd-btwid", "verlegd-klant"].includes(p.id)))
+                : rij("Nummer en datums", `Geldig tot ${inhoud.geldigTot.split("-").reverse().join("-")}`, () => setSheet("meta"), controle.blokkerend.some((p) => p.id === "geldig"))}
             </ul>
             {melding && <p role="status" className="rounded-lg bg-accent px-3 py-2 text-sm text-foreground">{melding}</p>}
             {(activiteit.length > 0 || heeftGetekend) && <div className="flex flex-col gap-3 text-sm">{getekendLink}{activiteitLijst}</div>}
@@ -448,14 +550,18 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
             <span className="block text-lg font-bold tabular-nums text-foreground">{formatCents(eind)}</span>
           </div>
           {alleenLezen ? (
-            status === "GEACCEPTEERD" ? null : (
+            isFactuur ? (
+              <Button type="button" size="lg" onClick={() => openDelen("offerte")}>
+                Versturen
+              </Button>
+            ) : status === "GEACCEPTEERD" ? null : (
               <Button type="button" size="lg" onClick={() => void nieuweVersie()}>
                 Nieuwe versie
               </Button>
             )
           ) : (
             <Button type="button" size="lg" onClick={() => openDelen("offerte")}>
-              Versturen{aantalProblemen > 0 ? ` (${aantalProblemen})` : ""}
+              {isFactuur ? "Definitief maken" : "Versturen"}{aantalProblemen > 0 ? ` (${aantalProblemen})` : ""}
             </Button>
           )}
         </StickyActiebalk>
@@ -463,8 +569,8 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
         <MobieleSheet open={sheet === "klant"} onClose={() => setSheet(null)} titel="Klant en projectadres" beginStand="volledig">
           <KlantPaneel inhoud={inhoud} wijzig={wijzig} />
         </MobieleSheet>
-        <MobieleSheet open={sheet === "meta"} onClose={() => setSheet(null)} titel="Nummer en datums" beginStand="half">
-          <MetaPaneel inhoud={inhoud} wijzig={wijzig} />
+        <MobieleSheet open={sheet === "meta"} onClose={() => setSheet(null)} titel={isFactuur ? "Datums, btw en betaling" : "Nummer en datums"} beginStand={isFactuur ? "volledig" : "half"}>
+          {isFactuur ? <FactuurMetaPaneel inhoud={inhoud as FactuurInhoud} wijzig={wijzig} /> : <MetaPaneel inhoud={inhoud} wijzig={wijzig} />}
         </MobieleSheet>
         <MobieleSheet open={sheet === "teksten"} onClose={() => setSheet(null)} titel="Onderwerp en teksten" beginStand="volledig">
           <div className="flex flex-col gap-4">
@@ -524,7 +630,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
           {sectieSheet && <SectiePaneel inhoud={inhoud} sectieId={sectieSheet} wijzig={wijzig} standaardRegels={standaardRegels} onVerwijderStandaard={verwijderStandaard} onSelect={(s) => (s.soort === "regel" && s.id && s.sectieId ? setRegelSheet({ sectieId: s.sectieId, regelId: s.id }) : setSectieSheet(s.id ?? null))} btwStandaard={btwStandaard} />}
         </MobieleSheet>
 
-        <DeelDialoog modus={deelModus} open={client && controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} />
+        <DeelDialoog modus={deelModus} open={client && controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} ops={factuurOps} />
       </div>
     );
   }
@@ -533,25 +639,34 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
   return (
     <div className="-mx-4 -my-6 hidden h-[calc(100dvh-4rem)] min-h-[32rem] flex-col md:-mx-8 md:-my-8 md:flex">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
-        <Link href="/dashboard/leads" className="flex h-11 items-center gap-1 rounded-md px-2 text-sm font-semibold text-foreground hover:bg-secondary" aria-label="Terug naar Leads">
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Leads
+        <Link href={terug} className="flex h-11 items-center gap-1 rounded-md px-2 text-sm font-semibold text-foreground hover:bg-secondary" aria-label="Terug">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {isFactuur ? "Terug" : "Leads"}
         </Link>
-        <h1 className="min-w-0 truncate text-base font-bold text-foreground">Offerte {inhoud.nummer}</h1>
+        <h1 className="min-w-0 truncate text-base font-bold text-foreground">{titelTekst}</h1>
         {statusBadge}
-        {inhoud.versie > 1 && <span className="text-sm text-muted-foreground">versie {inhoud.versie}</span>}
+        {!isFactuur && inhoud.versie > 1 && <span className="text-sm text-muted-foreground">versie {inhoud.versie}</span>}
         <div className="ml-auto flex items-center gap-3">
           {statusBlok}
-          <a href={pdfHref} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium text-foreground hover:bg-secondary">
-            <Download className="h-4 w-4" aria-hidden="true" /> PDF
-          </a>
+          {(!isFactuur || alleenLezen) && (
+            <a href={pdfHref} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium text-foreground hover:bg-secondary">
+              <Download className="h-4 w-4" aria-hidden="true" /> PDF
+            </a>
+          )}
           {!alleenLezen && (
             <Button type="button" onClick={() => openDelen("offerte")}>
-              Versturen{aantalProblemen > 0 ? ` (${aantalProblemen})` : ""}
+              {isFactuur ? "Definitief maken" : "Versturen"}{aantalProblemen > 0 ? ` (${aantalProblemen})` : ""}
+            </Button>
+          )}
+          {isFactuur && alleenLezen && (
+            <Button type="button" onClick={() => openDelen("offerte")}>
+              Versturen
             </Button>
           )}
         </div>
       </header>
       {banner}
+      {beheerPaneel}
+      {offerteBanner}
       {klaarBanner}
       {herinneringBanner}
       {fouttekst}
@@ -561,7 +676,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
         </div>
         <aside aria-label="Aanpassen" className="w-[400px] shrink-0 overflow-y-auto overscroll-contain border-l border-border bg-background p-4">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="text-base font-bold text-foreground">{selectie ? PANEEL_TITEL[selectie.soort] : "Offerte"}</h2>
+            <h2 className="text-base font-bold text-foreground">{selectie ? PANEEL_TITEL[selectie.soort] : isFactuur ? "Factuur" : "Offerte"}</h2>
             {selectie && (
               <button type="button" className="min-h-9 text-sm font-semibold underline" onClick={() => setSelectie(null)}>
                 Sluiten
@@ -569,10 +684,10 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
             )}
           </div>
           {melding && <p role="status" className="mb-3 rounded-lg bg-accent px-3 py-2 text-sm text-foreground">{melding}</p>}
-          {alleenLezen ? <div className="flex flex-col gap-4 text-sm"><p className="text-muted-foreground">Deze versie is verstuurd. Maak een nieuwe versie om te wijzigen.</p>{getekendLink}{activiteitLijst}</div> : paneelInhoud(selectie)}
+          {alleenLezen ? <div className="flex flex-col gap-4 text-sm"><p className="text-muted-foreground">{isFactuur ? "Deze factuur is definitief. Betalingen en creditnota’s beheer je bovenaan de pagina." : "Deze versie is verstuurd. Maak een nieuwe versie om te wijzigen."}</p>{getekendLink}{activiteitLijst}</div> : paneelInhoud(selectie)}
         </aside>
       </div>
-      <DeelDialoog modus={deelModus} open={client && controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} />
+      <DeelDialoog modus={deelModus} open={client && controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} ops={factuurOps} />
     </div>
   );
 }

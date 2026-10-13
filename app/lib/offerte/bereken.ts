@@ -42,15 +42,20 @@ export type Totalen = {
   optioneelNietGekozenIncl: number;
   toonIncl: boolean;
   kor: boolean;
+  // Btw verlegd (alleen facturen aan zakelijke klanten): geen btw berekend, wel vermeld.
+  verlegd: boolean;
 };
 
 export function berekenTotalen(
-  inhoud: Pick<OfferteInhoud, "secties" | "klant" | "afzender"> & { rekenregel?: OfferteInhoud["rekenregel"] },
+  inhoud: Pick<OfferteInhoud, "secties" | "klant" | "afzender"> & { rekenregel?: OfferteInhoud["rekenregel"]; factuur?: { btwModus?: "normaal" | "verlegd" } },
   gekozenOptioneel: ReadonlySet<string> | readonly string[] = []
 ): Totalen {
   const gekozen = gekozenOptioneel instanceof Set ? gekozenOptioneel : new Set(gekozenOptioneel);
+  const verlegd = inhoud.factuur?.btwModus === "verlegd";
+  // Zonder btw rekenen: kleineondernemersregeling of btw verlegd.
   const kor = inhoud.afzender.korActief;
-  const toonIncl = inhoud.klant.type === "particulier" && !kor;
+  const geenBtw = kor || verlegd;
+  const toonIncl = inhoud.klant.type === "particulier" && !geenBtw;
 
   const regels: Record<string, RegelUitkomst> = {};
   const secties: Totalen["secties"] = [];
@@ -62,7 +67,7 @@ export function berekenTotalen(
     let sExcl = 0;
     let sIncl = 0;
     for (const r of sectie.regels) {
-      const tarief = kor ? 0 : r.btw;
+      const tarief = geenBtw ? 0 : r.btw;
       const excl = regelBedragExcl(r);
       const korting = r.type === "tekst" ? 0 : round((r.aantal * r.prijsCenten) - 0) - excl;
       const incl = excl + round((excl * tarief) / 100);
@@ -100,7 +105,7 @@ export function berekenTotalen(
 
   const totaalExcl = btwGroepen.reduce((s, g) => s + g.grondslag, 0);
   const totaalBtw = btwGroepen.reduce((s, g) => s + g.btw, 0);
-  return { regels, secties, btwGroepen, totaalExcl, totaalBtw, totaalIncl: totaalExcl + totaalBtw, optioneelNietGekozenIncl, toonIncl, kor };
+  return { regels, secties, btwGroepen, totaalExcl, totaalBtw, totaalIncl: totaalExcl + totaalBtw, optioneelNietGekozenIncl, toonIncl, kor, verlegd };
 }
 
 // Prijs per eenheid zoals de klant hem ziet (incl. btw voor particulieren).

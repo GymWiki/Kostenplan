@@ -27,10 +27,14 @@ export function voettekstTekst(a: OfferteAfzender): string {
   const naam = a.rechtsvorm && heeftStatutaireGegevens(a.rechtsvorm) && a.statutaireNaam && a.statutaireNaam !== a.handelsnaam ? `${a.handelsnaam} (${a.statutaireNaam})` : a.handelsnaam;
   return [naam, a.kvkNummer ? `KvK ${a.kvkNummer}` : null, a.korActief ? null : a.btwId ? `Btw-id ${a.btwId}` : null, a.iban ? `IBAN ${a.iban}` : null, a.telefoon, a.email].filter(Boolean).join(" · ");
 }
-export const voetPaginaTekst = (i: Pick<OfferteInhoud, "nummer" | "versie">) => `Offerte ${i.nummer}${i.versie > 1 ? ` · versie ${i.versie}` : ""}`;
+// Offerte of factuur: een factuur heeft `factuur` (soort en nummer) in zijn inhoud.
+type MetFactuur = { factuur?: { soort: string; nummer: string | null } };
+export const voetPaginaTekst = (i: Pick<OfferteInhoud, "nummer" | "versie"> & MetFactuur) =>
+  i.factuur ? `${i.factuur.soort === "creditnota" ? "Creditnota" : "Factuur"} ${i.factuur.nummer ?? "(concept)"}` : `Offerte ${i.nummer}${i.versie > 1 ? ` · versie ${i.versie}` : ""}`;
 
-export function bestandsnaam(i: Pick<OfferteInhoud, "nummer" | "afzender">): string {
-  return `Offerte ${i.nummer} – ${i.afzender.handelsnaam}.pdf`.replace(/[\\/:*?"<>|]/g, "");
+export function bestandsnaam(i: Pick<OfferteInhoud, "nummer" | "afzender"> & MetFactuur): string {
+  const soort = i.factuur ? (i.factuur.soort === "creditnota" ? "Creditnota" : "Factuur") : "Offerte";
+  return `${soort} ${i.nummer} – ${i.afzender.handelsnaam}.pdf`.replace(/[\\/:*?"<>|]/g, "");
 }
 
 export const rechtsvormTekst = (a: OfferteAfzender) =>

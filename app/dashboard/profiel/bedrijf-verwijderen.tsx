@@ -6,7 +6,7 @@ import { Input, Label } from "@/app/components/ui/input";
 import { deleteCompanyAction, type CompanyFormState } from "@/app/lib/actions/companies";
 
 // Alleen getoond bij meer dan één bedrijf. Een rode tekstregel; tikken opent de bevestiging in de pagina.
-export function BedrijfVerwijderen({ company, abonnementLoopt }: { company: { id: string; naam: string }; abonnementLoopt: boolean }) {
+export function BedrijfVerwijderen({ company, abonnementLoopt, facturen = { aantal: 0, geexporteerd: true } }: { company: { id: string; naam: string }; abonnementLoopt: boolean; facturen?: { aantal: number; geexporteerd: boolean } }) {
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState("");
   const action = deleteCompanyAction.bind(null, company.id);
@@ -32,6 +32,15 @@ export function BedrijfVerwijderen({ company, abonnementLoopt }: { company: { id
               ? "Het abonnement van dit bedrijf loopt nog. Zeg het eerst op via Abonnement wijzigen; daarna kun je het bedrijf verwijderen."
               : "Er loopt geen abonnement meer voor dit bedrijf, dus je betaalt er na het verwijderen niets meer voor."}
           </p>
+          {facturen.aantal > 0 && (
+            <p className="rounded-lg border border-border bg-card p-3 text-foreground">
+              Dit bedrijf heeft <strong>{facturen.aantal} {facturen.aantal === 1 ? "factuur" : "facturen"}</strong>. Facturen moet je 7 jaar bewaren.{" "}
+              {facturen.geexporteerd ? "Je hebt de export gedownload; bewaar die goed." : "Download eerst de volledige export (ZIP met alle PDF's en een CSV), anders kun je het bedrijf niet verwijderen. Ververs daarna deze pagina."}{" "}
+              <a className="font-semibold underline" href="/api/facturen/export?formaat=zip&ubl=1" download>
+                Export van alle facturen downloaden
+              </a>
+            </p>
+          )}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={`bevestig-${company.id}`}>Typ “{company.naam}” ter bevestiging</Label>
             <Input id={`bevestig-${company.id}`} name="bevestigingsNaam" value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" />

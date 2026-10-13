@@ -6,7 +6,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // wát getoond wordt, niet de inhoud; die komt uit de database.
 export type PrintPayload =
   | { k: "versie"; o: string; v: number; akkoord?: boolean; exp: number }
-  | { k: "voorbeeld"; n: string; akkoord?: boolean; optioneel?: boolean; exp: number };
+  | { k: "voorbeeld"; n: string; akkoord?: boolean; optioneel?: boolean; exp: number }
+  | { k: "factuur"; f: string; exp: number };
 
 const sleutel = () => createHmac("sha256", "offerte-print-v1").update(process.env.OFFERTE_PDF_SECRET ?? process.env.DATABASE_URL ?? "lokaal").digest();
 const b64 = (b: Buffer | string) => Buffer.from(b).toString("base64url");

@@ -242,6 +242,9 @@ model Company {
   offerteGegevens OfferteGegevens?
   offertesV2      OfferteV2[]
   offerteStandaardRegels OfferteStandaardRegel[]
+  facturen        Factuur[]
+  // Laatste keer dat de facturen van dit bedrijf zijn geëxporteerd (nodig voordat een bedrijf met facturen kan worden verwijderd).
+  factuurExportOp DateTime?
   id             String    @id @default(cuid())
   naam           String
   // Gezet voor een bedrijf van een gast (probeer-flow zonder account): tot
@@ -847,11 +850,21 @@ model Lead {
   notities LeadNote[]
   offerte  Offerte?
   offertesV2 OfferteV2[]
+  facturen   Factuur[]
 
   // Gezet door markExternAfgehandeldAction wanneer status EXTERN_AFGEHANDELD
   // wordt. Notitie is bewust optioneel — geen verplichte stap.
   externAfgehandeldOp      DateTime?
   externAfgehandeldNotitie String?
+
+  // Voortgang die de hovenier zelf bijhoudt (de rest van de fase wordt afgeleid, zie app/lib/lead-fase).
+  inContactOp          DateTime?
+  ingeplandStartweek   String?
+  ingeplandOp          DateTime?
+  opgeleverdOp         DateTime? @db.Date
+  verlorenReden        String?
+  verlorenOp           DateTime?
+  gebeurtenissen       LeadGebeurtenis[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -862,6 +875,19 @@ model Lead {
   // orderBy createdAt desc) — zonder deze index viel die query terug op
   // companyId-only uit de bovenstaande index plus een losse sort.
   @@index([companyId, createdAt])
+}
+
+// Handmatige stappen in het verloop van een lead (in contact, ingepland, opgeleverd, verloren); samen met de
+// gebeurtenissen van offerte en facturen vormen ze de tijdlijn.
+model LeadGebeurtenis {
+  id     String @id @default(cuid())
+  leadId String
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  soort  String
+  tekst  String?
+  createdAt DateTime @default(now())
+
+  @@index([leadId, createdAt])
 }
 
 // Individuele, los bewerkbare/verwijderbare aantekening bij een Lead (zie
@@ -1030,6 +1056,11 @@ model OfferteGegevens {
   // Berichten bij het delen van een offerte; {naam} {nummer} {onderwerp} {totaal} {geldigTot} {handelsnaam} {link}.
   deelTekst       String?
   herinneringTekst String?
+  // Facturen: voorvoegsel van de reeks (F2026-0001), apart voorvoegsel voor creditnota's, betaaltermijn en bericht bij versturen.
+  factuurPrefix   String  @default("F")
+  creditPrefix    String  @default("C")
+  factuurBetaaltermijnDagen Int @default(14)
+  factuurDeelTekst String?
   // Standaard btw-tarief per regeltype, bijv. {"arbeid":21,"materiaal":21,"planten":9}.
   btwStandaard    Json?
 
@@ -1071,6 +1102,7 @@ enum OfferteGebeurtenisSoort {
 // Eén offerte (dossier) met een uniek nummer per bedrijf. De inhoud staat per
 // versie in OfferteVersie; een verstuurde versie is onveranderlijk.
 model OfferteV2 {
+  facturen  Factuur[]
   id        String  @id @default(cuid())
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -1180,4 +1212,143 @@ model OfferteStandaardRegel {
   createdAt   DateTime @default(now())
 
   @@index([companyId])
+}
+
+
+// ─── Facturen ────────────────────────────────────────────────────────────
+// Een factuur is een concept tot "Definitief maken": dan krijgt hij zijn nummer en een snapshot van alle gegevens
+// en is hij onveranderlijk (ook op databaseniveau: zie de trigger in migratie 20261019090000_facturen).
+// Correcties gaan via een creditnota. Facturen worden niet verwijderd (bewaarplicht 7 jaar).
+
+enum FactuurType {
+  FACTUUR
+  TERMIJN
+  EINDFACTUUR
+  CREDITNOTA
+}
+
+enum FactuurStatus {
+  CONCEPT
+  DEFINITIEF
+  VERSTUURD
+  DEELS_BETAALD
+  BETAALD
+  GECREDITEERD
+}
+
+enum BetaalMethode {
+  OVERBOEKING
+  CONTANT
+  PIN
+  BETAALLINK
+  OVERIG
+}
+
+enum FactuurGebeurtenisSoort {
+  AANGEMAAKT
+  DEFINITIEF
+  VERZONDEN
+  BEKEKEN
+  BETALING
+  HERINNERING
+  AANMANING
+  LAATSTE_HERINNERING
+  CREDITNOTA
+  NOTITIE
+}
+
+model Factuur {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  leadId    String?
+  lead      Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  offerteId String?
+  offerte   OfferteV2? @relation(fields: [offerteId], references: [id], onDelete: SetNull)
+  offerteVersie Int?
+
+  // Reeks "F" (facturen) of "C" (creditnota's): elk een eigen doorlopende teller per bedrijf en jaar.
+  reeks     String  @default("F")
+  // Null zolang het een concept is.
+  nummer    String?
+  jaar      Int?
+  volgnummer Int?
+  type      FactuurType   @default(FACTUUR)
+  status    FactuurStatus @default(CONCEPT)
+
+  factuurdatum   DateTime? @db.Date
+  vervaldatum    DateTime? @db.Date
+  uitvoeringVan  DateTime? @db.Date
+  uitvoeringTot  DateTime? @db.Date
+
+  // Volledige inhoud (afzender, klant, projectadres, regels, btw-modus, betaalgegevens): zie app/lib/factuur/model.ts.
+  inhoud Json
+  totaalExclCenten Int @default(0)
+  totaalBtwCenten  Int @default(0)
+  totaalInclCenten Int @default(0)
+
+  // Onraadbare token voor de publieke factuurpagina; pas bruikbaar vanaf definitief.
+  token     String  @unique
+  betaallink String?
+  notities  String?
+
+  // Creditnota verwijst naar de oorspronkelijke factuur.
+  creditVoorId String?
+  creditVoor   Factuur?  @relation("Credit", fields: [creditVoorId], references: [id], onDelete: Restrict)
+  creditnotas  Factuur[] @relation("Credit")
+
+  definitiefOp    DateTime?
+  verstuurdOp     DateTime?
+  eersteBekekenOp DateTime?
+  // PDF zoals definitief gemaakt, met SHA-256 (eenmalig te vullen).
+  pdfData Bytes?
+  pdfHash String?
+
+  betalingen     FactuurBetaling[]
+  gebeurtenissen FactuurGebeurtenis[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, nummer])
+  @@index([companyId, status])
+  @@index([leadId])
+  @@index([offerteId])
+  @@index([companyId, factuurdatum])
+}
+
+model FactuurBetaling {
+  id        String  @id @default(cuid())
+  factuurId String
+  factuur   Factuur @relation(fields: [factuurId], references: [id], onDelete: Cascade)
+  datum     DateTime @db.Date
+  bedragCenten Int
+  methode   BetaalMethode @default(OVERBOEKING)
+  notitie   String?
+  createdAt DateTime @default(now())
+
+  @@index([factuurId])
+}
+
+model FactuurGebeurtenis {
+  id        String  @id @default(cuid())
+  factuurId String
+  factuur   Factuur @relation(fields: [factuurId], references: [id], onDelete: Cascade)
+  soort     FactuurGebeurtenisSoort
+  tekst     String?
+  bedragCenten Int?
+  createdAt DateTime @default(now())
+
+  @@index([factuurId, createdAt])
+}
+
+// Teller voor factuurnummers per bedrijf, reeks en jaar. Wordt in dezelfde transactie opgehoogd als waarin de
+// factuur definitief wordt: een mislukte poging laat geen gat achter, twee gelijktijdige krijgen nooit hetzelfde nummer.
+model FactuurNummerTeller {
+  companyId String
+  reeks     String
+  jaar      Int
+  laatste   Int    @default(0)
+
+  @@id([companyId, reeks, jaar])
 }

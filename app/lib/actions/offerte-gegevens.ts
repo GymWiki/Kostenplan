@@ -50,6 +50,10 @@ export async function saveOfferteGegevensAction(invoer: Partial<OfferteGegevensW
     btwStandaard: invoer.btwStandaard === undefined ? undefined : (invoer.btwStandaard ?? undefined),
     deelTekst: t(invoer.deelTekst),
     herinneringTekst: t(invoer.herinneringTekst),
+    factuurPrefix: t(invoer.factuurPrefix)?.replace(/[^A-Za-z0-9-]/g, "").slice(0, 10),
+    creditPrefix: t(invoer.creditPrefix)?.replace(/[^A-Za-z0-9-]/g, "").slice(0, 10),
+    factuurBetaaltermijnDagen: invoer.factuurBetaaltermijnDagen,
+    factuurDeelTekst: t(invoer.factuurDeelTekst),
   };
   // Lege tekst betekent "terug naar standaard" voor de lange teksten en de KOR-tekst.
   const schoon = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined));

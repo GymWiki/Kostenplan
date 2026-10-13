@@ -27,6 +27,9 @@ export type OfferteRegel = {
   kortingPct?: number;
   // Toelichting onder de regel (bijv. "geschat, op nacalculatie").
   toelichting?: string;
+  // Alleen op facturen: "Meerwerk", "Reeds gefactureerd" (aftrek van een eerdere factuur) of een stelpost
+  // waarvan de werkelijke hoeveelheid nog moet worden ingevuld vóór de factuur definitief wordt.
+  label?: "meerwerk" | "reeds-gefactureerd" | "stelpost-open";
 };
 
 export type OfferteSectie = {

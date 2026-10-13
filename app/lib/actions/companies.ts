@@ -1,5 +1,6 @@
 "use server";
 
+import { factuurExportStatus } from "@/app/lib/factuur/export-server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -295,6 +296,12 @@ export async function deleteCompanyAction(
   }
   if (!["GEEN", "CANCELED", "COMPLETED"].includes(company.subscriptionStatus)) {
     return { error: "Zeg eerst het abonnement op voordat je dit bedrijf verwijdert." };
+  }
+
+  // Facturen moeten 7 jaar bewaard blijven: zonder een volledige export (na de laatste factuur) verdwijnen ze niet.
+  const facturen = await factuurExportStatus(companyId);
+  if (facturen.aantal > 0 && !facturen.geexporteerd) {
+    return { error: `Dit bedrijf heeft ${facturen.aantal} ${facturen.aantal === 1 ? "factuur" : "facturen"}. Download eerst de volledige export van je facturen; die moet je 7 jaar bewaren.` };
   }
 
   const parsed = deleteCompanySchema.safeParse({

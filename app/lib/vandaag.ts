@@ -1,5 +1,6 @@
 import { prisma } from "@/app/lib/prisma";
 import { eersteRegelNaam } from "@/app/lib/lead-weergave";
+import { laadFactuurOverzicht, LEEG_FACTUUR_OVERZICHT, type FactuurOverzichtData } from "@/app/lib/factuur/overzicht";
 import { laadOfferteTips, type OfferteTip } from "@/app/lib/offerte/tips";
 
 export { eersteRegelNaam };
@@ -14,6 +15,7 @@ export type VandaagData = {
   laatsteNieuweLeads: VandaagLead[];
   wachtendeOffertes: { aantal: number; lijst: VandaagOfferte[] };
   offerteTips: OfferteTip[];
+  facturen: FactuurOverzichtData;
   checklist: { toolId: string; toolNaam: string; stappen: ChecklistStap[] } | null;
   leadsDezeMaand: number;
   toolsLive: number;
@@ -38,7 +40,7 @@ export async function laadVandaag(companyId: string): Promise<VandaagData> {
   beginVanMaand.setDate(1);
   beginVanMaand.setHours(0, 0, 0, 0);
 
-  const [nieuw, nieuweLijst, offertes, leadsDezeMaand, tools, offerteTips] = await Promise.all([
+  const [nieuw, nieuweLijst, offertes, leadsDezeMaand, tools, offerteTips, facturen] = await Promise.all([
     prisma.lead.count({ where: { companyId, status: "NIEUW" } }),
     prisma.lead.findMany({
       where: { companyId, status: "NIEUW" },
@@ -59,6 +61,7 @@ export async function laadVandaag(companyId: string): Promise<VandaagData> {
       select: { id: true, naam: true, status: true },
     }),
     laadOfferteTips(companyId).catch(() => []),
+    laadFactuurOverzicht(companyId).catch(() => LEEG_FACTUUR_OVERZICHT),
   ]);
 
   // Checklist voor de eerste rekentool die nog niet af is (anders de eerste):
@@ -111,6 +114,7 @@ export async function laadVandaag(companyId: string): Promise<VandaagData> {
       lijst: offertes.slice(0, 3).map((o) => ({ leadId: o.leadId, naam: o.lead.naam, bedrag: o.lead.totaalIndicatie, verstuurdOp: o.verstuurdOp })),
     },
     offerteTips,
+    facturen,
     checklist,
     leadsDezeMaand,
     toolsLive: tools.filter((t) => t.status === "GEPUBLICEERD").length,

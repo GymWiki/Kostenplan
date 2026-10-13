@@ -11,18 +11,20 @@ import { DropdownMenu } from "@/app/components/ui/dropdown-menu";
 import { Select } from "@/app/components/ui/input";
 import { SegmentedControl } from "@/app/components/mobile/segmented-control";
 import { formatCurrency } from "@/app/lib/format";
-import { LEAD_STATUS_LABELS, whatsappLink } from "@/app/lib/leads";
+import { whatsappLink } from "@/app/lib/leads";
 import { eersteRegelNaam } from "@/app/lib/lead-weergave";
 import { relatieveTijd } from "@/app/components/dashboard/recente-aanvragen";
 import { cn } from "@/app/lib/cn";
 import { AfhandelKeuzeModal } from "./afhandel-keuze-modal";
+import { FASE_LABEL } from "@/app/lib/lead-fase";
 import type { LeadWithNotes } from "./leads-view";
 
 export type LeadFilter = "nieuw" | "open" | "alles";
 
 export function filterLeads(leads: LeadWithNotes[], filter: LeadFilter): LeadWithNotes[] {
-  if (filter === "nieuw") return leads.filter((l) => l.status === "NIEUW");
-  if (filter === "open") return leads.filter((l) => l.status === "NIEUW" || l.status === "IN_BEHANDELING" || l.status === "OFFERTE_VERSTUURD");
+  if (filter === "nieuw") return leads.filter((l) => l.voortgang.fase === "nieuw");
+  // Open = alles wat nog loopt (ook akkoord, ingepland, te factureren en openstaand), niet afgerond of verloren.
+  if (filter === "open") return leads.filter((l) => !["betaald", "verloren", "afgewezen", "offerte-verlopen"].includes(l.voortgang.fase));
   return leads;
 }
 
@@ -96,7 +98,7 @@ export function LeadsMobiel({
   const { trek, bezig } = useTrekVernieuwen();
   const [afhandelId, setAfhandelId] = useState<string | null>(null);
   const zichtbaar = useMemo(() => filterLeads(leads, filter), [leads, filter]);
-  const aantalNieuw = leads.filter((l) => l.status === "NIEUW").length;
+  const aantalNieuw = leads.filter((l) => l.voortgang.fase === "nieuw").length;
 
   return (
     <div className="flex flex-col gap-3 pb-24 md:hidden">
@@ -161,8 +163,10 @@ export function LeadsMobiel({
                       {eersteRegelNaam(l.snapshot)} · {relatieveTijd(l.createdAt)}
                     </span>
                     <LocatieLabels snapshot={l.snapshot} className="mt-1" />
+                    {l.voortgang.actie && <span className="mt-0.5 block text-sm font-medium text-foreground">Volgende: {l.voortgang.actie.label}</span>}
                     <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                      <span className={cn("inline-block rounded-full px-2 py-0.5 text-xs font-semibold", nieuw ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground")}>{LEAD_STATUS_LABELS[l.status]}</span>
+                      <span className={cn("inline-block rounded-full px-2 py-0.5 text-xs font-semibold", nieuw ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground")}>{FASE_LABEL[l.voortgang.fase]}</span>
+                      {l.voortgang.teLaatDagen ? <span className="inline-block rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">{l.voortgang.teLaatDagen} d te laat</span> : null}
                       {l.offerte && <OfferteStatusBadge offerte={l.offerte} />}
                       {l.offerte && !l.offerte.reactieGezien && <span className="animate-soft-pulse h-2 w-2 rounded-full bg-accent" aria-label="Klant heeft gereageerd" />}
                     </span>

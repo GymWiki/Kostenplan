@@ -25,6 +25,8 @@ import {
 import { BTW_TARIEVEN, REGEL_SOORT_LABEL, btwVoorSoort, type RegelSoort } from "@/app/lib/offerte/btw-config";
 import { formatteerOfferteNummer } from "@/app/lib/offerte/nummer-formaat";
 import { STANDAARD_DEELTEKST, STANDAARD_HERINNERINGSTEKST } from "@/app/lib/offerte/berichten";
+import { STANDAARD_FACTUURTEKST } from "@/app/lib/factuur/berichten";
+import { formatteerFactuurNummer } from "@/app/lib/factuur/nummer";
 
 // Velden-groepen die de wizard één voor één kan vragen (zelfde sleutels als
 // ontbrekendeVerplichteGegevens() in app/lib/offerte/gegevens.ts).
@@ -34,7 +36,7 @@ export type VeldGroep = "handelsnaam" | "kvkNummer" | "statutaireZetel" | "adres
 // alleen wat bij offertes hoort (Profiel → Offerte-instellingen). Zo staat elk veld op precies één plek.
 export type FormulierModus = "alles" | "bedrijf" | "offerte";
 const BEDRIJF_VELDEN = ["handelsnaam", "rechtsvorm", "statutaireNaam", "statutaireZetel", "kvkNummer", "adresRegel", "postcode", "plaats", "btwId", "korActief", "korTekst", "iban", "ibanTenaamstelling", "telefoon", "email", "website", "contactNaam", "contactFunctie"] as const;
-const OFFERTE_VELDEN = ["nummerPrefix", "geldigheidDagen", "betaalPreset", "betaalTermijnen", "introTekst", "slotTekst", "voorwaardenBlokken", "herroepingTekst", "btwStandaard", "deelTekst", "herinneringTekst"] as const;
+const OFFERTE_VELDEN = ["nummerPrefix", "geldigheidDagen", "betaalPreset", "betaalTermijnen", "introTekst", "slotTekst", "voorwaardenBlokken", "herroepingTekst", "btwStandaard", "deelTekst", "herinneringTekst", "factuurPrefix", "creditPrefix", "factuurBetaaltermijnDagen", "factuurDeelTekst"] as const;
 
 export function OfferteGegevensFormulier({
   start,
@@ -404,6 +406,27 @@ export function OfferteGegevensFormulier({
             <Field label="Bericht bij een herinnering" htmlFor="og-herinneringTekst" hint="Je krijgt een tip om een herinnering te sturen als een offerte binnen 3 dagen verloopt of 7 dagen zonder reactie openstaat.">
               <Textarea id="og-herinneringTekst" className="min-h-44" value={g.herinneringTekst} onChange={(e) => zet("herinneringTekst", e.target.value)} />
               <button type="button" className="w-fit text-sm font-semibold underline" onClick={() => zet("herinneringTekst", STANDAARD_HERINNERINGSTEKST)}>
+                Standaardtekst terugzetten
+              </button>
+            </Field>
+          </fieldset>
+          <fieldset className="flex flex-col gap-4">
+            <legend className="mb-1 text-base font-bold text-foreground">Facturen</legend>
+            <p className="text-sm text-muted-foreground">Een factuur krijgt bij “Definitief maken” een doorlopend nummer dat nooit wordt hergebruikt. Creditnota’s hebben een eigen reeks.</p>
+            <div className={groep}>
+              <Field label="Voorvoegsel factuurnummer" htmlFor="og-factuurPrefix" hint={`Bijvoorbeeld ${formatteerFactuurNummer(g.factuurPrefix || "F", new Date().getFullYear(), 1)}.`} error={fouten.factuurPrefix}>
+                <Input id="og-factuurPrefix" value={g.factuurPrefix} maxLength={10} onChange={(e) => zet("factuurPrefix", e.target.value)} />
+              </Field>
+              <Field label="Voorvoegsel creditnota" htmlFor="og-creditPrefix" hint={`Bijvoorbeeld ${formatteerFactuurNummer(g.creditPrefix || "C", new Date().getFullYear(), 1)}.`} error={fouten.creditPrefix}>
+                <Input id="og-creditPrefix" value={g.creditPrefix} maxLength={10} onChange={(e) => zet("creditPrefix", e.target.value)} />
+              </Field>
+            </div>
+            <Field label="Betaaltermijn in dagen" htmlFor="og-factuurBetaaltermijnDagen" hint="De vervaldatum is de factuurdatum plus deze termijn. Per factuur aan te passen." error={fouten.factuurBetaaltermijnDagen}>
+              <Input id="og-factuurBetaaltermijnDagen" inputMode="numeric" className="max-w-[10rem]" value={String(g.factuurBetaaltermijnDagen)} onChange={(e) => zet("factuurBetaaltermijnDagen", Number(e.target.value.replace(/\D/g, "")) || 0)} />
+            </Field>
+            <Field label="Bericht bij het versturen van een factuur" htmlFor="og-factuurDeelTekst" hint="Beschikbaar: {naam} {nummer} {totaal} {vervaldatum} {iban} {handelsnaam} {contactNaam} {link}.">
+              <Textarea id="og-factuurDeelTekst" className="min-h-44" value={g.factuurDeelTekst} onChange={(e) => zet("factuurDeelTekst", e.target.value)} />
+              <button type="button" className="w-fit text-sm font-semibold underline" onClick={() => zet("factuurDeelTekst", STANDAARD_FACTUURTEKST)}>
                 Standaardtekst terugzetten
               </button>
             </Field>

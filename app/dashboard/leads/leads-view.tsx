@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useOptimistic, useState, useSyncExternalStore, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { LayoutGrid, List, TrendingUp, Users, Trophy, Target } from "lucide-react";
 import { cn } from "@/app/lib/cn";
 import { formatCurrency } from "@/app/lib/format";
@@ -12,12 +13,15 @@ import { HelpTip } from "@/app/components/ui/help-tip";
 import { ProFeatureLock } from "@/app/components/dashboard/pro-feature-lock";
 import { updateLeadStatusAction } from "@/app/lib/actions/leads";
 import { telItMeeVoorPipeline } from "@/app/lib/leads";
+import { FaseChips } from "./fase-chips";
+import { FASE_FILTERS, valtOnderFilter, type FaseFilter } from "@/app/lib/lead-fase";
 import { LeadsTable } from "./leads-table";
 import { MARKERING_FILTER_OPTIES, leadMarkeringen } from "@/app/lib/werkgebied/lead-markeringen";
 import { LeadDetailDrawer, type LeadStart } from "./lead-detail-drawer";
 import { LeadsMobiel, type LeadFilter } from "./leads-mobiel";
 import type { Lead, LeadNote, LeadStatus, Offerte, OfferteV2Status } from "@/app/generated/prisma/client";
 import { OFFERTE_FILTER_OPTIES, leadOfferteStatus } from "@/app/lib/offerte/lead-status";
+import type { LeadVoortgang } from "@/app/lib/lead-voortgang";
 import type { LeadSnapshot } from "@/app/lib/leads";
 import type { OfferteRegel } from "@/app/lib/offertes";
 import type { HelpContentKey } from "@/app/lib/helpContent";
@@ -25,6 +29,7 @@ import type { HelpContentKey } from "@/app/lib/helpContent";
 export type LeadWithNotes = Omit<Lead, "snapshot"> & {
   snapshot: LeadSnapshot;
   notities: LeadNote[];
+  voortgang: LeadVoortgang;
   offerte: (Omit<Offerte, "regels"> & { regels: OfferteRegel[]; v2Status?: OfferteV2Status }) | null;
 };
 
@@ -99,6 +104,9 @@ export function LeadsView({
   const offerteFilter = searchParams.get("offerte") ?? "alle";
   // Filter op werkgebied en minimum (?markering=buiten|minimum|niet-gecontroleerd).
   const markeringFilter = searchParams.get("markering") ?? "alle";
+  // Filter op fase (?fase=nieuw|offerte|akkoord|te-factureren|openstaand|te-laat|afgerond).
+  const faseParam = searchParams.get("fase");
+  const faseFilter: FaseFilter = FASE_FILTERS.some((f) => f.waarde === faseParam) ? (faseParam as FaseFilter) : "alle";
 
   const updateQuery = useCallback(
     (patch: Record<string, string | null>) => {
@@ -140,18 +148,20 @@ export function LeadsView({
 
   // Mobiele statusfilter (?status=): zonder keuze starten we bij Nieuw als er
   // nieuwe aanvragen zijn, anders bij Open.
-  const heeftNieuw = optimisticLeads.some((l) => l.status === "NIEUW");
+  const heeftNieuw = optimisticLeads.some((l) => l.voortgang.fase === "nieuw");
   const statusParam = searchParams.get("status");
-  const mobielFilter: LeadFilter = statusParam === "nieuw" || statusParam === "open" || statusParam === "alles" ? statusParam : heeftNieuw ? "nieuw" : "open";
+  // Met een fasefilter (chips) tonen we altijd alles wat daaronder valt.
+  const mobielFilter: LeadFilter = faseFilter !== "alle" ? "alles" : statusParam === "nieuw" || statusParam === "open" || statusParam === "alles" ? statusParam : heeftNieuw ? "nieuw" : "open";
 
   const selectedLead = optimisticLeads.find((lead) => lead.id === selectedLeadId) ?? null;
 
+  const opToolLeads = useMemo(() => (toolFilter === "alle" ? optimisticLeads : optimisticLeads.filter((lead) => lead.toolId === toolFilter)), [optimisticLeads, toolFilter]);
   const zichtbareLeads = useMemo(() => {
-    const opTool = toolFilter === "alle" ? optimisticLeads : optimisticLeads.filter((lead) => lead.toolId === toolFilter);
+    const opTool = faseFilter === "alle" ? opToolLeads : opToolLeads.filter((lead) => valtOnderFilter(lead.voortgang, faseFilter));
     const opOfferte = offerteFilter === "alle" ? opTool : opTool.filter((lead) => leadOfferteStatus(lead).sleutel === offerteFilter);
     const soort = MARKERING_FILTER_OPTIES.find((o) => o.waarde === markeringFilter)?.soort ?? null;
     return soort ? opOfferte.filter((lead) => leadMarkeringen(lead.snapshot).includes(soort)) : opOfferte;
-  }, [optimisticLeads, toolFilter, offerteFilter, markeringFilter]);
+  }, [opToolLeads, faseFilter, offerteFilter, markeringFilter]);
   // Het filter verschijnt pas als er iets te filteren valt.
   const toonMarkeringFilter = useMemo(() => optimisticLeads.some((lead) => leadMarkeringen(lead.snapshot).length > 0), [optimisticLeads]);
 
@@ -193,8 +203,15 @@ export function LeadsView({
     );
   }
 
+  const chips = (
+    <div className="flex flex-col gap-1">
+      <FaseChips leads={opToolLeads} waarde={faseFilter} onKies={(f) => updateQuery({ fase: f === "alle" ? null : f })} />
+      <Link href="/dashboard/facturen" className="inline-flex min-h-11 items-center self-start text-sm font-semibold text-primary underline-offset-2 hover:underline">Alle facturen en export</Link>
+    </div>
+  );
   return (
     <div className="flex flex-col gap-6">
+      <div className="md:hidden">{chips}</div>
       <LeadsMobiel
         leads={zichtbareLeads}
         filter={mobielFilter}
@@ -291,6 +308,8 @@ export function LeadsView({
           <HelpTip contentKey="leads.statusKolommen" />
         </div>
       </div>
+
+      <div className="hidden md:block">{chips}</div>
 
       <div className="hidden gap-4 md:grid [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
         <KpiCard
