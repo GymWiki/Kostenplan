@@ -169,7 +169,7 @@ async function seedA(n: number) {
   const regelId = (orig.inhoud as unknown as { secties: { regels: { id: string }[] }[] }).secties[0].regels[2].id;
   const credit = await maakCreditnotaConcept(db, { factuurId: facturen["credit-orig"], companyId: c1.id, regelIds: [regelId], instellingen: { betaaltermijnDagen: 14 } });
   await maakFactuurDefinitief(db, { factuurId: credit.id, companyId: c1.id, afzender: AFZENDER_OK, prefix: { factuur: "F", credit: "C" } });
-  await herberekenFactuurStatus(db, facturen["credit-orig"]);
+  await herberekenFactuurStatus(db, facturen["credit-orig"], c1.id);
   facturen["creditnota"] = credit.id;
   await L("verloren", { naam: "Vic Verloren", status: "VERLOREN", offerte: "VERSTUURD", extra: { verlorenReden: "Te duur", verlorenOp: dag(-1) } });
   // een lead buiten het werkgebied en een onder het minimum, zoals de rekentool ze aanlevert
