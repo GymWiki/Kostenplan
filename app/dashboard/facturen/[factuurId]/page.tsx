@@ -60,7 +60,7 @@ export default async function FactuurPagina({ params }: { params: Promise<{ fact
       versies={[]}
       standaardRegels={standaardRegels.map((r) => ({ id: r.id, omschrijving: r.omschrijving, eenheid: r.eenheid, prijsCenten: r.prijsCenten, btw: r.btw, soort: r.soort }))}
       btwStandaard={gegevens.btwStandaard as Partial<Record<RegelSoort, number>> | null}
-      factuur={{ id: f.id, status: f.status, terug: f.leadId ? `/dashboard/leads?lead=${f.leadId}` : "/dashboard/leads", beheer }}
+      factuur={{ id: f.id, status: f.status, verstuurdOp: f.verstuurdOp ? f.verstuurdOp.toISOString() : null, terug: f.leadId ? `/dashboard/leads?lead=${f.leadId}` : "/dashboard/leads", beheer }}
     />
   );
 }
