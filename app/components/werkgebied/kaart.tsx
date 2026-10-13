@@ -48,7 +48,7 @@ export function WerkgebiedKaart({
         L.circleMarker(p, { radius: 7, color: "#ffffff", weight: 2, fillColor: kleur, fillOpacity: 1 }).bindTooltip(start.label ?? "Je vestigingsadres").addTo(kaart);
         if (straalKm && straalKm > 0) {
           const c = L.circle(p, { radius: straalKm * 1000, color: kleur, weight: 2, fillColor: kleur, fillOpacity: 0.12 }).addTo(kaart);
-          const b = c.getBounds();
+          const b = L.latLng(p).toBounds(straalKm * 2000); // niet c.getBounds(): een cirkel heeft pas een kaart zodra die een weergave heeft
           groep.push(b.getNorthEast(), b.getSouthWest());
         }
       }

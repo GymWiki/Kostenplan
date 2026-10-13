@@ -78,6 +78,7 @@ async function vulKlus(p, meter = "20") {
   // ── 1. Instellingen (Profiel), desktop en mobiel ──
   zet(null);
   for (const [naam, vp] of [["desktop-1440", { width: 1440, height: 1100 }], ["mobiel-412", { width: 412, height: 915 }]]) {
+    zet(null);
     p = await nieuwe(b, vp, { inloggen: true });
     await p.goto(`${BASE}/dashboard/profiel`, { waitUntil: "networkidle" });
     if (vp.width < 600) {
