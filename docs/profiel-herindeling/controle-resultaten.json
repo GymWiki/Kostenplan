@@ -1,0 +1,334 @@
+[
+  {
+    "n": "1-een-bedrijf-pro-actief mobiel-412: kop, vier groepen en uitloggen",
+    "ok": true
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief mobiel-412: 'Bedrijf verwijderen' staat niet op Profiel",
+    "ok": true
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief mobiel-412: elke regel is ≥ 56 px hoog (12 regels)",
+    "ok": true,
+    "d": "[]"
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief mobiel-412: abonnement 'Pro · verlengt op 12 november'",
+    "ok": true
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief mobiel-412: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief desktop-1440: kop, vier groepen en uitloggen",
+    "ok": true
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief desktop-1440: 'Bedrijf verwijderen' staat niet op Profiel",
+    "ok": true
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief desktop-1440: elke regel is ≥ 56 px hoog (8 regels)",
+    "ok": true,
+    "d": "[]"
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief desktop-1440: abonnement 'Pro · verlengt op 12 november'",
+    "ok": true
+  },
+  {
+    "n": "1-een-bedrijf-pro-actief desktop-1440: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "2-opgezegd mobiel-412: kop, vier groepen en uitloggen",
+    "ok": true
+  },
+  {
+    "n": "2-opgezegd mobiel-412: 'Bedrijf verwijderen' staat niet op Profiel",
+    "ok": true
+  },
+  {
+    "n": "2-opgezegd mobiel-412: elke regel is ≥ 56 px hoog (12 regels)",
+    "ok": true,
+    "d": "[]"
+  },
+  {
+    "n": "2-opgezegd mobiel-412: abonnement 'Pro tot 12 november, daarna Gratis'",
+    "ok": true
+  },
+  {
+    "n": "2-opgezegd mobiel-412: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "2-opgezegd desktop-1440: kop, vier groepen en uitloggen",
+    "ok": true
+  },
+  {
+    "n": "2-opgezegd desktop-1440: 'Bedrijf verwijderen' staat niet op Profiel",
+    "ok": true
+  },
+  {
+    "n": "2-opgezegd desktop-1440: elke regel is ≥ 56 px hoog (8 regels)",
+    "ok": true,
+    "d": "[]"
+  },
+  {
+    "n": "2-opgezegd desktop-1440: abonnement 'Pro tot 12 november, daarna Gratis'",
+    "ok": true
+  },
+  {
+    "n": "2-opgezegd desktop-1440: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "3-twee-bedrijven mobiel-412: kop, vier groepen en uitloggen",
+    "ok": true
+  },
+  {
+    "n": "3-twee-bedrijven mobiel-412: 'Bedrijf verwijderen' staat niet op Profiel",
+    "ok": true
+  },
+  {
+    "n": "3-twee-bedrijven mobiel-412: elke regel is ≥ 56 px hoog (12 regels)",
+    "ok": true,
+    "d": "[]"
+  },
+  {
+    "n": "3-twee-bedrijven mobiel-412: knop 'Wisselen' bij de kop",
+    "ok": true
+  },
+  {
+    "n": "3-twee-bedrijven mobiel-412: sheet met bedrijven, vinkje en '+ Bedrijf toevoegen'",
+    "ok": true
+  },
+  {
+    "n": "3-twee-bedrijven mobiel-412: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "3-twee-bedrijven desktop-1440: kop, vier groepen en uitloggen",
+    "ok": true
+  },
+  {
+    "n": "3-twee-bedrijven desktop-1440: 'Bedrijf verwijderen' staat niet op Profiel",
+    "ok": true
+  },
+  {
+    "n": "3-twee-bedrijven desktop-1440: elke regel is ≥ 56 px hoog (8 regels)",
+    "ok": true,
+    "d": "[]"
+  },
+  {
+    "n": "3-twee-bedrijven desktop-1440: knop 'Wisselen' bij de kop",
+    "ok": true
+  },
+  {
+    "n": "3-twee-bedrijven desktop-1440: sheet met bedrijven, vinkje en '+ Bedrijf toevoegen'",
+    "ok": true
+  },
+  {
+    "n": "3-twee-bedrijven desktop-1440: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "ontbrekende gegevens mobiel-412: Profiel toont een concrete tekst",
+    "ok": true,
+    "d": "4 gegevens ontbreken voor offertes"
+  },
+  {
+    "n": "ontbrekende gegevens mobiel-412: oranje badge op het Profiel-icoon in de tabbalk",
+    "ok": true
+  },
+  {
+    "n": "bedrijfsgegevens mobiel-412: alle officiële velden op één pagina",
+    "ok": true
+  },
+  {
+    "n": "bedrijfsgegevens mobiel-412: geen offerte-instellingen op deze pagina",
+    "ok": true
+  },
+  {
+    "n": "bedrijfsgegevens mobiel-412: 'Bedrijf verwijderen' niet zichtbaar bij één bedrijf",
+    "ok": true
+  },
+  {
+    "n": "bedrijfsgegevens mobiel-412: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "ontbrekende gegevens desktop-1440: Profiel toont een concrete tekst",
+    "ok": true,
+    "d": "4 gegevens ontbreken voor offertes"
+  },
+  {
+    "n": "bedrijfsgegevens desktop-1440: alle officiële velden op één pagina",
+    "ok": true
+  },
+  {
+    "n": "bedrijfsgegevens desktop-1440: geen offerte-instellingen op deze pagina",
+    "ok": true
+  },
+  {
+    "n": "bedrijfsgegevens desktop-1440: 'Bedrijf verwijderen' niet zichtbaar bij één bedrijf",
+    "ok": true
+  },
+  {
+    "n": "bedrijfsgegevens desktop-1440: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "automatisch opslaan: status 'Opgeslagen' en waarde in de database",
+    "ok": true,
+    "d": "Opgeslagen | 06 99887766"
+  },
+  {
+    "n": "automatisch opslaan: bedrijfsnaam volgt de handelsnaam",
+    "ok": true,
+    "d": "Hoveniersbedrijf De Vries BV"
+  },
+  {
+    "n": "offerte-instellingen mobiel-412: nummering, geldigheid, betaling, teksten, voorwaarden, herroeping",
+    "ok": true
+  },
+  {
+    "n": "offerte-instellingen mobiel-412: geen bedrijfsgegevens op deze pagina",
+    "ok": true
+  },
+  {
+    "n": "offerte-instellingen desktop-1440: nummering, geldigheid, betaling, teksten, voorwaarden, herroeping",
+    "ok": true
+  },
+  {
+    "n": "offerte-instellingen desktop-1440: geen bedrijfsgegevens op deze pagina",
+    "ok": true
+  },
+  {
+    "n": "tarieven mobiel-412: pagina laadt (200)",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "tarieven desktop-1440: pagina laadt (200)",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "werkgebied mobiel-412: pagina laadt (200)",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "werkgebied desktop-1440: pagina laadt (200)",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "abonnement mobiel-412: pagina laadt (200)",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "abonnement desktop-1440: pagina laadt (200)",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "huisstijl mobiel-412: pagina laadt (200)",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "huisstijl desktop-1440: pagina laadt (200)",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "account mobiel-412: pagina laadt (200)",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "account desktop-1440: pagina laadt (200)",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "twee bedrijven mobiel-412: 'Bedrijf verwijderen' onderaan Bedrijfsgegevens",
+    "ok": true
+  },
+  {
+    "n": "twee bedrijven desktop-1440: 'Bedrijf verwijderen' onderaan Bedrijfsgegevens",
+    "ok": true
+  },
+  {
+    "n": "oude route /dashboard/abonnement → /dashboard/profiel/abonnement",
+    "ok": true,
+    "d": "/dashboard/profiel/abonnement (200)"
+  },
+  {
+    "n": "oude route /dashboard/abonnement?checkout=afgerond → /dashboard/profiel/abonnement?checkout=afgerond",
+    "ok": true,
+    "d": "/dashboard/profiel/abonnement?checkout=afgerond (200)"
+  },
+  {
+    "n": "oude route /dashboard/branding → /dashboard/profiel/huisstijl",
+    "ok": true,
+    "d": "/dashboard/profiel/huisstijl (200)"
+  },
+  {
+    "n": "oude route /dashboard/profiel?scherm=bedrijf → /dashboard/profiel/bedrijfsgegevens",
+    "ok": true,
+    "d": "/dashboard/profiel/bedrijfsgegevens (200)"
+  },
+  {
+    "n": "oude route /dashboard/profiel?scherm=bedrijfsgegevens → /dashboard/profiel/bedrijfsgegevens",
+    "ok": true,
+    "d": "/dashboard/profiel/bedrijfsgegevens (200)"
+  },
+  {
+    "n": "oude route /dashboard/profiel?scherm=offertegegevens → /dashboard/profiel/bedrijfsgegevens",
+    "ok": true,
+    "d": "/dashboard/profiel/bedrijfsgegevens (200)"
+  },
+  {
+    "n": "oude route /dashboard/profiel?scherm=uiterlijk → /dashboard/profiel/huisstijl",
+    "ok": true,
+    "d": "/dashboard/profiel/huisstijl (200)"
+  },
+  {
+    "n": "oude route /dashboard/profiel?scherm=tarieven → /dashboard/profiel/tarieven",
+    "ok": true,
+    "d": "/dashboard/profiel/tarieven (200)"
+  },
+  {
+    "n": "oude route /dashboard/profiel?scherm=werkgebied → /dashboard/profiel/werkgebied",
+    "ok": true,
+    "d": "/dashboard/profiel/werkgebied (200)"
+  },
+  {
+    "n": "oude route /dashboard/profiel?scherm=abonnement → /dashboard/profiel/abonnement",
+    "ok": true,
+    "d": "/dashboard/profiel/abonnement (200)"
+  },
+  {
+    "n": "oude route /dashboard/profiel?scherm=account → /dashboard/profiel/account",
+    "ok": true,
+    "d": "/dashboard/profiel/account (200)"
+  },
+  {
+    "n": "geen instelling is op meer dan één instellingenpagina bewerkbaar",
+    "ok": true,
+    "d": "[]"
+  }
+]
