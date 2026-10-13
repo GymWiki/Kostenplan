@@ -6,6 +6,12 @@ import type { WerkgebiedInstellingen } from "@/app/lib/werkgebied/schema";
 const PLAN_NAAM: Record<SubscriptionTier, string> = { GRATIS: "Gratis", PLUS: "Plus", PRO: "Pro" };
 const datum = (d: Date) => new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long" }).format(d);
 
+// Korte planaanduiding in de bedrijfswisselaar: "Pro", "Gratis", "Pro · opgezegd".
+export function planKort(b: { plan: SubscriptionTier; status: MollieSubscriptionStatus; handmatigToegekend?: boolean }): string {
+  const naam = PLAN_NAAM[b.plan];
+  return b.plan !== "GRATIS" && !b.handmatigToegekend && b.status === "CANCELED" ? `${naam} · opgezegd` : naam;
+}
+
 export type AbonnementRegel = {
   tekst: string;
   // Oranje markering (opgezegd, betaling mislukt).
