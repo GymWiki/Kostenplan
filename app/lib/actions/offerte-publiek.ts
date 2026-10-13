@@ -55,7 +55,7 @@ export async function geefAkkoordAction(token: string, invoer: { naam: string; v
   } catch {
     return { ok: false, error: "Er is al op deze offerte gereageerd." };
   }
-  if (o.leadId) await prismaBasis.lead.updateMany({ where: { id: o.leadId }, data: { status: "GEWONNEN" } });
+  if (o.leadId) await prismaBasis.lead.updateMany({ where: { id: o.leadId, companyId: o.companyId }, data: { status: "GEWONNEN" } });
 
   // Getekende PDF meteen maken, zodat de bevestigingspagina hem kan tonen (best effort; wordt
   // anders bij de eerste download alsnog gemaakt).
