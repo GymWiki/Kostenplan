@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { parseGetal as leesGetal } from "@/app/lib/getal";
 import Link from "next/link";
 import { Minus, Plus, Printer, Mail, Phone, Image as ImageIcon, Check } from "lucide-react";
 import { bedragTop, type Bedrag, type BreakdownRange } from "@/app/lib/calculate";
@@ -1282,7 +1283,8 @@ function round(value: number) {
 }
 
 function parseDecimal(raw: string) {
-  return Number(raw.trim().replace(",", "."));
+  const r = leesGetal(raw, { negatief: true, soort: "getal" });
+  return r.ok ? r.waarde : Number.NaN;
 }
 
 // Local text buffer, not just `value` formatted as a string: a controlled

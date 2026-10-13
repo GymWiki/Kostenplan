@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
+import { formatBedragInvoer, parseBedrag } from "@/app/lib/getal";
 import { Field } from "@/app/components/ui/field";
 import { Input, Select } from "@/app/components/ui/input";
 import { Sheet } from "@/app/components/ui/sheet";
@@ -45,10 +46,6 @@ const SOORT: Record<string, string> = {
   NOTITIE: "Notitie",
 };
 
-const naarCenten = (t: string) => {
-  const v = Number(t.replace(/\./g, "").replace(",", "."));
-  return Number.isFinite(v) ? Math.round(v * 100) : NaN;
-};
 const vandaag = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Amsterdam" }).format(new Date());
 
 // Beheer van een definitieve factuur: status, betalingen, herinneringen, creditnota en tijdlijn.
@@ -60,6 +57,7 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
   const [weg, setWeg] = useState<string | null>(null);
   const [fout, setFout] = useState<string | null>(null);
   const [bedrag, setBedrag] = useState("");
+  const [bedragFout, setBedragFout] = useState<string | undefined>();
   const [datum, setDatum] = useState(vandaag());
   const [methode, setMethode] = useState("OVERBOEKING");
   const [notitie, setNotitie] = useState("");
@@ -68,13 +66,17 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
   const kanCrediteren = !data.isCreditnota && data.status !== "GECREDITEERD";
 
   function opent() {
-    setBedrag((data.openstaandCenten / 100).toFixed(2).replace(".", ","));
+    setBedrag(formatBedragInvoer(data.openstaandCenten));
+    setBedragFout(undefined);
     setDatum(vandaag());
     setFout(null);
     setBetaalOpen(true);
   }
   function betaal() {
-    const c = naarCenten(bedrag);
+    const p = parseBedrag(bedrag, { maxCenten: data.openstaandCenten });
+    if (!p.ok) return setBedragFout(p.fout.startsWith("Vul maximaal") ? `Dit is meer dan het openstaande bedrag (${formatCents(data.openstaandCenten)}).` : p.fout);
+    if (p.centen < 1) return setBedragFout("Vul een bedrag boven € 0,00 in.");
+    const c = p.centen;
     start(async () => {
       const r = await registreerBetalingAction({ factuurId: data.id, bedragCenten: c, datum, methode: methode as "OVERBOEKING", notitie });
       if (r.ok) {
@@ -147,7 +149,7 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
       {fout && !betaalOpen && !creditOpen && <p role="alert" className="text-sm text-destructive">{fout}</p>}
 
       <Sheet open={betaalOpen} onClose={() => { setBetaalOpen(false); setFout(null); }} title="Betaling registreren" description={`Openstaand: ${formatCents(data.openstaandCenten)}`}>
-        <Field label="Bedrag (€)" htmlFor="bt-bedrag"><Input id="bt-bedrag" inputMode="decimal" value={bedrag} onChange={(e) => setBedrag(e.target.value)} /></Field>
+        <Field label="Bedrag (€)" htmlFor="bt-bedrag" error={bedragFout}><Input id="bt-bedrag" inputMode="decimal" autoComplete="off" aria-invalid={bedragFout ? true : undefined} aria-describedby={bedragFout ? "bt-bedrag-fout" : undefined} value={bedrag} onChange={(e) => { setBedrag(e.target.value); setBedragFout(undefined); }} /></Field>
         <Field label="Datum ontvangen" htmlFor="bt-datum"><Input id="bt-datum" type="date" value={datum} onChange={(e) => setDatum(e.target.value)} /></Field>
         <Field label="Hoe is er betaald?" htmlFor="bt-methode">
           <Select id="bt-methode" value={methode} onChange={(e) => setMethode(e.target.value)}>

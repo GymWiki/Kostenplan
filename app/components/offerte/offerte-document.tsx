@@ -1,3 +1,4 @@
+import { AantalInvoer } from "./aantal-invoer";
 import type { CSSProperties, ReactNode } from "react";
 import { berekenTotalen, prijsPerEenheidWeergave, type Totalen } from "@/app/lib/offerte/bereken";
 import type { OfferteInhoud, OfferteRegel } from "@/app/lib/offerte/model";
@@ -53,10 +54,6 @@ export type OfferteDocumentProps = {
   className?: string;
 };
 
-const num = (s: string) => {
-  const v = Number(s.replace(",", "."));
-  return Number.isFinite(v) ? v : 0;
-};
 
 function Wijzigbaar({ sel, bewerk, children, className = "", as: Tag = "div" }: { sel: Selectie; bewerk?: BewerkHaken; children: ReactNode; className?: string; as?: "div" | "section" | "p" }) {
   if (!bewerk) return <Tag className={className}>{children}</Tag>;
@@ -246,7 +243,7 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
                       ) : (
                         <>
                           <td className="r">
-                            {bewerk ? <input className="og-invoer r" inputMode="decimal" aria-label="Aantal" value={formatAantal(r.aantal)} onChange={(e) => bewerk.onRegel(s.id, r.id, { aantal: num(e.target.value) })} style={{ textAlign: "right" }} /> : formatAantal(r.aantal)}
+                            {bewerk ? <AantalInvoer aantal={r.aantal} onChange={(n) => bewerk.onRegel(s.id, r.id, { aantal: n })} /> : formatAantal(r.aantal)}
                           </td>
                           <td>
                             {bewerk ? <input className="og-invoer" aria-label="Eenheid" value={r.eenheid} onChange={(e) => bewerk.onRegel(s.id, r.id, { eenheid: e.target.value })} /> : r.eenheid}
