@@ -80,7 +80,7 @@
   {
     "n": "delen: het bericht bevat de link naar de online factuur, het bedrag, de vervaldatum en het IBAN",
     "ok": true,
-    "d": "/f/fhX8BqLaZJnCohKve_UfO4GF0VqW2OBQ"
+    "d": "/f/eP8pPO5AMJHsgFRc2HiCf2VbMsi7bFJ4"
   },
   {
     "n": "na 'Ja, verstuurd': status Verstuurd met datum",
@@ -139,7 +139,7 @@
     "d": "ERROR:  Een definitieve factuur kan niet worden gewijzigd. Maak een creditnota."
   },
   {
-    "n": "directe database-aanroep wordt geweigerd: delete from \"Factuur\" where id='cmv6qf8h…",
+    "n": "directe database-aanroep wordt geweigerd: delete from \"Factuur\" where id='cmv6r2m3…",
     "ok": true,
     "d": "ERROR:  Een definitieve factuur kan niet worden verwijderd (bewaarplicht)."
   },
@@ -181,7 +181,7 @@
   },
   {
     "n": "leads desktop-1440: voortgangsbalk en één volgende actie",
-    "ok": false
+    "ok": true
   },
   {
     "n": "leads mobiel-412: Jansen staat op Gefactureerd met facturen en tijdlijn",
@@ -197,7 +197,7 @@
   },
   {
     "n": "leads mobiel-412: filter Te laat toont alleen die lead",
-    "ok": false
+    "ok": true
   },
   {
     "n": "overzicht mobiel-412: tellers Te factureren/Openstaand/Te laat en melding '5 dagen te laat'",
@@ -225,8 +225,8 @@
   },
   {
     "n": "export-CSV: totaal incl. btw is gelijk aan de som van de facturen in de database",
-    "ok": false,
-    "d": "503797 = 1001857"
+    "ok": true,
+    "d": "503797 = 503797"
   },
   {
     "n": "export-ZIP: bevat CSV, PDF's en UBL",

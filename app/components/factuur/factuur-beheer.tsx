@@ -146,7 +146,7 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
       </details>
       {fout && !betaalOpen && !creditOpen && <p role="alert" className="text-sm text-destructive">{fout}</p>}
 
-      <Sheet open={betaalOpen} onClose={() => setBetaalOpen(false)} title="Betaling registreren" description={`Openstaand: ${formatCents(data.openstaandCenten)}`}>
+      <Sheet open={betaalOpen} onClose={() => { setBetaalOpen(false); setFout(null); }} title="Betaling registreren" description={`Openstaand: ${formatCents(data.openstaandCenten)}`}>
         <Field label="Bedrag (€)" htmlFor="bt-bedrag"><Input id="bt-bedrag" inputMode="decimal" value={bedrag} onChange={(e) => setBedrag(e.target.value)} /></Field>
         <Field label="Datum ontvangen" htmlFor="bt-datum"><Input id="bt-datum" type="date" value={datum} onChange={(e) => setDatum(e.target.value)} /></Field>
         <Field label="Hoe is er betaald?" htmlFor="bt-methode">
@@ -159,7 +159,7 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
         <Button type="button" onClick={betaal} disabled={bezig}>{bezig ? "Opslaan…" : "Betaling opslaan"}</Button>
       </Sheet>
 
-      <Sheet open={creditOpen} onClose={() => setCreditOpen(false)} title="Creditnota maken" description="Je maakt een concept-creditnota. Controleer hem en maak hem daarna definitief; de factuur zelf blijft ongewijzigd.">
+      <Sheet open={creditOpen} onClose={() => { setCreditOpen(false); setFout(null); }} title="Creditnota maken" description="Je maakt een concept-creditnota. Controleer hem en maak hem daarna definitief; de factuur zelf blijft ongewijzigd.">
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-sm font-semibold">Welke regels crediteer je? (niets gekozen = de hele factuur)</legend>
           {data.regels.map((r) => (

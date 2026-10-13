@@ -684,7 +684,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
             )}
           </div>
           {melding && <p role="status" className="mb-3 rounded-lg bg-accent px-3 py-2 text-sm text-foreground">{melding}</p>}
-          {alleenLezen ? <div className="flex flex-col gap-4 text-sm"><p className="text-muted-foreground">Deze versie is verstuurd. Maak een nieuwe versie om te wijzigen.</p>{getekendLink}{activiteitLijst}</div> : paneelInhoud(selectie)}
+          {alleenLezen ? <div className="flex flex-col gap-4 text-sm"><p className="text-muted-foreground">{isFactuur ? "Deze factuur is definitief. Betalingen en creditnota’s beheer je bovenaan de pagina." : "Deze versie is verstuurd. Maak een nieuwe versie om te wijzigen."}</p>{getekendLink}{activiteitLijst}</div> : paneelInhoud(selectie)}
         </aside>
       </div>
       <DeelDialoog modus={deelModus} open={client && controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} ops={factuurOps} />
