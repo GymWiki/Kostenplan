@@ -95,7 +95,7 @@ export async function importDraftAction(ruw: unknown, modus?: "toevoegen" | "weg
       data: {
         companyId: company.id,
         naam: draft.calculator.name,
-        slug: await generateUniqueToolSlug(company.id, draft.calculator.name),
+        slug: await generateUniqueToolSlug(company.id, draft.calculator.name, tx),
         importSleutel: draft.id,
         order: await tx.tool.count({ where: { companyId: company.id } }),
         costSettings: {
