@@ -1,3 +1,8 @@
+import type { LocatieInvoer } from "@/app/lib/pricing/schema";
+import { afstandKm, rondKm } from "./afstand";
+import type { PdokAdres } from "./pdok";
+import type { WerkgebiedInstellingen } from "./schema";
+
 // Wat de klant of hovenier typt ("8011 AB 12", "8011ab 12a", "8011AB 12-3") naar postcode, huisnummer en toevoeging.
 export type AdresRuw = { postcode: string; huisnummer: string; toevoeging: string };
 
@@ -11,4 +16,26 @@ export function parseAdresInvoer(tekst: string): AdresRuw | null {
 export function adresRegel(a: { straat: string; huisnummer: string; postcode: string; plaats: string }): string {
   const pc = a.postcode.replace(/^(\d{4})\s*([A-Za-z]{2})$/, "$1 $2");
   return `${[a.straat, a.huisnummer].filter(Boolean).join(" ")}, ${pc} ${a.plaats}`.replace(/^, /, "").trim();
+}
+
+// Wat het adresveld oplevert.
+export type AdresKeuze =
+  // Een gevonden adres bij PDOK.
+  | { soort: "gevonden"; adres: PdokAdres; ruw: AdresRuw }
+  // PDOK is niet bereikbaar: wel een geldige postcode en huisnummer, niet gecontroleerd.
+  | { soort: "niet-gecontroleerd"; ruw: AdresRuw }
+  // Postcode en huisnummer horen niet bij een bestaand adres.
+  | { soort: "onbekend"; ruw: AdresRuw }
+  // Nog niet af (of leeg).
+  | { soort: "leeg" };
+
+// Is het adres bruikbaar om door te gaan? (Ook "niet gecontroleerd": een storing van PDOK blokkeert nooit.)
+export const adresIsKlaar = (k: AdresKeuze) => k.soort === "gevonden" || k.soort === "niet-gecontroleerd";
+
+// De locatie voor de rekenkern: wat de klant typte en de afstand hemelsbreed tot het startadres (als die bekend is).
+export function locatieInvoerVan(k: AdresKeuze, i: WerkgebiedInstellingen | null | undefined): LocatieInvoer | undefined {
+  if (k.soort !== "gevonden" && k.soort !== "niet-gecontroleerd") return undefined;
+  const start = i?.werkgebied.aan && i.werkgebied.methode === "STRAAL" ? i.werkgebied.start : null;
+  const afstand = k.soort === "gevonden" && start ? rondKm(afstandKm(start, { lat: k.adres.lat, lon: k.adres.lon })) : null;
+  return { postcode: k.ruw.postcode, huisnummer: k.ruw.huisnummer, toevoeging: k.ruw.toevoeging, afstandKm: afstand };
 }

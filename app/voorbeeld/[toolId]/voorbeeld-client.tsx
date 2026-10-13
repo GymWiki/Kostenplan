@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Calculator, type ProductWithDetails } from "@/app/portaal/[slug]/calculator";
 import { EngineCalculator } from "@/app/portaal/[slug]/engine-calculator";
 import { Bewerkbaar, EditorProvider, type EditorHaken, type Waarschuwing } from "@/app/portaal/[slug]/bewerkbaar";
+import type { WerkgebiedInstellingen } from "@/app/lib/werkgebied/schema";
 import type { AnyCalculatorConfigData } from "@/app/lib/calculator-engine";
 import type { Branding, CostSettings, SubscriptionTier } from "@/app/generated/prisma/client";
 
@@ -36,6 +37,8 @@ type Initieel = {
   toelichting: string | null;
   ctaTekst: string | null;
   vraagTelefoon: boolean;
+  // Werkgebied en minimum zoals voor deze rekentool geldt (alleen als aan).
+  werkgebied?: WerkgebiedInstellingen | null;
 };
 
 function stuur(bericht: VanVoorbeeld) {
@@ -155,6 +158,7 @@ export function VoorbeeldClient({
       toelichting={data.toelichting}
       ctaTekst={data.ctaTekst}
       vraagTelefoon={data.vraagTelefoon}
+      werkgebied={initieel.werkgebied ?? null}
     />
   );
 }

@@ -2,6 +2,7 @@ import { prisma } from "@/app/lib/prisma";
 import { parseLeadFormConfig, parseResultaatConfig } from "@/app/lib/tools";
 import { resolveCostSettings } from "@/app/lib/tools";
 import { effectiveTier } from "@/app/lib/subscription";
+import { isActief, resolveWerkgebied } from "@/app/lib/werkgebied/schema";
 import { Calculator } from "@/app/portaal/[slug]/calculator";
 import type { Company, Tool } from "@/app/generated/prisma/client";
 
@@ -29,6 +30,7 @@ export async function ToolCalculatorPreview({ company, tool }: { company: Compan
   ]);
 
   if (!costSettings) return null;
+  const werkgebied = resolveWerkgebied(company.werkgebied, tool.werkgebied);
 
   return (
     <Calculator
@@ -42,6 +44,7 @@ export async function ToolCalculatorPreview({ company, tool }: { company: Compan
       toelichting={parseResultaatConfig(tool.resultaatConfig).toelichting}
       ctaTekst={parseResultaatConfig(tool.resultaatConfig).ctaTekst}
       vraagTelefoon={parseLeadFormConfig(tool.leadFormConfig).vraagTelefoon}
+      werkgebied={isActief(werkgebied) ? werkgebied : null}
     />
   );
 }

@@ -456,6 +456,12 @@ export function RekentoolEditor(props: EditorProps) {
             eigen={props.werkgebied.tool !== null}
             onOpgeslagen={() => {
               setWerkgebiedOpen(false);
+              // Het voorbeeld toont de rekentool met de nieuwe instelling.
+              try {
+                iframeRef.current?.contentWindow?.location.reload();
+              } catch {
+                /* voorbeeld nog niet geladen */
+              }
               router.refresh();
             }}
           />

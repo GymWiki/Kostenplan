@@ -4,18 +4,9 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Check, Loader2, TriangleAlert } from "lucide-react";
 import { Input } from "@/app/components/ui/input";
 import { cn } from "@/app/lib/cn";
-import { parseAdresInvoer, type AdresRuw } from "@/app/lib/werkgebied/adres-invoer";
+import { parseAdresInvoer, type AdresKeuze } from "@/app/lib/werkgebied/adres-invoer";
+export type { AdresKeuze };
 import { zoekAdressen, zoekPostcodeHuisnummer, type PdokAdres } from "@/app/lib/werkgebied/pdok";
-
-export type AdresKeuze =
-  // Een gevonden adres bij PDOK.
-  | { soort: "gevonden"; adres: PdokAdres; ruw: AdresRuw }
-  // PDOK is niet bereikbaar: wel een geldige postcode en huisnummer, niet gecontroleerd.
-  | { soort: "niet-gecontroleerd"; ruw: AdresRuw }
-  // Postcode en huisnummer horen niet bij een bestaand adres.
-  | { soort: "onbekend"; ruw: AdresRuw }
-  // Nog niet af (of leeg).
-  | { soort: "leeg" };
 
 // Eén invoerveld voor postcode en huisnummer met autocomplete via de gratis PDOK Locatieserver. Typ "8011 AB 12"
 // en kies een adres, of laat het zelf zoeken zodra postcode en huisnummer compleet zijn.

@@ -33,6 +33,7 @@ export function SnapshotWeergave({ snapshot }: { snapshot: RekentoolSnapshot }) 
           toelichting={snapshot.toelichting}
           ctaTekst={snapshot.ctaTekst}
           vraagTelefoon={snapshot.vraagTelefoon}
+          werkgebied={snapshot.werkgebied ?? null}
         />
       )}
     </>
