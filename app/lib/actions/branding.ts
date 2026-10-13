@@ -36,7 +36,7 @@ async function resolveLogo(
   // blind vertrouwen), en het oude bestand opruimen zoals bij een normale
   // upload.
   const extracted = formData.get("extractedLogoUrl");
-  if (typeof extracted === "string" && extracted && isOwnStorageUrl(extracted)) {
+  if (typeof extracted === "string" && extracted && isOwnStorageUrl(extracted, companyId)) {
     if (currentLogo && currentLogo !== extracted) await deleteFoto(currentLogo);
     return { logoUrl: extracted };
   }

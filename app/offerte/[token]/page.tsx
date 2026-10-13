@@ -4,7 +4,7 @@ import { prisma } from "@/app/lib/prisma";
 import { effectiveTier } from "@/app/lib/subscription";
 import { fontFamilyFor } from "@/app/lib/fonts";
 import { weergaveOfferteStatus, type OfferteRegel } from "@/app/lib/offertes";
-import { syncOfferteVerval } from "@/app/lib/actions/offertes";
+import { syncOfferteVerval } from "@/app/lib/offerte-verval";
 import { OffertePresentatie } from "./offerte-presentatie";
 
 // Nooit indexeren — een geldig deelToken geeft toegang tot de individuele

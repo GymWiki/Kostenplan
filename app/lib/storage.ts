@@ -104,8 +104,10 @@ export async function uploadOffertePdf(
 // client-aangeleverde URL-string mag nooit blind vertrouwd worden, maar
 // hier gaat het altijd om een URL die onze eigen extractie-route zelf al
 // naar deze bucket heeft geüpload, dus is een marker-check voldoende.
-export function isOwnStorageUrl(url: string): boolean {
-  return url.includes(`/object/public/${BUCKET}/`);
+export function isOwnStorageUrl(url: string, companyId: string): boolean {
+  // Ook de map moet van het eigen bedrijf zijn ({companyId}/…): anders kan een
+  // bedrijf naar andermans bestand verwijzen (en het later laten verwijderen).
+  return url.includes(`/object/public/${BUCKET}/${companyId}/`) && !url.includes("..");
 }
 
 // Algemene voorwaarden (PDF) van een bedrijf, meegestuurd als bijlage bij elke
