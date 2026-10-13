@@ -8,7 +8,12 @@ test.describe("bedragen typen (hovenier)", () => {
     await page.goto(`/dashboard/leads/${seed()[eigenA(info.project.name)].leads["offerte-concept"]}/offerte`);
     await rustig(page);
     await expect(async () => {
-      await page.locator("tr.og-wijzigbaar").and(page.locator(":visible")).first().click({ timeout: 3000 });
+      if (info.project.name === "mobiel") {
+        await page.getByRole("button", { name: /^Onderdelen/ }).click({ timeout: 3000 });
+        await page.getByRole("button", { name: /Bestrating terras/ }).click({ timeout: 3000 });
+      } else {
+        await page.locator("tr.og-wijzigbaar:has(input[value^=\"Bestrating terras\"])").and(page.locator(":visible")).first().locator("td").last().click({ timeout: 3000 });
+      }
       await expect(page.locator("#rg-prijs")).toBeVisible({ timeout: 3000 });
     }).toPass({ timeout: 30000 });
     const prijs = page.locator("#rg-prijs");
