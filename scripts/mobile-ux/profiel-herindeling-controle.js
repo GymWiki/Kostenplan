@@ -34,7 +34,7 @@ const tekst = async (p) => (await p.locator("body").innerText()).replace(/\s+/g,
   const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] });
   tweede(false);
   sql(`update "Branding" set "logoUrl"='${LOGO}' where "toolId"='cmv4w1j8c0002pc7d9mooidkq'`);
-  sql(`drop table if exists og_backup; create table og_backup as select * from "OfferteGegevens"`); // bestaande rij bewaren
+  sql(`create table if not exists og_backup as select * from "OfferteGegevens"`); // bestaande rij bewaren
   sql(`delete from "OfferteGegevens"`);
   sql(`insert into "OfferteGegevens"(id, "companyId", handelsnaam, "kvkNummer", website, "updatedAt") values ('cmgegevens00000000000000','${C1}','Hoveniersbedrijf De Vries','12345678','https://www.devries-hoveniers.nl/contact', now())`);
 
@@ -56,8 +56,8 @@ const tekst = async (p) => (await p.locator("body").innerText()).replace(/\s+/g,
       if (naam.startsWith("1")) rapport(`${naam} ${vn}: abonnement 'Pro · verlengt op 12 november'`, /Pro · verlengt op 12 november/.test(t));
       if (naam.startsWith("2")) rapport(`${naam} ${vn}: abonnement 'Pro tot 12 november, daarna Gratis'`, /Pro tot 12 november, daarna Gratis/.test(t));
       if (naam.startsWith("3")) {
-        rapport(`${naam} ${vn}: knop 'Wisselen' bij de kop`, (await p.getByRole("button", { name: "Wisselen" }).count()) === 1);
-        await p.getByRole("button", { name: "Wisselen" }).click();
+        rapport(`${naam} ${vn}: knop 'Wisselen' bij de kop`, (await p.getByRole("button", { name: "Wisselen", exact: true }).count()) === 1);
+        await p.getByRole("button", { name: "Wisselen", exact: true }).click();
         await p.waitForTimeout(400);
         const sheet = await tekst(p);
         rapport(`${naam} ${vn}: sheet met bedrijven, vinkje en '+ Bedrijf toevoegen'`, /Tuinontwerp Mulder/.test(sheet) && /Bedrijf toevoegen/.test(sheet) && (await p.getByLabel("Actief bedrijf").count()) === 1);
