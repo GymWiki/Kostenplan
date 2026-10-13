@@ -4,11 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/app/lib/cn";
 import { navLinks } from "@/app/components/dashboard/nav-links";
+import { useActiebalkAanwezig } from "./sticky-actiebalk";
 import { useToetsenbordOpen } from "./use-mobiel";
 
 // Routes waar de tabbalk plaatsmaakt voor de actiebalk van een bewerkscherm.
 export function verbergtTabbalk(pad: string) {
-  return /^\/dashboard\/tools\/[^/]+(\/|$)/.test(pad) && pad !== "/dashboard/tools/nieuw" || /^\/dashboard\/leads\/[^/]+\/offerte/.test(pad);
+  return (
+    (/^\/dashboard\/tools\/[^/]+(\/|$)/.test(pad) && pad !== "/dashboard/tools/nieuw") ||
+    /^\/dashboard\/leads\/[^/]+\/offerte/.test(pad) ||
+    /^\/dashboard\/facturen\/[^/]+/.test(pad)
+  );
 }
 
 // Tabbalk onderin, alleen < 768 px: de vier hoofdonderdelen binnen
@@ -16,7 +21,8 @@ export function verbergtTabbalk(pad: string) {
 export function Tabbalk({ nieuweLeads, profielWaarschuwing = 0 }: { nieuweLeads: number; profielWaarschuwing?: number }) {
   const pad = usePathname();
   const toetsenbord = useToetsenbordOpen();
-  if (toetsenbord || verbergtTabbalk(pad)) return null;
+  const actiebalk = useActiebalkAanwezig();
+  if (toetsenbord || actiebalk || verbergtTabbalk(pad)) return null;
 
   return (
     <nav

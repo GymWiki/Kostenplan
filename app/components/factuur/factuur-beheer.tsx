@@ -97,7 +97,6 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
   return (
     <section aria-label="Beheer van deze factuur" className="flex flex-col gap-4 border-b border-border bg-card px-4 py-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={data.status === "BETAALD" ? "success" : data.dagenTeLaat ? "warning" : "default"}>{FACTUUR_STATUS_LABEL[data.status]}</Badge>
         {data.dagenTeLaat ? <Badge variant="warning">{data.dagenTeLaat} {data.dagenTeLaat === 1 ? "dag" : "dagen"} te laat</Badge> : null}
         {data.creditVoor && <span className="text-sm text-muted-foreground">Creditnota bij factuur {data.creditVoor.nummer}</span>}
       </div>

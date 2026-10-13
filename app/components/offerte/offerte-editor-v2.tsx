@@ -16,7 +16,8 @@ import { HERINNERING_LABEL, type HerinneringStap } from "@/app/lib/factuur/betal
 import type { BerichtSoort } from "@/app/lib/factuur/berichten";
 import { bewaarFactuurAction } from "@/app/lib/actions/facturen-bewerken";
 import { controleerFactuur } from "@/app/lib/factuur/controle";
-import { FACTUUR_STATUS_LABEL, type FactuurInhoud } from "@/app/lib/factuur/model";
+import type { FactuurInhoud } from "@/app/lib/factuur/model";
+import { factuurStatusKop } from "@/app/lib/factuur/status-kop";
 import { normaliseerFactuur, voegMeerwerkToe } from "@/app/lib/factuur/maak";
 import { FactuurMetaPaneel } from "@/app/components/factuur/factuur-paneel";
 import { bevestigVerstuurdAction, bewaarOfferteAction, nieuweVersieAction, slaStandaardRegelOpAction, verwijderStandaardRegelAction, type StandaardRegelDto } from "@/app/lib/actions/offerte-v2";
@@ -49,7 +50,7 @@ type Props = {
   activiteit?: { id: string; soort: string; tekst: string | null; op: string }[];
   heeftGetekend?: boolean;
   // Factuur in plaats van offerte: dezelfde editor, het document en de panelen, met factuurspecifieke velden.
-  factuur?: { id: string; status: FactuurStatus; terug: string; beheer?: BeheerData };
+  factuur?: { id: string; status: FactuurStatus; verstuurdOp?: string | null; terug: string; beheer?: BeheerData };
 };
 
 const ACTIVITEIT_LABEL: Record<string, string> = {
@@ -91,6 +92,13 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
   const router = useRouter();
   const isMobiel = useIsMobiel();
   const [inhoud, setInhoud] = useState<OfferteInhoud>(begin);
+  // Na "Definitief maken" levert de server een nieuwe stand (nummer, definitieve inhoud): die overnemen,
+  // zodat kop, titel en watermerk meteen kloppen zonder het openstaande deel-dialoogvenster te sluiten.
+  const [vorigeFactuurStatus, setVorigeFactuurStatus] = useState(factuurCfg?.status);
+  if (factuurCfg && factuurCfg.status !== vorigeFactuurStatus) {
+    setVorigeFactuurStatus(factuurCfg.status);
+    setInhoud(begin);
+  }
   const [selectie, setSelectie] = useState<Selectie | null>(null);
   const [opslag, setOpslag] = useState<Opslag>("klaar");
   const [opslagFout, setOpslagFout] = useState<string | null>(null);
@@ -242,6 +250,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
           if (r.ok) {
             setPasVerstuurd(true);
             setNieuwNummer(r.nummer);
+            router.refresh(); // kop, nummer en titel meteen bijwerken (geen concept-watermerk meer)
           }
           return r.ok ? { ok: true } : { ok: false, error: r.error };
         },
@@ -259,7 +268,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
 
   const statusBlok = (
     <span role="status" aria-live="polite" className="flex items-center gap-1.5 text-sm text-muted-foreground">
-      {alleenLezen ? (
+      {alleenLezen && isFactuur ? null : alleenLezen ? (
         <>
           <Check className="h-4 w-4 text-primary" aria-hidden="true" /> Verstuurd
         </>
@@ -487,7 +496,8 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
     />
   );
 
-  const statusBadge = factuurCfg ? <Badge variant={factuurCfg.status === "BETAALD" ? "success" : "muted"}>{FACTUUR_STATUS_LABEL[factuurCfg.status]}</Badge> : <Badge variant={status === "GEACCEPTEERD" ? "success" : "muted"}>{OFFERTE_V2_STATUS_LABEL[status]}</Badge>;
+  const factuurKop = factuurCfg ? factuurStatusKop({ status: factuurCfg.status, verstuurdOp: factuurCfg.verstuurdOp, dagenTeLaat: factuurCfg.beheer?.dagenTeLaat }) : null;
+  const statusBadge = factuurKop ? <Badge variant={factuurKop.toon === "goed" ? "success" : factuurKop.toon === "let-op" ? "warning" : "muted"}>{factuurKop.tekst}</Badge> : <Badge variant={status === "GEACCEPTEERD" ? "success" : "muted"}>{OFFERTE_V2_STATUS_LABEL[status]}</Badge>;
   const pdfHref = factuurCfg ? `/api/facturen/${factuurCfg.id}/pdf` : `/api/offertes/${offerteId}/pdf?versie=${inhoud.versie}`;
   const titelTekst = isFactuur ? `${(inhoud as FactuurInhoud).factuur.soort === "creditnota" ? "Creditnota" : "Factuur"} ${(inhoud as FactuurInhoud).factuur.nummer ?? "(concept)"}` : `Offerte ${inhoud.nummer}`;
   const terug = factuurCfg?.terug ?? "/dashboard/leads";
