@@ -8,6 +8,10 @@ import { configVanProducten, invoerVanKlant } from "@/app/lib/pricing/adapters";
 import { berekenPrijs } from "@/app/lib/pricing/engine";
 import { formatEuro } from "@/app/lib/pricing/format";
 import { breakdownRangeVan } from "@/app/lib/pricing/weergave";
+import { adresIsKlaar, adresRegel, locatieInvoerVan, type AdresKeuze } from "@/app/lib/werkgebied/adres-invoer";
+import { meldingBuiten, meldingMinimumTarief, meldingOnderMinimum } from "@/app/lib/werkgebied/teksten";
+import type { WerkgebiedInstellingen } from "@/app/lib/werkgebied/schema";
+import { AdresVraag, LocatieBericht } from "./locatie-vragen";
 import {
   klantVeldenVoorSjabloon,
   parseGetal,
@@ -65,6 +69,8 @@ type Props = {
   toelichting?: string | null;
   ctaTekst?: string | null;
   vraagTelefoon?: boolean;
+  // Werkgebied en minimale opdracht (uit de momentopname of de database). Ontbreekt of uit = geen verandering.
+  werkgebied?: WerkgebiedInstellingen | null;
 };
 
 // Moet gelijk blijven aan de Kostenplan-standaardkleuren in globals.css
@@ -117,6 +123,7 @@ export function Calculator({
   toelichting = null,
   ctaTekst = null,
   vraagTelefoon = true,
+  werkgebied = null,
 }: Props) {
   const inEditor = Boolean(editor);
   // Rechtstreeks door de klant bijgehouden hoeveelheid — alleen gebruikt voor
@@ -212,10 +219,16 @@ export function Calculator({
 
   // De ene rekenkern (app/lib/pricing): dezelfde berekening als de server bij het versturen van de
   // aanvraag en als de offerte. Hier alleen de configuratie en de keuzes van de klant erin stoppen.
-  const config = useMemo(() => configVanProducten(products, costSettings), [products, costSettings]);
+  // Werkgebied: de eerste vraag is het adres. De afstand hemelsbreed tot het startadres komt hier in de invoer,
+  // de kern bepaalt wat dat betekent (toeslag, melding, markering).
+  const vraagAdres = Boolean(werkgebied?.werkgebied.aan);
+  const [adres, setAdres] = useState<AdresKeuze>({ soort: "leeg" });
+  const adresKlaar = !vraagAdres || adresIsKlaar(adres);
+  const locatie = useMemo(() => (vraagAdres ? locatieInvoerVan(adres, werkgebied) : undefined), [vraagAdres, adres, werkgebied]);
+  const config = useMemo(() => configVanProducten(products, costSettings, { werkgebied }), [products, costSettings, werkgebied]);
   const invoer = useMemo(
-    () => invoerVanKlant({ producten: products, hoeveelheden: productQty, sjabloonInvoer: productSjabloonInvoer, materiaalKeuzes: materialSelections, extraKeuzes: extraSelections }),
-    [products, productQty, productSjabloonInvoer, materialSelections, extraSelections]
+    () => invoerVanKlant({ producten: products, hoeveelheden: productQty, sjabloonInvoer: productSjabloonInvoer, materiaalKeuzes: materialSelections, extraKeuzes: extraSelections, locatie }),
+    [products, productQty, productSjabloonInvoer, materialSelections, extraSelections, locatie]
   );
   const resultaat = useMemo(() => berekenPrijs(config, invoer), [config, invoer]);
   const breakdown = useMemo(() => breakdownRangeVan(resultaat), [resultaat]);
@@ -248,7 +261,15 @@ export function Calculator({
   // app/lib/leads.ts) — meegestuurd bij "Offerte aanvragen" zodat de vakman
   // later precies kan zien waarop de prijsindicatie was gebaseerd, ook als de
   // Producten zelf intussen gewijzigd zijn.
-  const snapshot: LeadSnapshot = useMemo(() => bouwLeadSnapshot({ config, invoer, resultaat }), [config, invoer, resultaat]);
+  const snapshot: LeadSnapshot = useMemo(
+    () => bouwLeadSnapshot({ config, invoer, resultaat, adres: adres.soort === "gevonden" ? { straat: adres.adres.straat, plaats: adres.adres.plaats, lat: adres.adres.lat, lon: adres.adres.lon } : null }),
+    [config, invoer, resultaat, adres]
+  );
+
+  // Meldingen voor de klant (direct zichtbaar, geen pop-up): buiten het werkgebied bij het adres, het minimum bij het totaal.
+  const buitenTekst = vraagAdres && !resultaat.serviceArea.allowed ? meldingBuiten(werkgebied?.werkgebied.melding) : null;
+  const minimumTekst = resultaat.minimum.topUpCenten > 0 ? meldingMinimumTarief(resultaat.minimum.minimumInclCenten) : !resultaat.minimum.allowed ? meldingOnderMinimum(resultaat.minimum.minimumInclCenten) : null;
+  const adresTekst = adres.soort === "gevonden" ? adresRegel({ straat: adres.adres.straat, huisnummer: adres.adres.huisnummer, postcode: adres.adres.postcode, plaats: adres.adres.plaats }) : adres.soort === "niet-gecontroleerd" ? `${adres.ruw.postcode.replace(/^(\d{4})([A-Z]{2})$/, "$1 $2")} ${adres.ruw.huisnummer}${adres.ruw.toevoeging ? ` ${adres.ruw.toevoeging}` : ""}` : null;
 
   const isEmpty = products.length === 0;
 
@@ -326,7 +347,14 @@ export function Calculator({
               </div>
               </Bewerkbaar>
 
-              {products.length > 0 && (
+              {vraagAdres && (
+                <div className="flex flex-col gap-3">
+                  <AdresVraag keuze={adres} onKeuze={setAdres} />
+                  {adresKlaar && buitenTekst && <LocatieBericht soort="blokkade" tekst={buitenTekst} contact={contact} />}
+                </div>
+              )}
+
+              {products.length > 0 && adresKlaar && (
                 <section className="flex flex-col gap-3">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                     Onderdelen
@@ -382,6 +410,12 @@ export function Calculator({
                   toelichting={toelichting}
                   ctaTekst={ctaTekst}
                   vraagTelefoon={vraagTelefoon}
+                  afstandskosten={resultaat.serviceArea.distanceKm}
+                  aanvraagGeblokkeerd={!resultaat.requestAllowed && adresKlaar}
+                  geblokkeerdTekst={buitenTekst ? "Een aanvraag is voor dit adres niet mogelijk." : null}
+                  minimumTekst={minimumTekst}
+                  adresTekst={adresTekst}
+                  adresNog={vraagAdres && !adresKlaar}
                 />
               </div>
             </div>
@@ -960,7 +994,22 @@ function Summary({
   toelichting,
   ctaTekst,
   vraagTelefoon,
+  afstandskosten,
+  aanvraagGeblokkeerd,
+  geblokkeerdTekst,
+  minimumTekst,
+  adresTekst,
+  adresNog,
 }: {
+  // Afstand hemelsbreed (km) voor het label van de afstandstoeslag.
+  afstandskosten: number | null;
+  // De aanvraag mag niet (buiten het werkgebied of onder het minimum): de prijs blijft zichtbaar.
+  aanvraagGeblokkeerd: boolean;
+  geblokkeerdTekst: string | null;
+  minimumTekst: string | null;
+  adresTekst: string | null;
+  // Het adres is nog niet ingevuld: er valt nog niets te rekenen.
+  adresNog: boolean;
   toelichting: string | null;
   ctaTekst: string | null;
   vraagTelefoon: boolean;
@@ -997,6 +1046,13 @@ function Summary({
   if (costSettings.voorrijEnabled && costSettings.voorrijZichtbaar) {
     rows.push({ label: "Voorrijkosten", value: breakdown.voorrijkosten });
   }
+  // Afstandstoeslag en minimumtarief zijn nooit verborgen: de klant moet zien waar ze in de prijs zitten.
+  if (typeof breakdown.afstandskosten !== "number" || breakdown.afstandskosten > 0) {
+    rows.push({ label: afstandskosten != null ? `Voorrijkosten extra afstand (${String(afstandskosten).replace(".", ",")} km)` : "Voorrijkosten extra afstand", value: breakdown.afstandskosten });
+  }
+  if (typeof breakdown.aanvulling !== "number" || breakdown.aanvulling > 0) {
+    rows.push({ label: "Aanvulling tot minimumtarief", value: breakdown.aanvulling });
+  }
 
   // Als een kostenpost wél meetelt in het totaal maar zijn eigen regel
   // verborgen is (CostSettings.*Zichtbaar uit), mag het Subtotaal niet
@@ -1017,7 +1073,9 @@ function Summary({
         <CardContent className="flex flex-col gap-4">
           <h3 className="font-semibold text-foreground">Jouw kostenraming</h3>
 
-          {!breakdown.heeftSelectie ? (
+          {adresNog ? (
+            <p className="text-sm text-muted-foreground">Vul eerst je postcode en huisnummer in om een schatting te zien.</p>
+          ) : !breakdown.heeftSelectie ? (
             <p className="text-sm text-muted-foreground">
               Kies een onderdeel om een schatting te zien.
             </p>
@@ -1082,6 +1140,7 @@ function Summary({
                     </span>
                   )}
               </div>
+              {minimumTekst && <LocatieBericht soort={aanvraagGeblokkeerd ? "blokkade" : "info"} tekst={minimumTekst} contact={aanvraagGeblokkeerd ? contact : undefined} />}
               {heeftOntbrekendeVerplichteMaterialen && (
                 <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning">
                   Kies bij elke onderdeel een verplicht materiaal om een volledige prijsindicatie te
@@ -1098,6 +1157,14 @@ function Summary({
                   className="flex flex-col gap-3"
                 >
                   <input type="hidden" name="snapshot" value={JSON.stringify(snapshot)} />
+                  {adresTekst && (
+                    <p className="rounded-md bg-secondary/60 px-3 py-2 text-sm text-foreground">
+                      <span className="font-semibold">Adres:</span> {adresTekst}{" "}
+                      <button type="button" className="font-semibold underline" onClick={() => { setFormOpen(false); document.getElementById("wg-adres")?.focus(); }}>
+                        Wijzigen
+                      </button>
+                    </p>
+                  )}
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="lead-naam">Naam</Label>
                     <Input
@@ -1173,7 +1240,7 @@ function Summary({
                   {/* Primaire actie eerst (bovenaan op mobiel, voorop in de
                       rij op desktop) — "Bewaar als PDF" is bewust ghost, zo
                       blijft de aandacht op het aanvragen liggen. */}
-                  {magOfferteAanvragen && (
+                  {magOfferteAanvragen && !aanvraagGeblokkeerd && (
                     <Button
                       type="button"
                       variant="primary"
@@ -1199,6 +1266,7 @@ function Summary({
                 </div>
               )}
               </Bewerkbaar>
+              {aanvraagGeblokkeerd && geblokkeerdTekst && !minimumTekst && <LocatieBericht soort="blokkade" tekst={geblokkeerdTekst} contact={contact} />}
               {toelichting && <p className="text-sm text-muted-foreground">{toelichting}</p>}
             </>
           )}

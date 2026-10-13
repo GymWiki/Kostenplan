@@ -1,3 +1,4 @@
+import { isActief, resolveWerkgebied } from "@/app/lib/werkgebied/schema";
 import type { Metadata } from "next";
 import { parseLeadFormConfig, parseResultaatConfig } from "@/app/lib/tools";
 import { cache } from "react";
@@ -109,6 +110,12 @@ export default async function PortaalPage({
       toelichting={parseResultaatConfig(tool.resultaatConfig).toelichting}
       ctaTekst={parseResultaatConfig(tool.resultaatConfig).ctaTekst}
       vraagTelefoon={parseLeadFormConfig(tool.leadFormConfig).vraagTelefoon}
+      werkgebied={werkgebiedVoor(tool.company.werkgebied, tool.werkgebied)}
     />
   );
 }
+
+const werkgebiedVoor = (bedrijf: unknown, tool: unknown) => {
+  const w = resolveWerkgebied(bedrijf, tool);
+  return isActief(w) ? w : null;
+};

@@ -57,6 +57,24 @@ export type LeadSnapshotRekenkern = {
   afwijking?: { klantCenten: number; serverCenten: number };
 };
 
+// Het adres van de klant zoals het bij de aanvraag hoort, met wat het werkgebied ervan vond. Alleen aanwezig als
+// de hovenier het werkgebied gebruikt. De server stelt dit zelf vast (zie app/lib/pricing/server.ts).
+export type LeadSnapshotLocatie = {
+  postcode: string;
+  huisnummer: string;
+  toevoeging: string;
+  straat: string;
+  plaats: string;
+  lat: number | null;
+  lon: number | null;
+  afstandKm: number | null;
+  // true = binnen, false = buiten, "unknown" = niet te bepalen.
+  binnenWerkgebied: boolean | "unknown";
+  markeringen: ("BUITEN_WERKGEBIED" | "ONDER_MINIMUM" | "WERKGEBIED_NIET_GECONTROLEERD")[];
+  // Het adres is bij PDOK teruggevonden.
+  gecontroleerd: boolean;
+};
+
 // Vorm van Lead.snapshot (Json). De browser bouwt hem met de rekenkern en stuurt hem mee; de server
 // rekent opnieuw uit `rekenkern.invoer` en slaat zijn eigen uitkomst op (zie lead-aanmaken.ts).
 export type LeadSnapshot = {
@@ -75,6 +93,10 @@ export type LeadSnapshot = {
   // Aanwezig bij aanvragen vanaf de rekenkern; oudere snapshots hebben alleen de velden hierboven.
   rekenkern?: LeadSnapshotRekenkern;
   // Idem voor formule-gebaseerde ("Aangepaste") rekentools: de ingevulde waarden, zodat de server kan narekenen.
+  // Adres en werkgebied-uitkomst (alleen bij een rekentool met werkgebied of minimum).
+  locatie?: LeadSnapshotLocatie;
+  // Markeringen ook zonder adres, bijv. "Onder minimum" bij een rekentool met alleen een minimale opdracht.
+  markeringen?: LeadSnapshotLocatie["markeringen"];
   modulair?: { versie: 1; bron: "server" | "client"; configHash: string; waarden: Record<string, unknown>; afwijking?: { klantCenten: number; serverCenten: number } };
 };
 

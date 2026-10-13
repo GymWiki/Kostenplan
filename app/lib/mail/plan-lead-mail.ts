@@ -1,5 +1,6 @@
 import "server-only";
 import { after } from "next/server";
+import { verstuurAfwijzingsMail } from "./afwijzing-mail";
 import { mailGeconfigureerd, verstuurLeadMail, verwerkMailWachtrij } from "./lead-mail";
 
 // Plant de mail van een nieuwe lead ná het antwoord aan de bezoeker, met nog
@@ -13,6 +14,7 @@ export function planLeadMail(leadId: string): void {
       const uitslag = await verstuurLeadMail(leadId);
       if (uitslag !== "later") break;
     }
+    await verstuurAfwijzingsMail(leadId);
     await verwerkMailWachtrij(5);
   };
   try {

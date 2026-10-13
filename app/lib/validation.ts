@@ -349,6 +349,23 @@ export const leadSnapshotSchema = z.object({
   btwPercentage: z.number().optional(),
   bandbreedte: z.boolean().optional(),
   rekenkern: leadRekenkernSchema.optional(),
+  // Door de browser meegestuurd, door de server opnieuw vastgesteld (lead-aanmaken.ts).
+  locatie: z
+    .object({
+      postcode: z.string().max(12),
+      huisnummer: z.string().max(12),
+      toevoeging: z.string().max(12).default(""),
+      straat: z.string().max(120).default(""),
+      plaats: z.string().max(120).default(""),
+      lat: z.number().nullable().default(null),
+      lon: z.number().nullable().default(null),
+      afstandKm: z.number().nullable().default(null),
+      binnenWerkgebied: z.union([z.boolean(), z.literal("unknown")]).default("unknown"),
+      markeringen: z.array(z.enum(["BUITEN_WERKGEBIED", "ONDER_MINIMUM", "WERKGEBIED_NIET_GECONTROLEERD"])).max(3).default([]),
+      gecontroleerd: z.boolean().default(false),
+    })
+    .optional(),
+  markeringen: z.array(z.enum(["BUITEN_WERKGEBIED", "ONDER_MINIMUM", "WERKGEBIED_NIET_GECONTROLEERD"])).max(3).optional(),
   modulair: z
     .object({
       versie: z.literal(1),

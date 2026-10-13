@@ -1,6 +1,8 @@
 "use client";
 
 import { OFFERTE_FILTER_OPTIES } from "@/app/lib/offerte/lead-status";
+import { MARKERING_FILTER_OPTIES } from "@/app/lib/werkgebied/lead-markeringen";
+import { LocatieLabels } from "./locatie-labels";
 import { OfferteStatusBadge } from "./offerte-status-badge";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -72,6 +74,9 @@ export function LeadsMobiel({
   onToolFilter,
   offerteFilter,
   onOfferteFilter,
+  markeringFilter,
+  onMarkeringFilter,
+  toonMarkeringFilter,
   onSelect,
 }: {
   leads: LeadWithNotes[];
@@ -82,6 +87,10 @@ export function LeadsMobiel({
   onToolFilter: (id: string) => void;
   offerteFilter: string;
   onOfferteFilter: (v: string) => void;
+  markeringFilter: string;
+  onMarkeringFilter: (v: string) => void;
+  // Alleen als er leads zijn met een werkgebied- of minimumlabel.
+  toonMarkeringFilter: boolean;
   onSelect: (id: string) => void;
 }) {
   const { trek, bezig } = useTrekVernieuwen();
@@ -122,6 +131,15 @@ export function LeadsMobiel({
           </option>
         ))}
       </Select>
+      {toonMarkeringFilter && (
+        <Select aria-label="Filter op werkgebied en minimum" value={markeringFilter} onChange={(e) => onMarkeringFilter(e.target.value)}>
+          {MARKERING_FILTER_OPTIES.map((o) => (
+            <option key={o.waarde} value={o.waarde}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
+      )}
 
       {zichtbaar.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-8 text-center">
@@ -142,6 +160,7 @@ export function LeadsMobiel({
                     <span className="block break-words text-sm text-muted-foreground">
                       {eersteRegelNaam(l.snapshot)} · {relatieveTijd(l.createdAt)}
                     </span>
+                    <LocatieLabels snapshot={l.snapshot} className="mt-1" />
                     <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
                       <span className={cn("inline-block rounded-full px-2 py-0.5 text-xs font-semibold", nieuw ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground")}>{LEAD_STATUS_LABELS[l.status]}</span>
                       {l.offerte && <OfferteStatusBadge offerte={l.offerte} />}

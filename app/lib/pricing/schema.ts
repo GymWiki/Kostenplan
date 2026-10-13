@@ -81,11 +81,39 @@ export const tarievenSchema = z.object({
     .default({ modus: "GEEN", margeOmlaag: 0, margeOmhoog: 0 }),
 });
 
+// Werkgebied en minimale opdracht, in centen (zie app/lib/werkgebied voor de instellingen zoals de hovenier ze invult).
+export const werkgebiedConfigSchema = z.object({
+  aan: z.boolean().default(false),
+  methode: z.enum(["STRAAL", "POSTCODES"]).default("STRAAL"),
+  straalKm: getal.positive().default(30),
+  // Viercijferige postcodereeksen [van, tot], samengevoegd en op volgorde.
+  reeksen: z.array(z.tuple([z.number().int(), z.number().int()])).default([]),
+  buiten: z.enum(["GEEN_AANVRAAG", "MARKEREN", "TOESLAG"]).default("GEEN_AANVRAAG"),
+  toeslag: z
+    .object({
+      modus: z.enum(["PER_KM", "ZONES"]).default("PER_KM"),
+      perKmCenten: prijs.default(0),
+      // totKm null = alles daarboven; bedragCenten null = niet mogelijk.
+      zones: z.array(z.object({ totKm: getal.positive().nullable(), bedragCenten: prijs.nullable() })).default([]),
+    })
+    .default({ modus: "PER_KM", perKmCenten: 0, zones: [] }),
+});
+
+export const minimumConfigSchema = z.object({
+  aan: z.boolean().default(false),
+  // Minimumbedrag incl. btw.
+  bedragInclCenten: prijs.default(0),
+  gedrag: z.enum(["TARIEF", "GEEN_AANVRAAG", "MARKEREN"]).default("TARIEF"),
+});
+
 export const pricingConfigSchema = z.object({
   // Versie van de vorm van deze configuratie (niet van de inhoud).
   versie: z.literal(1).default(1),
   tarieven: tarievenSchema,
   onderdelen: z.array(onderdeelSchema),
+  // Ontbreekt of staat uit: de berekening is precies zoals zonder werkgebied en minimum.
+  werkgebied: werkgebiedConfigSchema.nullable().optional(),
+  minimum: minimumConfigSchema.nullable().optional(),
 });
 
 export const onderdeelInvoerSchema = z.object({
@@ -99,7 +127,19 @@ export const onderdeelInvoerSchema = z.object({
   extras: z.record(z.string(), z.number()).default({}),
 });
 
+// Het adres van de klant, zoals de rekentool of de server het heeft vastgesteld.
+export const locatieInvoerSchema = z.object({
+  // Wat de klant typte; voor postcodegebieden telt alleen het viercijferige deel.
+  postcode: z.string().max(12).nullable().default(null),
+  huisnummer: z.string().max(12).default(""),
+  toevoeging: z.string().max(12).default(""),
+  // Afstand hemelsbreed tot het startadres in km; null als die niet bekend is (PDOK onbereikbaar, geen coördinaten).
+  afstandKm: z.number().min(0).max(100000).nullable().default(null),
+});
+
 export const pricingInputSchema = z.object({
+  // Het adres van de klant. Alleen nodig als het werkgebied aan staat.
+  locatie: locatieInvoerSchema.optional(),
   // onderdeel-id → invoer. Een onderdeel dat hier niet in staat, of waarvan de hoeveelheid 0 is, telt niet mee.
   onderdelen: z.record(z.string(), onderdeelInvoerSchema),
 });
@@ -114,6 +154,9 @@ export type PricingTarieven = z.infer<typeof tarievenSchema>;
 export type PricingOnderdeelInvoer = z.infer<typeof onderdeelInvoerSchema>;
 export type PricingInput = z.infer<typeof pricingInputSchema>;
 export type PricingInputInput = z.input<typeof pricingInputSchema>;
+export type WerkgebiedConfig = z.infer<typeof werkgebiedConfigSchema>;
+export type MinimumConfig = z.infer<typeof minimumConfigSchema>;
+export type LocatieInvoer = z.infer<typeof locatieInvoerSchema>;
 export type ArbeidEenheid = (typeof ARBEID_EENHEDEN)[number];
 
 export function parsePricingConfig(ruw: unknown): PricingConfig {

@@ -1,4 +1,4 @@
-import type { LeadSnapshot, LeadSnapshotLine, LeadSnapshotOpbouw } from "@/app/lib/leads";
+import type { LeadSnapshot, LeadSnapshotLine, LeadSnapshotLocatie, LeadSnapshotOpbouw } from "@/app/lib/leads";
 import { totaalTopCenten } from "@/app/lib/pricing/weergave";
 import { hashConfig } from "@/app/lib/pricing/hash";
 import type { OnderdeelUitkomst, PricingResult } from "@/app/lib/pricing/engine";
@@ -31,12 +31,15 @@ export function bouwLeadSnapshot({
   resultaat,
   bron = "client",
   afwijking,
+  adres,
 }: {
   config: PricingConfig;
   invoer: PricingInput;
   resultaat: PricingResult;
   bron?: "server" | "client";
   afwijking?: { klantCenten: number; serverCenten: number };
+  // Het adres zoals bij PDOK gevonden (straat, plaats, coördinaten); ontbreekt bij een storing.
+  adres?: { straat: string; plaats: string; lat: number; lon: number } | null;
 }): LeadSnapshot {
   const regels: LeadSnapshotLine[] = resultaat.onderdelen.map((o) => {
     const materiaal = o.regels.filter((r) => r.soort === "materiaal").map((r) => r.omschrijving);
@@ -58,14 +61,43 @@ export function bouwLeadSnapshot({
   return {
     regels,
     arbeidskosten: euro(top ? top.kosten.arbeid : resultaat.kosten.arbeid),
-    materiaalkosten: euro(top ? top.kosten.materiaal + top.kosten.extra + top.kosten.artikel : resultaat.kosten.materiaal + resultaat.kosten.extra + resultaat.kosten.artikel),
+    // Een aanvulling tot het minimumtarief telt als overige kosten, de afstandstoeslag als voorrijkosten:
+    // zo blijven de vier totalen samen gelijk aan het subtotaal.
+    materiaalkosten: euro(top ? top.kosten.materiaal + top.kosten.extra + top.kosten.artikel + top.kosten.minimum : resultaat.kosten.materiaal + resultaat.kosten.extra + resultaat.kosten.artikel + resultaat.kosten.minimum),
     transportkosten: euro(top ? top.kosten.transport : resultaat.kosten.transport),
-    voorrijkosten: euro(top ? top.kosten.voorrijkosten : resultaat.kosten.voorrijkosten),
+    voorrijkosten: euro(top ? top.kosten.voorrijkosten + top.kosten.afstand : resultaat.kosten.voorrijkosten + resultaat.kosten.afstand),
     subtotaal: euro(top ? top.subtotaalExclCenten : resultaat.subtotaalExclCenten),
     btw: euro(top ? top.btwCenten : resultaat.btwCenten),
     totaal: euro(totaalTopCenten(resultaat)),
     btwPercentage: config.tarieven.btwPercentage,
     bandbreedte: resultaat.bandbreedte ? true : undefined,
     rekenkern: { versie: 1, bron, configHash: hashConfig(config), invoer, resultaat, afwijking },
+    ...locatieVan(invoer, resultaat, adres),
   };
+}
+
+function locatieVan(invoer: PricingInput, resultaat: PricingResult, adres: { straat: string; plaats: string; lat: number; lon: number } | null | undefined): Pick<LeadSnapshot, "locatie" | "markeringen"> {
+  const loc = invoer.locatie;
+  const heeftAdres = Boolean(loc?.postcode);
+  const markeringen = resultaat.flags;
+  if (!heeftAdres && markeringen.length === 0) return {};
+  const uit: Pick<LeadSnapshot, "locatie" | "markeringen"> = {};
+  if (markeringen.length > 0) uit.markeringen = markeringen;
+  if (loc && heeftAdres) {
+    const l: LeadSnapshotLocatie = {
+      postcode: loc.postcode ?? "",
+      huisnummer: loc.huisnummer,
+      toevoeging: loc.toevoeging,
+      straat: adres?.straat ?? "",
+      plaats: adres?.plaats ?? "",
+      lat: adres?.lat ?? null,
+      lon: adres?.lon ?? null,
+      afstandKm: resultaat.serviceArea.distanceKm,
+      binnenWerkgebied: resultaat.serviceArea.enabled ? resultaat.serviceArea.withinServiceArea : "unknown",
+      markeringen,
+      gecontroleerd: Boolean(adres),
+    };
+    uit.locatie = l;
+  }
+  return uit;
 }

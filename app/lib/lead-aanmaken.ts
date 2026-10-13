@@ -18,6 +18,8 @@ export type LeadInvoer = {
   snapshot: unknown;
   // Door de browser gemaakt per aanvraag; dezelfde sleutel = dezelfde lead.
   sleutel?: unknown;
+  // "reserve": opgenomen uit de Cloudflare-reserve; werkgebied en minimum markeren dan alleen, ze weigeren niet.
+  bron?: "interactief" | "reserve";
 };
 
 export type LeadUitslag =
@@ -74,7 +76,9 @@ export async function maakLead(invoer: LeadInvoer): Promise<LeadUitslag> {
 
   // De server rekent zelf na (zelfde rekenkern als de browser) en bewaart zijn eigen uitkomst als
   // momentopname; het bedrag van de browser wordt nooit vertrouwd.
-  const gerekend = await herberekenAanvraag(tool.id, snapshot.data as unknown as LeadSnapshot);
+  const gerekend = await herberekenAanvraag(tool.id, snapshot.data as unknown as LeadSnapshot, { bron: invoer.bron });
+  // Een aanvraag die volgens het werkgebied of het minimum niet mag, wordt ook geweigerd als de browser dat omzeilde.
+  if (gerekend.geweigerd) return { ok: false, permanent: true, error: gerekend.geweigerd };
   const bewaard = gerekend.snapshot;
 
   let leadId: string;

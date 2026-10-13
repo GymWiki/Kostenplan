@@ -32,6 +32,7 @@ export async function haalReserveLeadsOp(): Promise<{ opgehaald: number; verwerk
           telefoonnummer: lead.telefoonnummer,
           snapshot: lead.snapshot,
           sleutel: lead.sleutel,
+          bron: "reserve",
         });
         // Definitief afgewezen (ongeldig, tool weg) blokkeert de rest niet.
         if (!uitslag.ok) fouten.push(`${String(lead.sleutel)}: definitief afgewezen`);

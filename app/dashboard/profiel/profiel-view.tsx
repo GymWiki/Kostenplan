@@ -5,6 +5,8 @@ import { HelpTip } from "@/app/components/ui/help-tip";
 import { AbonnementView } from "@/app/dashboard/abonnement/abonnement-view";
 import { TarievenSectie } from "./tarieven-sectie";
 import { OfferteGegevensFormulier } from "./offertegegevens-formulier";
+import { WerkgebiedFormulier } from "@/app/components/werkgebied/werkgebied-formulier";
+import type { WerkgebiedInstellingen } from "@/app/lib/werkgebied/schema";
 import { ontbrekendeVerplichteGegevens, type OfferteGegevensWaarden } from "@/app/lib/offerte/gegevens";
 import { UiterlijkOverzicht, type BrandingRegel } from "./uiterlijk-overzicht";
 import { AccountForm } from "./account-form";
@@ -16,6 +18,13 @@ import { effectiveTier, isBetaaldTier, PRIJZEN } from "@/app/lib/subscription";
 import { formatCurrency } from "@/app/lib/format";
 import type { Company } from "@/app/generated/prisma/client";
 
+function werkgebiedSamenvatting(i: WerkgebiedInstellingen): string {
+  const delen: string[] = [];
+  if (i.werkgebied.aan) delen.push(i.werkgebied.methode === "STRAAL" ? `${String(i.werkgebied.straalKm).replace(".", ",")} km` : "Postcodes");
+  if (i.minimum.aan) delen.push(`minimaal ${formatCurrency(i.minimum.bedragEuro)}`);
+  return delen.length ? delen.join(" · ") : "Uit";
+}
+
 export function ProfielView({
   pushBeschikbaar = false,
   email,
@@ -25,6 +34,7 @@ export function ProfielView({
   tarieven,
   branding,
   offertegegevens,
+  werkgebied,
 }: {
   pushBeschikbaar?: boolean;
   email: string;
@@ -34,6 +44,7 @@ export function ProfielView({
   tarieven: React.ComponentProps<typeof TarievenSectie>["start"];
   branding: BrandingRegel[];
   offertegegevens: OfferteGegevensWaarden;
+  werkgebied: WerkgebiedInstellingen;
 }) {
   const ontbreekt = ontbrekendeVerplichteGegevens(offertegegevens).length;
   // Alleen echt betaalde, actief lopende abonnementen tellen mee — een
@@ -61,6 +72,7 @@ export function ProfielView({
       meldingenBeschikbaar={pushBeschikbaar}
       samenvattingen={{
         tarieven: `${formatCurrency(tarieven.tarief)} per ${eenheidWoord}`,
+        werkgebied: werkgebiedSamenvatting(werkgebied),
         bedrijf: actiefBedrijf?.naam ?? "Je bedrijf",
         offertegegevens: ontbreekt === 0 ? "Compleet" : `${ontbreekt} ${ontbreekt === 1 ? "gegeven" : "gegevens"} ontbreken`,
         uiterlijk: branding.length === 1 ? "Logo en kleuren" : `${branding.length} rekentools`,
@@ -73,6 +85,12 @@ export function ProfielView({
           <section className="flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">Eén keer instellen, geldt voor al je rekentools.</p>
             <TarievenSectie start={tarieven} />
+          </section>
+        ),
+        werkgebied: (
+          <section className="flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground">Alleen aanvragen binnen je werkgebied en boven een minimumbedrag. Per rekentool kun je afwijken.</p>
+            <WerkgebiedFormulier bereik={{ soort: "bedrijf" }} start={werkgebied} />
           </section>
         ),
         bedrijf: (
@@ -151,6 +169,16 @@ export function ProfielView({
         <h2 id="tarieven" className="scroll-mt-20 text-lg font-semibold text-foreground">Tarieven</h2>
         <p className="-mt-2 text-sm text-muted-foreground">Eén keer instellen, geldt voor al je rekentools.</p>
         <TarievenSectie start={tarieven} />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 id="werkgebied" className="scroll-mt-20 text-lg font-semibold text-foreground">Werkgebied en minimum</h2>
+        <p className="-mt-2 text-sm text-muted-foreground">Alleen aanvragen binnen je werkgebied en boven een minimumbedrag. Per rekentool kun je afwijken; dat doe je in de rekentool zelf.</p>
+        <Card>
+          <CardContent>
+            <WerkgebiedFormulier bereik={{ soort: "bedrijf" }} start={werkgebied} />
+          </CardContent>
+        </Card>
       </section>
 
       <section className="flex flex-col gap-3">

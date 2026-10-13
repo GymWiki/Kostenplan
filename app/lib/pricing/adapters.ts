@@ -1,5 +1,7 @@
 import type { CalcCostSettings } from "@/app/lib/calculate";
-import type { PricingConfig, PricingInput } from "./schema";
+import type { WerkgebiedInstellingen } from "@/app/lib/werkgebied/schema";
+import { parsePostcodes } from "@/app/lib/werkgebied/postcodes";
+import type { LocatieInvoer, PricingConfig, PricingInput } from "./schema";
 
 // Vertaalt de bestaande vorm (producten uit de database, kosteninstellingen, keuzes van de klant)
 // naar de configuratie en invoer van de rekenkern. Verder doet dit bestand niets: alle rekenwerk
@@ -36,7 +38,32 @@ export type BronProduct = {
 export type ConfigOpties = {
   vasteKosten?: "PER_ONDERDEEL" | "PER_AANVRAAG";
   kor?: boolean;
+  // Werkgebied en minimale opdracht (van het bedrijf of de rekentool). Uit = de config blijft zoals zonder.
+  werkgebied?: WerkgebiedInstellingen | null;
 };
+
+// De instellingen zoals de hovenier ze invult (euro's, ruwe postcodetekst) naar de config van de kern (centen, reeksen).
+export function locatieConfigVan(i: WerkgebiedInstellingen | null | undefined): Pick<PricingConfig, "werkgebied" | "minimum"> {
+  if (!i || !(i.werkgebied.aan || i.minimum.aan)) return {};
+  const w = i.werkgebied;
+  const uit: Pick<PricingConfig, "werkgebied" | "minimum"> = {};
+  if (w.aan) {
+    uit.werkgebied = {
+      aan: true,
+      methode: w.methode,
+      straalKm: w.straalKm,
+      reeksen: parsePostcodes(w.postcodes).reeksen,
+      buiten: w.buiten,
+      toeslag: {
+        modus: w.toeslag.modus,
+        perKmCenten: w.toeslag.perKmEuro * 100,
+        zones: w.toeslag.zones.map((z) => ({ totKm: z.totKm, bedragCenten: z.bedragEuro === null ? null : z.bedragEuro * 100 })),
+      },
+    };
+  }
+  if (i.minimum.aan) uit.minimum = { aan: true, bedragInclCenten: Math.round(i.minimum.bedragEuro * 100), gedrag: i.minimum.gedrag };
+  return uit;
+}
 
 const cent = (euro: number | null | undefined) => (euro == null ? null : euro * 100);
 
@@ -49,6 +76,7 @@ export function arbeidTariefVoorEenheid(k: Pick<CalcCostSettings, "arbeidTariefU
 export function configVanProducten(producten: readonly BronProduct[], k: CalcCostSettings, opties: ConfigOpties = {}): PricingConfig {
   return {
     versie: 1,
+    ...locatieConfigVan(opties.werkgebied),
     tarieven: {
       materiaalEnabled: k.materiaalEnabled,
       arbeidEnabled: k.arbeidEnabled,
@@ -104,6 +132,7 @@ export function invoerVanKlant(args: {
   sjabloonInvoer?: Record<string, Record<string, unknown>>;
   materiaalKeuzes?: Record<string, string>;
   extraKeuzes?: Record<string, number>;
+  locatie?: LocatieInvoer;
 }): PricingInput {
   const onderdelen: PricingInput["onderdelen"] = {};
   for (const p of args.producten) {
@@ -123,5 +152,5 @@ export function invoerVanKlant(args: {
     }
     onderdelen[p.id] = { ...(heeftSjabloon ? { invoer: sjabloon ?? {} } : { hoeveelheid: hoeveelheid ?? 0 }), materialen, extras };
   }
-  return { onderdelen };
+  return { onderdelen, ...(args.locatie ? { locatie: args.locatie } : {}) };
 }

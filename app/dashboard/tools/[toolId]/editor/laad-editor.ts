@@ -6,6 +6,7 @@ import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
 import { parseEmbedConfig, parseLeadFormConfig, parseResultaatConfig } from "@/app/lib/tools";
 import { blobGeconfigureerd } from "@/app/lib/snapshot/opslag";
 import type { EditorProps } from "./rekentool-editor";
+import { parseWerkgebied } from "@/app/lib/werkgebied/schema";
 
 const GELDIGE_PANELEN = ["uiterlijk", "resultaat", "aanvraag", "website", "toevoegen", "aangepast", "account"];
 
@@ -89,6 +90,7 @@ export async function laadEditorProps(toolId: string, paneel: string | undefined
     website: { toolUrl, embedCode, iframeCode, heeftContact: Boolean(contact.telefoon || contact.email), embedConfig, magEmbedden, magPubliceren, limiet: PLAN_LIMITS[tier].maxActiveTools },
     anderen: andereTools.map((t) => ({ id: t.id, naam: t.naam, werkzaamheden: t.products })),
     magNieuweTool,
+    werkgebied: { bedrijf: parseWerkgebied(company.werkgebied), tool: tool.werkgebied == null ? null : parseWerkgebied(tool.werkgebied) },
     startPaneel,
     publicatie: { actief: blobGeconfigureerd(), vuil: tool.snapshotVuil, fout: tool.snapshotFout },
   };
