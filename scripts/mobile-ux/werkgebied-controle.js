@@ -98,7 +98,8 @@ async function vulKlus(p, meter = "20") {
     await f.screenshot({ path: `${UIT}/instellingen-${naam}.png` });
     if (naam.startsWith("desktop")) {
       await f.getByRole("button", { name: /^Opslaan/ }).click();
-      await p.waitForTimeout(1500);
+      await p.waitForTimeout(2000);
+      console.log("   melding:", (await f.locator("[role=status]").last().innerText()).trim());
       const w = sql(`select werkgebied->'werkgebied'->>'aan', werkgebied->'werkgebied'->'start'->>'lat', werkgebied->'werkgebied'->'start'->>'plaats' from "Company" limit 1`).split("|");
       rapport("instellingen opgeslagen, startadres éénmalig gegeocodeerd en met coördinaten bewaard", w[0] === "true" && Number(w[1]) > 52 && w[2] === "Zwolle", w.join(" | "));
       const kaart = await p.locator(".leaflet-container").count();
@@ -223,7 +224,7 @@ async function vulKlus(p, meter = "20") {
   fs.writeFileSync("/tmp/pdok-down", "x");
   p = await nieuwe(b, { width: 1440, height: 1000 });
   await p.goto(`${BASE}/t/devries/tuinaanleg`, { waitUntil: "networkidle" });
-  await typAdres(p, "8011 AB 5");
+  await typAdres(p, "8000 AA 1"); // nog niet in de korte cache van de server
   await p.waitForTimeout(800);
   await vulKlus(p);
   const down = await lees(p);
@@ -271,7 +272,7 @@ async function vulKlus(p, meter = "20") {
     rapport(`leads ${naam}: filter 'Buiten werkgebied' toont alleen die leads`, /Utrecht Klein/.test(gefilterd) && !/Binnen Test/.test(gefilterd) && !/Storing Test/.test(gefilterd));
     await p.screenshot({ path: `${UIT}/leads-filter-${naam}.png`, fullPage: true });
     // detail met kaart
-    await p.getByText("Utrecht Klein").first().click();
+    await p.getByText("Utrecht Klein").locator("visible=true").first().click();
     await p.waitForTimeout(1500);
     rapport(`leads ${naam}: leaddetail met kaart en afstand`, (await p.locator(".leaflet-container").count()) > 0 && /hemelsbreed/.test(await lees(p)));
     await p.screenshot({ path: `${UIT}/lead-detail-kaart-${naam}.png`, fullPage: false });

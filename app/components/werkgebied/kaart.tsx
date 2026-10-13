@@ -28,8 +28,11 @@ export function WerkgebiedKaart({
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  // De ouder maakt bij elke render nieuwe objecten; alleen een echte wijziging bouwt de kaart opnieuw op.
+  const sleutel = JSON.stringify({ start, straalKm, postcodes, klant });
 
   useEffect(() => {
+    const { start, straalKm, postcodes = [], klant } = JSON.parse(sleutel) as { start?: KaartPunt | null; straalKm?: number | null; postcodes?: KaartPunt[]; klant?: KaartPunt | null };
     let weg = false;
     let kaart: import("leaflet").Map | null = null;
     (async () => {
@@ -68,7 +71,7 @@ export function WerkgebiedKaart({
       weg = true;
       kaart?.remove();
     };
-  }, [start, straalKm, postcodes, klant]);
+  }, [sleutel]);
 
   return <div ref={ref} role="img" aria-label={ariaLabel} style={{ height: hoogte }} className={cn("z-0 w-full overflow-hidden rounded-xl border border-border bg-muted", className)} />;
 }

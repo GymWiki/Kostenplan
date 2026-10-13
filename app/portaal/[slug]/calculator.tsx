@@ -1048,7 +1048,7 @@ function Summary({
   }
   // Afstandstoeslag en minimumtarief zijn nooit verborgen: de klant moet zien waar ze in de prijs zitten.
   if (typeof breakdown.afstandskosten !== "number" || breakdown.afstandskosten > 0) {
-    rows.push({ label: afstandskosten != null ? `Extra afstand (${String(afstandskosten).replace(".", ",")} km)` : "Extra afstand", value: breakdown.afstandskosten });
+    rows.push({ label: afstandskosten != null ? `Voorrijkosten extra afstand (${String(afstandskosten).replace(".", ",")} km)` : "Voorrijkosten extra afstand", value: breakdown.afstandskosten });
   }
   if (typeof breakdown.aanvulling !== "number" || breakdown.aanvulling > 0) {
     rows.push({ label: "Aanvulling tot minimumtarief", value: breakdown.aanvulling });
