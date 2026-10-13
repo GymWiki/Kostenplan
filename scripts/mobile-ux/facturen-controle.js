@@ -37,6 +37,11 @@ const tekst = async (p) => (await p.locator("body").innerText()).replace(/\s+/g,
   // ── Concept in de editor ──
   for (const [vn, vp] of VP) {
     const p = await pagina(b, vp, `/dashboard/facturen/${ids.totaal}`);
+    if (vp.width < 600) {
+      await p.screenshot({ path: `${UIT}/editor-concept-bewerken-${vn}.png`, fullPage: true });
+      await p.getByRole("radio", { name: "Voorbeeld" }).click().catch(async () => p.getByText("Voorbeeld", { exact: true }).click());
+      await p.waitForTimeout(500);
+    }
     rapport(`concept ${vn}: editor toont 'Factuur (concept)' en het document met watermerk`, /Factuur \(concept\)/.test(await tekst(p)) && (await p.locator(".og-watermerk").count()) >= 1);
     rapport(`concept ${vn}: totalen en btw per tarief (21% en 9%)`, /Btw 21%/.test(await doc(p).innerText()) && /Btw 9%/.test(await doc(p).innerText()));
     rapport(`concept ${vn}: stelpost gemarkeerd 'Te bepalen'`, /Te bepalen/.test(await doc(p).innerText()));
