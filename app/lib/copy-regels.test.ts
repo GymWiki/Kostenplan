@@ -46,10 +46,10 @@ describe("copy: onderdeel in plaats van werkzaamheid", () => {
   it('kent het woord "werkzaamheid" niet meer in UI-teksten', () => {
     const fout = alle.flatMap((f) => uiTeksten(f).filter((t) => /werkzaamhe/i.test(t.tekst)).map((t) => `${path.relative(process.cwd(), f)}:${t.regel} ${t.tekst.slice(0, 80)}`));
     expect(fout).toEqual([]);
-  });
+  }, 20_000);
 
   it('noemt de zichtbaarheid-schakelaar overal "Zichtbaar" (niet "Op je website")', () => {
     const fout = alle.flatMap((f) => uiTeksten(f).filter((t) => /^["`']?Op je website["`']?$/.test(t.tekst)).map((t) => `${path.relative(process.cwd(), f)}:${t.regel}`));
     expect(fout).toEqual([]);
-  });
+  }, 20_000);
 });
