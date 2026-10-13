@@ -84,7 +84,7 @@ test.describe("betaling registreren (verouderd tabblad, offline)", () => {
     // Dit scherm probeert het hele oude openstaande bedrag te registreren: de server weigert (actuele stand) en het scherm ververst.
     const rsc: string[] = [];
     page.on("response", async (r) => {
-      if (r.request().method() === "POST" || r.url().includes("_rsc")) rsc.push(`${r.request().method()} ${r.status()} ${r.url().replace(/https?:\/\/[^/]+/, "").slice(0, 60)} ${r.url().includes("_rsc") ? ((await r.text().catch(() => "")).includes("4.937,97") ? "[nieuw bedrag]" : "[oud bedrag]") : ""}`);
+      if (r.request().method() === "POST" || r.url().includes("_rsc")) rsc.push(`${r.request().method()} ${r.status()} ${r.url().replace(/https?:\/\/[^/]+/, "").slice(0, 60)} ${r.url().includes("_rsc") ? ((await r.text().catch(() => "")).includes("\"betaaldCenten\":10000") ? "[nieuw bedrag]" : "[oud bedrag]") : ""}`);
     });
     await page.getByRole("button", { name: "Betaling registreren" }).click();
     await page.getByRole("button", { name: "Betaling opslaan" }).click();
