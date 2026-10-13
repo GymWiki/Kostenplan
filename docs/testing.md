@@ -53,6 +53,10 @@ Definities: `.claude/agents/*.md` (model haiku, behalve `security-tester` en `ve
 | document-checker | Offerte-/factuur-PDF's tegen de wettelijke checklist |
 | verifier | Speelt elke melding opnieuw na in een schone sessie, bevestigt/verwerpt, voegt samen, kent prioriteit toe |
 
+> **Let op:** agentdefinities in `.claude/agents/` worden pas geladen als Claude Code (opnieuw) start. In een lopende sessie geef je de definitie door aan een `general-purpose` agent ("Lees `.claude/agents/<naam>.md` en volg die", met het `model` uit het bestand). De eerste ronde draaide zo; de verifiers gebruikten daarna het geregistreerde `verifier`-type.
+
+Leerpunten van ronde 1 (zie `docs/test-reports/2026-10-13/`): geef elke agent een eigen testgebruiker (a1–a3), reseed tussen groepen, laat de verifier seed-artefacten expliciet verwerpen, draai de `perf-tester` alleen, en splits grote dekkingsvragen (mobiel, PDF-keten) over meerdere runs zodat het stappenbudget niet opraakt.
+
 Een ronde starten: `npm run test:agents` (zet de omgeving klaar) en laat Claude Code `docs/test-agents-ronde.md` uitvoeren (of `npm run test:agents -- --uitvoeren` met de `claude` CLI). Agents wijzigen **nooit** code en melden alleen wat ze zelf zagen.
 
 ### Meldformaat

@@ -67,5 +67,6 @@ md += `## Alle bevestigde bevindingen\n\n${tab(bevestigd.map((v) => [prio(v), v.
 if (onzeker.length) md += `## Onzeker (verifier kon niet bevestigen of verwerpen)\n\n${tab(onzeker.map((v) => [v.area, esc(v.title), esc(v.reden || v.notitie || "")]), ["Gebied", "Titel", "Toelichting"])}\n\n`;
 if (nietGeverifieerd.length) md += `## Niet geverifieerd\n\n${tab(nietGeverifieerd.map((v) => [v.area, esc(v.title), v.id]), ["Gebied", "Titel", "Id"])}\n\n`;
 md += `## Verworpen\n\n${verworpen.length} meldingen; zie \`rejected.json\` (met reden) om de agents te verbeteren.\n`;
+if (fs.existsSync(path.join(root, "test-results/rapport-aanvulling.md"))) md += fs.readFileSync(path.join(root, "test-results/rapport-aanvulling.md"), "utf8");
 fs.writeFileSync(path.join(uit, "report.md"), md);
 console.log(`Rapport: docs/test-reports/${datum}/report.md  (P0 ${perPrio.P0 || 0}, P1 ${perPrio.P1 || 0}, P2 ${perPrio.P2 || 0}, P3 ${perPrio.P3 || 0})`);

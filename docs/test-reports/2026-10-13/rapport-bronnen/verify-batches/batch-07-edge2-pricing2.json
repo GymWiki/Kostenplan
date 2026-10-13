@@ -1,0 +1,285 @@
+[
+ {
+  "id": "edge-case-tester-2-mv6yexvr-hvo0",
+  "agent": "edge-case-tester-2",
+  "area": "bug",
+  "title": "Offerte: wijziging in verouderd tabblad overschrijft stil de wijziging van het andere tabblad",
+  "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+  "viewport": "1440x900",
+  "user": "a2",
+  "steps": [
+   "Open concept-offerte a2 (Offerte 2026-0114) in tab A en tab B",
+   "Tab A: Onderwerp wijzigen naar 'Tab A onderwerp', blur; status 'Alles opgeslagen'",
+   "Tab B (nog met oud onderwerp 'Aanleg tuin'): Aantal van regel 2 wijzigen naar 7, blur; status 'Alles opgeslagen'",
+   "Tab A herladen"
+  ],
+  "expected": "Wijziging van tab A blijft staan, of de gebruiker krijgt een melding dat de offerte in een ander tabblad is gewijzigd",
+  "actual": "Na herladen staat Onderwerp op 'Aanleg tuin' (tab A-wijziging weg), aantal regel 2 is 7 (tab B-wijziging wel). Geen melding in een van beide tabbladen.",
+  "screenshot": "test-results/screens/edge-case-tester-2/01-tab-a.png",
+  "console_errors": [
+   "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  ],
+  "confidence": 0.9
+ },
+ {
+  "id": "edge-case-tester-2-mv6yexvs-5y2f",
+  "agent": "edge-case-tester-2",
+  "area": "bug",
+  "title": "Offerte: prijs '12.50' wordt opgeslagen als 1.250,00 (100x te hoog)",
+  "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+  "viewport": "1440x900",
+  "user": "a2",
+  "steps": [
+   "Offerte a2 concept: 'Sectie toevoegen', dan 'Regel toevoegen'",
+   "Prijsveld: typen '12.50', blur",
+   "Herladen"
+  ],
+  "expected": "Prijs 12,50 (of melding dat punt niet als decimaal wordt gezien)",
+  "actual": "Veld toont direct '1250,00'; na herladen regel-prijs € 1.512,50 incl. btw (= 1.250 excl.). Totaal van offerte verspringt met ruim € 1.500.",
+  "screenshot": "test-results/screens/edge-case-tester-2/01-voor-reload-12-50.png",
+  "console_errors": [
+   "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  ],
+  "confidence": 0.9
+ },
+ {
+  "id": "edge-case-tester-2-mv6yexvs-bezr",
+  "agent": "edge-case-tester-2",
+  "area": "bug",
+  "title": "Offerte: prijs '1,234.56' wordt stil opgeslagen als 1,23",
+  "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+  "viewport": "1440x900",
+  "user": "a2",
+  "steps": [
+   "Nieuwe regel in offerte a2, prijsveld typen '1,234.56', blur",
+   "Herladen"
+  ],
+  "expected": "1.234,56 of een foutmelding",
+  "actual": "Veld toont '1,23', status 'Alles opgeslagen'; na herladen regel-prijs € 1,49 incl. btw. Geen waarschuwing.",
+  "screenshot": "test-results/screens/edge-case-tester-2/01-voor-reload-1-234-56.png",
+  "console_errors": [
+   "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  ],
+  "confidence": 0.9
+ },
+ {
+  "id": "edge-case-tester-2-mv6yexvs-qke8",
+  "agent": "edge-case-tester-2",
+  "area": "bug",
+  "title": "Offerte: negatieve prijs (-3) wordt zonder melding opgeslagen en verlaagt het totaal",
+  "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+  "viewport": "1440x900",
+  "user": "a2",
+  "steps": [
+   "Nieuwe regel in offerte a2, prijsveld typen '-3', blur"
+  ],
+  "expected": "Negatieve prijs geweigerd of melding; geen korting via een prijsregel zonder bedoeling",
+  "actual": "Veld toont '-3,00', status 'Alles opgeslagen', totaal daalt. Na herladen staat de regel nog op € -3,63 incl. btw. Het Controleren-scherm vond dit niet (alleen 'bedrag van €0' gecontroleerd).",
+  "screenshot": "test-results/screens/edge-case-tester-2/01-prijs-tests.png",
+  "console_errors": [
+   "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  ],
+  "confidence": 0.85
+ },
+ {
+  "id": "edge-case-tester-2-mv6yexvt-85e2",
+  "agent": "edge-case-tester-2",
+  "area": "ux",
+  "title": "Offerte: foutmelding bij aantal -5 is technisch Engels en het totaal toont een niet-opgeslagen waarde",
+  "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+  "viewport": "1440x900",
+  "user": "a2",
+  "steps": [
+   "Offerte a2 concept, Aantal regel 1 typen '-5', blur",
+   "Wacht 2,5 s"
+  ],
+  "expected": "Nederlandse, begrijpelijke melding bij het veld; opgeslagen waarde en getoonde waarde gelijk",
+  "actual": "Status 'Niet opgeslagen / Opnieuw proberen' met tekst 'Ongeldige offerte: secties.0.regels.0.aantal Too small: expected number to be >=0'. Totaal toont € 1.916,11 terwijl de opgeslagen waarde 24 is (na herladen € 4.493,47).",
+  "screenshot": "test-results/screens/edge-case-tester-2/01-min5-melding.png",
+  "console_errors": [
+   "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  ],
+  "confidence": 0.9
+ },
+ {
+  "id": "edge-case-tester-2-mv6yexvt-vq9o",
+  "agent": "edge-case-tester-2",
+  "area": "ux",
+  "title": "Offerte: onderwerp van 495 tekens wordt geweigerd met Engelse technische melding en gaat na herladen verloren",
+  "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+  "viewport": "1440x900",
+  "user": "a2",
+  "steps": [
+   "Offerte a2, Onderwerp vullen met emoji + 'Aanleg ' x70 (495 tekens), blur",
+   "Herladen"
+  ],
+  "expected": "Tekenlimiet zichtbaar in het veld (maxlength / teller) en Nederlandse melding; of het bericht blijft staan",
+  "actual": "Veld heeft geen maxlength. Melding: 'Ongeldige offerte: onderwerp Too big: expected string to have <=200 characters'. Na herladen staat Onderwerp weer op 'Aanleg tuin'.",
+  "screenshot": "test-results/screens/edge-case-tester-2/03-onderwerp-na-reload.png",
+  "console_errors": [
+   "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  ],
+  "confidence": 0.85
+ },
+ {
+  "id": "edge-case-tester-2-mv6yexvt-9iv4",
+  "agent": "edge-case-tester-2",
+  "area": "bug",
+  "title": "Offerte en factuur: tekst 'abc' in aantal wordt stil 0 en opgeslagen",
+  "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+  "viewport": "1440x900",
+  "user": "a2",
+  "steps": [
+   "Offerte a2 (en factuur F-concept), Aantal regel 1 typen 'abc', blur"
+  ],
+  "expected": "Weigering of melding dat alleen getallen mogen",
+  "actual": "Veld toont '0', status 'Alles opgeslagen'; na herladen blijft 0 staan. Offerte: totaal € 2.360,48 na herladen. Factuur: totaal € 4.311,97 na herladen. Geen melding.",
+  "screenshot": "test-results/screens/edge-case-tester-2/04-aantal-abc.png",
+  "console_errors": [
+   "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  ],
+  "confidence": 0.85
+ },
+ {
+  "id": "edge-case-tester-2-mv6yexvu-n6of",
+  "agent": "edge-case-tester-2",
+  "area": "bug",
+  "title": "Offerte: offline bewerken blijft 'Opslaan…' hangen zonder melding; wijziging is na weer online en herladen weg",
+  "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+  "viewport": "1440x900",
+  "user": "a2",
+  "steps": [
+   "Offerte a2 geopend, ctx offline",
+   "Aantal regel 1 naar 31 en Onderwerp naar 'Aanleg tuin offline', blur",
+   "Wacht 6 s, daarna weer online en 8 s wachten",
+   "Herladen"
+  ],
+  "expected": "Duidelijke melding 'geen verbinding, wijziging niet opgeslagen' en opnieuw proberen na online komen; of wijziging blijft behouden",
+  "actual": "Status blijft 'Opslaan…' (spinner), geen foutmelding; na online blijft 'Opslaan…'. Na herladen: aantal 30 (oude waarde), onderwerp 'Aanleg tuin'. Console: 'pageerror: Failed to fetch'. Wijziging verloren.",
+  "screenshot": "test-results/screens/edge-case-tester-2/02-offline-bewerkt.png",
+  "console_errors": [
+   "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  ],
+  "confidence": 0.85
+ },
+ {
+  "id": "edge-case-tester-2-mv6yexvu-wtsq",
+  "agent": "edge-case-tester-2",
+  "area": "bug",
+  "title": "Factuur: betaling registreren terwijl offline geeft Engelse foutpagina en de betaling wordt niet opgeslagen",
+  "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+  "viewport": "1440x900",
+  "user": "a2",
+  "steps": [
+   "Factuur F2026-0005 (definitief), 'Betaling registreren', bedrag 100",
+   "ctx offline",
+   "'Betaling opslaan' klikken",
+   "Wacht 6 s, online, herladen"
+  ],
+  "expected": "Melding dat de betaling niet is opgeslagen; formulier blijft open met de ingevoerde gegevens",
+  "actual": "Dialoog verdwijnt, pagina toont 'This page couldn't load / Reload to try again, or go back.' (Engelse generieke foutpagina). Na herladen geen betaling van 100 (Betaald blijft € 3.000,00). Console: 'pageerror: Failed to fetch'.",
+  "screenshot": "test-results/screens/edge-case-tester-2/01-offline-betaling.png",
+  "console_errors": [
+   "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  ],
+  "confidence": 0.9
+ },
+ {
+  "id": "edge-case-tester-2-mv6yexvu-evu1",
+  "agent": "edge-case-tester-2",
+  "area": "ux",
+  "title": "Factuur: verouderd tabblad toont openstaand € 3.037,97 maar weigert betaling van precies dat bedrag",
+  "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+  "viewport": "1440x900",
+  "user": "a2",
+  "steps": [
+   "Factuur F2026-0005 in tab A en B, beide 'Betaling registreren' geopend (openstaand € 3.037,97 in beide)",
+   "Tab A: 1000 betalen, opslaan (Betaald € 3.000,00)",
+   "Tab B: 3037,97 invullen, 'Betaling opslaan'"
+  ],
+  "expected": "Betaling wordt geweigerd met duidelijke uitleg dat de openstaande post is gewijzigd (of geaccepteerd als wat er nog openstaat)",
+  "actual": "Tab B blijft open met melding 'Dit is meer dan het openstaande bedrag.' terwijl het veld 'Openstaand: € 3.037,97' toont. Geen dubbele betaling gezien (na herladen één betaling van € 1.000 bovenop de eerste). Verwarrende melding.",
+  "screenshot": "test-results/screens/edge-case-tester-2/01-B-stale-betaling.png",
+  "console_errors": [
+   "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  ],
+  "confidence": 0.6
+ },
+ {
+  "id": "edge-case-tester-2-mv6yexvu-b8di",
+  "agent": "edge-case-tester-2",
+  "area": "ux",
+  "title": "Offerte: 'Sectie toevoegen' en 'Regel toevoegen' slaan lege secties en prijs-0-regels direct op",
+  "url": "http://localhost:3200/dashboard/leads/cmv6xym4d00630s7d7rzjfxq8/offerte",
+  "viewport": "1440x900",
+  "user": "a2",
+  "steps": [
+   "Offerte a2, 'Sectie toevoegen' klikken, 'Regel toevoegen' klikken",
+   "Herladen"
+  ],
+  "expected": "Lege sectie pas opslaan na invullen, of duidelijk als concept",
+  "actual": "Na herladen staan 8 secties 'Nieuwe sectie' (met € 0,00-regels) in de offerte; Controleren-scherm blokkeert versturen met 'Dit moet eerst kloppen'. Handmatig verwijderd via 'Sectie verwijderen'.",
+  "screenshot": "test-results/screens/edge-case-tester-2/01-sectie-toegevoegd.png",
+  "console_errors": [
+   "pageerror: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  ],
+  "confidence": 0.5
+ },
+ {
+  "agent": "pricing-checker-2",
+  "viewport": "1440x900",
+  "user": "a3",
+  "console_errors": [],
+  "id": "pricing-checker-2-C-leadkop",
+  "area": "pricing",
+  "title": "Leaddetail Boom C: kopbedrag € 428,75 past niet bij Subtotaal € 1.239,67 op dezelfde kaart",
+  "url": "http://localhost:3200/dashboard/leads",
+  "steps": [
+   "Log als a3 in (desktop). Embed /t/devries-a3/tuinaanleg-a3: postcode 8011AB 5, Boom planten 3 stuks, materiaal Boom 200 cm. Embed toont Arbeid € 33,75, Materiaal € 360,00, Voorrijkosten € 35,00, Aanvulling tot minimumtarief € 810,92, Subtotaal € 1.239,67, TOTAAL (INCL. BTW) € 1.500,00.",
+   "Dien de aanvraag in als PC2 Boom C.",
+   "Open de lead op /dashboard/leads (Bord, kaart PC2 Boom C). Lees 'Wat de klant koos'."
+  ],
+  "expected": "Kopbedrag van de leadkaart gelijk aan het subtotaal (excl. btw), zoals bij de andere twee leads (Schutting: € 1.915,00 = subtotaal; Bestrating: € 1.463,00 = subtotaal).",
+  "actual": "Kopbedrag € 428,75 (= arbeid 33,75 + materiaal 360,00 + voorrij 35,00, zonder de minimum-aanvulling). Daaronder staat Materiaalkosten € 1.170,92 (incl. aanvulling), Subtotaal € 1.239,67, Btw € 260,33, Totaal (incl. btw) € 1.500,00.",
+  "screenshot": "test-results/screens/pricing-checker-2/01-lead-C.png",
+  "confidence": 0.7
+ },
+ {
+  "agent": "pricing-checker-2",
+  "viewport": "1440x900",
+  "user": "a3",
+  "console_errors": [],
+  "id": "pricing-checker-2-C-minimum-label",
+  "area": "pricing",
+  "title": "Offerte Boom C: minimumaanvulling heet 'Transport' (€ 981,21 incl. btw) i.p.v. 'Aanvulling tot minimumtarief' (€ 810,92 excl. btw)",
+  "url": "http://localhost:3200/dashboard/leads/cmv6y5cbt00cu7b7drqb2x67p/offerte",
+  "steps": [
+   "Zelfde aanvraag als hierboven (PC2 Boom C, 3 bomen, minimum € 1.500,00).",
+   "Open 'Offerte maken in Kostenplan' vanuit de lead. Lees de editor en de offerte-PDF (pdftotext -layout)."
+  ],
+  "expected": "Het minimumbedrag staat op de offerte onder dezelfde naam als in de rekentool ('Aanvulling tot minimumtarief', € 810,92 excl. btw).",
+  "actual": "Offerte-PDF en editor tonen de post 'Voorrijkosten en transport € 1.023,56' met een regel 'Transport, 1 post, € 981,21 (21%)'. Totaal excl. btw € 1.239,67, incl. btw € 1.500,00 (de totalen kloppen wel).",
+  "screenshot": "test-results/screens/pricing-checker-2/01-offerte-C.png",
+  "confidence": 0.6
+ },
+ {
+  "agent": "pricing-checker-2",
+  "viewport": "1440x900",
+  "user": "a3",
+  "console_errors": [],
+  "id": "pricing-checker-2-A-voorwaarden",
+  "area": "bug",
+  "title": "Offerte-versturen blijft geblokkeerd na upload van algemene voorwaarden in Profiel",
+  "url": "http://localhost:3200/dashboard/leads/cmv6y1yv500c97b7drc6bmq9j/offerte",
+  "steps": [
+   "Log als a3 in (desktop). Open offerte 2026-0001 (lead PC2 Schutting A) en klik Versturen.",
+   "Zie blokkade: 'Let op: Er zijn geen algemene voorwaarden bijgevoegd'; de knop 'Verder naar versturen' gaat niet verder.",
+   "Ga naar /dashboard/profiel/offerte-instellingen#og-voorwaarden en upload een PDF (voorwaarden.pdf). Het profiel toont daarna voorwaarden.pdf.",
+   "Open de offerte opnieuw, klik Versturen en daarna Verder naar versturen."
+  ],
+  "expected": "Na upload van de voorwaarden is de blokkade weg en kan de offerte verder naar versturen.",
+  "actual": "Het profiel toont voorwaarden.pdf, maar in de offerte staat nog steeds 'Er zijn geen algemene voorwaarden bijgevoegd' en 'Verder naar versturen' gaat niet verder.",
+  "screenshot": "test-results/screens/pricing-checker-2/01-verstuur-A-na-voorwaarden.png",
+  "confidence": 0.6
+ }
+]
