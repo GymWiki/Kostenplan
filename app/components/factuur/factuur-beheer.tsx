@@ -88,7 +88,9 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
           router.refresh();
         } else {
           setFout(r.error);
-          router.refresh(); // toon meteen het actuele openstaande bedrag
+          // Toon meteen het actuele openstaande bedrag. Buiten de lopende transitie (setTimeout): binnen een
+          // async transitie werd deze verversing soms niet doorgevoerd en bleef het verouderde bedrag staan.
+          setTimeout(() => router.refresh(), 0);
         }
       } catch {
         setFout("Geen verbinding. De betaling is niet opgeslagen; probeer het opnieuw zodra je weer online bent.");
