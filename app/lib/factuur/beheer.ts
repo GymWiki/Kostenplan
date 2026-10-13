@@ -12,12 +12,14 @@ export class BeheerFout extends Error {}
 
 type Db = Pick<PrismaClient, "factuur" | "factuurBetaling" | "factuurGebeurtenis" | "$queryRaw">;
 
-// Betaald en gecrediteerd (definitieve creditnota's, positief) van een factuur.
-export async function laadStand(db: Db, factuurId: string): Promise<BetalingsStand & { status: string; verstuurd: boolean }> {
-  const f = await db.factuur.findUniqueOrThrow({
-    where: { id: factuurId },
+// Betaald en gecrediteerd (definitieve creditnota's, positief) van een factuur van dit bedrijf. Een factuur van een ander
+// bedrijf bestaat hier niet: "Factuur niet gevonden." (nooit een factuur alleen op id laden).
+export async function laadStand(db: Db, factuurId: string, companyId: string): Promise<BetalingsStand & { status: string; verstuurd: boolean }> {
+  const f = await db.factuur.findFirst({
+    where: { id: factuurId, companyId },
     select: { status: true, verstuurdOp: true, totaalInclCenten: true, betalingen: { select: { bedragCenten: true } }, creditnotas: { where: { status: { not: "CONCEPT" } }, select: { totaalInclCenten: true } } },
   });
+  if (!f) throw new BeheerFout("Factuur niet gevonden.");
   return {
     status: f.status,
     verstuurd: f.verstuurdOp !== null,
@@ -28,14 +30,18 @@ export async function laadStand(db: Db, factuurId: string): Promise<BetalingsSta
 }
 
 // Zet de status van de factuur in lijn met betalingen en creditnota's.
-export async function herberekenFactuurStatus(db: Db, factuurId: string): Promise<void> {
-  const s = await laadStand(db, factuurId);
+export async function herberekenFactuurStatus(db: Db, factuurId: string, companyId: string): Promise<void> {
+  const s = await laadStand(db, factuurId, companyId);
   if (s.status === "CONCEPT") return;
   const nieuw = statusNaMutatie(s.status as Parameters<typeof statusNaMutatie>[0], s, s.verstuurd);
   if (nieuw !== s.status) await db.factuur.update({ where: { id: factuurId }, data: { status: nieuw } });
 }
 
-const vergrendel = (tx: Db, id: string, companyId: string) => tx.$queryRaw`SELECT "id" FROM "Factuur" WHERE "id" = ${id} AND "companyId" = ${companyId} FOR UPDATE`;
+// Vergrendelt de factuur van dit bedrijf; bestaat hij niet (of is hij van een ander bedrijf), dan stopt alles hier.
+async function vergrendel(tx: Db, id: string, companyId: string): Promise<void> {
+  const rijen = await tx.$queryRaw<{ id: string }[]>`SELECT "id" FROM "Factuur" WHERE "id" = ${id} AND "companyId" = ${companyId} FOR UPDATE`;
+  if (rijen.length === 0) throw new BeheerFout("Factuur niet gevonden.");
+}
 
 export async function registreerBetaling(
   db: PrismaClient,
@@ -43,12 +49,12 @@ export async function registreerBetaling(
 ): Promise<void> {
   await db.$transaction(async (tx) => {
     await vergrendel(tx, factuurId, companyId);
-    const s = await laadStand(tx, factuurId);
+    const s = await laadStand(tx, factuurId, companyId);
     const fout = valideerBetaling({ bedragCenten, datum }, s, s.status as Parameters<typeof valideerBetaling>[2]);
     if (fout) throw new BeheerFout(BETALING_FOUT_TEKST[fout]);
     await tx.factuurBetaling.create({ data: { factuurId, datum: new Date(`${datum}T00:00:00Z`), bedragCenten, methode, notitie: notitie?.trim() || null } });
     await tx.factuurGebeurtenis.create({ data: { factuurId, soort: "BETALING", bedragCenten, tekst: notitie?.trim() || null } });
-    await herberekenFactuurStatus(tx, factuurId);
+    await herberekenFactuurStatus(tx, factuurId, companyId);
   });
 }
 
@@ -60,7 +66,7 @@ export async function verwijderBetaling(db: PrismaClient, { betalingId, companyI
     await vergrendel(tx, b.factuurId, companyId);
     await tx.factuurBetaling.delete({ where: { id: b.id } });
     await tx.factuurGebeurtenis.create({ data: { factuurId: b.factuurId, soort: "NOTITIE", tekst: "Betaling verwijderd", bedragCenten: b.bedragCenten } });
-    await herberekenFactuurStatus(tx, b.factuurId);
+    await herberekenFactuurStatus(tx, b.factuurId, companyId);
   });
 }
 

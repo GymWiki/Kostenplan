@@ -1,0 +1,9 @@
+{
+  "edge-case-tester-2-mv6yexvs-5y2f": { "priority": "P0", "note": "Fout bedrag: '12.50' wordt stil 1.250,00 (factor 100). P0 volgens de definitie 'fout bedrag'." },
+  "edge-case-tester-2-mv6yexvu-n6of": { "priority": "P0", "note": "Stil dataverlies bij offline bewerken (geen melding, geen retry). P0 volgens de definitie 'dataverlies'." },
+  "edge-case-tester-2-mv6yexvr-hvo0": { "priority": "P0", "note": "Stil dataverlies door last-writer-wins bij twee tabbladen. P0 volgens de definitie 'dataverlies'." },
+  "ui-auditor-1-mv6wj4o8-9lp8": { "priority": "P0", "note": "De hoofdactie van de factuur (Definitief maken/Versturen) is op mobiel onbereikbaar: blokkade. P0 volgens de definitie 'blokkade'." },
+  "flow-tester-5-mv6x7k4w-1ulp": { "title": "Geaccepteerde offerte: beheerscherm en gewone PDF tellen de door de klant gekozen optionele regel niet mee (getekende PDF, online pagina en factuur wel)", "add_merged": ["document-checker-1-mv6x4d3i-ik4k"], "note": "Samengevoegd met de getekende-PDF-melding (zelfde oorzaak: gekozenOptioneel wordt in de editor niet doorgegeven). De oorspronkelijke melding verwachtte onjuist dat de factuur de optie niet zou meetellen; de factuur is juist." },
+  "document-checker-1-mv6x4d3i-ik4k": { "drop": true },
+  "pricing-checker-2-C-leadkop": { "priority": "P2", "note": "Alleen de weergave van het onderdeelkopbedrag verschilt (de aanvulling tot het minimum zit in Materiaalkosten); alle totalen kloppen. Verlaagd van P1 naar P2." }
+}

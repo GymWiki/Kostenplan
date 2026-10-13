@@ -1,0 +1,174 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Direct naar de inhoud" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - navigation [ref=e5]:
+        - link "Kostenplan" [ref=e6] [cursor=pointer]:
+          - /url: /dashboard
+          - text: Kostenplan
+        - link "Overzicht" [ref=e8] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e9]
+          - text: Overzicht
+        - link "Rekentools" [ref=e14] [cursor=pointer]:
+          - /url: /dashboard/tools
+          - img [ref=e15]
+          - text: Rekentools
+        - link "Leads" [ref=e17] [cursor=pointer]:
+          - /url: /dashboard/leads
+          - img [ref=e18]
+          - text: Leads
+        - link "Profiel" [ref=e23] [cursor=pointer]:
+          - /url: /dashboard/profiel
+          - img [ref=e25]
+          - text: Profiel
+    - generic [ref=e29]:
+      - banner [ref=e30]:
+        - generic [ref=e31]:
+          - button "Bedrijf wisselen" [ref=e32] [cursor=pointer]:
+            - generic [ref=e33]: Hoveniersbedrijf De Vries
+            - img [ref=e34]
+          - 'button "Uitleg: Bedrijf wisselen" [ref=e37]':
+            - img [ref=e38]
+        - button "Schakel naar donkere modus" [ref=e41] [cursor=pointer]:
+          - img [ref=e42]
+        - button "Uitloggen" [ref=e45] [cursor=pointer]:
+          - img [ref=e46]
+          - generic [ref=e49]: Uitloggen
+      - main [ref=e50]:
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - link "Profiel" [ref=e54] [cursor=pointer]:
+              - /url: /dashboard/profiel
+              - img [ref=e55]
+              - text: Profiel
+            - heading "Werkgebied en minimum" [level=1] [ref=e57]
+          - paragraph [ref=e58]: Alleen aanvragen binnen je werkgebied en boven een minimumbedrag. Per rekentool kun je afwijken; dat doe je in de rekentool zelf.
+          - generic [ref=e59]:
+            - group [ref=e60]:
+              - generic [ref=e61]:
+                - generic [ref=e62]:
+                  - generic [ref=e63]:
+                    - heading "Werkgebied" [level=3] [ref=e64]
+                    - paragraph [ref=e65]: Vraag de klant eerst naar zijn adres. Zo weet hij vooraf of je bij hem werkt.
+                  - checkbox "Werkgebied gebruiken" [checked] [ref=e67]
+                - group "Hoe bepaal je je werkgebied?" [ref=e70]:
+                  - generic [ref=e71]: Hoe bepaal je je werkgebied?
+                  - radiogroup [ref=e72]:
+                    - generic [ref=e73] [cursor=pointer]:
+                      - radio "Straal rond een adres Bijvoorbeeld 30 km rond je bedrijf." [checked] [ref=e74]
+                      - generic [ref=e75]:
+                        - generic [ref=e76]: Straal rond een adres
+                        - img [ref=e77]
+                      - generic [ref=e79]: Bijvoorbeeld 30 km rond je bedrijf.
+                    - generic [ref=e80] [cursor=pointer]:
+                      - radio "Postcodegebieden Een lijst postcodes of reeksen, bijv. 8000–8099." [ref=e81]
+                      - generic [ref=e83]: Postcodegebieden
+                      - generic [ref=e84]: Een lijst postcodes of reeksen, bijv. 8000–8099.
+                - generic [ref=e85]:
+                  - generic [ref=e86]:
+                    - generic [ref=e87]: Startadres
+                    - generic [ref=e88]:
+                      - combobox "Startadres" [ref=e89]: 8011AB 5
+                      - generic:
+                        - img
+                    - paragraph [ref=e90]: Voorstraat 5, 8011 AB Zwolle
+                  - generic [ref=e91]:
+                    - generic [ref=e92]: Straal
+                    - generic [ref=e93]:
+                      - textbox "Straal" [ref=e94]: "30"
+                      - generic: km
+                    - paragraph [ref=e95]: Hemelsbreed, dus niet de reisafstand.
+                - img "Kaart van je werkgebied" [ref=e96]:
+                  - generic:
+                    - generic:
+                      - img
+                  - generic:
+                    - generic [ref=e99]:
+                      - button "Zoom in" [ref=e100] [cursor=pointer]: +
+                      - button "Zoom out" [ref=e101] [cursor=pointer]: −
+                    - generic [ref=e102]:
+                      - link "Leaflet" [ref=e103] [cursor=pointer]:
+                        - /url: https://leafletjs.com
+                        - img [ref=e104]
+                        - text: Leaflet
+                      - text: "| Kaartgegevens © Kadaster"
+                - group "Wat gebeurt er bij een adres buiten je werkgebied?" [ref=e108]:
+                  - generic [ref=e109]: Wat gebeurt er bij een adres buiten je werkgebied?
+                  - radiogroup [ref=e110]:
+                    - generic [ref=e111] [cursor=pointer]:
+                      - radio "Geen aanvraag De klant ziet een melding en kan geen aanvraag doen." [ref=e112]
+                      - generic [ref=e114]: Geen aanvraag
+                      - generic [ref=e115]: De klant ziet een melding en kan geen aanvraag doen.
+                    - generic [ref=e116] [cursor=pointer]:
+                      - radio "Wel aanvragen De aanvraag komt binnen, gemarkeerd als \"Buiten werkgebied\"." [ref=e117]
+                      - generic [ref=e119]: Wel aanvragen
+                      - generic [ref=e120]: De aanvraag komt binnen, gemarkeerd als "Buiten werkgebied".
+                    - generic [ref=e121] [cursor=pointer]:
+                      - radio "Afstandstoeslag Extra voorrijkosten voor de afstand." [checked] [ref=e122]
+                      - generic [ref=e123]:
+                        - generic [ref=e124]: Afstandstoeslag
+                        - img [ref=e125]
+                      - generic [ref=e127]: Extra voorrijkosten voor de afstand.
+                - generic [ref=e128]:
+                  - group "Hoe reken je de toeslag?" [ref=e129]:
+                    - generic [ref=e130]: Hoe reken je de toeslag?
+                    - radiogroup [ref=e131]:
+                      - generic [ref=e132] [cursor=pointer]:
+                        - radio "Per kilometer Voor elke km buiten de straal." [checked] [ref=e133]
+                        - generic [ref=e134]:
+                          - generic [ref=e135]: Per kilometer
+                          - img [ref=e136]
+                        - generic [ref=e138]: Voor elke km buiten de straal.
+                      - generic [ref=e139] [cursor=pointer]:
+                        - radio "Zones Een vast bedrag per afstandszone." [ref=e140]
+                        - generic [ref=e142]: Zones
+                        - generic [ref=e143]: Een vast bedrag per afstandszone.
+                  - generic [ref=e144]:
+                    - generic [ref=e145]: Extra voorrijkosten
+                    - generic [ref=e146]:
+                      - generic: €
+                      - textbox "Extra voorrijkosten" [ref=e147]: 0,5
+                      - generic: per km
+                    - paragraph [ref=e148]: Per kilometer buiten de straal, excl. btw.
+                - generic [ref=e149]:
+                  - generic [ref=e150]: Tekst bij een adres buiten je werkgebied
+                  - textbox "Tekst bij een adres buiten je werkgebied" [ref=e151]:
+                    - /placeholder: Dit adres ligt buiten ons werkgebied. Neem gerust contact op, dan kijken we of we iets voor je kunnen doen.
+                  - paragraph [ref=e152]: Je telefoonnummer en e-mailadres staan er automatisch onder, als je ze op je rekentool toont.
+              - generic [ref=e153]:
+                - generic [ref=e154]:
+                  - generic [ref=e155]:
+                    - heading "Minimale opdracht" [level=3] [ref=e156]
+                    - paragraph [ref=e157]: Voor kleine klussen die je niet wilt doen, of die je tegen een minimumtarief doet.
+                  - checkbox "Minimale opdracht gebruiken" [checked] [ref=e159]
+                - generic [ref=e162]:
+                  - generic [ref=e163]: Minimumbedrag
+                  - generic [ref=e164]:
+                    - generic: €
+                    - textbox "Minimumbedrag" [ref=e165]: "1500"
+                  - paragraph [ref=e166]: "Inclusief btw: het bedrag dat de klant ziet."
+                - group "Wat gebeurt er onder het minimum?" [ref=e167]:
+                  - generic [ref=e168]: Wat gebeurt er onder het minimum?
+                  - radiogroup [ref=e169]:
+                    - generic [ref=e170] [cursor=pointer]:
+                      - radio "Minimumtarief rekenen De prijs wordt minimaal het minimumbedrag." [checked] [ref=e171]
+                      - generic [ref=e172]:
+                        - generic [ref=e173]: Minimumtarief rekenen
+                        - img [ref=e174]
+                      - generic [ref=e176]: De prijs wordt minimaal het minimumbedrag.
+                    - generic [ref=e177] [cursor=pointer]:
+                      - radio "Geen aanvraag \"We nemen opdrachten aan vanaf …\"" [ref=e178]
+                      - generic [ref=e180]: Geen aanvraag
+                      - generic [ref=e181]: "\"We nemen opdrachten aan vanaf …\""
+                    - generic [ref=e182] [cursor=pointer]:
+                      - radio "Wel aanvragen Gemarkeerd als \"Onder minimum\"." [ref=e183]
+                      - generic [ref=e185]: Wel aanvragen
+                      - generic [ref=e186]: Gemarkeerd als "Onder minimum".
+            - status [ref=e187]
+  - alert [ref=e188]
+```

@@ -1,0 +1,112 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Direct naar de inhoud" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - banner [ref=e5]:
+        - heading "Profiel" [level=1] [ref=e6]
+      - main [ref=e7]:
+        - generic [ref=e9]:
+          - 'button "Bedrijf wisselen, huidig: Hoveniersbedrijf De Vries" [ref=e11] [cursor=pointer]':
+            - generic [ref=e12]: HD
+            - generic [ref=e14]: Hoveniersbedrijf De Vries
+            - img [ref=e15]
+          - region "Je bedrijf" [ref=e18]:
+            - heading "Je bedrijf" [level=2] [ref=e19]
+            - list [ref=e20]:
+              - listitem [ref=e21]:
+                - link "Bedrijfsgegevens Naam, adres, KvK, contact" [ref=e22] [cursor=pointer]:
+                  - /url: /dashboard/profiel/bedrijfsgegevens
+                  - img [ref=e24]
+                  - generic [ref=e28]:
+                    - generic [ref=e29]: Bedrijfsgegevens
+                    - generic [ref=e30]: Naam, adres, KvK, contact
+                  - img [ref=e31]
+              - listitem [ref=e33]:
+                - link "Huisstijl & logo" [ref=e34] [cursor=pointer]:
+                  - /url: /dashboard/profiel/huisstijl
+                  - img [ref=e36]
+                  - generic [ref=e43]: Huisstijl & logo
+                  - img [ref=e46]
+          - region "Prijzen en aanvragen" [ref=e48]:
+            - heading "Prijzen en aanvragen" [level=2] [ref=e49]
+            - list [ref=e50]:
+              - listitem [ref=e51]:
+                - link "Tarieven € 45 per uur · voorrijkosten € 35" [ref=e52] [cursor=pointer]:
+                  - /url: /dashboard/profiel/tarieven
+                  - img [ref=e54]
+                  - generic [ref=e55]:
+                    - generic [ref=e56]: Tarieven
+                    - generic [ref=e57]: € 45 per uur · voorrijkosten € 35
+                  - img [ref=e58]
+              - listitem [ref=e60]:
+                - link "Werkgebied en minimum 30 km rond Zwolle · vanaf € 1500" [ref=e61] [cursor=pointer]:
+                  - /url: /dashboard/profiel/werkgebied
+                  - img [ref=e63]
+                  - generic [ref=e66]:
+                    - generic [ref=e67]: Werkgebied en minimum
+                    - generic [ref=e68]: 30 km rond Zwolle · vanaf € 1500
+                  - img [ref=e69]
+              - listitem [ref=e71]:
+                - link "Offerte-instellingen Nummering, geldigheid, betaling, standaardteksten" [ref=e72] [cursor=pointer]:
+                  - /url: /dashboard/profiel/offerte-instellingen
+                  - img [ref=e74]
+                  - generic [ref=e77]:
+                    - generic [ref=e78]: Offerte-instellingen
+                    - generic [ref=e79]: Nummering, geldigheid, betaling, standaardteksten
+                  - img [ref=e80]
+          - region "Abonnement" [ref=e82]:
+            - heading "Abonnement" [level=2] [ref=e83]
+            - list [ref=e84]:
+              - listitem [ref=e85]:
+                - link "Abonnement Pro · actief" [ref=e86] [cursor=pointer]:
+                  - /url: /dashboard/profiel/abonnement
+                  - img [ref=e88]
+                  - generic [ref=e90]:
+                    - generic [ref=e91]: Abonnement
+                    - generic [ref=e92]: Pro · actief
+                  - img [ref=e93]
+          - region "Account" [ref=e95]:
+            - heading "Account" [level=2] [ref=e96]
+            - list [ref=e97]:
+              - listitem [ref=e98]:
+                - link "Account hovenier-a1@test.kostenplan.nl" [ref=e99] [cursor=pointer]:
+                  - /url: /dashboard/profiel/account
+                  - img [ref=e101]
+                  - generic [ref=e104]:
+                    - generic [ref=e105]: Account
+                    - generic [ref=e106]: hovenier-a1@test.kostenplan.nl
+                  - img [ref=e107]
+              - listitem [ref=e109]:
+                - button "Uitloggen" [ref=e111] [cursor=pointer]:
+                  - img [ref=e113]
+                  - generic [ref=e116]: Uitloggen
+    - navigation "Hoofdmenu" [ref=e117]:
+      - list [ref=e118]:
+        - listitem [ref=e119]:
+          - link "Overzicht" [ref=e120] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e122]
+            - generic [ref=e127]: Overzicht
+        - listitem [ref=e128]:
+          - link "Rekentools" [ref=e129] [cursor=pointer]:
+            - /url: /dashboard/tools
+            - img [ref=e131]
+            - generic [ref=e133]: Rekentools
+        - listitem [ref=e134]:
+          - link "2 nieuwe leads Leads" [ref=e135] [cursor=pointer]:
+            - /url: /dashboard/leads
+            - generic [ref=e136]:
+              - img [ref=e137]
+              - generic "2 nieuwe leads" [ref=e142]: "2"
+            - generic [ref=e143]: Leads
+        - listitem [ref=e144]:
+          - link "Profiel" [ref=e145] [cursor=pointer]:
+            - /url: /dashboard/profiel
+            - img [ref=e147]
+            - generic [ref=e151]: Profiel
+  - alert [ref=e152]
+```

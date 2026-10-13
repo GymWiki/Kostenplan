@@ -1,0 +1,20 @@
+const h = require("./h.js");
+const k = require("/home/user/Kostenplan/scripts/test/agent-lib.js");
+const telLead = async () => { const b = await k.open({ agent: "edge-case-tester-1", gebruiker: "a3", viewport: "mobiel", pad: "/dashboard/leads", maxStappen: 250 }); await b.page.waitForTimeout(1200); const t = (await b.page.innerText("body")).replace(/\n+/g, " | "); const m = t.match(/Alle \| (\d+)/); const d = t.match(/Dubbel[^|]*\|[^|]*/g); await b.sluit(); return { alle: m && m[1], dubbelTekst: d }; };
+(async () => {
+  const s = await h.open();
+  await h.klaar(s, s.seed.a3.tools.tuinaanleg);
+  await s.page.getByRole("button", { name: "Offerte aanvragen" }).click();
+  await s.page.waitForTimeout(800);
+  await s.page.locator("input[name=naam]").fill("Dubbelklik Test E1");
+  await s.page.locator("input[name=email]").fill("edge-dubbel@voorbeeld.nl");
+  await s.page.locator("input[name=telefoonnummer]").fill("0612345678");
+  const btn = s.page.getByRole("button", { name: "Versturen" });
+  await btn.dblclick();
+  await s.page.waitForTimeout(4000);
+  console.log("TEKST NA DBLCLICK:", (await h.tekst(s)).slice(-300));
+  await s.scherm("embed-dubbelklik");
+  console.log("CONSOLE", s.consoleFouten.slice(-3));
+  await s.sluit();
+  console.log("LEADS NA:", JSON.stringify(await telLead()));
+})().catch(e => { console.error("FOUT", e.message.slice(0, 400)); process.exit(1); });

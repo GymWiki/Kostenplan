@@ -1,0 +1,20 @@
+const start = require("./lib.js");
+(async () => {
+  const s = await start(null, 120, "desktop");
+  const p = s.page;
+  await s.goto2("/dashboard/profiel");
+  s.stap(); await p.getByRole("button", { name: /Groenstijl Tuinen|Hoveniersbedrijf De Vries/ }).first().click();
+  await p.waitForTimeout(500);
+  await s.scherm("desk-popover");
+  s.stap(); await p.getByRole("button", { name: /Hoveniersbedrijf De Vries/ }).last().click();
+  await p.waitForTimeout(2500); await p.waitForLoadState("networkidle");
+  const kop = (await p.locator("body").innerText()).split("\n").filter((l) => /Groen|Hoveniers/.test(l));
+  console.log("kop na klik:", kop, "| url", p.url());
+  console.log("toast:", await p.getByText(/Je werkt nu in/).allInnerTexts());
+  await s.scherm("desk-na-wissel-devries");
+  await s.goto2("/dashboard/profiel");
+  console.log("kop na reload:", (await p.locator("body").innerText()).split("\n").filter((l) => /Groen|Hoveniers/.test(l)));
+  await s.scherm("desk-profiel");
+  console.log("consoleFouten", s.consoleFouten, "netwerk", s.netwerkFouten);
+  await s.sluit();
+})().catch((e) => { console.error("FOUT", e.message); process.exit(1); });

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Wrench, Package, Users, ArrowRight } from "lucide-react";
 import { requireActiveCompany, getDashboardStats } from "@/app/lib/dal";
-import { markOnboardingVoltooid } from "@/app/lib/actions/onboarding";
+import { markOnboardingVoltooid } from "@/app/lib/onboarding-voltooid";
 import { bouwOnboardingStappen } from "@/app/lib/onboarding";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { LinkButton } from "@/app/components/ui/button";

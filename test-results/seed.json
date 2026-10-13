@@ -1,0 +1,217 @@
+{
+  "a1": {
+    "email": "hovenier-a1@test.kostenplan.nl",
+    "userId": "35838848-b0df-4572-8836-23cfe0ccb75f",
+    "factuurTokens": {
+      "concept": "A2gQVSLb1eL-s0GgvVeOc48Tlirw7wDR",
+      "verstuurd": "LSsihuu7RJ9toFLPC8MbcOQOf_JL1Ybs",
+      "te-laat": "0_q5xRbInyrinn8rVAmIZlFrAzJBUzsl",
+      "betaald": "JkGQuOMFmzQ6BobsNkFJ7w_93fN1LNE0",
+      "credit-orig": "gr3IjBsEZQYeCmWi-o_bSO4XnVWkJTiU",
+      "creditnota": "PNhym51MiYnh24elP9NfWNt0Pr3k6mU7"
+    },
+    "offerteTokens": {
+      "offerte-concept": "fqLxpiBuPUwiQVDPfmM4A2GCp1J0dE0m",
+      "offerte-verstuurd": "g7exdKwknArNnHY_vQIIOmNSDLEu-oHQ",
+      "offerte-verlopen": "E5kdX-aSo01oBTuB4tmjLQ2Ow-GaTnNW",
+      "afgewezen": "1l_cF6fDQrLJLu0fmekaNAr_HlHnk3Dg",
+      "akkoord": "pHL6HiHxqNrR-H1goBZnQztZ5i6L736G",
+      "ingepland": "x2GUC9YFMdRUQIZ2LSR2RX5zKfEgvo4m",
+      "opgeleverd": "UkgX85-GqB-Yu9hhxkU0jPetoE1KVmxo",
+      "gefactureerd": "ii-eqB55aGMVIQMLXrKSFWt_RsyBYcd6",
+      "te-laat": "vqZ_6OfVKpNXmNfpzWBCqNJ_xPB8Cmm_",
+      "betaald": "uzJgmlGsRu-k6MMukdWBEql9ULxZFdwH",
+      "creditnota": "zNrUK7GGhr6ZlIXf3BPhhue08eYx-VCf",
+      "verloren": "W3ZxhCuGqG07LN9kGWYRuS7j7OB2O6I5"
+    },
+    "tuinaanlegSlug": "tuinaanleg-a1",
+    "bedrijfSlug": "devries-a1",
+    "company1": "cmv71bdyo0000u07dhcvit3r4",
+    "company2": "cmv71bedf0042u07dck6zt6y3",
+    "tools": {
+      "tuinaanleg": "cmv71bdz70003u07dx6qkxpmu",
+      "onderhoud": "cmv71be1o000yu07d040h10un",
+      "heggen": "cmv71bedq0045u07d3kznfqyq"
+    },
+    "products": [
+      "cmv71bdzw0006u07dk6zqhcme",
+      "cmv71be0a000bu07dwkuor8pc",
+      "cmv71be0n000gu07dwqdzquvm",
+      "cmv71be0u000ku07d6qlw5bpa",
+      "cmv71be14000ou07d3wmdway9",
+      "cmv71be1i000tu07dvfvazbs2"
+    ],
+    "leads": {
+      "nieuw": "cmv71be34001eu07d1nk3z9cd",
+      "in-contact": "cmv71be39001fu07d5bp5oshf",
+      "offerte-concept": "cmv71be3l001gu07dum3447bv",
+      "offerte-verstuurd": "cmv71be45001ju07dl6bhtjwc",
+      "offerte-verlopen": "cmv71be4m001nu07dk9r21xko",
+      "afgewezen": "cmv71be4w001ru07df4wsje21",
+      "akkoord": "cmv71be5g001wu07dqxyllrq6",
+      "ingepland": "cmv71be5x0023u07djx16k1cu",
+      "opgeleverd": "cmv71be6c002au07da48ggd2v",
+      "gefactureerd": "cmv71be77002ju07dex4pe1xw",
+      "te-laat": "cmv71be8l002uu07dm2g04fln",
+      "betaald": "cmv71be9g0035u07d692pofhu",
+      "creditnota": "cmv71beba003iu07dhqe6wjrq",
+      "verloren": "cmv71bed0003xu07duaspj9dx",
+      "buiten-werkgebied": "cmv71bedb0041u07deb1zix8y"
+    },
+    "facturen": {
+      "concept": "cmv71be70002hu07dclwrvef6",
+      "verstuurd": "cmv71be7l002qu07d71qafegj",
+      "te-laat": "cmv71be8y0031u07dem94kmtr",
+      "betaald": "cmv71be9t003cu07dgjuwwo4n",
+      "credit-orig": "cmv71bebn003pu07d8qbavasa",
+      "creditnota": "cmv71beca003tu07dago6v9qc"
+    }
+  },
+  "a2": {
+    "email": "hovenier-a2@test.kostenplan.nl",
+    "userId": "33454ed4-bb07-4516-86af-d817cfe64748",
+    "factuurTokens": {
+      "concept": "4nD3hsYoOvuwylrTV6Su3Te91AVgsjUo",
+      "verstuurd": "_Wxvi0utf3cCds6LCZqHa0_901696Qg1",
+      "te-laat": "iBNaHDyCFg5gEqcMbojJpWyOex5Cq5k3",
+      "betaald": "9jLfl2z0Li5beERNKPJGmPo9fT7qPFbw",
+      "credit-orig": "SqfTgDbSK2wiL3aNOOrd4WQomjvJ5zCp",
+      "creditnota": "htU9vRZMEwyEOzi-TCSELEUqByoLUn3l"
+    },
+    "offerteTokens": {
+      "offerte-concept": "jk7RMz4xbm2nOa6s0Zll-EaFBc17gv3m",
+      "offerte-verstuurd": "y6NrbvaopWC3auPA6Qi3nWpf3UYtLY97",
+      "offerte-verlopen": "iEEeJW1TPbiCzxQ8y8hcmHTQShp--8uY",
+      "afgewezen": "E-sPyz0ySDpMVPBSdYyqXFR_p5bDdZQH",
+      "akkoord": "WuobgRXbLbNDDTVz0sWOHe0MDyPU4hTW",
+      "ingepland": "106qgjZQZxKK4rdduWKTl1Pn7c-SnEHW",
+      "opgeleverd": "QIdkW9S1GOog_LE-d2fCA-wQusrvx3fe",
+      "gefactureerd": "MV2R3mNK0-emSWlrx2OQJoBvCCvWerA-",
+      "te-laat": "uSd62WAHtHoL1JXD5wKY8XsF_TXW7zFt",
+      "betaald": "FEVbQvdAXJMRTwnMz-evyq4U51mKLNvU",
+      "creditnota": "tRPy4rNH0JUEDjNv3K4nmkmwDLk5ue_w",
+      "verloren": "pB5AQb5hnA-WsGJoU7-s4OliSeXSgTg3"
+    },
+    "tuinaanlegSlug": "tuinaanleg-a2",
+    "bedrijfSlug": "devries-a2",
+    "company1": "cmv71befc004nu07dohduo7rl",
+    "company2": "cmv71bend008pu07dderjhqdn",
+    "tools": {
+      "tuinaanleg": "cmv71befi004qu07dw6dogzgw",
+      "onderhoud": "cmv71bego005lu07djc8f7gdi",
+      "heggen": "cmv71beni008su07d8tcf5qzu"
+    },
+    "products": [
+      "cmv71befo004tu07dcimgcaat",
+      "cmv71befs004yu07dpaertf8b",
+      "cmv71befy0053u07d9il5qi58",
+      "cmv71beg20057u07dm5mbjz9m",
+      "cmv71beg7005bu07de613oozv",
+      "cmv71begj005gu07dhhcxgb8l"
+    ],
+    "leads": {
+      "nieuw": "cmv71behb0061u07d6qd568yu",
+      "in-contact": "cmv71behd0062u07dfbh8hlpb",
+      "offerte-concept": "cmv71behf0063u07djxsebwcn",
+      "offerte-verstuurd": "cmv71behl0066u07d6le4pujs",
+      "offerte-verlopen": "cmv71behr006au07dhu8jb6ot",
+      "afgewezen": "cmv71behz006eu07d22d4ntrv",
+      "akkoord": "cmv71bei5006ju07dapgmu41q",
+      "ingepland": "cmv71beie006qu07dwv5jbufy",
+      "opgeleverd": "cmv71beim006xu07dpdmgo6de",
+      "gefactureerd": "cmv71bej10076u07dq5ihalft",
+      "te-laat": "cmv71bejr007hu07dwuk99ogc",
+      "betaald": "cmv71bekg007su07d69wmlpfc",
+      "creditnota": "cmv71belj0085u07de6ddonrh",
+      "verloren": "cmv71bemz008ku07ddbjy2y8q",
+      "buiten-werkgebied": "cmv71benb008ou07dhon7ma69"
+    },
+    "facturen": {
+      "concept": "cmv71beiw0074u07dlw760ckx",
+      "verstuurd": "cmv71bejb007du07d92707rjf",
+      "te-laat": "cmv71bek1007ou07drjftqdua",
+      "betaald": "cmv71bekq007zu07dy0xaovmk",
+      "credit-orig": "cmv71belu008cu07d4hx6e0cs",
+      "creditnota": "cmv71bemi008gu07d92q82kjv"
+    }
+  },
+  "a3": {
+    "email": "hovenier-a3@test.kostenplan.nl",
+    "userId": "8e164701-7dec-4520-8a9d-be731d1d3ab2",
+    "factuurTokens": {
+      "concept": "RsDpqT9Td835XLVQGhvJLryCDNO08Z7x",
+      "verstuurd": "_fYoTMNrLwtehG2a4luQC9QO8VdJD9_F",
+      "te-laat": "hXaPromeQSqgcWme-Qpn6a8SynVXZAql",
+      "betaald": "Ea0amxolTPssj-wczmZbWR0LewB-2Joi",
+      "credit-orig": "lcC3_fHaKwsAIZ1GDUSKcBMYReOQfcki",
+      "creditnota": "6CjPqtxKRLVM7EEzygRYbsrqdvEYE2ID"
+    },
+    "offerteTokens": {
+      "offerte-concept": "kJEe1_63iFbk_UtAeMGEgJ-ZQfylIJ1R",
+      "offerte-verstuurd": "mB2V4imz3KlWX_4AAEQsqK24LFrkfAXb",
+      "offerte-verlopen": "Foq4cts1sfmJH5QcrxDWMu9xV7rxCEAZ",
+      "afgewezen": "GAiehXCfZlhTNwowhqHiEFvvjotOk9hy",
+      "akkoord": "ou1Qw8SSMLopXsRCWQ7dyCl3Md55eoeW",
+      "ingepland": "QiPlK6vCbPSFTaapIp0b9ib57fVdFt18",
+      "opgeleverd": "z9JcP9tF4ciCp309dwfhCD7Shz-w7BXz",
+      "gefactureerd": "1uxTPDHJtu7-iVNu7mvovQSh4f5UUHo9",
+      "te-laat": "jFDK7CZ9RFnkemRdRjHd1NU5L2fRNp2L",
+      "betaald": "J4PxwO-m26vr4heAok5CHiyaYqxOtBhQ",
+      "creditnota": "4OYNuCK_wIb_yHCkHU124Jw7LE0dIn1b",
+      "verloren": "dg5NXPiPnuvDwQy50Iuh-134aMRTi545"
+    },
+    "tuinaanlegSlug": "tuinaanleg-a3",
+    "bedrijfSlug": "devries-a3",
+    "company1": "cmv71beop009au07dxfzjiipf",
+    "company2": "cmv71bevl00dcu07dv42i9ozq",
+    "tools": {
+      "tuinaanleg": "cmv71beox009du07di5knapuu",
+      "onderhoud": "cmv71bepu00a8u07dqmrvj6rd",
+      "heggen": "cmv71bevq00dfu07ddr03gwut"
+    },
+    "products": [
+      "cmv71bep4009gu07dmys5jung",
+      "cmv71bep8009lu07dbe9f71gb",
+      "cmv71bepc009qu07dmuuedo4b",
+      "cmv71bepg009uu07dqc05gryf",
+      "cmv71bepk009yu07d7rby6d4k",
+      "cmv71bepo00a3u07dfqf2n9x6"
+    ],
+    "leads": {
+      "nieuw": "cmv71beqg00aou07d8puwi7fu",
+      "in-contact": "cmv71beqi00apu07d6em1exog",
+      "offerte-concept": "cmv71beqk00aqu07d7s22e6kn",
+      "offerte-verstuurd": "cmv71beqr00atu07d25baelk4",
+      "offerte-verlopen": "cmv71beqx00axu07d6nxzr1vo",
+      "afgewezen": "cmv71ber700b1u07divjeutx2",
+      "akkoord": "cmv71bere00b6u07dn5u7j1sg",
+      "ingepland": "cmv71berl00bdu07dree64o16",
+      "opgeleverd": "cmv71bert00bku07dfro3s650",
+      "gefactureerd": "cmv71bes500btu07dy92rlxlz",
+      "te-laat": "cmv71besr00c4u07dxfo5god2",
+      "betaald": "cmv71betd00cfu07dyxoba22n",
+      "creditnota": "cmv71beu600csu07dimw1ev44",
+      "verloren": "cmv71bevc00d7u07duz48yegb",
+      "buiten-werkgebied": "cmv71bevj00dbu07du9lyb69c"
+    },
+    "facturen": {
+      "concept": "cmv71bes200bru07dm3f3jbe0",
+      "verstuurd": "cmv71bese00c0u07d5gvi9mky",
+      "te-laat": "cmv71bet000cbu07de09nt0ru",
+      "betaald": "cmv71betl00cmu07dcfaxvsof",
+      "credit-orig": "cmv71beuf00czu07d013ugrj3",
+      "creditnota": "cmv71beuy00d3u07d2ay5mlu1"
+    }
+  },
+  "b": {
+    "email": "hovenier-b@test.kostenplan.nl",
+    "userId": "5ae3e69d-f4ab-4d5b-8fc4-9d2328d79a0b",
+    "company1": "cmv71bex900dxu07dnvopkr9e",
+    "tools": {
+      "rekentool": "cmv71bexc00dzu07dx81z0kf7"
+    }
+  },
+  "nieuw": {
+    "email": "nieuw@test.kostenplan.nl"
+  }
+}

@@ -1,0 +1,178 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Direct naar de inhoud" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e6]:
+        - link "Kostenplan" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - text: Kostenplan
+        - navigation "Hoofdnavigatie" [ref=e9]:
+          - link "Functionaliteiten" [ref=e10] [cursor=pointer]:
+            - /url: /features
+          - link "Voor hoveniers" [ref=e11] [cursor=pointer]:
+            - /url: /voor/hoveniers
+          - link "Kennisbank" [ref=e12] [cursor=pointer]:
+            - /url: /kennisbank
+          - link "Blog" [ref=e13] [cursor=pointer]:
+            - /url: /blog
+          - link "Prijzen" [ref=e14] [cursor=pointer]:
+            - /url: /prijzen
+        - generic [ref=e15]:
+          - button "Doorzoek de kennisbank" [ref=e17]:
+            - img [ref=e18]
+            - generic [ref=e21]: Zoeken…
+          - link "Inloggen" [ref=e22] [cursor=pointer]:
+            - /url: /login
+          - link "Probeer gratis" [ref=e23] [cursor=pointer]:
+            - /url: /probeer
+    - main [ref=e24]:
+      - heading "Maak gratis je rekentool" [level=1] [ref=e25]
+      - paragraph [ref=e26]: Je ziet hem meteen zoals je klant hem ziet. Geen account nodig.
+      - generic [ref=e28]:
+        - region "1. Wat is je website?" [ref=e29]:
+          - heading "1. Wat is je website?" [level=2] [ref=e30]
+          - generic [ref=e31]: Website (niet verplicht)
+          - generic [ref=e32]:
+            - textbox "Website (niet verplicht)" [ref=e33]:
+              - /placeholder: Bijv. jouwtuinbedrijf.nl…
+            - button "Overslaan" [ref=e34] [cursor=pointer]
+          - paragraph [ref=e35]: Dan halen we je logo en kleuren daar vandaan. Lukt dat niet, dan voeg je ze zelf toe.
+          - status [ref=e36]
+        - group "2. Welke onderdelen doe je?" [ref=e37]:
+          - generic [ref=e38]: 2. Welke onderdelen doe je?
+          - paragraph [ref=e39]: Kies er minstens één. Je past alles daarna zelf aan.
+          - list [ref=e40]:
+            - listitem [ref=e41]:
+              - generic [ref=e42] [cursor=pointer]:
+                - checkbox "Schutting" [checked] [ref=e43]
+                - img [ref=e44]
+                - generic [ref=e48]: Schutting
+                - img [ref=e49]
+            - listitem [ref=e51]:
+              - generic [ref=e52] [cursor=pointer]:
+                - checkbox "Bestrating / terras" [checked] [ref=e53]
+                - img [ref=e54]
+                - generic [ref=e56]: Bestrating / terras
+                - img [ref=e57]
+            - listitem [ref=e59]:
+              - generic [ref=e60] [cursor=pointer]:
+                - checkbox "Graszoden" [ref=e61]
+                - img [ref=e62]
+                - generic [ref=e65]: Graszoden
+            - listitem [ref=e66]:
+              - generic [ref=e67] [cursor=pointer]:
+                - checkbox "Kunstgras" [ref=e68]
+                - img [ref=e69]
+                - generic [ref=e73]: Kunstgras
+            - listitem [ref=e74]:
+              - generic [ref=e75] [cursor=pointer]:
+                - checkbox "Vlonder" [ref=e76]
+                - img [ref=e77]
+                - generic [ref=e78]: Vlonder
+            - listitem [ref=e79]:
+              - generic [ref=e80] [cursor=pointer]:
+                - checkbox "Haag planten" [ref=e81]
+                - img [ref=e82]
+                - generic [ref=e86]: Haag planten
+            - listitem [ref=e87]:
+              - generic [ref=e88] [cursor=pointer]:
+                - checkbox "Grondwerk & afvoer" [ref=e89]
+                - img [ref=e90]
+                - generic [ref=e94]: Grondwerk & afvoer
+            - listitem [ref=e95]:
+              - generic [ref=e96] [cursor=pointer]:
+                - checkbox "Boom planten" [ref=e97]
+                - img [ref=e98]
+                - generic [ref=e100]: Boom planten
+            - listitem [ref=e101]:
+              - generic [ref=e102] [cursor=pointer]:
+                - checkbox "Tuinonderhoud" [ref=e103]
+                - img [ref=e104]
+                - generic [ref=e110]: Tuinonderhoud
+        - region "3. Wat reken je per dagdeel?" [ref=e111]:
+          - heading "3. Wat reken je per dagdeel?" [level=2] [ref=e112]
+          - generic [ref=e113]: Tarief per dagdeel (ochtend of middag)
+          - generic [ref=e114]:
+            - generic: €
+            - textbox "Tarief per dagdeel (ochtend of middag)" [ref=e115]:
+              - /placeholder: Bijv. 180…
+              - text: "180"
+          - paragraph [ref=e116]: Voorrijkosten en transport zetten we alvast voor je klaar. Die pas je later aan.
+        - generic [ref=e117]:
+          - button "Maak mijn rekentool" [ref=e118] [cursor=pointer]
+          - paragraph [ref=e119]:
+            - text: Geen account nodig. Heb je al een account?
+            - link "Inloggen" [ref=e120] [cursor=pointer]:
+              - /url: /login
+    - contentinfo [ref=e121]:
+      - generic [ref=e122]:
+        - generic [ref=e123]:
+          - generic [ref=e124]:
+            - paragraph [ref=e125]: Kostenplan
+            - paragraph [ref=e126]: Kostenplan is een online rekentool voor hoveniers in Nederland waarmee klanten op de website van de hovenier zelf de prijs van bijvoorbeeld een schutting, terras of gazon berekenen en een aanvraag versturen.
+            - paragraph [ref=e127]: Kostenplan is onderdeel van GymWiki · KVK 97351911 · BTW NL005266843B58 · Zwolle
+          - generic [ref=e128]:
+            - navigation "Product" [ref=e129]:
+              - paragraph [ref=e130]: Product
+              - list [ref=e131]:
+                - listitem [ref=e132]:
+                  - link "Probeer gratis" [ref=e133] [cursor=pointer]:
+                    - /url: /probeer
+                - listitem [ref=e134]:
+                  - link "Wat is een rekentool?" [ref=e135] [cursor=pointer]:
+                    - /url: /rekentool
+                - listitem [ref=e136]:
+                  - link "Voorbeelden" [ref=e137] [cursor=pointer]:
+                    - /url: /voorbeelden-rekentools
+                - listitem [ref=e138]:
+                  - link "Functionaliteiten" [ref=e139] [cursor=pointer]:
+                    - /url: /features
+                - listitem [ref=e140]:
+                  - link "Prijzen" [ref=e141] [cursor=pointer]:
+                    - /url: /prijzen
+                - listitem [ref=e142]:
+                  - link "Kennisbank" [ref=e143] [cursor=pointer]:
+                    - /url: /kennisbank
+                - listitem [ref=e144]:
+                  - link "Blog" [ref=e145] [cursor=pointer]:
+                    - /url: /blog
+                - listitem [ref=e146]:
+                  - link "Inloggen" [ref=e147] [cursor=pointer]:
+                    - /url: /login
+            - navigation "Voor hoveniers" [ref=e148]:
+              - paragraph [ref=e149]: Voor hoveniers
+              - list [ref=e150]:
+                - listitem [ref=e151]:
+                  - link "Rekentool voor hoveniers" [ref=e152] [cursor=pointer]:
+                    - /url: /voor/hoveniers
+                - listitem [ref=e153]:
+                  - link "Offerte calculator" [ref=e154] [cursor=pointer]:
+                    - /url: /offerte-calculator
+                - listitem [ref=e155]:
+                  - link "Prijs calculator" [ref=e156] [cursor=pointer]:
+                    - /url: /prijs-calculator
+                - listitem [ref=e157]:
+                  - link "Online offerte maken" [ref=e158] [cursor=pointer]:
+                    - /url: /online-offerte-maken
+                - listitem [ref=e159]:
+                  - link "Op je eigen website" [ref=e160] [cursor=pointer]:
+                    - /url: /rekentool-op-eigen-website
+            - navigation "Juridisch" [ref=e161]:
+              - paragraph [ref=e162]: Juridisch
+              - list [ref=e163]:
+                - listitem [ref=e164]:
+                  - link "Privacyverklaring" [ref=e165] [cursor=pointer]:
+                    - /url: /privacybeleid
+                - listitem [ref=e166]:
+                  - link "Algemene voorwaarden" [ref=e167] [cursor=pointer]:
+                    - /url: /algemene-voorwaarden
+                - listitem [ref=e168]:
+                  - link "Contact" [ref=e169] [cursor=pointer]:
+                    - /url: mailto:pieter@kostenplan.nl
+        - paragraph [ref=e170]: © 2026 Kostenplan
+  - alert [ref=e171]
+```

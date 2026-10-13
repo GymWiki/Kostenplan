@@ -14,6 +14,9 @@ export async function bewaarPushAbonnementAction(sub: { endpoint: string; p256dh
   if (!sub.endpoint.startsWith("https://") || sub.endpoint.length > 1000 || !sub.p256dh || !sub.auth) {
     return { ok: false, error: "Ongeldig toestel." };
   }
+  // Een endpoint is globaal uniek: een bestaand toestel van een ander bedrijf nooit overschrijven.
+  const bestaand = await prisma.pushAbonnement.findUnique({ where: { endpoint: sub.endpoint }, select: { companyId: true } });
+  if (bestaand && bestaand.companyId !== company.id) return { ok: false, error: "Dit toestel is al gekoppeld aan een ander account." };
   await prisma.pushAbonnement.upsert({
     where: { endpoint: sub.endpoint },
     create: { companyId: company.id, userId: user.id, endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
