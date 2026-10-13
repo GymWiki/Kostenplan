@@ -1,6 +1,7 @@
 import { berekenHoeveelheidVoorSjabloon, coerceVeldWaarden, klantVeldenVoorSjabloon, type SjabloonRegelResultaat } from "@/app/lib/sjablonen";
 import { ceilStap, MAX_BEDRAG_CENTEN, rondCenten, schoonGetal } from "./rond";
 import { regelTotaal, totalenVanRegels, type BtwGroep } from "./totalen";
+import { aanvullingTotMinimum, beoordeelLocatie, beoordeelMinimum, type LocatieBeoordeling } from "./locatie";
 import type { ArbeidEenheid, PricingCategorie, PricingConfig, PricingInput, PricingMateriaal, PricingOnderdeel, PricingOnderdeelInvoer } from "./schema";
 
 // De rekenkern: de enige bron van waarheid voor prijzen. Puur TypeScript, zonder React, database
@@ -14,7 +15,7 @@ import type { ArbeidEenheid, PricingCategorie, PricingConfig, PricingInput, Pric
 export const DAGDELEN_PER_DAG = 2;
 export const UREN_PER_DAG = 8;
 
-export type RegelSoort = "materiaal" | "arbeid" | "extra" | "artikel" | "transport" | "voorrijkosten";
+export type RegelSoort = "materiaal" | "arbeid" | "extra" | "artikel" | "transport" | "voorrijkosten" | "afstand" | "minimum";
 
 export type PrijsRegel = {
   // Stabiel per regel: `<onderdeel>:materiaal:<categorie>`, `<onderdeel>:arbeid`, `project:transport`, …
@@ -48,7 +49,30 @@ export type WaarschuwingCode =
 
 export type Waarschuwing = { code: WaarschuwingCode; onderdeelId?: string; bericht: string };
 
-export type KostenPerSoort = { materiaal: number; arbeid: number; extra: number; artikel: number; transport: number; voorrijkosten: number };
+// "afstand" is de afstandstoeslag, "minimum" de aanvulling tot het minimumtarief (beide projectregels).
+export type KostenPerSoort = { materiaal: number; arbeid: number; extra: number; artikel: number; transport: number; voorrijkosten: number; afstand: number; minimum: number };
+
+export type Markering = "BUITEN_WERKGEBIED" | "ONDER_MINIMUM" | "WERKGEBIED_NIET_GECONTROLEERD";
+
+export type WerkgebiedUitkomst = {
+  enabled: boolean;
+  // true = binnen, false = buiten, "unknown" = niet te bepalen (geen adres, PDOK onbereikbaar).
+  withinServiceArea: boolean | "unknown";
+  distanceKm: number | null;
+  surchargeCenten: number;
+  allowed: boolean;
+  reason: "outside" | "zone-not-possible" | null;
+};
+
+export type MinimumUitkomst = {
+  enabled: boolean;
+  // Het totaal (incl. btw) lag onder het minimumbedrag, vóór een eventuele aanvulling.
+  belowMinimum: boolean;
+  minimumInclCenten: number;
+  // De aanvulling tot het minimumtarief (excl. btw); 0 als er niet is aangevuld.
+  topUpCenten: number;
+  allowed: boolean;
+};
 
 export type OnderdeelUitkomst = {
   id: string;
@@ -91,11 +115,17 @@ export type PricingResult = {
   doorlooptijd: { dagdelen: number; werkdagen: number } | null;
   waarschuwingen: Waarschuwing[];
   heeftSelectie: boolean;
+  // Werkgebied en minimale opdracht. Staan ze uit, dan is alles "toegestaan" en zonder markering.
+  serviceArea: WerkgebiedUitkomst;
+  minimum: MinimumUitkomst;
+  // Mag een aanvraag worden gedaan volgens het werkgebied én het minimum (de selectie zelf niet meegerekend).
+  requestAllowed: boolean;
+  flags: Markering[];
 };
 
 type Richting = "MIN" | "MAX" | "MIDDEN";
 
-const leegKosten = (): KostenPerSoort => ({ materiaal: 0, arbeid: 0, extra: 0, artikel: 0, transport: 0, voorrijkosten: 0 });
+const leegKosten = (): KostenPerSoort => ({ materiaal: 0, arbeid: 0, extra: 0, artikel: 0, transport: 0, voorrijkosten: 0, afstand: 0, minimum: 0 });
 
 export function dagdelenVoorArbeid(tijd: number, eenheid: ArbeidEenheid): number {
   if (eenheid === "UUR") return (tijd / UREN_PER_DAG) * DAGDELEN_PER_DAG;
@@ -168,9 +198,12 @@ type Kern = {
   projectRegels: PrijsRegel[];
   waarschuwingen: Waarschuwing[];
   dagdelen: number;
+  // Totaal incl. btw vóór een aanvulling tot het minimumtarief.
+  voorAanvullingInclCenten: number;
+  aanvullingCenten: number;
 };
 
-function rekenKern(config: PricingConfig, invoer: PricingInput, richting: Richting): Kern {
+function rekenKern(config: PricingConfig, invoer: PricingInput, richting: Richting, locatie: LocatieBeoordeling): Kern {
   const t = config.tarieven;
   const btw = t.kor ? 0 : t.btwPercentage;
   const waarschuwingen: Waarschuwing[] = [];
@@ -305,8 +338,21 @@ function rekenKern(config: PricingConfig, invoer: PricingInput, richting: Richti
   if (onderdelen.length > 0) {
     if (vastVoorrij > 0) projectRegels.push(regel({ id: "project:voorrijkosten", onderdeelId: null, soort: "voorrijkosten", omschrijving: "Voorrijkosten", aantal: 1, eenheid: "post", prijsPerEenheidCenten: vastVoorrij, bedrag: vastVoorrij }));
     if (vastTransport > 0) projectRegels.push(regel({ id: "project:transport", onderdeelId: null, soort: "transport", omschrijving: "Transport", aantal: 1, eenheid: "post", prijsPerEenheidCenten: vastTransport, bedrag: vastTransport }));
+    // Afstandstoeslag: een eigen projectregel, zodat de opbouw en de offerte hem netjes tonen.
+    if (locatie.toeslag) {
+      const t2 = locatie.toeslag;
+      projectRegels.push(regel({ id: "project:afstand", onderdeelId: null, soort: "afstand", omschrijving: t2.omschrijving, aantal: t2.aantal, eenheid: t2.eenheid, prijsPerEenheidCenten: t2.prijsPerEenheidCenten, bedrag: t2.bedragCenten }));
+    }
   }
-  return { onderdelen, projectRegels, waarschuwingen, dagdelen };
+  // Minimumtarief: een eigen correctieregel zodat het totaal precies op het minimumbedrag uitkomt.
+  const voor = totalenVanRegels([...onderdelen.flatMap((o) => o.regels), ...projectRegels]).totaalInclCenten;
+  const min = beoordeelMinimum(config.minimum, voor, onderdelen.length > 0);
+  let aanvulling = 0;
+  if (min.vulAan) {
+    aanvulling = aanvullingTotMinimum(min.minimumInclCenten - voor, btw);
+    if (aanvulling > 0) projectRegels.push(regel({ id: "project:minimum", onderdeelId: null, soort: "minimum", omschrijving: "Aanvulling tot minimumtarief", aantal: 1, eenheid: "post", prijsPerEenheidCenten: aanvulling, bedrag: aanvulling }));
+  }
+  return { onderdelen, projectRegels, waarschuwingen, dagdelen, voorAanvullingInclCenten: voor, aanvullingCenten: aanvulling };
 }
 
 function samenvattingVan(kern: Kern): Samenvatting {
@@ -319,7 +365,8 @@ function samenvattingVan(kern: Kern): Samenvatting {
 
 export function berekenPrijs(config: PricingConfig, invoer: PricingInput): PricingResult {
   const t = config.tarieven;
-  const midden = rekenKern(config, invoer, "MIDDEN");
+  const locatie = beoordeelLocatie(config.werkgebied, invoer.locatie);
+  const midden = rekenKern(config, invoer, "MIDDEN", locatie);
   const regels = [...midden.onderdelen.flatMap((o) => o.regels), ...midden.projectRegels];
   const totalen = totalenVanRegels(regels);
   const kosten = leegKosten();
@@ -328,17 +375,25 @@ export function berekenPrijs(config: PricingConfig, invoer: PricingInput): Prici
 
   let bandbreedte: Bandbreedte | null = null;
   if (heeftSelectie && t.bandbreedte.modus === "PER_PRODUCT") {
-    const min = samenvattingVan(rekenKern(config, invoer, "MIN"));
-    const max = samenvattingVan(rekenKern(config, invoer, "MAX"));
+    const min = samenvattingVan(rekenKern(config, invoer, "MIN", locatie));
+    const max = samenvattingVan(rekenKern(config, invoer, "MAX", locatie));
     if (min.totaalInclCenten !== max.totaalInclCenten || min.subtotaalExclCenten !== max.subtotaalExclCenten) bandbreedte = { modus: "PER_PRODUCT", min, max };
   } else if (heeftSelectie && t.bandbreedte.modus === "TOTAAL") {
     const basis: Samenvatting = { kosten, subtotaalExclCenten: totalen.subtotaalExclCenten, btwCenten: totalen.btwCenten, totaalInclCenten: totalen.totaalInclCenten };
-    const minIncl = rondCenten(totalen.totaalInclCenten * (1 - t.bandbreedte.margeOmlaag / 100));
+    // Bij een minimumtarief gaat de onderkant van de bandbreedte niet onder dat minimum.
+    const ondergrens = config.minimum?.aan && config.minimum.gedrag === "TARIEF" ? config.minimum.bedragInclCenten : 0;
+    const minIncl = Math.max(ondergrens, rondCenten(totalen.totaalInclCenten * (1 - t.bandbreedte.margeOmlaag / 100)));
     const maxIncl = rondCenten(totalen.totaalInclCenten * (1 + t.bandbreedte.margeOmhoog / 100));
     if (minIncl !== maxIncl) {
       bandbreedte = { modus: "TOTAAL", min: { ...basis, totaalInclCenten: minIncl }, max: { ...basis, totaalInclCenten: maxIncl }, margeOmlaag: t.bandbreedte.margeOmlaag, margeOmhoog: t.bandbreedte.margeOmhoog };
     }
   }
+
+  const minimumBeoordeling = beoordeelMinimum(config.minimum, midden.voorAanvullingInclCenten, heeftSelectie);
+  const flags: Markering[] = [];
+  if (locatie.enabled && locatie.withinServiceArea === false && config.werkgebied?.buiten === "MARKEREN") flags.push("BUITEN_WERKGEBIED");
+  if (locatie.enabled && locatie.withinServiceArea === "unknown") flags.push("WERKGEBIED_NIET_GECONTROLEERD");
+  if (minimumBeoordeling.belowMinimum && config.minimum?.gedrag === "MARKEREN") flags.push("ONDER_MINIMUM");
 
   return {
     versie: 1,
@@ -356,5 +411,9 @@ export function berekenPrijs(config: PricingConfig, invoer: PricingInput): Prici
     doorlooptijd: midden.dagdelen > 0 ? { dagdelen: midden.dagdelen, werkdagen: Math.max(1, ceilStap(midden.dagdelen / DAGDELEN_PER_DAG)) } : null,
     waarschuwingen: midden.waarschuwingen,
     heeftSelectie,
+    serviceArea: { enabled: locatie.enabled, withinServiceArea: locatie.withinServiceArea, distanceKm: locatie.distanceKm, surchargeCenten: locatie.toeslag?.bedragCenten ?? 0, allowed: locatie.allowed, reason: locatie.reason },
+    minimum: { enabled: minimumBeoordeling.enabled, belowMinimum: minimumBeoordeling.belowMinimum, minimumInclCenten: minimumBeoordeling.minimumInclCenten, topUpCenten: midden.aanvullingCenten, allowed: minimumBeoordeling.allowed },
+    requestAllowed: locatie.allowed && minimumBeoordeling.allowed,
+    flags,
   };
 }

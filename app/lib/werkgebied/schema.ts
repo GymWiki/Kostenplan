@@ -4,7 +4,9 @@ import { z } from "zod";
 // Alles staat standaard uit: een rekentool zonder deze instellingen gedraagt zich precies zoals voorheen.
 // Bedragen voor de toeslag zijn excl. btw (zoals voorrijkosten); het minimumbedrag is incl. btw.
 
-export const STANDAARD_MELDING_BUITEN = "Dit adres ligt buiten ons werkgebied. Neem gerust contact op, dan kijken we of we iets voor je kunnen doen.";
+import { meldingBuiten, STANDAARD_MELDING_BUITEN } from "./teksten";
+
+export { STANDAARD_MELDING_BUITEN };
 
 export const startadresSchema = z.object({
   postcode: z.string().trim().max(10),
@@ -80,4 +82,4 @@ export function resolveWerkgebied(bedrijfJson: unknown, toolJson: unknown): Werk
 
 export const isActief = (i: WerkgebiedInstellingen) => i.werkgebied.aan || i.minimum.aan;
 
-export const meldingTekst = (r: WerkgebiedRegels) => r.melding.trim() || STANDAARD_MELDING_BUITEN;
+export const meldingTekst = (r: WerkgebiedRegels) => meldingBuiten(r.melding);

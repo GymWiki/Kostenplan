@@ -12,6 +12,9 @@ export type BreakdownRange = {
   materiaalkosten: Bedrag;
   transportkosten: Bedrag;
   voorrijkosten: Bedrag;
+  // Afstandstoeslag en aanvulling tot het minimumtarief (0 als die er niet zijn).
+  afstandskosten: Bedrag;
+  aanvulling: Bedrag;
   subtotaal: Bedrag;
   btw: Bedrag;
   totaal: Bedrag;
@@ -41,6 +44,8 @@ export function breakdownRangeVan(r: PricingResult): BreakdownRange {
     materiaalkosten: veld(r, (s) => s.kosten.materiaal + s.kosten.extra + s.kosten.artikel),
     transportkosten: veld(r, (s) => s.kosten.transport),
     voorrijkosten: veld(r, (s) => s.kosten.voorrijkosten),
+    afstandskosten: veld(r, (s) => s.kosten.afstand),
+    aanvulling: veld(r, (s) => s.kosten.minimum),
     subtotaal: veld(r, (s) => s.subtotaalExclCenten),
     btw: veld(r, (s) => s.btwCenten),
     totaal: veld(r, (s) => s.totaalInclCenten),
