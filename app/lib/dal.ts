@@ -453,7 +453,27 @@ export async function getLeadsPageData(companyId: string) {
       include: {
         notities: { orderBy: { createdAt: "asc" } },
         offerte: true,
-        offertesV2: { orderBy: { createdAt: "desc" }, take: 1, select: { id: true, status: true, huidigeVersie: true, geldigTot: true, reactieGezien: true, nummer: true } },
+        offertesV2: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { id: true, status: true, huidigeVersie: true, geldigTot: true, reactieGezien: true, nummer: true, gebeurtenissen: { orderBy: { createdAt: "asc" }, select: { soort: true, tekst: true, createdAt: true } } },
+        },
+        gebeurtenissen: { orderBy: { createdAt: "asc" }, select: { soort: true, tekst: true, createdAt: true } },
+        facturen: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            nummer: true,
+            type: true,
+            status: true,
+            totaalInclCenten: true,
+            vervaldatum: true,
+            inhoud: true,
+            betalingen: { select: { bedragCenten: true } },
+            creditnotas: { select: { status: true, totaalInclCenten: true } },
+            gebeurtenissen: { orderBy: { createdAt: "asc" }, select: { soort: true, tekst: true, bedragCenten: true, createdAt: true } },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
       take: 500,

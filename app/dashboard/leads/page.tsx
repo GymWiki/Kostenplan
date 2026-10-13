@@ -11,6 +11,7 @@ import { planReserveIngest } from "@/app/lib/reserve-ingest";
 import { planLeadMailWachtrij } from "@/app/lib/mail/plan-lead-mail";
 import { resolveWerkgebied } from "@/app/lib/werkgebied/schema";
 import type { LeadStart } from "./lead-detail-drawer";
+import { bouwVoortgang } from "@/app/lib/lead-voortgang";
 import { LeadsView, type LeadWithNotes } from "./leads-view";
 
 export const metadata: Metadata = { title: "Leads" };
@@ -60,10 +61,11 @@ export default async function LeadsPage() {
     }
   }
 
-  const leads: LeadWithNotes[] = rawLeads.map(({ offertesV2, ...lead }) => {
+  const leads: LeadWithNotes[] = rawLeads.map(({ offertesV2, gebeurtenissen, facturen, ...lead }) => {
     const v2 = offertesV2[0];
     return {
       ...lead,
+      voortgang: bouwVoortgang({ ...lead, gebeurtenissen, offertesV2, facturen }),
       snapshot: lead.snapshot as unknown as LeadSnapshot,
       // Nieuwe offertes (v2) krijgen dezelfde vorm als de oude, zodat bord, lijst en paneel ze gelijk tonen.
       offerte: v2

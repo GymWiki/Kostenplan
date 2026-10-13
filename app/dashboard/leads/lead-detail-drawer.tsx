@@ -22,6 +22,7 @@ import { whatsappLink } from "@/app/lib/leads";
 import dynamic from "next/dynamic";
 import { adresRegel } from "@/app/lib/werkgebied/adres-invoer";
 import { afstandTekst } from "@/app/lib/werkgebied/lead-markeringen";
+import { LeadVoortgangBlok } from "./lead-voortgang-blok";
 import { LocatieLabels } from "./locatie-labels";
 import { StatusSelect } from "./status-select";
 import { OfferteStatusBadge } from "./offerte-status-badge";
@@ -132,6 +133,9 @@ export function LeadDetailDrawer({
         </div>
 
         <div className="flex flex-col gap-6 p-5 max-md:pb-6">
+          <div className="order-first">
+            <LeadVoortgangBlok leadId={lead.id} naam={lead.naam} voortgang={lead.voortgang} />
+          </div>
           <div className="flex flex-col gap-3 max-md:order-2">
             <StatusSelect leadId={lead.id} status={lead.status} className="w-full" onStatusChange={onUpdateStatus} />
 

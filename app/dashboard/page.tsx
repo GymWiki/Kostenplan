@@ -9,6 +9,7 @@ import { LinkButton } from "@/app/components/ui/button";
 import { OnboardingChecklist } from "./onboarding-checklist";
 import { laadVandaag } from "@/app/lib/vandaag";
 import { VandaagMobiel } from "@/app/components/dashboard/vandaag-mobiel";
+import { FactuurTellers } from "@/app/components/dashboard/factuur-tellers";
 import { OfferteTips } from "@/app/components/dashboard/offerte-tips";
 import { RecenteAanvragen } from "@/app/components/dashboard/recente-aanvragen";
 
@@ -53,6 +54,7 @@ export default async function DashboardPage() {
       </div>
 
       {vandaag && <OfferteTips tips={vandaag.offerteTips} />}
+      {vandaag && <FactuurTellers data={vandaag.facturen} />}
 
       {toonOnboarding && (
         <OnboardingChecklist stappen={onboardingStappen} justCompleted={justCompletedOnboarding} />

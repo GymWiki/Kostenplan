@@ -1,3 +1,4 @@
+import { FactuurTellers } from "@/app/components/dashboard/factuur-tellers";
 import { OfferteTips } from "@/app/components/dashboard/offerte-tips";
 import Link from "next/link";
 import { Check, ChevronRight, Circle } from "lucide-react";
@@ -50,6 +51,7 @@ export function VandaagMobiel({ data }: { data: VandaagData }) {
           )}
 
           <OfferteTips tips={data.offerteTips} />
+          <FactuurTellers data={data.facturen} />
 
           {data.wachtendeOffertes.aantal > 0 && (
             <section aria-labelledby="vd-offertes" className="flex flex-col gap-2">
