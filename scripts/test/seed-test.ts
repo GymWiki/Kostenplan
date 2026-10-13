@@ -67,7 +67,7 @@ async function lead(c: { companyId: string; toolId: string; toolNaam: string; pr
       totaalIndicatie: 4537.97,
       createdAt: dag(-(o.ouderDagen ?? 3)),
       idempotentieSleutel: `${c.prefix}-${randomBytes(12).toString("hex")}`,
-      snapshot: { regels: [{ naam: "Bestrating / terras", type: "dienst", aantal: 24, eenheid: "m²", materiaal: "Gebakken klinkers", prijs: 4537.97, productId: c.productId }], arbeidskosten: 1500, materiaalkosten: 2100, transportkosten: 150, voorrijkosten: 35, subtotaal: 3750.4, btw: 787.58, totaal: 4537.97 },
+      snapshot: { regels: [{ naam: "Bestrating / terras", type: "dienst", aantal: 24, eenheid: "m²", materiaal: "Gebakken klinkers", prijs: 3750.4, productId: c.productId }], arbeidskosten: 1500, materiaalkosten: 2100, transportkosten: 150, voorrijkosten: 35, subtotaal: 3750.4, btw: 787.58, totaal: 4537.97 },
       ...(o.extra ?? {}),
     },
   });
