@@ -15,15 +15,6 @@ import { HOVENIER_PRESETS, REKENMETHODE_SJABLOON, productiviteitVoorStapEenheid,
 
 export type OnboardingToolFormState = { error?: string; fieldErrors?: Record<string, string> } | null;
 
-// Gezet zodra alle onboarding-stappen voltooid zijn (zie bouwOnboardingStappen
-// in app/lib/onboarding.ts) — rechtstreeks aangeroepen vanuit dashboard/
-// page.tsx tijdens render, niet gebonden aan een formulier. Verplaatst
-// hierheen vanuit de page zelf (Fase 2, P2.9): een write hoort niet
-// rechtstreeks in een Server Component te staan.
-export async function markOnboardingVoltooid(companyId: string) {
-  await prisma.company.update({ where: { id: companyId }, data: { onboardingVoltooid: true } });
-}
-
 // /onboarding/rekentool — de eerste rekentool van een net aangemaakt bedrijf
 // (zie createCompanyAction in companies.ts). Geen templatekeuze hier (dat is
 // Levering B) — gewoon een naam, CostSettings die de company-defaults volgt
@@ -88,7 +79,7 @@ export async function applyOnboardingBrandingAction(formData: FormData) {
     // nooit blind vertrouwen dat het echt uit onze eigen Storage komt, zelfde
     // check als bij een normale branding-update (zie resolveLogo hierboven
     // in branding.ts).
-    const veiligeLogoUrl = logoUrl && isOwnStorageUrl(logoUrl) ? logoUrl : undefined;
+    const veiligeLogoUrl = logoUrl && isOwnStorageUrl(logoUrl, company.id) ? logoUrl : undefined;
     // Kleuren/lettertype blijven een Plus/Pro-feature — alleen de extractie
     // zelf is gratis geworden. Een gloednieuw bedrijf staat hier altijd op
     // Gratis (subscriptionTier heeft geen ander startpunt), maar deze check

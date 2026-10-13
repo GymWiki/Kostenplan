@@ -92,7 +92,7 @@ export default async function ToolPage({
       <EngineCalculator
         toolId={tool.id}
         bedrijfsnaam={tool.company.naam}
-        email={tool.company.creator.email}
+        email={tool.branding?.toonEmail ? tool.company.creator.email : ""}
         subscriptionTier={effectiveTier(tool.company)}
         branding={tool.branding}
         config={config}
@@ -106,7 +106,7 @@ export default async function ToolPage({
     <Calculator
       toolId={tool.id}
       bedrijfsnaam={tool.company.naam}
-      email={tool.company.creator.email}
+      email={tool.branding?.toonEmail ? tool.company.creator.email : ""}
       subscriptionTier={effectiveTier(tool.company)}
       branding={tool.branding}
       costSettings={effectieveCostSettings}

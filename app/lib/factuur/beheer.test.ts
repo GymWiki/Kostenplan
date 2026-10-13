@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/app/generated/prisma/client";
-import { BeheerFout, maakCreditnotaConcept, registreerBetaling, verwijderBetaling } from "./beheer";
+import { BeheerFout, laadStand, maakCreditnotaConcept, registreerBetaling, verwijderBetaling } from "./beheer";
 import { maakFactuurConcept, maakFactuurDefinitief } from "./opslag";
 import { herberekenFactuurStatus } from "./beheer";
 import { AFZENDER_OK, factuurInhoud, regel } from "./test-helpers";
@@ -67,7 +67,7 @@ describe.skipIf(!url)("betalingen en creditnota's (database)", () => {
     expect(concept.creditVoorId).toBe(id);
     expect(concept.totaalInclCenten).toBe(-13080);
     await maakFactuurDefinitief(db, { factuurId: c1.id, companyId, afzender: AFZENDER_OK, prefix });
-    await herberekenFactuurStatus(db, id);
+    await herberekenFactuurStatus(db, id, companyId);
     const na = await db.factuur.findUniqueOrThrow({ where: { id: c1.id } });
     expect(na.nummer).toMatch(/^C2026-/);
     expect(await status(id)).toBe("DEFINITIEF");
@@ -82,9 +82,58 @@ describe.skipIf(!url)("betalingen en creditnota's (database)", () => {
     const c = await maakCreditnotaConcept(db, { factuurId: id, companyId, instellingen });
     await expect(maakCreditnotaConcept(db, { factuurId: id, companyId, instellingen })).rejects.toBeInstanceOf(BeheerFout);
     await maakFactuurDefinitief(db, { factuurId: c.id, companyId, afzender: AFZENDER_OK, prefix });
-    await herberekenFactuurStatus(db, id);
+    await herberekenFactuurStatus(db, id, companyId);
     expect(await status(id)).toBe("GECREDITEERD");
     await expect(registreerBetaling(db, { factuurId: id, companyId, bedragCenten: 100, datum: "2026-10-27" })).rejects.toBeInstanceOf(BeheerFout);
+  });
+
+  // #67: elke actie op een factuur van een ander bedrijf moet "Factuur niet gevonden." geven, zonder iets te wijzigen.
+  describe("een ander bedrijf kan niets aan deze factuur doen (#67)", () => {
+    let anderId = "";
+    beforeAll(async () => {
+      const user = await db.user.create({ data: { id: `u2-${sleutel}`, email: `${sleutel}-2@test.nl` } });
+      anderId = (await db.company.create({ data: { naam: "Ander", slug: `${sleutel}-ander`, createdBy: user.id } })).id;
+    });
+    afterAll(async () => {
+      await db.$executeRaw`SET session_replication_role = replica`;
+      await db.company.deleteMany({ where: { id: anderId } });
+      await db.user.deleteMany({ where: { id: `u2-${sleutel}` } });
+    });
+    const staat = async (id: string) => {
+      const f = await db.factuur.findUniqueOrThrow({ where: { id }, select: { status: true, betalingen: { select: { id: true } }, creditnotas: { select: { id: true } }, gebeurtenissen: { select: { id: true } } } });
+      return JSON.stringify({ status: f.status, b: f.betalingen.length, c: f.creditnotas.length, g: f.gebeurtenissen.length });
+    };
+
+    it("betaling registreren", async () => {
+      const id = await nieuweFactuur();
+      const voor = await staat(id);
+      await expect(registreerBetaling(db, { factuurId: id, companyId: anderId, bedragCenten: 100000, datum: "2026-10-13" })).rejects.toThrow("Factuur niet gevonden.");
+      expect(await staat(id)).toBe(voor);
+    });
+    it("betaling verwijderen", async () => {
+      const id = await nieuweFactuur();
+      await registreerBetaling(db, { factuurId: id, companyId, bedragCenten: 10000, datum: "2026-10-13" });
+      const voor = await staat(id);
+      const b = await db.factuurBetaling.findFirstOrThrow({ where: { factuurId: id } });
+      await expect(verwijderBetaling(db, { betalingId: b.id, companyId: anderId })).rejects.toBeInstanceOf(BeheerFout);
+      expect(await staat(id)).toBe(voor);
+    });
+    it("creditnota maken", async () => {
+      const id = await nieuweFactuur();
+      const voor = await staat(id);
+      await expect(maakCreditnotaConcept(db, { factuurId: id, companyId: anderId, instellingen })).rejects.toThrow("Factuur niet gevonden.");
+      expect(await staat(id)).toBe(voor);
+    });
+    it("status herberekenen en stand laden", async () => {
+      const id = await nieuweFactuur();
+      await expect(herberekenFactuurStatus(db, id, anderId)).rejects.toThrow("Factuur niet gevonden.");
+      await expect(laadStand(db, id, anderId)).rejects.toThrow("Factuur niet gevonden.");
+    });
+    it("definitief maken", async () => {
+      const c = await maakFactuurConcept(db, { companyId, leadId: null, offerteId: null, offerteVersie: null, inhoud: factuurInhoud() });
+      await expect(maakFactuurDefinitief(db, { factuurId: c.id, companyId: anderId, afzender: AFZENDER_OK, prefix })).rejects.toThrow("Factuur niet gevonden.");
+      expect(await status(c.id)).toBe("CONCEPT");
+    });
   });
 
   it("een concept of een creditnota kan niet worden gecrediteerd", async () => {
