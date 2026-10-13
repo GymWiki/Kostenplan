@@ -498,6 +498,16 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
 
   const factuurKop = factuurCfg ? factuurStatusKop({ status: factuurCfg.status, verstuurdOp: factuurCfg.verstuurdOp, dagenTeLaat: factuurCfg.beheer?.dagenTeLaat }) : null;
   const statusBadge = factuurKop ? <Badge variant={factuurKop.toon === "goed" ? "success" : factuurKop.toon === "let-op" ? "warning" : "muted"}>{factuurKop.tekst}</Badge> : <Badge variant={status === "GEACCEPTEERD" ? "success" : "muted"}>{OFFERTE_V2_STATUS_LABEL[status]}</Badge>;
+  // Mobiel staat er geen badge naast de titel: de echte status komt dan in de kopbalk.
+  const statusBlokMobiel =
+    alleenLezen && factuurKop ? (
+      <span role="status" aria-live="polite" className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+        {factuurKop.toon === "goed" ? <Check className="h-4 w-4 text-primary" aria-hidden="true" /> : <TriangleAlert className="h-4 w-4 text-warning" aria-hidden="true" />}
+        {factuurKop.tekst}
+      </span>
+    ) : (
+      statusBlok
+    );
   const pdfHref = factuurCfg ? `/api/facturen/${factuurCfg.id}/pdf` : `/api/offertes/${offerteId}/pdf?versie=${inhoud.versie}`;
   const titelTekst = isFactuur ? `${(inhoud as FactuurInhoud).factuur.soort === "creditnota" ? "Creditnota" : "Factuur"} ${(inhoud as FactuurInhoud).factuur.nummer ?? "(concept)"}` : `Offerte ${inhoud.nummer}`;
   const terug = factuurCfg?.terug ?? "/dashboard/leads";
@@ -520,7 +530,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
     return (
       <div className="flex flex-col gap-4 pb-28 md:hidden">
         <KopInstellen titel={titelTekst} terug={terug} />
-        <KopActie>{statusBlok}</KopActie>
+        <KopActie>{statusBlokMobiel}</KopActie>
         {banner}
         {beheerPaneel}
         {offerteBanner}
