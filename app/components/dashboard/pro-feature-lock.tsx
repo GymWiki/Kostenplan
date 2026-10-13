@@ -14,7 +14,7 @@ export function ProFeatureLock({
   title,
   description,
   ctaLabel = "Upgrade naar Pro",
-  ctaHref = "/dashboard/abonnement",
+  ctaHref = "/dashboard/profiel/abonnement",
   size = "sm",
   wrapper = "card",
 }: {

@@ -328,8 +328,8 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
         return (
           <p className="text-sm text-foreground">
             Je bedrijfsgegevens, logo en voorwaarden komen uit je profiel en worden bij het versturen bijgewerkt.{" "}
-            <Link href="/dashboard/profiel#offertegegevens" className="font-semibold underline">
-              Aanpassen in Profiel
+            <Link href="/dashboard/profiel/bedrijfsgegevens" className="font-semibold underline">
+              Aanpassen bij Bedrijfsgegevens
             </Link>
           </p>
         );

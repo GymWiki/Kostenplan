@@ -62,7 +62,7 @@ export default async function OnboardingKlaarPage({
             <p className="break-words text-sm text-muted-foreground">
               Past niet in je huidige pakket: {overPresets.map((p) => p.naam).join(", ")}.
             </p>
-            <LinkButton href="/dashboard/abonnement" variant="outline" className="w-full sm:w-fit">
+            <LinkButton href="/dashboard/profiel/abonnement" variant="outline" className="w-full sm:w-fit">
               Bekijk de pakketten
             </LinkButton>
           </div>

@@ -10,6 +10,7 @@ import { Switch } from "@/app/components/ui/switch";
 import { Textarea } from "@/app/components/ui/input";
 import { UnitInput } from "@/app/components/ui/unit-input";
 import { AdresZoeker, type AdresKeuze } from "./adres-zoeker";
+import { OpslaanStatus, useAutoSave } from "@/app/components/instellingen/use-autosave";
 import { slaWerkgebiedOpAction, type WerkgebiedBereik } from "@/app/lib/actions/werkgebied";
 import { parseGetal } from "@/app/lib/sjablonen";
 import { adresRegel } from "@/app/lib/werkgebied/adres-invoer";
@@ -35,7 +36,10 @@ export function WerkgebiedFormulier({
   bedrijfInstellingen,
   eigen = false,
   onOpgeslagen,
+  autoOpslaan = false,
 }: {
+  // Automatisch opslaan (met status) in plaats van een opslaanknop.
+  autoOpslaan?: boolean;
   bereik: WerkgebiedBereik;
   start: WerkgebiedInstellingen;
   // Bij een rekentool: wat het bedrijf heeft ingesteld (getoond als "overnemen" gekozen is).
@@ -89,11 +93,8 @@ export function WerkgebiedFormulier({
     } else if (k.soort === "onbekend") setStartKeuze(null);
   }
 
-  async function opslaan(e: React.FormEvent) {
-    e.preventDefault();
-    setBezig(true);
-    setMelding(null);
-    const instellingen: WerkgebiedInstellingen = {
+  function bouwInstellingen(): WerkgebiedInstellingen {
+    return {
       werkgebied: {
         ...w,
         start: startKeuze,
@@ -106,7 +107,24 @@ export function WerkgebiedFormulier({
       },
       minimum: { ...m, bedragEuro: parseGetal(minBedrag, 0) },
     };
-    const r = await slaWerkgebiedOpAction(perTool ? { ...bereik, overnemen } : bereik, instellingen);
+  }
+
+  const auto = useAutoSave(
+    { w, m, straal, perKm, zones, minBedrag, startKeuze, overnemen },
+    async () => {
+      const r = await slaWerkgebiedOpAction(perTool ? { ...bereik, overnemen } : bereik, bouwInstellingen());
+      if (!r.ok) return { ok: false, fout: r.error };
+      onOpgeslagen?.(r.instellingen);
+      return { ok: true };
+    },
+    { aan: autoOpslaan, vertragingMs: 1200 }
+  );
+
+  async function opslaan(e: React.FormEvent) {
+    e.preventDefault();
+    setBezig(true);
+    setMelding(null);
+    const r = await slaWerkgebiedOpAction(perTool ? { ...bereik, overnemen } : bereik, bouwInstellingen());
     setBezig(false);
     if (!r.ok) return setMelding({ soort: "fout", tekst: r.error });
     setMelding({ soort: "ok", tekst: "Opgeslagen. Je rekentools gebruiken dit direct." });
@@ -117,7 +135,7 @@ export function WerkgebiedFormulier({
   const toeslagKan = w.methode === "STRAAL";
 
   return (
-    <form onSubmit={opslaan} className="flex max-w-3xl flex-col gap-6">
+    <form onSubmit={opslaan} className="flex w-full max-w-[640px] flex-col gap-6">
       {perTool && (
         <Field label="Voor deze rekentool" as="fieldset">
           <Segmented
@@ -327,14 +345,18 @@ export function WerkgebiedFormulier({
         </section>
       </fieldset>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" disabled={bezig}>
-          {bezig ? "Opslaan…" : "Opslaan"}
-        </Button>
-        <p role="status" aria-live="polite" className={melding?.soort === "fout" ? "text-sm font-medium text-destructive" : "text-sm text-muted-foreground"}>
-          {melding?.tekst}
-        </p>
-      </div>
+      {autoOpslaan ? (
+        <OpslaanStatus stand={auto.stand} bericht={auto.bericht} opnieuw={auto.opnieuw} />
+      ) : (
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="submit" disabled={bezig}>
+            {bezig ? "Opslaan…" : "Opslaan"}
+          </Button>
+          <p role="status" aria-live="polite" className={melding?.soort === "fout" ? "text-sm font-medium text-destructive" : "text-sm text-muted-foreground"}>
+            {melding?.tekst}
+          </p>
+        </div>
+      )}
     </form>
   );
 }

@@ -10,5 +10,5 @@ export default async function AbonnementRedirect({
   const params = new URLSearchParams();
   for (const [k, v] of Object.entries(await searchParams)) if (typeof v === "string") params.set(k, v);
   const q = params.toString();
-  redirect(`/dashboard/profiel${q ? `?${q}` : ""}#abonnement`);
+  redirect(`/dashboard/profiel/abonnement${q ? `?${q}` : ""}`);
 }

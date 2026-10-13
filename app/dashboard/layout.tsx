@@ -7,6 +7,8 @@ import { Tabbalk } from "@/app/components/mobile/tabbalk";
 import { KopProvider, MobieleKop } from "@/app/components/mobile/mobiele-kop";
 import { PwaBasis } from "@/app/components/mobile/pwa-basis";
 import { MobielBasis } from "@/app/components/mobile/mobiel-basis";
+import { laadOfferteGegevens } from "@/app/lib/offerte/gegevens-server";
+import { ontbrekendeVerplichteGegevens } from "@/app/lib/offerte/gegevens";
 import { adminFontClasses } from "@/app/lib/admin-fonts";
 
 export default async function DashboardLayout({
@@ -18,9 +20,11 @@ export default async function DashboardLayout({
   // Badge op de tabbalk (alleen mobiel). Een mislukte telling mag het
   // dashboard nooit breken.
   // Telt ook offertes met een reactie van de klant die de hovenier nog niet heeft gezien.
-  const [nieuweAanvragen, offerteReacties] = await Promise.all([
+  const [nieuweAanvragen, offerteReacties, profielWaarschuwing] = await Promise.all([
     prisma.lead.count({ where: { companyId: company.id, status: "NIEUW" } }).catch(() => 0),
     telOngezienReacties(company.id).catch(() => 0),
+    // Aantal ontbrekende verplichte gegevens voor offertes: oranje badge op Profiel.
+    laadOfferteGegevens(company).then((g) => ontbrekendeVerplichteGegevens(g).length).catch(() => 0),
   ]);
   const nieuweLeads = nieuweAanvragen + offerteReacties;
 
@@ -47,7 +51,7 @@ export default async function DashboardLayout({
           <div className="mx-auto max-w-[1800px]">{children}</div>
         </main>
       </div>
-      <Tabbalk nieuweLeads={nieuweLeads} />
+      <Tabbalk nieuweLeads={nieuweLeads} profielWaarschuwing={profielWaarschuwing} />
       <MobielBasis />
       <PwaBasis />
     </div>

@@ -7,6 +7,8 @@ import { Field } from "@/app/components/ui/field";
 import { Input, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { saveOfferteGegevensAction, uploadVoorwaardenAction, verwijderVoorwaardenAction } from "@/app/lib/actions/offerte-gegevens";
+import { updateCompanyDetailsAction } from "@/app/lib/actions/companies";
+import { OpslaanStatus, useAutoSave, type OpslaanUitslag } from "@/app/components/instellingen/use-autosave";
 import {
   BETAAL_PRESETS,
   heeftStatutaireGegevens,
@@ -28,14 +30,28 @@ import { STANDAARD_DEELTEKST, STANDAARD_HERINNERINGSTEKST } from "@/app/lib/offe
 // ontbrekendeVerplichteGegevens() in app/lib/offerte/gegevens.ts).
 export type VeldGroep = "handelsnaam" | "kvkNummer" | "statutaireZetel" | "adres" | "btwId" | "iban" | "ibanTenaamstelling" | "telefoon" | "email" | "contactNaam";
 
+// Welke velden bij welke pagina horen: "bedrijf" = de officiële gegevens (Profiel → Bedrijfsgegevens), "offerte" =
+// alleen wat bij offertes hoort (Profiel → Offerte-instellingen). Zo staat elk veld op precies één plek.
+export type FormulierModus = "alles" | "bedrijf" | "offerte";
+const BEDRIJF_VELDEN = ["handelsnaam", "rechtsvorm", "statutaireNaam", "statutaireZetel", "kvkNummer", "adresRegel", "postcode", "plaats", "btwId", "korActief", "korTekst", "iban", "ibanTenaamstelling", "telefoon", "email", "website", "contactNaam", "contactFunctie"] as const;
+const OFFERTE_VELDEN = ["nummerPrefix", "geldigheidDagen", "betaalPreset", "betaalTermijnen", "introTekst", "slotTekst", "voorwaardenBlokken", "herroepingTekst", "btwStandaard", "deelTekst", "herinneringTekst"] as const;
+
 export function OfferteGegevensFormulier({
   start,
   alleenVelden,
   onOpgeslagen,
   onWijzig,
   opslaanLabel = "Offertegegevens opslaan",
+  modus = "alles",
+  autoOpslaan = false,
+  bedrijfId,
 }: {
   start: OfferteGegevensWaarden;
+  modus?: FormulierModus;
+  // Automatisch opslaan (met status) in plaats van een opslaanknop.
+  autoOpslaan?: boolean;
+  // Bij "bedrijf": de naam, het KvK-nummer en het adres worden ook bij het bedrijf bijgewerkt (zoals eerder in "Bedrijf").
+  bedrijfId?: string;
   // Wizard: alleen deze velden tonen (geen standaardinstellingen).
   alleenVelden?: string[];
   onOpgeslagen?: (g: OfferteGegevensWaarden) => void;
@@ -49,6 +65,8 @@ export function OfferteGegevensFormulier({
   const [upload, setUpload] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const wizard = Boolean(alleenVelden);
+  const toonBedrijf = modus !== "offerte";
+  const toonOfferte = !wizard && modus !== "bedrijf";
   const toon = (sleutel: string) => !alleenVelden || alleenVelden.includes(sleutel);
 
   function zet<K extends keyof OfferteGegevensWaarden>(sleutel: K, waarde: OfferteGegevensWaarden[K]) {
@@ -58,6 +76,30 @@ export function OfferteGegevensFormulier({
       return nieuw;
     });
   }
+
+  const sleutels = modus === "bedrijf" ? BEDRIJF_VELDEN : modus === "offerte" ? OFFERTE_VELDEN : null;
+  const auto = useAutoSave(
+    g,
+    async (waarde): Promise<OpslaanUitslag> => {
+      const deel = sleutels ? (Object.fromEntries(sleutels.map((k) => [k, waarde[k]])) as Partial<OfferteGegevensWaarden>) : waarde;
+      const r = await saveOfferteGegevensAction(deel);
+      if (!r.ok) {
+        setFouten(r.fouten);
+        return { ok: false, fout: r.error ?? "Controleer de gemarkeerde velden." };
+      }
+      setFouten({});
+      if (modus === "bedrijf" && bedrijfId && waarde.handelsnaam.trim().length >= 2) {
+        const fd = new FormData();
+        fd.set("naam", waarde.handelsnaam.trim());
+        fd.set("kvkNummer", waarde.kvkNummer.trim());
+        fd.set("adres", [waarde.adresRegel.trim(), [waarde.postcode.trim(), waarde.plaats.trim()].filter(Boolean).join(" ")].filter(Boolean).join(", "));
+        await updateCompanyDetailsAction(bedrijfId, null, fd);
+      }
+      onOpgeslagen?.(r.gegevens);
+      return { ok: true };
+    },
+    { aan: autoOpslaan }
+  );
 
   async function opslaan(e: React.FormEvent) {
     e.preventDefault();
@@ -109,8 +151,8 @@ export function OfferteGegevensFormulier({
 
   const groep = "grid grid-cols-1 gap-4 min-[520px]:grid-cols-2";
   return (
-    <form onSubmit={opslaan} className="flex max-w-3xl flex-col gap-8" noValidate>
-      {(toon("handelsnaam") || toon("kvkNummer") || toon("adres") || toon("btwId") || toon("statutaireZetel")) && (
+    <form onSubmit={opslaan} className="flex w-full max-w-[640px] flex-col gap-8" noValidate>
+      {toonBedrijf && (toon("handelsnaam") || toon("kvkNummer") || toon("adres") || toon("btwId") || toon("statutaireZetel")) && (
         <fieldset className="flex flex-col gap-4">
           {!wizard && <legend className="mb-1 text-base font-bold text-foreground">Bedrijf</legend>}
           {toon("handelsnaam") && (
@@ -164,7 +206,7 @@ export function OfferteGegevensFormulier({
         </fieldset>
       )}
 
-      {(toon("iban") || toon("ibanTenaamstelling")) && (
+      {toonBedrijf && (toon("iban") || toon("ibanTenaamstelling")) && (
         <fieldset className={groep}>
           {!wizard && <legend className="mb-1 text-base font-bold text-foreground">Betalen</legend>}
           {toon("iban") && veld("iban", "IBAN", { placeholder: "NL91 ABNA 0417 1643 00" })}
@@ -172,7 +214,7 @@ export function OfferteGegevensFormulier({
         </fieldset>
       )}
 
-      {(toon("telefoon") || toon("email") || toon("contactNaam")) && (
+      {toonBedrijf && (toon("telefoon") || toon("email") || toon("contactNaam")) && (
         <fieldset className="flex flex-col gap-4">
           {!wizard && <legend className="mb-1 text-base font-bold text-foreground">Contact</legend>}
           <div className={groep}>
@@ -188,7 +230,7 @@ export function OfferteGegevensFormulier({
           )}
           {!wizard && (
             <p className="text-sm text-muted-foreground">
-              Het logo op je offerte komt uit je rekentool. Je past het aan via Uiterlijk.
+              Het logo op je offerte komt uit je rekentool. Je past het aan bij Huisstijl &amp; logo.
               {g.logoUrl && (
                 // eslint-disable-next-line @next/next/no-img-element -- extern logo, afmetingen onbekend
                 <img src={g.logoUrl} alt="Je logo" className="mt-2 h-12 w-auto max-w-[12rem] object-contain" />
@@ -198,7 +240,7 @@ export function OfferteGegevensFormulier({
         </fieldset>
       )}
 
-      {!wizard && (
+      {toonOfferte && (
         <>
           <fieldset className="flex flex-col gap-3">
             <legend className="mb-1 text-base font-bold text-foreground">Algemene voorwaarden</legend>
@@ -234,7 +276,7 @@ export function OfferteGegevensFormulier({
           </fieldset>
 
           <fieldset className="flex flex-col gap-4">
-            <legend className="mb-1 text-base font-bold text-foreground">Standaard voor nieuwe offertes</legend>
+            <legend className="mb-1 text-base font-bold text-foreground">Nummering, geldigheid en betaling</legend>
             <div className={groep}>
               <Field label="Voorvoegsel offertenummer" htmlFor="og-nummerPrefix" hint={`Bijvoorbeeld ${formatteerOfferteNummer(g.nummerPrefix, new Date().getFullYear(), 1)}. Het volgnummer loopt per jaar op.`} error={fouten.nummerPrefix}>
                 <Input id="og-nummerPrefix" value={g.nummerPrefix} maxLength={10} onChange={(e) => zet("nummerPrefix", e.target.value)} placeholder="Geen" />
@@ -369,6 +411,9 @@ export function OfferteGegevensFormulier({
         </>
       )}
 
+      {autoOpslaan ? (
+        <OpslaanStatus stand={auto.stand} bericht={auto.bericht} opnieuw={auto.opnieuw} />
+      ) : (
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={bezig}>
           {bezig ? "Opslaan…" : opslaanLabel}
@@ -379,6 +424,7 @@ export function OfferteGegevensFormulier({
           </p>
         )}
       </div>
+      )}
     </form>
   );
 }

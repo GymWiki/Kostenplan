@@ -125,8 +125,8 @@ function DeelInhoud({ onSluit, offerteId, inhoud, modus = "offerte", onGaNaar, o
           <>
             {" "}
             {p.actie === "profiel" ? (
-              <Link href="/dashboard/profiel#offertegegevens" className="font-semibold underline">
-                Aanpassen in Profiel
+              <Link href={p.href ?? "/dashboard/profiel/bedrijfsgegevens"} className="font-semibold underline">
+                Aanpassen
               </Link>
             ) : (
               <button type="button" className="font-semibold underline" onClick={() => { onGaNaar(p.actie!); onSluit(); }}>

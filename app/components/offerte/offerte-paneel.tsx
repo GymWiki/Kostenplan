@@ -460,7 +460,7 @@ export function VoorwaardenPaneel({ inhoud, wijzig, toonHerroeping }: { inhoud: 
         </fieldset>
       )}
       <p className="text-sm text-muted-foreground">
-        De algemene voorwaarden ({inhoud.bijlagen.length > 0 ? inhoud.bijlagen[0].naam : "nog niet geüpload"}) worden als bijlage meegestuurd. Je beheert ze bij Profiel → Offertegegevens.
+        De algemene voorwaarden ({inhoud.bijlagen.length > 0 ? inhoud.bijlagen[0].naam : "nog niet geüpload"}) worden als bijlage meegestuurd. Je beheert ze bij Profiel → Offerte-instellingen.
       </p>
     </div>
   );

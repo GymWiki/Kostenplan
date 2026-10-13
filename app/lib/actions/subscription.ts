@@ -42,7 +42,7 @@ export async function startCheckoutAction(
         subscriptionStatus: company.mollieSubscriptionId ? "CANCELED" : "GEEN",
       },
     });
-    redirect("/dashboard/abonnement?gewijzigd=1");
+    redirect("/dashboard/profiel/abonnement?gewijzigd=1");
   }
 
   const mollie = getMollieClient();
@@ -63,7 +63,7 @@ export async function startCheckoutAction(
       where: { id: company.id },
       data: { subscriptionTier: plan, billingInterval: interval },
     });
-    redirect("/dashboard/abonnement?gewijzigd=1");
+    redirect("/dashboard/profiel/abonnement?gewijzigd=1");
   }
 
   // Nieuwe (of nog niet eerder betalende) klant: eerst een Mollie-customer
@@ -83,7 +83,7 @@ export async function startCheckoutAction(
   const payment = await mollie.payments.create({
     amount: { currency: "EUR", value: bedrag.toFixed(2) },
     description: `Kostenplan ${plan} (${intervalLabel})`,
-    redirectUrl: `${baseUrl}/dashboard/abonnement?checkout=afgerond`,
+    redirectUrl: `${baseUrl}/dashboard/profiel/abonnement?checkout=afgerond`,
     webhookUrl: getMollieWebhookUrl(baseUrl),
     customerId,
     sequenceType: SequenceType.first,

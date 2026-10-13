@@ -22,7 +22,7 @@ export async function slaWerkgebiedOpAction(bereik: WerkgebiedBereik, invoer: un
     if (!tool) return { ok: false, error: "Deze rekentool bestaat niet meer." };
     if (bereik.overnemen) {
       await prisma.tool.update({ where: { id: tool.id }, data: { werkgebied: null as never } });
-      revalidatePath("/dashboard/profiel");
+      revalidatePath("/dashboard/profiel", "layout");
       revalidatePath(`/t/${company.slug}/${tool.slug}`);
       const { parseWerkgebied } = await import("@/app/lib/werkgebied/schema");
       return { ok: true, instellingen: parseWerkgebied(company.werkgebied) };
@@ -50,7 +50,7 @@ export async function slaWerkgebiedOpAction(bereik: WerkgebiedBereik, invoer: un
   } else {
     await prisma.tool.update({ where: { id: bereik.toolId }, data: { werkgebied: instellingen as never } });
   }
-  revalidatePath("/dashboard/profiel");
+  revalidatePath("/dashboard/profiel", "layout");
   revalidatePath(`/portaal/${company.slug}`);
   return { ok: true, instellingen };
 }

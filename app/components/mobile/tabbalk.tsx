@@ -13,7 +13,7 @@ export function verbergtTabbalk(pad: string) {
 
 // Tabbalk onderin, alleen < 768 px: de vier hoofdonderdelen binnen
 // duimbereik, met het aantal nieuwe leads op Leads.
-export function Tabbalk({ nieuweLeads }: { nieuweLeads: number }) {
+export function Tabbalk({ nieuweLeads, profielWaarschuwing = 0 }: { nieuweLeads: number; profielWaarschuwing?: number }) {
   const pad = usePathname();
   const toetsenbord = useToetsenbordOpen();
   if (toetsenbord || verbergtTabbalk(pad)) return null;
@@ -28,6 +28,8 @@ export function Tabbalk({ nieuweLeads }: { nieuweLeads: number }) {
           const actief = link.href === "/dashboard" ? pad === "/dashboard" : pad.startsWith(link.href);
           const Icon = link.icon;
           const badge = link.href === "/dashboard/leads" && nieuweLeads > 0 ? nieuweLeads : null;
+          // Oranje: gegevens ontbreken voor offertes (Profiel → Bedrijfsgegevens).
+          const waarschuwing = link.href === "/dashboard/profiel" && profielWaarschuwing > 0 ? profielWaarschuwing : null;
           return (
             <li key={link.href}>
               <Link
@@ -40,6 +42,14 @@ export function Tabbalk({ nieuweLeads }: { nieuweLeads: number }) {
               >
                 <span className="relative">
                   <Icon className="h-6 w-6" aria-hidden="true" strokeWidth={actief ? 2.4 : 2} />
+                  {waarschuwing && (
+                    <span
+                      aria-label={`${waarschuwing} ${waarschuwing === 1 ? "gegeven ontbreekt" : "gegevens ontbreken"} voor offertes`}
+                      className="absolute -right-3 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-warning px-1 text-[11px] font-bold leading-none text-white"
+                    >
+                      {waarschuwing}
+                    </span>
+                  )}
                   {badge && (
                     <span
                       aria-label={`${badge} nieuwe ${badge === 1 ? "lead" : "leads"}`}

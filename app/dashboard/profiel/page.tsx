@@ -1,92 +1,85 @@
 import type { Metadata } from "next";
-import { getToolCostSettings, requireActiveCompany } from "@/app/lib/dal";
-import { prisma } from "@/app/lib/prisma";
-import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
-import { abonnementRegel, domeinVan, werkgebiedRegel } from "@/app/lib/profiel/samenvattingen";
+import { redirect } from "next/navigation";
+import { Bell, Building2, CreditCard, FileText, MapPin, Palette, SlidersHorizontal, UserRound } from "lucide-react";
+import { InstellingenKolom, SettingsGroup, SettingsRow } from "@/app/components/instellingen/settings";
 import { ontbrekendeVerplichteGegevens } from "@/app/lib/offerte/gegevens";
+import { abonnementRegel, domeinVan, ontbreektTekst, tarievenRegel, werkgebiedRegel } from "@/app/lib/profiel/samenvattingen";
+import { laadAbonnementInvoer, laadProfiel, laadTarieven } from "@/app/lib/profiel/laad";
 import { pushBeschikbaar } from "@/app/lib/push/versturen";
-import { ProfielView } from "./profiel-view";
-import { laadOfferteGegevens } from "@/app/lib/offerte/gegevens-server";
-import { parseWerkgebied } from "@/app/lib/werkgebied/schema";
+import { ProfielKop } from "./profiel-kop";
+import { UitloggenRij } from "./uitloggen-rij";
 
 export const metadata: Metadata = { title: "Profiel" };
 
-export default async function ProfielPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ gewijzigd?: string; checkout?: string }>;
-}) {
-  const [{ user, company, alleBedrijven }, params] = await Promise.all([requireActiveCompany(), searchParams]);
+// Oude adressen (/dashboard/profiel?scherm=…) sturen door naar de nieuwe pagina's.
+const OUD: Record<string, string> = {
+  bedrijf: "bedrijfsgegevens",
+  bedrijfsgegevens: "bedrijfsgegevens",
+  offertegegevens: "bedrijfsgegevens",
+  uiterlijk: "huisstijl",
+  tarieven: "tarieven",
+  werkgebied: "werkgebied",
+  abonnement: "abonnement",
+  meldingen: "meldingen",
+  account: "account",
+};
 
-  const tools = await prisma.tool.findMany({
-    where: { companyId: company.id, deletedAt: null },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, naam: true, branding: { select: { logoUrl: true, primaireKleur: true } } },
-  });
-  const offertegegevens = await laadOfferteGegevens(company);
-  const onderdelenGebruikt = await prisma.product.count({ where: { tool: { companyId: company.id } } });
-  const plan = effectiveTier(company);
-  const werkgebied = parseWerkgebied(company.werkgebied);
+export default async function ProfielPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams;
+  const scherm = typeof params.scherm === "string" ? params.scherm : null;
+  if (scherm && OUD[scherm]) {
+    const rest = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) if (k !== "scherm" && typeof v === "string") rest.set(k, v);
+    redirect(`/dashboard/profiel/${OUD[scherm]}${rest.size ? `?${rest}` : ""}`);
+  }
+
+  const { user, company, alleBedrijven, tools, offertegegevens, werkgebied } = await laadProfiel();
+  const [tarieven, abonnementInvoer] = await Promise.all([laadTarieven(company, tools[0]?.id), laadAbonnementInvoer(company)]);
+  const abonnement = abonnementRegel(abonnementInvoer);
+  const ontbreekt = ontbrekendeVerplichteGegevens(offertegegevens).length;
   const logoUrl = tools.map((t) => t.branding?.logoUrl).find(Boolean) ?? offertegegevens.logoUrl ?? null;
-  const kleuren = [...new Set(tools.map((t) => t.branding?.primaireKleur).filter((k): k is string => Boolean(k)))];
-  const kosten = tools[0] ? await getToolCostSettings(tools[0].id, company) : null;
-  const eenheid = kosten?.arbeidStapEenheid ?? "DAGDEEL";
-  const tarief = kosten
-    ? eenheid === "UUR"
-      ? kosten.arbeidTariefUur
-      : eenheid === "DAG"
-        ? kosten.arbeidTariefDag
-        : kosten.arbeidTariefDagdeel
-    : 180;
+  const kleuren = [...new Set(tools.map((t) => t.branding?.primaireKleur).filter((k): k is string => Boolean(k)))].slice(0, 3);
 
   return (
-    <ProfielView
-      pushBeschikbaar={pushBeschikbaar()}
-      email={user.email}
-      activeCompanyId={company.id}
-      companies={alleBedrijven}
-      tarieven={{
-        eenheid,
-        tarief,
-        voorrij: kosten?.voorrijTarief ?? company.standaardVoorrijTarief,
-        transport: kosten?.transportTarief ?? 0,
-      }}
-      offertegegevens={offertegegevens}
-      werkgebied={werkgebied}
-      bedrijfOverzicht={{
-        actief: { id: company.id, naam: company.naam, logoUrl, domein: domeinVan(offertegegevens.website) },
-        bedrijven: alleBedrijven.map((b) => ({ id: b.id, naam: b.naam })),
-        samenvatting: { werkgebied: werkgebiedRegel(werkgebied), kleuren, logoUrl, offertegegevensOntbreken: ontbrekendeVerplichteGegevens(offertegegevens).length > 0 },
-        abonnement: abonnementRegel({
-          plan,
-          handmatigToegekend: company.overrideTier !== null,
-          status: company.subscriptionStatus,
-          periodeEind: company.huidigePeriodeEind,
-          gepauzeerdTot: company.gepauzeerdTot,
-          gebruikteOnderdelen: onderdelenGebruikt,
-          limietOnderdelen: PLAN_LIMITS[plan].maxProductsPerCompany,
-        }),
-        abonnementLoopt: !["GEEN", "CANCELED", "COMPLETED"].includes(company.subscriptionStatus),
-      }}
-      branding={tools.map((t) => ({
-        toolId: t.id,
-        toolNaam: t.naam,
-        logoUrl: t.branding?.logoUrl ?? null,
-        primaireKleur: t.branding?.primaireKleur ?? "#15803d",
-      }))}
-      abonnement={{
-        companyId: company.id,
-        effectivePlan: effectiveTier(company),
-        isOverridden: company.overrideTier !== null,
-        actualPlan: company.subscriptionTier,
-        actualInterval: company.billingInterval,
-        subscriptionStatus: company.subscriptionStatus,
-        huidigePeriodeEindLabel: company.huidigePeriodeEind
-          ? new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long", year: "numeric" }).format(company.huidigePeriodeEind)
-          : null,
-        gewijzigd: params.gewijzigd === "1",
-        checkoutAfgerond: params.checkout === "afgerond",
-      }}
-    />
+    <InstellingenKolom>
+      <h1 className="hidden text-2xl font-semibold text-foreground md:block">Profiel</h1>
+      <ProfielKop actief={{ id: company.id, naam: company.naam, logoUrl, domein: domeinVan(offertegegevens.website) }} bedrijven={alleBedrijven.map((b) => ({ id: b.id, naam: b.naam }))} />
+
+      <SettingsGroup kop="Je bedrijf">
+        <SettingsRow href="/dashboard/profiel/bedrijfsgegevens" icoon={Building2} titel="Bedrijfsgegevens" samenvatting="Naam, adres, KvK, contact" waarschuwing={ontbreektTekst(ontbreekt)} />
+        <SettingsRow
+          href="/dashboard/profiel/huisstijl"
+          icoon={Palette}
+          titel="Huisstijl & logo"
+          rechts={
+            <span className="flex shrink-0 items-center gap-1.5" aria-hidden="true">
+              {kleuren.map((k) => (
+                <span key={k} className="h-5 w-5 rounded-full border border-border" style={{ backgroundColor: k }} />
+              ))}
+              {logoUrl && (
+                // eslint-disable-next-line @next/next/no-img-element -- extern logo
+                <img src={logoUrl} alt="" width={28} height={28} className="h-7 w-7 rounded border border-border bg-white object-contain" />
+              )}
+            </span>
+          }
+        />
+      </SettingsGroup>
+
+      <SettingsGroup kop="Prijzen en aanvragen">
+        <SettingsRow href="/dashboard/profiel/tarieven" icoon={SlidersHorizontal} titel="Tarieven" samenvatting={tarievenRegel(tarieven)} />
+        <SettingsRow href="/dashboard/profiel/werkgebied" icoon={MapPin} titel="Werkgebied en minimum" samenvatting={werkgebiedRegel(werkgebied)} />
+        <SettingsRow href="/dashboard/profiel/offerte-instellingen" icoon={FileText} titel="Offerte-instellingen" samenvatting="Nummering, geldigheid, betaling, standaardteksten" />
+      </SettingsGroup>
+
+      <SettingsGroup kop="Abonnement">
+        <SettingsRow href="/dashboard/profiel/abonnement" icoon={CreditCard} titel="Abonnement" samenvatting={abonnement.tekst} waarschuwing={abonnement.letOp ? abonnement.tekst : null} />
+      </SettingsGroup>
+
+      <SettingsGroup kop="Account">
+        <SettingsRow href="/dashboard/profiel/account" icoon={UserRound} titel="Account" samenvatting={user.email} />
+        {pushBeschikbaar() && <SettingsRow href="/dashboard/profiel/meldingen" icoon={Bell} titel="Meldingen" samenvatting="Bij een nieuwe aanvraag" />}
+        <UitloggenRij />
+      </SettingsGroup>
+    </InstellingenKolom>
   );
 }

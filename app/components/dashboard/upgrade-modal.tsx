@@ -47,7 +47,7 @@ export function UpgradeModal({
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row-reverse">
-          <LinkButton href="/dashboard/abonnement" size="lg" className="w-full sm:flex-1" onClick={onClose}>
+          <LinkButton href="/dashboard/profiel/abonnement" size="lg" className="w-full sm:flex-1" onClick={onClose}>
             Upgrade naar {PLAN_LABELS[requiredPlan]}
           </LinkButton>
           <Button type="button" variant="secondary" size="lg" className="w-full sm:flex-1" onClick={onClose}>
