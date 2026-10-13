@@ -209,6 +209,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
 
   // Factuur: eerst definitief maken (controle, nummer, vastleggen), daarna delen; een definitieve factuur gaat direct naar het delen.
   const [verwachtNummer, setVerwachtNummer] = useState<string | null>(null);
+  const [nieuwNummer, setNieuwNummer] = useState<string | null>(null);
   useEffect(() => {
     if (!factuurCfg || factuurCfg.status !== "CONCEPT" || !controleOpen) return;
     let weg = false;
@@ -229,10 +230,13 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
         terugKnop: "Terug naar de factuur",
         naControle: async () => {
           const r = await definitiefMakenAction(factuurCfg.id);
-          if (r.ok) setPasVerstuurd(true);
+          if (r.ok) {
+            setPasVerstuurd(true);
+            setNieuwNummer(r.nummer);
+          }
           return r.ok ? { ok: true } : { ok: false, error: r.error };
         },
-        titelDelen: `${woord === "creditnota" ? "Creditnota" : "Factuur"} ${(inhoud as FactuurInhoud).factuur.nummer ?? ""} van ${formatCents(Math.abs(totalen.totaalIncl))} versturen`.replace("  ", " "),
+        titelDelen: `${woord === "creditnota" ? "Creditnota" : "Factuur"} ${(inhoud as FactuurInhoud).factuur.nummer ?? nieuwNummer ?? ""} van ${formatCents(Math.abs(totalen.totaalIncl))} versturen`.replace("  ", " "),
         maakKlaar: () => maakFactuurDeelklaarAction(factuurCfg.id),
         bevestig: (kanaal) => bevestigFactuurVerstuurdAction(factuurCfg.id, kanaal),
         woord,
