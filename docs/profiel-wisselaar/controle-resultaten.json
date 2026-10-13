@@ -1,0 +1,116 @@
+[
+  {
+    "n": "kop mobiel-412: knop met aria-label en aria-haspopup=\"dialog\"",
+    "ok": true
+  },
+  {
+    "n": "kop mobiel-412: domein van de website in de kop",
+    "ok": true
+  },
+  {
+    "n": "kop mobiel-412: wissel-icoon in plaats van een chevron",
+    "ok": true
+  },
+  {
+    "n": "kop mobiel-412: de kop linkt niet meer naar Bedrijfsgegevens",
+    "ok": true
+  },
+  {
+    "n": "wisselaar (één bedrijf) mobiel-412: dat ene bedrijf met vinkje, plan en '+ Bedrijf toevoegen'",
+    "ok": true
+  },
+  {
+    "n": "wisselaar mobiel-412: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "kop desktop-1440: knop met aria-label en aria-haspopup=\"dialog\"",
+    "ok": true
+  },
+  {
+    "n": "kop desktop-1440: domein van de website in de kop",
+    "ok": true
+  },
+  {
+    "n": "kop desktop-1440: wissel-icoon in plaats van een chevron",
+    "ok": true
+  },
+  {
+    "n": "kop desktop-1440: de kop linkt niet meer naar Bedrijfsgegevens",
+    "ok": true
+  },
+  {
+    "n": "wisselaar (één bedrijf) desktop-1440: dat ene bedrijf met vinkje, plan en '+ Bedrijf toevoegen'",
+    "ok": true
+  },
+  {
+    "n": "wisselaar desktop-1440: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "wisselaar (twee bedrijven) mobiel-412: beide bedrijven met plan ('Pro' en 'Pro · opgezegd')",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "wisselaar (twee bedrijven) desktop-1440: beide bedrijven met plan ('Pro' en 'Pro · opgezegd')",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "wisselaar desktop: Escape sluit de popover",
+    "ok": true
+  },
+  {
+    "n": "voor het wisselen: Leads toont de leads van het eerste bedrijf",
+    "ok": true
+  },
+  {
+    "n": "voor het wisselen: badge op Leads in de tabbalk is 8",
+    "ok": true
+  },
+  {
+    "n": "directe feedback: laadtoestand op de gekozen regel",
+    "ok": true,
+    "d": "aria-busy-regels: 1"
+  },
+  {
+    "n": "na het wisselen: melding 'Je werkt nu in Tuinontwerp Mulder'",
+    "ok": true
+  },
+  {
+    "n": "na het wisselen: de kop toont het nieuwe bedrijf, de sheet is dicht",
+    "ok": true
+  },
+  {
+    "n": "na het wisselen: badge in de tabbalk is van het nieuwe bedrijf (Leads: 1)",
+    "ok": true
+  },
+  {
+    "n": "Rekentools toont de rekentools van het nieuwe bedrijf",
+    "ok": true
+  },
+  {
+    "n": "Leads toont de leads van het nieuwe bedrijf",
+    "ok": true
+  },
+  {
+    "n": "na herladen is het nieuwe bedrijf nog actief",
+    "ok": true
+  },
+  {
+    "n": "na opnieuw inloggen (nieuwe sessie) is het nieuwe bedrijf nog actief",
+    "ok": true
+  },
+  {
+    "n": "terugwisselen (desktop-popover): Leads toont weer de leads van het eerste bedrijf",
+    "ok": true
+  },
+  {
+    "n": "wisselen: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  }
+]
