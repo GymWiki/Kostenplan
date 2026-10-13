@@ -6,7 +6,7 @@ import { Bell, Building2, ChevronRight, CreditCard, FileText, LogOut, MapPin, Pa
 import { KopInstellen } from "@/app/components/mobile/mobiele-kop";
 import { logoutAction } from "@/app/lib/actions/auth";
 
-export type ProfielScherm = "tarieven" | "werkgebied" | "bedrijf" | "offertegegevens" | "uiterlijk" | "abonnement" | "meldingen" | "account";
+export type ProfielScherm = "tarieven" | "werkgebied" | "bedrijf" | "bedrijfsgegevens" | "offertegegevens" | "uiterlijk" | "abonnement" | "meldingen" | "account";
 
 type Rij = { id: ProfielScherm; titel: string; samenvatting: string; icoon: React.ComponentType<{ className?: string }> };
 
@@ -40,7 +40,7 @@ export function ProfielMobiel({
   ];
 
   if (actief) {
-    const titel = [...groepen.flat()].find((r) => r.id === actief)?.titel ?? "Profiel";
+    const titel = actief === "bedrijfsgegevens" ? "Bedrijfsgegevens" : ([...groepen.flat()].find((r) => r.id === actief)?.titel ?? "Profiel");
     return (
       <div className="flex flex-col gap-4 pb-8 md:hidden">
         <KopInstellen titel={titel} terug="/dashboard/profiel" />

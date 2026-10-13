@@ -1,7 +1,4 @@
-import { Plus } from "lucide-react";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { LinkButton } from "@/app/components/ui/button";
-import { HelpTip } from "@/app/components/ui/help-tip";
 import { AbonnementView } from "@/app/dashboard/abonnement/abonnement-view";
 import { TarievenSectie } from "./tarieven-sectie";
 import { OfferteGegevensFormulier } from "./offertegegevens-formulier";
@@ -10,20 +7,15 @@ import type { WerkgebiedInstellingen } from "@/app/lib/werkgebied/schema";
 import { ontbrekendeVerplichteGegevens, type OfferteGegevensWaarden } from "@/app/lib/offerte/gegevens";
 import { UiterlijkOverzicht, type BrandingRegel } from "./uiterlijk-overzicht";
 import { AccountForm } from "./account-form";
-import { CompanyCard } from "./company-card";
+import { BedrijfOverzicht, type BedrijfOverzichtProps } from "./bedrijf-overzicht";
+import { BedrijfsgegevensFormulier } from "./bedrijfsgegevens-formulier";
 import { ProfielMobiel } from "./profiel-mobiel";
 import { MeldingenPaneel } from "./meldingen-paneel";
 import { PLAN_LABELS } from "@/app/lib/subscription";
 import { effectiveTier, isBetaaldTier, PRIJZEN } from "@/app/lib/subscription";
 import { formatCurrency } from "@/app/lib/format";
+import { werkgebiedRegel } from "@/app/lib/profiel/samenvattingen";
 import type { Company } from "@/app/generated/prisma/client";
-
-function werkgebiedSamenvatting(i: WerkgebiedInstellingen): string {
-  const delen: string[] = [];
-  if (i.werkgebied.aan) delen.push(i.werkgebied.methode === "STRAAL" ? `${String(i.werkgebied.straalKm).replace(".", ",")} km` : "Postcodes");
-  if (i.minimum.aan) delen.push(`minimaal ${formatCurrency(i.minimum.bedragEuro)}`);
-  return delen.length ? delen.join(" · ") : "Uit";
-}
 
 export function ProfielView({
   pushBeschikbaar = false,
@@ -35,6 +27,7 @@ export function ProfielView({
   branding,
   offertegegevens,
   werkgebied,
+  bedrijfOverzicht,
 }: {
   pushBeschikbaar?: boolean;
   email: string;
@@ -45,6 +38,7 @@ export function ProfielView({
   branding: BrandingRegel[];
   offertegegevens: OfferteGegevensWaarden;
   werkgebied: WerkgebiedInstellingen;
+  bedrijfOverzicht: Omit<BedrijfOverzichtProps, "modus">;
 }) {
   const ontbreekt = ontbrekendeVerplichteGegevens(offertegegevens).length;
   // Alleen echt betaalde, actief lopende abonnementen tellen mee — een
@@ -72,8 +66,9 @@ export function ProfielView({
       meldingenBeschikbaar={pushBeschikbaar}
       samenvattingen={{
         tarieven: `${formatCurrency(tarieven.tarief)} per ${eenheidWoord}`,
-        werkgebied: werkgebiedSamenvatting(werkgebied),
+        werkgebied: werkgebiedRegel(werkgebied),
         bedrijf: actiefBedrijf?.naam ?? "Je bedrijf",
+        bedrijfsgegevens: "Naam, adres, KvK, contact",
         offertegegevens: ontbreekt === 0 ? "Compleet" : `${ontbreekt} ${ontbreekt === 1 ? "gegeven" : "gegevens"} ontbreken`,
         uiterlijk: branding.length === 1 ? "Logo en kleuren" : `${branding.length} rekentools`,
         abonnement: PLAN_LABELS?.[abonnement.effectivePlan] ?? String(abonnement.effectivePlan),
@@ -93,17 +88,14 @@ export function ProfielView({
             <WerkgebiedFormulier bereik={{ soort: "bedrijf" }} start={werkgebied} />
           </section>
         ),
-        bedrijf: (
-          <section className="flex flex-col gap-4">
-            {companies.map((company) => (
-              <CompanyCard key={company.id} company={company} isActive={company.id === activeCompanyId} isLastCompany={companies.length === 1} />
-            ))}
-            <LinkButton href="/dashboard/bedrijven/nieuw" size="lg" variant="outline" className="w-full">
-              <Plus className="h-4 w-4" />
-              Nieuw bedrijf toevoegen
-            </LinkButton>
-          </section>
-        ),
+        bedrijf: <BedrijfOverzicht modus="mobiel" {...bedrijfOverzicht} />,
+        bedrijfsgegevens: actiefBedrijf ? (
+          <Card>
+            <CardContent>
+              <BedrijfsgegevensFormulier company={actiefBedrijf} />
+            </CardContent>
+          </Card>
+        ) : null,
         offertegegevens: <OfferteGegevensFormulier start={offertegegevens} />,
         uiterlijk: <UiterlijkOverzicht regels={branding} />,
         abonnement: <AbonnementView {...abonnement} />,
@@ -135,35 +127,25 @@ export function ProfielView({
       </section>
 
       <section className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-            Mijn bedrijven
-            <HelpTip contentKey="profiel.multiCompany" />
-          </h2>
-          <LinkButton href="/dashboard/bedrijven/nieuw" size="sm" variant="outline">
-            <Plus className="h-4 w-4" />
-            Nieuw bedrijf toevoegen
-          </LinkButton>
-        </div>
-
+        <h2 className="text-lg font-semibold text-foreground">Bedrijf</h2>
         {betaaldeBedrijven.length > 1 && (
-          <p className="rounded-md border border-border bg-secondary/50 px-4 py-3 text-sm text-foreground">
-            Je betaalt nu {formatCurrency(totaalPerMaand)}/maand over {betaaldeBedrijven.length}{" "}
-            bedrijven.
+          <p className="max-w-[640px] rounded-md border border-border bg-secondary/50 px-4 py-3 text-sm text-foreground">
+            Je betaalt nu {formatCurrency(totaalPerMaand)}/maand over {betaaldeBedrijven.length} bedrijven.
           </p>
         )}
-
-        <div className="flex flex-col gap-4">
-          {companies.map((company) => (
-            <CompanyCard
-              key={company.id}
-              company={company}
-              isActive={company.id === activeCompanyId}
-              isLastCompany={companies.length === 1}
-            />
-          ))}
-        </div>
+        <BedrijfOverzicht modus="desktop" {...bedrijfOverzicht} />
       </section>
+
+      {actiefBedrijf && (
+        <section className="flex flex-col gap-3">
+          <h2 id="bedrijfsgegevens" className="scroll-mt-20 text-lg font-semibold text-foreground">Bedrijfsgegevens</h2>
+          <Card className="max-w-[640px]">
+            <CardContent>
+              <BedrijfsgegevensFormulier company={actiefBedrijf} />
+            </CardContent>
+          </Card>
+        </section>
+      )}
 
       <section className="flex flex-col gap-3">
         <h2 id="tarieven" className="scroll-mt-20 text-lg font-semibold text-foreground">Tarieven</h2>
