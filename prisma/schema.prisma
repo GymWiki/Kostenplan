@@ -857,6 +857,15 @@ model Lead {
   externAfgehandeldOp      DateTime?
   externAfgehandeldNotitie String?
 
+  // Voortgang die de hovenier zelf bijhoudt (de rest van de fase wordt afgeleid, zie app/lib/lead-fase).
+  inContactOp          DateTime?
+  ingeplandStartweek   String?
+  ingeplandOp          DateTime?
+  opgeleverdOp         DateTime? @db.Date
+  verlorenReden        String?
+  verlorenOp           DateTime?
+  gebeurtenissen       LeadGebeurtenis[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -866,6 +875,19 @@ model Lead {
   // orderBy createdAt desc) — zonder deze index viel die query terug op
   // companyId-only uit de bovenstaande index plus een losse sort.
   @@index([companyId, createdAt])
+}
+
+// Handmatige stappen in het verloop van een lead (in contact, ingepland, opgeleverd, verloren); samen met de
+// gebeurtenissen van offerte en facturen vormen ze de tijdlijn.
+model LeadGebeurtenis {
+  id     String @id @default(cuid())
+  leadId String
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  soort  String
+  tekst  String?
+  createdAt DateTime @default(now())
+
+  @@index([leadId, createdAt])
 }
 
 // Individuele, los bewerkbare/verwijderbare aantekening bij een Lead (zie
