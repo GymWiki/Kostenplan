@@ -9,6 +9,8 @@ import type { LeadSnapshot } from "@/app/lib/leads";
 import type { OfferteRegel } from "@/app/lib/offertes";
 import { planReserveIngest } from "@/app/lib/reserve-ingest";
 import { planLeadMailWachtrij } from "@/app/lib/mail/plan-lead-mail";
+import { resolveWerkgebied } from "@/app/lib/werkgebied/schema";
+import type { LeadStart } from "./lead-detail-drawer";
 import { LeadsView, type LeadWithNotes } from "./leads-view";
 
 export const metadata: Metadata = { title: "Leads" };
@@ -48,6 +50,15 @@ export default async function LeadsPage() {
   }
 
   const { rawLeads, tools } = await getLeadsPageData(company.id);
+
+  // Startadres en straal per rekentool (van het bedrijf, of de eigen instelling van de rekentool) voor de kaart.
+  const startPerTool: Record<string, LeadStart> = {};
+  for (const tool of tools) {
+    const w = resolveWerkgebied(company.werkgebied, tool.werkgebied).werkgebied;
+    if (w.aan && w.start) {
+      startPerTool[tool.id] = { lat: w.start.lat, lon: w.start.lon, straalKm: w.methode === "STRAAL" ? w.straalKm : null, label: "Je vestigingsadres" };
+    }
+  }
 
   const leads: LeadWithNotes[] = rawLeads.map(({ offertesV2, ...lead }) => {
     const v2 = offertesV2[0];
@@ -90,7 +101,7 @@ export default async function LeadsPage() {
     <div className="flex flex-col gap-6">
       <OfferteTips tips={offerteTips} />
       <Suspense fallback={<LeadsViewFallback />}>
-        <LeadsView leads={leads} isGratis={false} tools={tools} />
+        <LeadsView leads={leads} isGratis={false} tools={tools.map(({ id, naam }) => ({ id, naam }))} startPerTool={startPerTool} />
       </Suspense>
     </div>
   );

@@ -464,7 +464,7 @@ export async function getLeadsPageData(companyId: string) {
     prisma.tool.findMany({
       where: { companyId, deletedAt: null },
       orderBy: { order: "asc" },
-      select: { id: true, naam: true },
+      select: { id: true, naam: true, werkgebied: true },
     }),
   ]);
   return { rawLeads, tools };

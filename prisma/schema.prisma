@@ -841,6 +841,8 @@ model Lead {
   mailPogingen       Int       @default(0)
   mailVolgendePoging DateTime?
   mailFout           String?
+  // Vriendelijke afwijzing aan de klant (werkgebied); één keer, zonder nieuwe pogingen.
+  afwijzingVerzondOp DateTime?
 
   notities LeadNote[]
   offerte  Offerte?

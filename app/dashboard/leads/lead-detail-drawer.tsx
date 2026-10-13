@@ -19,6 +19,10 @@ import {
 import { omzettenNaarOfferteAction, markOffertReactieGezienAction } from "@/app/lib/actions/offertes";
 import { markeerOfferteV2GezienAction } from "@/app/lib/actions/offerte-v2";
 import { whatsappLink } from "@/app/lib/leads";
+import dynamic from "next/dynamic";
+import { adresRegel } from "@/app/lib/werkgebied/adres-invoer";
+import { afstandTekst } from "@/app/lib/werkgebied/lead-markeringen";
+import { LocatieLabels } from "./locatie-labels";
 import { StatusSelect } from "./status-select";
 import { OfferteStatusBadge } from "./offerte-status-badge";
 import { AfhandelKeuzeModal } from "./afhandel-keuze-modal";
@@ -33,12 +37,50 @@ const dateFormatter = new Intl.DateTimeFormat("nl-NL", {
   minute: "2-digit",
 });
 
+export type LeadStart = { lat: number; lon: number; straalKm: number | null; label: string };
+
+const WerkgebiedKaart = dynamic(() => import("@/app/components/werkgebied/kaart").then((m) => m.WerkgebiedKaart), {
+  ssr: false,
+  loading: () => <div className="h-56 animate-pulse rounded-lg bg-secondary" aria-hidden="true" />,
+});
+
+// Adres, afstand en kaart van de klant (alleen bij een rekentool met werkgebied).
+function LocatieBlok({ snapshot, start }: { snapshot: LeadWithNotes["snapshot"]; start: LeadStart | null }) {
+  const loc = snapshot.locatie;
+  if (!loc) return null;
+  const afstand = afstandTekst(snapshot);
+  const adres = loc.gecontroleerd ? adresRegel(loc) : `${loc.postcode.replace(/^(\d{4})([A-Za-z]{2})$/, "$1 $2")} ${loc.huisnummer}${loc.toevoeging}`;
+  const heeftPunt = loc.lat !== null && loc.lon !== null;
+  return (
+    <div className="flex flex-col gap-2 max-md:order-1">
+      <h3 className="text-sm font-semibold text-foreground">Locatie</h3>
+      <div className="flex flex-col gap-1.5 rounded-lg border border-border p-3 text-sm">
+        <p className="font-medium text-foreground">{adres}</p>
+        {afstand && <p className="text-muted-foreground">{afstand} hemelsbreed vanaf je startadres</p>}
+        <LocatieLabels snapshot={snapshot} metAfstand={false} />
+        {!loc.gecontroleerd && <p className="text-xs text-muted-foreground">PDOK was niet bereikbaar, dus dit adres en de afstand zijn niet gecontroleerd.</p>}
+      </div>
+      {heeftPunt && (
+        <WerkgebiedKaart
+          start={start ? { lat: start.lat, lon: start.lon, label: start.label } : null}
+          straalKm={start?.straalKm ?? null}
+          klant={{ lat: loc.lat as number, lon: loc.lon as number, label: afstand ? `Klant · ${afstand}` : "Klant" }}
+          hoogte={220}
+          ariaLabel="Kaart met de locatie van de klant"
+        />
+      )}
+    </div>
+  );
+}
+
 export function LeadDetailDrawer({
   lead,
   onClose,
   onUpdateStatus,
   toolBestaat,
+  start = null,
 }: {
+  start?: LeadStart | null;
   lead: LeadWithNotes | null;
   onClose: () => void;
   onUpdateStatus: (leadId: string, status: LeadStatus) => void;
@@ -194,6 +236,8 @@ export function LeadDetailDrawer({
               waarschuwing={keuzeModal.waarschuwing}
             />
           </div>
+
+          <LocatieBlok snapshot={lead.snapshot} start={start} />
 
           <div className="flex flex-col gap-2 max-md:order-1">
             <div className="flex flex-wrap items-center justify-between gap-2">

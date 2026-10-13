@@ -13,7 +13,8 @@ import { ProFeatureLock } from "@/app/components/dashboard/pro-feature-lock";
 import { updateLeadStatusAction } from "@/app/lib/actions/leads";
 import { telItMeeVoorPipeline } from "@/app/lib/leads";
 import { LeadsTable } from "./leads-table";
-import { LeadDetailDrawer } from "./lead-detail-drawer";
+import { MARKERING_FILTER_OPTIES, leadMarkeringen } from "@/app/lib/werkgebied/lead-markeringen";
+import { LeadDetailDrawer, type LeadStart } from "./lead-detail-drawer";
 import { LeadsMobiel, type LeadFilter } from "./leads-mobiel";
 import type { Lead, LeadNote, LeadStatus, Offerte, OfferteV2Status } from "@/app/generated/prisma/client";
 import { OFFERTE_FILTER_OPTIES, leadOfferteStatus } from "@/app/lib/offerte/lead-status";
@@ -65,10 +66,13 @@ export function LeadsView({
   leads,
   isGratis,
   tools = [],
+  startPerTool = {},
 }: {
   leads: LeadWithNotes[];
   isGratis: boolean;
   tools?: { id: string; naam: string }[];
+  // Het startadres en de straal van het werkgebied per rekentool, voor de kaart in het leaddetail.
+  startPerTool?: Record<string, LeadStart>;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -93,6 +97,8 @@ export function LeadsView({
   const toolFilter = searchParams.get("tool") ?? "alle";
   // Filter op offertestatus (?offerte=geaccepteerd, enz.).
   const offerteFilter = searchParams.get("offerte") ?? "alle";
+  // Filter op werkgebied en minimum (?markering=buiten|minimum|niet-gecontroleerd).
+  const markeringFilter = searchParams.get("markering") ?? "alle";
 
   const updateQuery = useCallback(
     (patch: Record<string, string | null>) => {
@@ -142,8 +148,12 @@ export function LeadsView({
 
   const zichtbareLeads = useMemo(() => {
     const opTool = toolFilter === "alle" ? optimisticLeads : optimisticLeads.filter((lead) => lead.toolId === toolFilter);
-    return offerteFilter === "alle" ? opTool : opTool.filter((lead) => leadOfferteStatus(lead).sleutel === offerteFilter);
-  }, [optimisticLeads, toolFilter, offerteFilter]);
+    const opOfferte = offerteFilter === "alle" ? opTool : opTool.filter((lead) => leadOfferteStatus(lead).sleutel === offerteFilter);
+    const soort = MARKERING_FILTER_OPTIES.find((o) => o.waarde === markeringFilter)?.soort ?? null;
+    return soort ? opOfferte.filter((lead) => leadMarkeringen(lead.snapshot).includes(soort)) : opOfferte;
+  }, [optimisticLeads, toolFilter, offerteFilter, markeringFilter]);
+  // Het filter verschijnt pas als er iets te filteren valt.
+  const toonMarkeringFilter = useMemo(() => optimisticLeads.some((lead) => leadMarkeringen(lead.snapshot).length > 0), [optimisticLeads]);
 
   // Zelfde berekening als voorheen server-side in page.tsx, nu hier zodat de
   // KPI's direct meebewegen met een optimistische statuswijziging in plaats
@@ -194,6 +204,9 @@ export function LeadsView({
         onToolFilter={setToolFilter}
         offerteFilter={offerteFilter}
         onOfferteFilter={(v) => updateQuery({ offerte: v === "alle" ? null : v })}
+        markeringFilter={markeringFilter}
+        onMarkeringFilter={(v) => updateQuery({ markering: v === "alle" ? null : v })}
+        toonMarkeringFilter={toonMarkeringFilter}
         onSelect={setSelectedLeadId}
       />
       <div className="hidden flex-col gap-4 sm:flex-row sm:items-center sm:justify-between md:flex">
@@ -231,6 +244,20 @@ export function LeadsView({
               </option>
             ))}
           </select>
+          {toonMarkeringFilter && (
+            <select
+              value={markeringFilter}
+              onChange={(e) => updateQuery({ markering: e.target.value === "alle" ? null : e.target.value })}
+              aria-label="Filter op werkgebied en minimum"
+              className="h-10 rounded-md border border-input bg-card px-3 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {MARKERING_FILTER_OPTIES.map((o) => (
+                <option key={o.waarde} value={o.waarde}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
             <button
               type="button"
@@ -321,6 +348,7 @@ export function LeadsView({
         lead={selectedLead}
         onClose={() => setSelectedLeadId(null)}
         onUpdateStatus={updateLeadStatus}
+        start={selectedLead ? (startPerTool[selectedLead.toolId] ?? null) : null}
         toolBestaat={selectedLead ? (tools ?? []).some((t) => t.id === selectedLead.toolId) : false}
       />
     </div>

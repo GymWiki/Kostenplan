@@ -6,6 +6,7 @@ import { formatCurrency } from "@/app/lib/format";
 import { Card } from "@/app/components/ui/card";
 import { cn } from "@/app/lib/cn";
 import { StatusSelect } from "./status-select";
+import { LocatieLabels } from "./locatie-labels";
 import { OfferteStatusBadge } from "./offerte-status-badge";
 import type { LeadWithNotes } from "./leads-view";
 import type { LeadStatus } from "@/app/generated/prisma/client";
@@ -97,6 +98,7 @@ export function LeadsTable({
                   <td className="px-4 py-3">
                     <p className="font-medium text-foreground">{lead.naam}</p>
                     <p className="text-xs text-muted-foreground">{lead.email}</p>
+                    <LocatieLabels snapshot={lead.snapshot} className="mt-1" />
                   </td>
                   {showTool && <td className="px-4 py-3 text-muted-foreground">{lead.toolNaamSnapshot}</td>}
                   <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>

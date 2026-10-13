@@ -13,6 +13,7 @@ import { cn } from "@/app/lib/cn";
 import { formatCurrency } from "@/app/lib/format";
 import { Badge } from "@/app/components/ui/badge";
 import { LEAD_STATUSSEN, LEAD_STATUS_LABELS } from "@/app/lib/leads";
+import { LocatieLabels } from "./locatie-labels";
 import { OfferteStatusBadge } from "./offerte-status-badge";
 import type { LeadWithNotes } from "./leads-view";
 import type { LeadStatus } from "@/app/generated/prisma/client";
@@ -167,6 +168,7 @@ function LeadCard({
       <p className="mt-1 text-sm font-semibold text-primary tabular-nums">
         {formatCurrency(lead.totaalIndicatie)}
       </p>
+      <LocatieLabels snapshot={lead.snapshot} className="mt-1.5" />
       {lead.offerte && (
         <div className="mt-1.5">
           <OfferteStatusBadge offerte={lead.offerte} />
