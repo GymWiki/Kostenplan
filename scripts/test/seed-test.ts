@@ -54,7 +54,7 @@ async function gegevens(companyId: string, opties: { kor?: boolean; handelsnaam:
 
 let offerteTeller = 0;
 // Een lead, optioneel met offerte (v2) en akkoord.
-async function lead(c: { companyId: string; toolId: string; toolNaam: string; productId?: string; prefix: string }, o: { naam: string; status?: "NIEUW" | "IN_BEHANDELING" | "OFFERTE_VERSTUURD" | "GEWONNEN" | "VERLOREN"; offerte?: "CONCEPT" | "VERSTUURD" | "VERLOPEN" | "AFGEWEZEN" | "GEACCEPTEERD"; zakelijk?: boolean; extra?: Record<string, unknown>; ouderDagen?: number }) {
+async function lead(c: { companyId: string; toolId: string; toolNaam: string; productId?: string; prefix: string; afzender?: Partial<typeof AFZENDER_OK> }, o: { naam: string; status?: "NIEUW" | "IN_BEHANDELING" | "OFFERTE_VERSTUURD" | "GEWONNEN" | "VERLOREN"; offerte?: "CONCEPT" | "VERSTUURD" | "VERLOPEN" | "AFGEWEZEN" | "GEACCEPTEERD"; zakelijk?: boolean; extra?: Record<string, unknown>; ouderDagen?: number }) {
   const l = await db.lead.create({
     data: {
       companyId: c.companyId,
@@ -81,7 +81,7 @@ async function lead(c: { companyId: string; toolId: string; toolNaam: string; pr
       { ...regel("e", "Verlichting", 1, 25000, 21), type: "optioneel" as const },
     ];
     const nummer = `2026-${String(100 + ++offerteTeller).padStart(4, "0")}`;
-    const base = factuurInhoud({ zakelijk: o.zakelijk });
+    const base = factuurInhoud({ zakelijk: o.zakelijk, afzender: c.afzender, kor: Boolean(c.afzender?.korActief) });
     const inhoud = { ...base, factuur: undefined, nummer, versie: 1, klant: { ...base.klant, naam: o.naam, email: l.email }, secties: [{ id: "s1", titel: "Tuin Kerkstraat 5", regels }], betaaltermijnen: [{ label: "Aanbetaling", percentage: 30 }, { label: "Bij oplevering", percentage: 70 }], voorwaarden: [], herroeping: { aan: false, tekst: "" } } as unknown as OfferteInhoud;
     const t = berekenTotalen({ ...inhoud, secties: [{ id: "s1", titel: "x", regels: regels.filter((r) => r.type !== "optioneel") }] });
     const verstuurd = o.offerte !== "CONCEPT";
@@ -178,7 +178,7 @@ async function seedA(n: number) {
   const c2 = await db.company.create({ data: { naam: "Groenstijl Tuinen", slug: `groenstijl-a${n}`, createdBy: uid, subscriptionTier: "PRO", subscriptionStatus: "ACTIVE", onboardingVoltooid: true, onboardingPortaalBekeken: true, members: { create: { userId: uid } } } });
   await gegevens(c2.id, { handelsnaam: "Groenstijl Tuinen", kor: true });
   const t3 = await maakTool(c2.id, "Heggen en bomen", `heggen-a${n}`, ["haag-beplanting", "boom-planten"], 0);
-  const ctx2 = { companyId: c2.id, toolId: t3.id, toolNaam: "Heggen en bomen", productId: t3.productIds[0], prefix: `a${n}b` };
+  const ctx2 = { companyId: c2.id, toolId: t3.id, toolNaam: "Heggen en bomen", productId: t3.productIds[0], prefix: `a${n}b`, afzender: { handelsnaam: "Groenstijl Tuinen", ibanTenaamstelling: "Groenstijl Tuinen", btwId: "", korActief: true } };
   await lead(ctx2, { naam: "Hans Heg" });
   await lead(ctx2, { naam: "Gina Groen", status: "OFFERTE_VERSTUURD", offerte: "VERSTUURD" });
 
