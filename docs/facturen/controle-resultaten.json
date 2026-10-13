@@ -1,0 +1,150 @@
+[
+  {
+    "n": "concept mobiel-412: editor toont 'Factuur (concept)' en het document met watermerk",
+    "ok": true
+  },
+  {
+    "n": "concept mobiel-412: totalen en btw per tarief (21% en 9%)",
+    "ok": true
+  },
+  {
+    "n": "concept mobiel-412: stelpost gemarkeerd 'Te bepalen'",
+    "ok": true
+  },
+  {
+    "n": "concept mobiel-412: alleen de door de klant gekozen optionele regel (Verlichting) staat erop",
+    "ok": true
+  },
+  {
+    "n": "concept mobiel-412: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "concept desktop-1440: editor toont 'Factuur (concept)' en het document met watermerk",
+    "ok": true
+  },
+  {
+    "n": "concept desktop-1440: totalen en btw per tarief (21% en 9%)",
+    "ok": true
+  },
+  {
+    "n": "concept desktop-1440: stelpost gemarkeerd 'Te bepalen'",
+    "ok": true
+  },
+  {
+    "n": "concept desktop-1440: alleen de door de klant gekozen optionele regel (Verlichting) staat erop",
+    "ok": true
+  },
+  {
+    "n": "concept desktop-1440: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "definitief maken: de controle blokkeert (stelpost, uitvoeringsdatum)",
+    "ok": true
+  },
+  {
+    "n": "definitief maken: de knop is uitgeschakeld zolang er blokkades zijn",
+    "ok": true
+  },
+  {
+    "n": "definitief maken: de bevestiging noemt het verwachte nummer",
+    "ok": true,
+    "d": "Na definitief maken krijgt deze factuur nummer F2026-0001 en kun je hem niet meer wijzigen."
+  },
+  {
+    "n": "concept bewerken: autosave",
+    "ok": true,
+    "d": "Alles opgeslagen"
+  },
+  {
+    "n": "concept bewerken: uitvoeringsdatum staat in de database",
+    "ok": true,
+    "d": "2026-10-22"
+  },
+  {
+    "n": "definitief maken: na het oplossen is er geen blokkade meer",
+    "ok": true
+  },
+  {
+    "n": "definitief maken: de factuur krijgt nummer F2026-0001 en het delen start",
+    "ok": true
+  },
+  {
+    "n": "definitief maken: nummer, status en PDF-hash staan vast in de database",
+    "ok": true,
+    "d": "F2026-0001 | DEFINITIEF | t | t"
+  },
+  {
+    "n": "delen: het bericht bevat de link naar de online factuur, het bedrag, de vervaldatum en het IBAN",
+    "ok": true,
+    "d": "/f/pDJJ_SDSQAGQQRUhnYl1eeRJZsQzWmsS"
+  },
+  {
+    "n": "na 'Ja, verstuurd': status Verstuurd met datum",
+    "ok": true,
+    "d": "VERSTUURD | t"
+  },
+  {
+    "n": "een definitieve factuur is in de editor alleen-lezen met uitleg",
+    "ok": true
+  },
+  {
+    "n": "definitief maken: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "online factuur mobiel-412: bekijken, PDF downloaden en betaalgegevens",
+    "ok": true
+  },
+  {
+    "n": "online factuur mobiel-412: kopieerknoppen voor IBAN, bedrag en kenmerk",
+    "ok": true
+  },
+  {
+    "n": "online factuur desktop-1440: bekijken, PDF downloaden en betaalgegevens",
+    "ok": true
+  },
+  {
+    "n": "online factuur desktop-1440: kopieerknoppen voor IBAN, bedrag en kenmerk",
+    "ok": true
+  },
+  {
+    "n": "de eerste keer openen registreert 'bekeken' (en één regel in de tijdlijn)",
+    "ok": true
+  },
+  {
+    "n": "een linkpreview/bot telt niet als bekeken",
+    "ok": true
+  },
+  {
+    "n": "de link van een concept bestaat niet voor de klant (404)",
+    "ok": true
+  },
+  {
+    "n": "de online PDF komt exact uit de database (hash klopt)",
+    "ok": true
+  },
+  {
+    "n": "directe database-aanroep wordt geweigerd: update \"Factuur\" set \"totaalInclCenten\" …",
+    "ok": true,
+    "d": "ERROR:  Een definitieve factuur kan niet worden gewijzigd. Maak een creditnota."
+  },
+  {
+    "n": "directe database-aanroep wordt geweigerd: update \"Factuur\" set inhoud = '{}' where…",
+    "ok": true,
+    "d": "ERROR:  Een definitieve factuur kan niet worden gewijzigd. Maak een creditnota."
+  },
+  {
+    "n": "directe database-aanroep wordt geweigerd: delete from \"Factuur\" where id='cmv6lofl…",
+    "ok": true,
+    "d": "ERROR:  Een definitieve factuur kan niet worden verwijderd (bewaarplicht)."
+  },
+  {
+    "n": "na de pogingen is de factuur ongewijzigd",
+    "ok": true
+  }
+]

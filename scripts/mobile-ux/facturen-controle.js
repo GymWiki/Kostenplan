@@ -18,7 +18,7 @@ const VP = [["mobiel-412", { width: 412, height: 915 }], ["desktop-1440", { widt
 const ruim = () => sql(`set session_replication_role = replica; delete from "Factuur" where "companyId"='${C1}'; delete from "FactuurNummerTeller" where "companyId"='${C1}'; delete from "OfferteV2" where "companyId"='${C1}'; delete from "Lead" where email='a.jansen@example.nl'`);
 const seed = () => JSON.parse(execSync(`DATABASE_URL=postgresql://postgres@127.0.0.1:5433/kp npx tsx scripts/mobile-ux/seed-factuur.ts ${C1} ${TOOL}`, { encoding: "utf8" }).trim().split("\n").pop());
 async function pagina(b, vp, pad, inloggen = true) {
-  const ctx = await b.newContext({ viewport: vp, hasTouch: vp.width < 600 });
+  const ctx = await b.newContext({ viewport: vp, hasTouch: vp.width < 600, userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" });
   if (inloggen) await ctx.addCookies([cookie()]);
   const p = await ctx.newPage();
   p.fouten = []; p.on("pageerror", (e) => p.fouten.push(e.message));
