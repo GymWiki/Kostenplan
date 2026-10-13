@@ -1,0 +1,184 @@
+[
+  {
+    "n": "alles uit: geen postcodevraag",
+    "ok": true
+  },
+  {
+    "n": "alles uit: zelfde totaal met en zonder instellingen",
+    "ok": true,
+    "d": "1915 = 1915"
+  },
+  {
+    "n": "instellingen opgeslagen, startadres éénmalig gegeocodeerd en met coördinaten bewaard",
+    "ok": true,
+    "d": "true | 52.513 | Zwolle"
+  },
+  {
+    "n": "kaart met PDOK-achtergrond staat in de instellingen",
+    "ok": true
+  },
+  {
+    "n": "instellingen desktop-1440: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "instellingen mobiel-412: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "postcodevraag staat bovenaan",
+    "ok": true
+  },
+  {
+    "n": "binnen: adres bevestigd, geen melding",
+    "ok": true
+  },
+  {
+    "n": "binnen: aanvraag kan gedaan worden",
+    "ok": true
+  },
+  {
+    "n": "buiten (a): melding met standaardtekst direct na het invullen",
+    "ok": true
+  },
+  {
+    "n": "buiten (a): contactgegevens bij de melding",
+    "ok": true
+  },
+  {
+    "n": "buiten (a): prijs wordt nog getoond",
+    "ok": true
+  },
+  {
+    "n": "buiten (a): aanvraag niet mogelijk",
+    "ok": true
+  },
+  {
+    "n": "buiten: eigen melding wordt getoond",
+    "ok": true
+  },
+  {
+    "n": "toeslag: aparte regel 'Voorrijkosten extra afstand (… km)' in de opbouw",
+    "ok": true,
+    "d": "Voorrijkosten extra afstand (34,8 km)"
+  },
+  {
+    "n": "zones: €35 toeslag voor ± 35 km",
+    "ok": true
+  },
+  {
+    "n": "zones: 40+ km is niet mogelijk met melding",
+    "ok": true
+  },
+  {
+    "n": "minimum (a): melding bij het totaal, geen pop-up",
+    "ok": true
+  },
+  {
+    "n": "minimum (a): totaal is het minimum",
+    "ok": true
+  },
+  {
+    "n": "minimum (b): 'We nemen opdrachten aan vanaf …'",
+    "ok": true
+  },
+  {
+    "n": "minimum (b): aanvraag niet mogelijk",
+    "ok": true
+  },
+  {
+    "n": "het adres wordt meegenomen naar het aanvraagformulier",
+    "ok": true
+  },
+  {
+    "n": "lead binnen werkgebied: server bepaalde afstand en adres",
+    "ok": true,
+    "d": "0.6 | true | true | Zwolle"
+  },
+  {
+    "n": "rechtstreekse aanroep met verzonnen afstand wordt geweigerd (400, dezelfde melding)",
+    "ok": true,
+    "d": "{\"status\":400,\"body\":{\"ok\":false,\"error\":\"Dit adres ligt buiten ons werkgebied. Neem gerust contact op, dan kijken we of we iets voor je kunnen doen.\"}}"
+  },
+  {
+    "n": "rechtstreekse aanroep zonder adres wordt geweigerd",
+    "ok": true,
+    "d": "{\"status\":400,\"body\":{\"ok\":false,\"error\":\"Vul je postcode en huisnummer in om je aanvraag te versturen.\"}}"
+  },
+  {
+    "n": "rechtstreekse aanroep met onbestaand adres wordt geweigerd",
+    "ok": true,
+    "d": "{\"status\":400,\"body\":{\"ok\":false,\"error\":\"We vinden dit adres niet. Controleer je postcode en huisnummer.\"}}"
+  },
+  {
+    "n": "geen lead aangemaakt voor de geweigerde aanroepen",
+    "ok": true
+  },
+  {
+    "n": "rechtstreekse aanroep onder het minimum wordt geweigerd",
+    "ok": true,
+    "d": "{\"status\":400,\"body\":{\"ok\":false,\"error\":\"We nemen opdrachten aan vanaf € 5.000,00.\"}}"
+  },
+  {
+    "n": "PDOK onbereikbaar: de klant kan gewoon doorgaan",
+    "ok": true
+  },
+  {
+    "n": "PDOK onbereikbaar: de aanvraag is mogelijk",
+    "ok": true
+  },
+  {
+    "n": "PDOK onbereikbaar: lead staat erin met 'Werkgebied niet gecontroleerd'",
+    "ok": true,
+    "d": "false | [\"WERKGEBIED_NIET_GECONTROLEERD\"]"
+  },
+  {
+    "n": "buiten + onder minimum met markeren: lead staat erin met beide markeringen",
+    "ok": true,
+    "d": "[\"BUITEN_WERKGEBIED\", \"ONDER_MINIMUM\"] | 80.7"
+  },
+  {
+    "n": "leads desktop-1440: labels 'Buiten werkgebied', 'Onder minimum' en 'Werkgebied niet gecontroleerd'",
+    "ok": true
+  },
+  {
+    "n": "leads desktop-1440: afstand in km",
+    "ok": true
+  },
+  {
+    "n": "leads desktop-1440: filter 'Buiten werkgebied' toont alleen die leads",
+    "ok": true
+  },
+  {
+    "n": "leads desktop-1440: leaddetail met kaart en afstand",
+    "ok": true
+  },
+  {
+    "n": "leads desktop-1440: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "leads mobiel-412: labels 'Buiten werkgebied', 'Onder minimum' en 'Werkgebied niet gecontroleerd'",
+    "ok": true
+  },
+  {
+    "n": "leads mobiel-412: afstand in km",
+    "ok": true
+  },
+  {
+    "n": "leads mobiel-412: filter 'Buiten werkgebied' toont alleen die leads",
+    "ok": true
+  },
+  {
+    "n": "leads mobiel-412: leaddetail met kaart en afstand",
+    "ok": true
+  },
+  {
+    "n": "leads mobiel-412: geen scriptfouten",
+    "ok": true,
+    "d": ""
+  }
+]
