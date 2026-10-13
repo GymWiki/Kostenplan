@@ -84,9 +84,9 @@ export async function createCompanyAction(
 // een hidden field dat wijzelf renderen.
 const SWITCH_REDIRECT_TARGETS = {
   dashboard: "/dashboard",
-  abonnement: "/dashboard/abonnement",
-  branding: "/dashboard/branding",
-  profiel: "/dashboard/profiel?scherm=bedrijf",
+  abonnement: "/dashboard/profiel/abonnement",
+  branding: "/dashboard/profiel/huisstijl",
+  profiel: "/dashboard/profiel",
 } as const;
 
 // Aangeroepen vanuit de bedrijfsswitcher ("Openen") en de profielpagina
@@ -161,7 +161,7 @@ export async function updateCompanyDetailsAction(
     },
   });
 
-  revalidatePath("/dashboard/profiel");
+  revalidatePath("/dashboard/profiel", "layout");
   return { error: undefined };
 }
 
@@ -218,8 +218,8 @@ export async function cancelSubscriptionAction(
     });
   }
 
-  revalidatePath("/dashboard/profiel");
-  revalidatePath("/dashboard/abonnement");
+  revalidatePath("/dashboard/profiel", "layout");
+  revalidatePath("/dashboard/profiel", "layout");
   return { error: undefined };
 }
 
@@ -263,8 +263,8 @@ export async function pauseSubscriptionAction(
     },
   });
 
-  revalidatePath("/dashboard/profiel");
-  revalidatePath("/dashboard/abonnement");
+  revalidatePath("/dashboard/profiel", "layout");
+  revalidatePath("/dashboard/profiel", "layout");
   return { error: undefined };
 }
 

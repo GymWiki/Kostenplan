@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Field } from "@/app/components/ui/field";
 import { Select } from "@/app/components/ui/input";
 import { UnitInput } from "@/app/components/ui/unit-input";
+import { OpslaanStatus, useAutoSave } from "@/app/components/instellingen/use-autosave";
 import { saveBedrijfTarievenAction } from "@/app/lib/actions/tarieven";
 
 type Eenheid = "UUR" | "DAGDEEL" | "DAG";
@@ -22,28 +22,16 @@ export function TarievenSectie({
   const [tarief, setTarief] = useState(String(start.tarief));
   const [voorrij, setVoorrij] = useState(String(start.voorrij));
   const [transport, setTransport] = useState(String(start.transport));
-  const [bezig, setBezig] = useState(false);
-  const [melding, setMelding] = useState<{ soort: "ok" | "fout"; tekst: string } | null>(null);
-
-  async function opslaan(e: React.FormEvent) {
-    e.preventDefault();
-    setBezig(true);
-    setMelding(null);
-    const r = await saveBedrijfTarievenAction({ eenheid, tarief, voorrij, transport });
-    setBezig(false);
-    if (!r.ok) return setMelding({ soort: "fout", tekst: r.error });
-    setMelding({
-      soort: "ok",
-      tekst: r.overgeslagen.length
-        ? `Opgeslagen. Niet aangepast (andere rekeneenheid): ${r.overgeslagen.join(", ")}.`
-        : "Opgeslagen voor al je rekentools.",
-    });
-  }
+  const auto = useAutoSave({ eenheid, tarief, voorrij, transport }, async (w) => {
+    const r = await saveBedrijfTarievenAction(w);
+    if (!r.ok) return { ok: false, fout: r.error };
+    return { ok: true, melding: r.overgeslagen.length ? `niet aangepast (andere rekeneenheid): ${r.overgeslagen.join(", ")}` : undefined };
+  });
 
   return (
     <Card>
       <CardContent>
-        <form onSubmit={opslaan} className="flex max-w-xl flex-col gap-4">
+        <div className="flex flex-col gap-4">
           <Field label="Hoe bereken je je arbeid?" htmlFor="profiel-eenheid">
             <Select id="profiel-eenheid" value={eenheid} onChange={(e) => setEenheid(e.target.value as Eenheid)}>
               {(Object.keys(EENHEID_LABEL) as Eenheid[]).map((k) => (
@@ -64,15 +52,8 @@ export function TarievenSectie({
               <UnitInput id="profiel-transport" prefix="€" value={transport} onChange={(e) => setTransport(e.target.value)} />
             </Field>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button type="submit" disabled={bezig}>
-              {bezig ? "Opslaan…" : "Tarieven opslaan"}
-            </Button>
-            <p role="status" aria-live="polite" className={melding?.soort === "fout" ? "text-sm font-medium text-destructive" : "text-sm text-muted-foreground"}>
-              {melding?.tekst}
-            </p>
-          </div>
-        </form>
+          <OpslaanStatus stand={auto.stand} bericht={auto.bericht} opnieuw={auto.opnieuw} />
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,15 +1,15 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, CreditCard } from "lucide-react";
 import { startCheckoutAction, type CheckoutFormState } from "@/app/lib/actions/subscription";
 import { Button } from "@/app/components/ui/button";
-import { Badge } from "@/app/components/ui/badge";
-import { Card, CardContent } from "@/app/components/ui/card";
+import { SettingsGroup, SettingsInfoRow } from "@/app/components/instellingen/settings";
+import type { AbonnementRegel } from "@/app/lib/profiel/samenvattingen";
 import { PricingTable } from "@/app/components/pricing/pricing-table";
 import { HelpTip } from "@/app/components/ui/help-tip";
 import { CancelRetentionModal } from "@/app/components/dashboard/cancel-retention-modal";
-import { PLAN_LABELS, SUBSCRIPTION_STATUS_LABELS } from "@/app/lib/subscription";
+import { PLAN_LABELS } from "@/app/lib/subscription";
 import type {
   BillingInterval,
   MollieSubscriptionStatus,
@@ -17,23 +17,23 @@ import type {
 } from "@/app/generated/prisma/client";
 
 export function AbonnementView({
+  regel,
   companyId,
   effectivePlan,
   isOverridden,
   actualPlan,
   actualInterval,
   subscriptionStatus,
-  huidigePeriodeEindLabel,
   gewijzigd,
   checkoutAfgerond,
 }: {
+  regel: AbonnementRegel;
   companyId: string;
   effectivePlan: SubscriptionTier;
   isOverridden: boolean;
   actualPlan: SubscriptionTier;
   actualInterval: BillingInterval | null;
   subscriptionStatus: MollieSubscriptionStatus;
-  huidigePeriodeEindLabel: string | null;
   gewijzigd: boolean;
   checkoutAfgerond: boolean;
 }) {
@@ -41,13 +41,6 @@ export function AbonnementView({
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h2 id="abonnement" className="scroll-mt-20 text-lg font-semibold text-foreground">Abonnement</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Beheer je pakket en betaalperiode. Betalingen verlopen veilig via Mollie.
-        </p>
-      </div>
-
       {(gewijzigd || checkoutAfgerond) && (
         <div className="flex items-center gap-2 rounded-md border border-accent bg-accent/50 px-4 py-3 text-sm text-accent-foreground">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -57,42 +50,24 @@ export function AbonnementView({
         </div>
       )}
 
-      <Card>
-        <CardContent className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="font-semibold text-foreground">
-              Huidig pakket: {PLAN_LABELS[effectivePlan]}
-            </p>
-            {isOverridden && (
-              <span className="flex items-center gap-1.5">
-                <Badge variant="default">Handmatig toegekend</Badge>
-                <HelpTip contentKey="abonnement.overrideTier" />
-              </span>
-            )}
-            {!isOverridden && actualPlan !== "GRATIS" && (
-              <Badge variant={isActiveSubscription ? "success" : "warning"}>
-                {SUBSCRIPTION_STATUS_LABELS[subscriptionStatus]}
-              </Badge>
-            )}
-          </div>
-          {isOverridden ? (
-            <p className="text-sm text-muted-foreground">
-              Deze toegang is handmatig toegekend en staat los van een eventueel betaald
-              abonnement hieronder.
-            </p>
-          ) : (
-            isActiveSubscription &&
-            huidigePeriodeEindLabel && (
-              <p className="text-sm text-muted-foreground">
-                Betaalperiode: {actualInterval === "JAARLIJKS" ? "jaarlijks" : "maandelijks"} —
-                volgende betaling rond {huidigePeriodeEindLabel}.
-              </p>
-            )
-          )}
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-3">
+        <SettingsGroup>
+          <SettingsInfoRow icoon={CreditCard} titel="Abonnement" samenvatting={regel.letOp ? undefined : regel.tekst} waarschuwing={regel.letOp ? regel.tekst : null} />
+        </SettingsGroup>
+        {isOverridden && (
+          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            Deze toegang is handmatig toegekend en staat los van een eventueel betaald abonnement hieronder.
+            <HelpTip contentKey="abonnement.overrideTier" />
+          </p>
+        )}
+        {regel.opnieuwAbonneren && (
+          <a href="#pakketten" className="flex min-h-12 items-center justify-center rounded-xl bg-primary px-4 text-base font-semibold text-primary-foreground hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+            Opnieuw abonneren
+          </a>
+        )}
+      </div>
 
-      <h2 className="flex items-center gap-2 font-semibold text-foreground">
+      <h2 id="pakketten" className="flex scroll-mt-20 items-center gap-2 font-semibold text-foreground">
         Kies je pakket
         <HelpTip contentKey="abonnement.upgradeDowngrade" />
       </h2>

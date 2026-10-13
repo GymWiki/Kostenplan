@@ -50,7 +50,7 @@ export async function saveBedrijfTarievenAction(invoer: {
   } else if (opgeslagen === 0) {
     return { ok: false, error: "Je rekentools rekenen al met een andere eenheid. Die kun je niet in één keer wijzigen." };
   }
-  revalidatePath("/dashboard/profiel");
+  revalidatePath("/dashboard/profiel", "layout");
   revalidatePath(`/portaal/${company.slug}`);
   return { ok: true, overgeslagen };
 }

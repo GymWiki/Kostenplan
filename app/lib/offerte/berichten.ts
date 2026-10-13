@@ -3,7 +3,7 @@ import type { OfferteInhoud } from "./model";
 import { formatCents, formatDatum } from "./weergave";
 
 // De hovenier verstuurt de offerte zelf (eigen mail, deelmenu of WhatsApp). Dit zijn de
-// standaardteksten daarvoor; ze zijn aanpasbaar in Profiel → Offertegegevens en nog eens in
+// standaardteksten daarvoor; ze zijn aanpasbaar in Profiel → Offerte-instellingen en nog eens in
 // het scherm vóór het delen.
 export const STANDAARD_DEELTEKST = `Geachte {naam},
 

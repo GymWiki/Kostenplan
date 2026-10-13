@@ -54,7 +54,7 @@ export async function saveOfferteGegevensAction(invoer: Partial<OfferteGegevensW
   // Lege tekst betekent "terug naar standaard" voor de lange teksten en de KOR-tekst.
   const schoon = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined));
   await prisma.offerteGegevens.upsert({ where: { companyId: company.id }, create: { companyId: company.id, ...schoon }, update: schoon });
-  revalidatePath("/dashboard/profiel");
+  revalidatePath("/dashboard/profiel", "layout");
   return { ok: true, gegevens: await laadOfferteGegevens(company) };
 }
 
@@ -73,13 +73,13 @@ export async function uploadVoorwaardenAction(formData: FormData): Promise<{ ok:
     create: { companyId: company.id, voorwaardenPdfUrl: r.url as string, voorwaardenPdfNaam: bestand.name },
     update: { voorwaardenPdfUrl: r.url, voorwaardenPdfNaam: bestand.name },
   });
-  revalidatePath("/dashboard/profiel");
+  revalidatePath("/dashboard/profiel", "layout");
   return { ok: true, url: r.url, naam: bestand.name };
 }
 
 export async function verwijderVoorwaardenAction(): Promise<{ ok: true }> {
   const { company } = await requireActiveCompany();
   await prisma.offerteGegevens.updateMany({ where: { companyId: company.id }, data: { voorwaardenPdfUrl: null, voorwaardenPdfNaam: null } });
-  revalidatePath("/dashboard/profiel");
+  revalidatePath("/dashboard/profiel", "layout");
   return { ok: true };
 }

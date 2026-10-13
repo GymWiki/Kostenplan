@@ -1,0 +1,62 @@
+{
+  "bedrijfsgegevens": [
+    "Handelsnaam",
+    "Rechtsvorm",
+    "KvK-nummer",
+    "Straat en huisnummer",
+    "Postcode",
+    "Plaats",
+    "Kleineondernemersregeling",
+    "Btw-id",
+    "IBAN",
+    "Ten name van",
+    "Telefoon",
+    "E-mailadres",
+    "Website",
+    "Contactpersoon",
+    "Functie"
+  ],
+  "huisstijl": [],
+  "tarieven": [
+    "Hoe bereken je je arbeid?",
+    "Tarief per uur",
+    "Voorrijkosten",
+    "Transport"
+  ],
+  "werkgebied": [
+    "Werkgebied gebruiken",
+    "Minimale opdracht gebruiken"
+  ],
+  "offerte-instellingen": [
+    "Voorvoegsel offertenummer",
+    "Geldigheid in dagen",
+    "Betaalvoorwaarden",
+    "Introductietekst",
+    "Slottekst",
+    "Bereikbaarheid en grondgesteldheid",
+    "Bereikbaarheid en grondgesteldheid: tekst",
+    "Afvoer van grond en puin",
+    "Afvoer van grond en puin: keuze",
+    "Afvoer van grond en puin: tekst",
+    "KLIC-melding",
+    "KLIC-melding: keuze",
+    "KLIC-melding: tekst",
+    "Meerwerk",
+    "Meerwerk: tekst",
+    "Aanslaggarantie planten",
+    "Weersomstandigheden",
+    "Weersomstandigheden: tekst",
+    "Herroepingsrecht (voor particulieren)",
+    "Arbeid en aanleg",
+    "Materiaal",
+    "Levering planten",
+    "Transport en voorrijkosten",
+    "Overig",
+    "Bericht bij een nieuwe offerte",
+    "Bericht bij een herinnering"
+  ],
+  "abonnement": [],
+  "account": [
+    "Nieuw wachtwoord"
+  ]
+}

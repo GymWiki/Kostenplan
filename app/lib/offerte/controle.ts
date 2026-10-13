@@ -7,7 +7,11 @@ import type { OfferteInhoud } from "./model";
 // "Controleren en versturen": wat moet kloppen voordat een offerte de deur uit
 // mag. Blokkerend = versturen kan niet; waarschuwing = de hovenier moet het
 // gezien hebben. Wordt ook server-side herhaald bij het versturen.
-export type ControlePunt = { id: string; bericht: string; actie?: "klant" | "regels" | "meta" | "profiel" };
+// `href`: bij een punt met actie "profiel" de pagina én het veld waar het opgelost wordt.
+export type ControlePunt = { id: string; bericht: string; actie?: "klant" | "regels" | "meta" | "profiel"; href?: string };
+
+const BEDRIJFSGEGEVENS = "/dashboard/profiel/bedrijfsgegevens";
+const veldHref = (veld: string) => `${BEDRIJFSGEGEVENS}#og-${veld}`;
 
 export type ControleUitkomst = { blokkerend: ControlePunt[]; waarschuwingen: ControlePunt[]; ok: ControlePunt[] };
 
@@ -20,10 +24,11 @@ export function controleerOfferte(inhoud: OfferteInhoud, nu: Date = new Date()):
   const a = inhoud.afzender;
 
   const bedrijfOk = a.handelsnaam.trim() !== "" && isGeldigKvk(a.kvkNummer || "") && (!heeftStatutaireGegevens(a.rechtsvorm) || a.statutaireZetel.trim() !== "");
-  if (!bedrijfOk) blokkerend.push({ id: "bedrijf", bericht: heeftStatutaireGegevens(a.rechtsvorm) ? "Handelsnaam, KvK-nummer en statutaire zetel ontbreken of kloppen niet." : "Handelsnaam of KvK-nummer ontbreekt of klopt niet (8 cijfers).", actie: "profiel" });
+  const eersteBedrijfsveld = a.handelsnaam.trim() === "" ? "handelsnaam" : !isGeldigKvk(a.kvkNummer || "") ? "kvkNummer" : "statutaireZetel";
+  if (!bedrijfOk) blokkerend.push({ id: "bedrijf", href: veldHref(eersteBedrijfsveld), bericht: heeftStatutaireGegevens(a.rechtsvorm) ? "Handelsnaam, KvK-nummer en statutaire zetel ontbreken of kloppen niet." : "Handelsnaam of KvK-nummer ontbreekt of klopt niet (8 cijfers).", actie: "profiel" });
   else ok.push({ id: "bedrijf", bericht: "Handelsnaam en KvK-nummer staan erop." });
 
-  if (!a.korActief && !isGeldigBtwId(a.btwId || "")) blokkerend.push({ id: "btwid", bericht: "Btw-id ontbreekt (of zet de kleineondernemersregeling aan).", actie: "profiel" });
+  if (!a.korActief && !isGeldigBtwId(a.btwId || "")) blokkerend.push({ id: "btwid", href: veldHref("btwId"), bericht: "Btw-id ontbreekt (of zet de kleineondernemersregeling aan).", actie: "profiel" });
 
   const klantOk = inhoud.klant.naam.trim() !== "" && isGeldigEmail(inhoud.klant.email);
   if (!klantOk) blokkerend.push({ id: "klant", bericht: inhoud.klant.naam.trim() === "" ? "De naam van de klant ontbreekt." : "Het e-mailadres van de klant ontbreekt of klopt niet.", actie: "klant" });
@@ -40,7 +45,7 @@ export function controleerOfferte(inhoud: OfferteInhoud, nu: Date = new Date()):
   if (!(tot.getTime() > nu.getTime())) blokkerend.push({ id: "geldig", bericht: "De geldigheidsdatum ligt niet in de toekomst.", actie: "meta" });
   else ok.push({ id: "geldig", bericht: "De offerte is nog geldig." });
 
-  if (inhoud.bijlagen.length === 0) waarschuwingen.push({ id: "av", bericht: "Er zijn geen algemene voorwaarden bijgevoegd. Upload ze bij Profiel → Offertegegevens.", actie: "profiel" });
+  if (inhoud.bijlagen.length === 0) waarschuwingen.push({ id: "av", bericht: "Er zijn geen algemene voorwaarden bijgevoegd. Upload ze bij Profiel → Offerte-instellingen.", actie: "profiel", href: "/dashboard/profiel/offerte-instellingen#og-voorwaarden" });
   else ok.push({ id: "av", bericht: "Algemene voorwaarden worden meegestuurd." });
 
   const rek = inhoud.bron?.totaalRekentoolInclCenten;
@@ -51,7 +56,7 @@ export function controleerOfferte(inhoud: OfferteInhoud, nu: Date = new Date()):
   for (const w of inhoud.bron?.waarschuwingen ?? []) waarschuwingen.push({ id: `bron-${w.slice(0, 12)}`, bericht: w, actie: "regels" });
 
   const kort = ["iban", "telefoon", "email", "adresRegel"].filter((k) => !String((a as Record<string, unknown>)[k] ?? "").trim());
-  if (kort.length > 0) waarschuwingen.push({ id: "gegevens", bericht: "Niet alle bedrijfsgegevens zijn ingevuld (IBAN, telefoon, e-mail of adres).", actie: "profiel" });
+  if (kort.length > 0) waarschuwingen.push({ id: "gegevens", href: veldHref(kort[0] === "adresRegel" ? "adresRegel" : kort[0]), bericht: "Niet alle bedrijfsgegevens zijn ingevuld (IBAN, telefoon, e-mail of adres).", actie: "profiel" });
 
   return { blokkerend, waarschuwingen, ok };
 }
