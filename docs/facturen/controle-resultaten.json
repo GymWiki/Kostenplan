@@ -80,7 +80,7 @@
   {
     "n": "delen: het bericht bevat de link naar de online factuur, het bedrag, de vervaldatum en het IBAN",
     "ok": true,
-    "d": "/f/pDJJ_SDSQAGQQRUhnYl1eeRJZsQzWmsS"
+    "d": "/f/fhX8BqLaZJnCohKve_UfO4GF0VqW2OBQ"
   },
   {
     "n": "na 'Ja, verstuurd': status Verstuurd met datum",
@@ -139,12 +139,102 @@
     "d": "ERROR:  Een definitieve factuur kan niet worden gewijzigd. Maak een creditnota."
   },
   {
-    "n": "directe database-aanroep wordt geweigerd: delete from \"Factuur\" where id='cmv6lofl…",
+    "n": "directe database-aanroep wordt geweigerd: delete from \"Factuur\" where id='cmv6qf8h…",
     "ok": true,
     "d": "ERROR:  Een definitieve factuur kan niet worden verwijderd (bewaarplicht)."
   },
   {
     "n": "na de pogingen is de factuur ongewijzigd",
+    "ok": true
+  },
+  {
+    "n": "beheerpaneel: status, openstaand en acties voor een verstuurde factuur",
+    "ok": true
+  },
+  {
+    "n": "deelbetaling via de UI: status Deels betaald, één betaling in de database",
+    "ok": true
+  },
+  {
+    "n": "te veel betalen wordt geweigerd",
+    "ok": true
+  },
+  {
+    "n": "creditnota: concept met verwijzing naar de oorspronkelijke factuur",
+    "ok": true
+  },
+  {
+    "n": "leads mobiel-412: voortgangsbalk en één volgende actie",
+    "ok": true
+  },
+  {
+    "n": "lead: Zet op In contact geeft fase In contact met tijdlijnregel",
+    "ok": true
+  },
+  {
+    "n": "lead: volgende actie wordt 'Maak een offerte'",
+    "ok": true
+  },
+  {
+    "n": "lead: verloren met reden",
+    "ok": true
+  },
+  {
+    "n": "leads desktop-1440: voortgangsbalk en één volgende actie",
+    "ok": false
+  },
+  {
+    "n": "leads mobiel-412: Jansen staat op Gefactureerd met facturen en tijdlijn",
+    "ok": true
+  },
+  {
+    "n": "leads desktop-1440: Jansen staat op Gefactureerd met facturen en tijdlijn",
+    "ok": true
+  },
+  {
+    "n": "leads mobiel-412: filterchips met aantallen, Te laat = 1",
+    "ok": true
+  },
+  {
+    "n": "leads mobiel-412: filter Te laat toont alleen die lead",
+    "ok": false
+  },
+  {
+    "n": "overzicht mobiel-412: tellers Te factureren/Openstaand/Te laat en melding '5 dagen te laat'",
+    "ok": true
+  },
+  {
+    "n": "leads desktop-1440: filterchips met aantallen, Te laat = 1",
+    "ok": true
+  },
+  {
+    "n": "leads desktop-1440: filter Te laat toont alleen die lead",
+    "ok": true
+  },
+  {
+    "n": "overzicht desktop-1440: tellers Te factureren/Openstaand/Te laat en melding '5 dagen te laat'",
+    "ok": true
+  },
+  {
+    "n": "facturenoverzicht mobiel-412: lijst, filters, export en boekhoudpakket-melding",
+    "ok": true
+  },
+  {
+    "n": "facturenoverzicht desktop-1440: lijst, filters, export en boekhoudpakket-melding",
+    "ok": true
+  },
+  {
+    "n": "export-CSV: totaal incl. btw is gelijk aan de som van de facturen in de database",
+    "ok": false,
+    "d": "503797 = 1001857"
+  },
+  {
+    "n": "export-ZIP: bevat CSV, PDF's en UBL",
+    "ok": true,
+    "d": "101544 bytes"
+  },
+  {
+    "n": "volledige export zet factuurExportOp",
     "ok": true
   }
 ]

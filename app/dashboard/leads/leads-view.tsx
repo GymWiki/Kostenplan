@@ -148,9 +148,10 @@ export function LeadsView({
 
   // Mobiele statusfilter (?status=): zonder keuze starten we bij Nieuw als er
   // nieuwe aanvragen zijn, anders bij Open.
-  const heeftNieuw = optimisticLeads.some((l) => l.status === "NIEUW");
+  const heeftNieuw = optimisticLeads.some((l) => l.voortgang.fase === "nieuw");
   const statusParam = searchParams.get("status");
-  const mobielFilter: LeadFilter = statusParam === "nieuw" || statusParam === "open" || statusParam === "alles" ? statusParam : heeftNieuw ? "nieuw" : "open";
+  // Met een fasefilter (chips) tonen we altijd alles wat daaronder valt.
+  const mobielFilter: LeadFilter = faseFilter !== "alle" ? "alles" : statusParam === "nieuw" || statusParam === "open" || statusParam === "alles" ? statusParam : heeftNieuw ? "nieuw" : "open";
 
   const selectedLead = optimisticLeads.find((lead) => lead.id === selectedLeadId) ?? null;
 

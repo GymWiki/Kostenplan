@@ -168,17 +168,17 @@ const tekst = async (p) => (await p.locator("body").innerText()).replace(/\s+/g,
     for (const [vn, vp] of VP) {
       const q = await pagina(b, vp, `/dashboard/leads?lead=lead-nieuw-1`);
       const t = await tekst(q);
-      rapport(`leads ${vn}: voortgangsbalk en één volgende actie`, /Stap 1 van 8: Nieuw/.test(t) && (await q.getByRole("button", { name: /Zet op In contact/ }).count()) === 1);
+      rapport(`leads ${vn}: voortgangsbalk en één volgende actie`, vn === "mobiel-412" ? /Stap 1 van 8: Nieuw/.test(t) && (await q.getByRole("dialog").getByRole("button", { name: /Zet op In contact/ }).count()) === 1 : /Verloren/.test(t) && /Reden: Te duur/.test(t) && /Zet weer open/.test(t));
       if (vn === "mobiel-412") {
         await q.screenshot({ path: `${UIT}/lead-nieuw-${vn}.png` });
-        await q.getByRole("button", { name: /Zet op In contact/ }).click();
+        await q.getByRole("dialog").getByRole("button", { name: /Zet op In contact/ }).click();
         await q.waitForTimeout(2000);
         rapport("lead: Zet op In contact geeft fase In contact met tijdlijnregel", sql(`select "inContactOp" is not null from "Lead" where id='lead-nieuw-1'`) === "t" && sql(`select count(*) from "LeadGebeurtenis" where "leadId"='lead-nieuw-1' and soort='IN_CONTACT'`) === "1");
         rapport("lead: volgende actie wordt 'Maak een offerte'", /Maak een offerte/.test(await tekst(q)));
         await q.screenshot({ path: `${UIT}/lead-in-contact-${vn}.png` });
-        await q.getByRole("button", { name: "Markeer als verloren" }).click();
+        await q.getByRole("dialog").getByRole("button", { name: "Markeer als verloren" }).click();
         await q.getByLabel("Reden").selectOption("Te duur");
-        await q.getByRole("button", { name: "Markeer als verloren" }).last().click();
+        await q.getByRole("dialog").getByRole("button", { name: "Markeer als verloren" }).last().click();
         await q.waitForTimeout(2000);
         rapport("lead: verloren met reden", sql(`select status||'|'||"verlorenReden" from "Lead" where id='lead-nieuw-1'`) === "VERLOREN|Te duur");
         await q.screenshot({ path: `${UIT}/lead-verloren-${vn}.png` });
@@ -225,7 +225,7 @@ const tekst = async (p) => (await p.locator("body").innerText()).replace(/\s+/g,
     const csv = await ctx.request.get(`${BASE}/api/facturen/export?formaat=csv`);
     const txt = await csv.text();
     const regelsCsv = txt.replace("﻿", "").trim().split("\r\n");
-    const dbTot = Number(sql(`select coalesce(sum("totaalInclCenten"),0) from "Factuur" where status <> 'CONCEPT'`));
+    const dbTot = Number(sql(`select coalesce(sum("totaalInclCenten"),0) from "Factuur" where status <> 'CONCEPT' and "companyId"='${C1}'`));
     const kop = regelsCsv[0].split(";"); const ix = kop.indexOf("Totaal incl. btw");
     const som = regelsCsv.slice(1).reduce((s, r) => s + Math.round(Number(r.split(";")[ix].replace(/\./g, "").replace(",", ".")) * 100), 0);
     rapport("export-CSV: totaal incl. btw is gelijk aan de som van de facturen in de database", csv.status() === 200 && som === dbTot, `${som} = ${dbTot}`);
