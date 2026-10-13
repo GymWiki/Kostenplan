@@ -11,6 +11,9 @@ import { MobieleSheet } from "@/app/components/mobile/mobiele-sheet";
 import { SegmentedControl } from "@/app/components/mobile/segmented-control";
 import { StickyActiebalk } from "@/app/components/mobile/sticky-actiebalk";
 import { useIsMobiel } from "@/app/components/mobile/use-mobiel";
+import { FactuurBeheerPaneel, type BeheerData } from "@/app/components/factuur/factuur-beheer";
+import { HERINNERING_LABEL, type HerinneringStap } from "@/app/lib/factuur/betaling";
+import type { BerichtSoort } from "@/app/lib/factuur/berichten";
 import { bewaarFactuurAction } from "@/app/lib/actions/facturen-bewerken";
 import { controleerFactuur } from "@/app/lib/factuur/controle";
 import { FACTUUR_STATUS_LABEL, type FactuurInhoud } from "@/app/lib/factuur/model";
@@ -46,7 +49,7 @@ type Props = {
   activiteit?: { id: string; soort: string; tekst: string | null; op: string }[];
   heeftGetekend?: boolean;
   // Factuur in plaats van offerte: dezelfde editor, het document en de panelen, met factuurspecifieke velden.
-  factuur?: { id: string; status: FactuurStatus; terug: string };
+  factuur?: { id: string; status: FactuurStatus; terug: string; beheer?: BeheerData };
 };
 
 const ACTIVITEIT_LABEL: Record<string, string> = {
@@ -210,6 +213,12 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
   // Factuur: eerst definitief maken (controle, nummer, vastleggen), daarna delen; een definitieve factuur gaat direct naar het delen.
   const [verwachtNummer, setVerwachtNummer] = useState<string | null>(null);
   const [nieuwNummer, setNieuwNummer] = useState<string | null>(null);
+  const [berichtSoort, setBerichtSoort] = useState<BerichtSoort>("factuur");
+  const stuurHerinnering = (stap: HerinneringStap) => {
+    setBerichtSoort(stap);
+    openDelen("offerte");
+  };
+  const isHerinnering = berichtSoort !== "factuur" && berichtSoort !== "creditnota";
   useEffect(() => {
     if (!factuurCfg || factuurCfg.status !== "CONCEPT" || !controleOpen) return;
     let weg = false;
@@ -236,12 +245,12 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
           }
           return r.ok ? { ok: true } : { ok: false, error: r.error };
         },
-        titelDelen: `${woord === "creditnota" ? "Creditnota" : "Factuur"} ${(inhoud as FactuurInhoud).factuur.nummer ?? nieuwNummer ?? ""} van ${formatCents(Math.abs(totalen.totaalIncl))} versturen`.replace("  ", " "),
-        maakKlaar: () => maakFactuurDeelklaarAction(factuurCfg.id),
-        bevestig: (kanaal) => bevestigFactuurVerstuurdAction(factuurCfg.id, kanaal),
-        woord,
-        vraag: `Is de ${woord} verstuurd?`,
-        verstuurdTitel: `${woord === "creditnota" ? "Creditnota" : "Factuur"} staat op Verstuurd`,
+        titelDelen: isHerinnering ? `${HERINNERING_LABEL[berichtSoort as HerinneringStap].replace(" sturen", "").replace(" (14 dagen)", "")} voor factuur ${(inhoud as FactuurInhoud).factuur.nummer} versturen` : `${woord === "creditnota" ? "Creditnota" : "Factuur"} ${(inhoud as FactuurInhoud).factuur.nummer ?? nieuwNummer ?? ""} van ${formatCents(Math.abs(totalen.totaalIncl))} versturen`.replace("  ", " "),
+        maakKlaar: () => maakFactuurDeelklaarAction(factuurCfg.id, berichtSoort),
+        bevestig: (kanaal) => bevestigFactuurVerstuurdAction(factuurCfg.id, kanaal, berichtSoort),
+        woord: isHerinnering ? "herinnering" : woord,
+        vraag: `Is de ${isHerinnering ? "herinnering" : woord} verstuurd?`,
+        verstuurdTitel: isHerinnering ? "Herinnering is vastgelegd in de tijdlijn" : `${woord === "creditnota" ? "Creditnota" : "Factuur"} staat op Verstuurd`,
         verstuurdTekst: `Verstuurd op ${new Date().toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}. Je ziet in de tijdlijn wanneer de klant de ${woord} bekijkt. Registreer een betaling zodra het geld binnen is.`,
         neeTekst: `De ${woord} is niet als verstuurd gemarkeerd. Je kunt hem later opnieuw delen via Versturen.`,
         wachtTekst: `Even geduld, de ${woord} wordt klaargezet…`,
@@ -278,6 +287,9 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
     <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-accent px-4 py-2.5 text-sm text-foreground">
       <span>Deze factuur is definitief en kan niet meer worden gewijzigd. Correcties gaan via een creditnota.</span>
     </div>
+  );
+  const beheerPaneel = alleenLezen && isFactuur && factuurCfg?.beheer && (
+    <FactuurBeheerPaneel data={factuurCfg.beheer} onHerinnering={stuurHerinnering} />
   );
   const offerteBanner = alleenLezen && !isFactuur && (
     <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-accent px-4 py-2.5 text-sm text-foreground">
@@ -500,6 +512,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
         <KopInstellen titel={titelTekst} terug={terug} />
         <KopActie>{statusBlok}</KopActie>
         {banner}
+        {beheerPaneel}
         {offerteBanner}
         {klaarBanner}
         {herinneringBanner}
@@ -652,6 +665,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
         </div>
       </header>
       {banner}
+      {beheerPaneel}
       {offerteBanner}
       {klaarBanner}
       {herinneringBanner}
