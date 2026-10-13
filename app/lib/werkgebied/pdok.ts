@@ -48,6 +48,9 @@ export function parseDoc(d: Doc): PdokAdres | null {
   };
 }
 
+// Alleen op de server: PDOK_BASIS_URL wijst naar een eigen testserver (de controle-scripts). In productie niet gezet.
+const basisUrl = (opties: { basis?: string }) => opties.basis ?? (typeof process !== "undefined" ? process.env.PDOK_BASIS_URL : undefined) ?? PDOK_BASIS;
+
 type Opties = { fetchFn?: typeof fetch; basis?: string; timeoutMs?: number; ttlMs?: number; nu?: () => number };
 
 const cache = new Map<string, { t: number; waarde: PdokAdres[] }>();
@@ -83,7 +86,7 @@ async function haal(url: string, opties: Opties): Promise<PdokUitslag<PdokAdres[
 export function zoekAdressen(tekst: string, opties: Opties = {}): Promise<PdokUitslag<PdokAdres[]>> {
   const q = tekst.trim();
   if (q.length < 3) return Promise.resolve({ ok: true, waarde: [] });
-  const url = `${opties.basis ?? PDOK_BASIS}/free?q=${encodeURIComponent(q)}&fq=type:adres&rows=5&fl=${FL}`;
+  const url = `${basisUrl(opties)}/free?q=${encodeURIComponent(q)}&fq=type:adres&rows=5&fl=${FL}`;
   return haal(url, opties);
 }
 
@@ -95,7 +98,7 @@ export async function zoekPostcodeHuisnummer(postcode: string, huisnummer: strin
   const nr = huisnummer.trim();
   if (!/^\d{4}[A-Z]{2}$/.test(pc) || !/^\d{1,5}$/.test(nr)) return { ok: true, waarde: null };
   const q = `${pc} ${nr}${toevoeging ? ` ${toevoeging}` : ""}`;
-  const url = `${opties.basis ?? PDOK_BASIS}/free?q=${encodeURIComponent(q)}&fq=type:adres&rows=10&fl=${FL}`;
+  const url = `${basisUrl(opties)}/free?q=${encodeURIComponent(q)}&fq=type:adres&rows=10&fl=${FL}`;
   const r = await haal(url, opties);
   if (!r.ok) return r;
   const metPostcode = r.waarde.filter((a) => a.postcode.replace(/\s/g, "").toUpperCase() === pc);
@@ -107,7 +110,7 @@ export async function zoekPostcodeHuisnummer(postcode: string, huisnummer: strin
 
 // Een punt in een viercijferig postcodegebied (voor de kaart): de eerste volledige postcode die erbij hoort.
 export async function zoekPostcodeGebied(vier: number, opties: Opties = {}): Promise<PdokUitslag<PdokAdres | null>> {
-  const url = `${opties.basis ?? PDOK_BASIS}/free?q=${vier}&fq=type:postcode&rows=1&fl=${FL}`;
+  const url = `${basisUrl(opties)}/free?q=${vier}&fq=type:postcode&rows=1&fl=${FL}`;
   const r = await haal(url, opties);
   if (!r.ok) return r;
   return { ok: true, waarde: r.waarde[0] ?? null };
