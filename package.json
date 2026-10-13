@@ -34,6 +34,7 @@
     "@vercel/blob": "^2.8.1",
     "cheerio": "^1.2.0",
     "clsx": "^2.1.1",
+    "fflate": "^0.8.3",
     "gray-matter": "^4.0.3",
     "image-size": "^2.0.2",
     "leaflet": "^1.9.4",

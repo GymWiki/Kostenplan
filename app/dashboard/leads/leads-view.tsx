@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useOptimistic, useState, useSyncExternalStore, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { LayoutGrid, List, TrendingUp, Users, Trophy, Target } from "lucide-react";
 import { cn } from "@/app/lib/cn";
 import { formatCurrency } from "@/app/lib/format";
@@ -201,7 +202,12 @@ export function LeadsView({
     );
   }
 
-  const chips = <FaseChips leads={opToolLeads} waarde={faseFilter} onKies={(f) => updateQuery({ fase: f === "alle" ? null : f })} />;
+  const chips = (
+    <div className="flex flex-col gap-1">
+      <FaseChips leads={opToolLeads} waarde={faseFilter} onKies={(f) => updateQuery({ fase: f === "alle" ? null : f })} />
+      <Link href="/dashboard/facturen" className="inline-flex min-h-11 items-center self-start text-sm font-semibold text-primary underline-offset-2 hover:underline">Alle facturen en export</Link>
+    </div>
+  );
   return (
     <div className="flex flex-col gap-6">
       <div className="md:hidden">{chips}</div>

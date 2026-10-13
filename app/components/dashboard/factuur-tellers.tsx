@@ -15,7 +15,7 @@ export function FactuurTellers({ data }: { data: FactuurOverzichtData }) {
   ];
   return (
     <section aria-labelledby="fact-tellers" className="flex flex-col gap-3">
-      <h2 id="fact-tellers" className="text-base font-bold text-foreground">Facturen</h2>
+      <div className="flex items-baseline justify-between"><h2 id="fact-tellers" className="text-base font-bold text-foreground">Facturen</h2><Link href="/dashboard/facturen" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-2 hover:underline">Alle facturen</Link></div>
       <ul className="grid grid-cols-3 gap-2">
         {kaarten.map((k) => (
           <li key={k.label}>
