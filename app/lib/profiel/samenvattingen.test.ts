@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { abonnementRegel, bedrag, domeinVan, initialen, ontbreektTekst, tarievenRegel, werkgebiedRegel } from "./samenvattingen";
+import { planKort, abonnementRegel, bedrag, domeinVan, initialen, ontbreektTekst, tarievenRegel, werkgebiedRegel } from "./samenvattingen";
 import { werkgebiedInstellingenSchema } from "@/app/lib/werkgebied/schema";
 
 const basis = { handmatigToegekend: false, periodeEind: null, gepauzeerdTot: null, gebruikteOnderdelen: 2, limietOnderdelen: 3, nu: new Date("2026-10-13T10:00:00Z") };
@@ -46,5 +46,14 @@ describe("tarieven en ontbrekende gegevens", () => {
     expect(ontbreektTekst(0)).toBeNull();
     expect(ontbreektTekst(1)).toBe("1 gegeven ontbreekt voor offertes");
     expect(ontbreektTekst(6)).toBe("6 gegevens ontbreken voor offertes");
+  });
+});
+
+describe("planKort", () => {
+  it("toont plan en of het is opgezegd", () => {
+    expect(planKort({ plan: "PRO", status: "ACTIVE" })).toBe("Pro");
+    expect(planKort({ plan: "GRATIS", status: "GEEN" })).toBe("Gratis");
+    expect(planKort({ plan: "PRO", status: "CANCELED" })).toBe("Pro · opgezegd");
+    expect(planKort({ plan: "GRATIS", status: "CANCELED" })).toBe("Gratis");
   });
 });

@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { Bell, Building2, CreditCard, FileText, MapPin, Palette, SlidersHorizontal, UserRound } from "lucide-react";
 import { InstellingenKolom, SettingsGroup, SettingsRow } from "@/app/components/instellingen/settings";
 import { ontbrekendeVerplichteGegevens } from "@/app/lib/offerte/gegevens";
-import { abonnementRegel, domeinVan, ontbreektTekst, tarievenRegel, werkgebiedRegel } from "@/app/lib/profiel/samenvattingen";
+import { abonnementRegel, domeinVan, ontbreektTekst, planKort, tarievenRegel, werkgebiedRegel } from "@/app/lib/profiel/samenvattingen";
+import { effectiveTier } from "@/app/lib/subscription";
+import { prisma } from "@/app/lib/prisma";
 import { laadAbonnementInvoer, laadProfiel, laadTarieven } from "@/app/lib/profiel/laad";
 import { pushBeschikbaar } from "@/app/lib/push/versturen";
 import { ProfielKop } from "./profiel-kop";
@@ -38,12 +40,16 @@ export default async function ProfielPage({ searchParams }: { searchParams: Prom
   const abonnement = abonnementRegel(abonnementInvoer);
   const ontbreekt = ontbrekendeVerplichteGegevens(offertegegevens).length;
   const logoUrl = tools.map((t) => t.branding?.logoUrl).find(Boolean) ?? offertegegevens.logoUrl ?? null;
+  // Logo per bedrijf voor de bedrijfswisselaar (het eerste logo van een rekentool van dat bedrijf).
+  const logos = await prisma.tool.findMany({ where: { companyId: { in: alleBedrijven.map((b) => b.id) }, deletedAt: null }, orderBy: { createdAt: "asc" }, select: { companyId: true, branding: { select: { logoUrl: true } } } });
+  const logoVan = (id: string) => (id === company.id ? logoUrl : (logos.find((t) => t.companyId === id && t.branding?.logoUrl)?.branding?.logoUrl ?? null));
+  const wisselBedrijven = alleBedrijven.map((b) => ({ id: b.id, naam: b.naam, logoUrl: logoVan(b.id), plan: planKort({ plan: effectiveTier(b), status: b.subscriptionStatus, handmatigToegekend: b.overrideTier !== null }) }));
   const kleuren = [...new Set(tools.map((t) => t.branding?.primaireKleur).filter((k): k is string => Boolean(k)))].slice(0, 3);
 
   return (
     <InstellingenKolom>
       <h1 className="hidden text-2xl font-semibold text-foreground md:block">Profiel</h1>
-      <ProfielKop actief={{ id: company.id, naam: company.naam, logoUrl, domein: domeinVan(offertegegevens.website) }} bedrijven={alleBedrijven.map((b) => ({ id: b.id, naam: b.naam }))} />
+      <ProfielKop key={company.id} actief={wisselBedrijven.find((b) => b.id === company.id)!} domein={domeinVan(offertegegevens.website)} bedrijven={wisselBedrijven} />
 
       <SettingsGroup kop="Je bedrijf">
         <SettingsRow href="/dashboard/profiel/bedrijfsgegevens" icoon={Building2} titel="Bedrijfsgegevens" samenvatting="Naam, adres, KvK, contact" waarschuwing={ontbreektTekst(ontbreekt)} />
