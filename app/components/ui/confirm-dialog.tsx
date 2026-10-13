@@ -8,7 +8,7 @@ import { Overlay } from "@/app/components/ui/overlay";
 // merkgevoel van de app passen, i.p.v. de kale browserdialoog. Bedoeld voor
 // de "lichte" verwijderbevestiging (één rij, één materiaal, één notitie);
 // het verwijderen van een heel bedrijf blijft bewust de zwaardere
-// typ-ter-bevestiging-flow (zie profiel/company-card.tsx) — dit component
+// typ-ter-bevestiging-flow (zie profiel/bedrijf-verwijderen.tsx) — dit component
 // vervangt confirm(), niet die aparte, zwaardere flow.
 export function ConfirmDialog({
   open,

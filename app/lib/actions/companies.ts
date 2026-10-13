@@ -86,6 +86,7 @@ const SWITCH_REDIRECT_TARGETS = {
   dashboard: "/dashboard",
   abonnement: "/dashboard/abonnement",
   branding: "/dashboard/branding",
+  profiel: "/dashboard/profiel?scherm=bedrijf",
 } as const;
 
 // Aangeroepen vanuit de bedrijfsswitcher ("Openen") en de profielpagina
