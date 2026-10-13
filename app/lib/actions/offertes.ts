@@ -3,12 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireActiveCompany } from "@/app/lib/dal";
+import { syncOfferteVerval } from "@/app/lib/offerte-verval";
 import { prisma } from "@/app/lib/prisma";
 import { offerteUpdateSchema, offerteReactieSchema, externAfgehandeldNotitieSchema } from "@/app/lib/validation";
 import { genereerEnUploadOffertePdf } from "@/app/lib/offerte-pdf";
 import { prefillOfferteRegels, type OfferteRegel } from "@/app/lib/offertes";
 import type { LeadSnapshot } from "@/app/lib/leads";
-import type { Offerte } from "@/app/generated/prisma/client";
 
 export type OfferteFormState = {
   error?: string;
@@ -325,17 +325,6 @@ export async function markExternAfgehandeldAction(leadId: string, notitie: strin
   });
 
   revalidatePath("/dashboard/leads");
-}
-
-// Lazy verval-check — wordt aangeroepen op de momenten die ertoe doen (de
-// publieke pagina openen, de concept-editor openen), niet bij elke
-// kanban-render. Zie weergaveOfferteStatus() in app/lib/offertes.ts voor de
-// puur-berekende variant die wél overal (incl. lijsten) gebruikt wordt.
-export async function syncOfferteVerval(offerte: Offerte): Promise<Offerte> {
-  if (offerte.status !== "VERSTUURD" || offerte.geldigTot.getTime() >= Date.now()) {
-    return offerte;
-  }
-  return prisma.offerte.update({ where: { id: offerte.id }, data: { status: "VERLOPEN" } });
 }
 
 export type PubliekeReactieState = { error?: string } | null;
