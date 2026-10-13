@@ -15,7 +15,7 @@ fs.mkdirSync(UIT, { recursive: true });
 const VP = [["mobiel-412", { width: 412, height: 915 }], ["desktop-1440", { width: 1440, height: 1000 }]];
 
 // Opruimen: definitieve facturen kunnen niet verwijderd worden; voor testdata zetten we de triggers even uit.
-const ruim = () => sql(`set session_replication_role = replica; delete from "Factuur" where "companyId"='${C1}'; delete from "FactuurNummerTeller" where "companyId"='${C1}'; delete from "OfferteV2" where "companyId"='${C1}'; delete from "Lead" where email='a.jansen@example.nl'`);
+const ruim = () => sql(`set session_replication_role = replica; delete from "Factuur" where "companyId"='${C1}'; delete from "FactuurNummerTeller" where "companyId"='${C1}'; delete from "OfferteV2" where "companyId"='${C1}'; delete from "Lead" where email in ('a.jansen@example.nl','nieuw@example.nl')`);
 const seed = () => JSON.parse(execSync(`DATABASE_URL=postgresql://postgres@127.0.0.1:5433/kp npx tsx scripts/mobile-ux/seed-factuur.ts ${C1} ${TOOL}`, { encoding: "utf8" }).trim().split("\n").pop());
 async function pagina(b, vp, pad, inloggen = true) {
   const ctx = await b.newContext({ viewport: vp, hasTouch: vp.width < 600, userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" });
@@ -138,6 +138,103 @@ const tekst = async (p) => (await p.locator("body").innerText()).replace(/\s+/g,
       rapport(`directe database-aanroep wordt geweigerd: ${q.slice(0, 40)}…`, /definitieve factuur/.test(fout), fout.split("\n").find((x) => /ERROR/.test(x)) || "");
     }
     rapport("na de pogingen is de factuur ongewijzigd", sql(`select "totaalInclCenten" from "Factuur" where id='${ids.totaal}'`) === nuTotaal && sql(`select count(*) from "Factuur" where id='${ids.totaal}'`) === "1");
+  }
+
+
+  // ── F5: betalingen, creditnota ──
+  {
+    const leadId = sql(`select "leadId" from "Factuur" where id='${ids.totaal}'`);
+    const p = await pagina(b, VP[1][1], `/dashboard/facturen/${ids.totaal}`);
+    rapport("beheerpaneel: status, openstaand en acties voor een verstuurde factuur", /Verstuurd/.test(await tekst(p)) && (await p.getByRole("button", { name: "Betaling registreren" }).count()) === 1 && (await p.getByRole("button", { name: "Crediteren" }).count()) === 1);
+    await p.screenshot({ path: `${UIT}/beheer-verstuurd-desktop-1440.png` });
+    await p.getByRole("button", { name: "Betaling registreren" }).click();
+    await p.getByLabel("Bedrag (€)").fill("500,00");
+    await p.getByRole("button", { name: "Betaling opslaan" }).click();
+    await p.waitForTimeout(2000);
+    rapport("deelbetaling via de UI: status Deels betaald, één betaling in de database", sql(`select status from "Factuur" where id='${ids.totaal}'`) === "DEELS_BETAALD" && sql(`select count(*) from "FactuurBetaling" where "factuurId"='${ids.totaal}'`) === "1" && sql(`select "bedragCenten" from "FactuurBetaling" where "factuurId"='${ids.totaal}'`) === "50000");
+    rapport("te veel betalen wordt geweigerd", await (async () => { await p.getByRole("button", { name: "Betaling registreren" }).click(); await p.getByLabel("Bedrag (€)").fill("99999,00"); await p.getByRole("button", { name: "Betaling opslaan" }).click(); await p.waitForTimeout(1500); return /meer dan het openstaande/.test(await tekst(p)); })());
+    await p.keyboard.press("Escape");
+    await p.screenshot({ path: `${UIT}/beheer-deels-betaald-desktop-1440.png`, fullPage: true });
+    await p.getByRole("button", { name: "Crediteren" }).click();
+    await p.getByRole("button", { name: "Concept-creditnota maken" }).click();
+    await p.waitForURL(/\/dashboard\/facturen\//, { timeout: 8000 });
+    await p.waitForTimeout(1500);
+    rapport("creditnota: concept met verwijzing naar de oorspronkelijke factuur", sql(`select count(*) from "Factuur" where "creditVoorId"='${ids.totaal}' and status='CONCEPT'`) === "1" && /Creditnota/.test(await tekst(p)));
+    await p.screenshot({ path: `${UIT}/creditnota-concept-desktop-1440.png` });
+    await p.context().close();
+
+    // ── F6: leads ──
+    sql(`insert into "Lead"(id,"companyId","toolId","toolNaamSnapshot",naam,email,snapshot,"totaalIndicatie","updatedAt") select 'lead-nieuw-1', "companyId","toolId","toolNaamSnapshot",'Nieuwe Klant','nieuw@example.nl',snapshot,1234,now() from "Lead" where id='${leadId}'`);
+    for (const [vn, vp] of VP) {
+      const q = await pagina(b, vp, `/dashboard/leads?lead=lead-nieuw-1`);
+      const t = await tekst(q);
+      rapport(`leads ${vn}: voortgangsbalk en één volgende actie`, /Stap 1 van 8: Nieuw/.test(t) && (await q.getByRole("button", { name: /Zet op In contact/ }).count()) === 1);
+      if (vn === "mobiel-412") {
+        await q.screenshot({ path: `${UIT}/lead-nieuw-${vn}.png` });
+        await q.getByRole("button", { name: /Zet op In contact/ }).click();
+        await q.waitForTimeout(2000);
+        rapport("lead: Zet op In contact geeft fase In contact met tijdlijnregel", sql(`select "inContactOp" is not null from "Lead" where id='lead-nieuw-1'`) === "t" && sql(`select count(*) from "LeadGebeurtenis" where "leadId"='lead-nieuw-1' and soort='IN_CONTACT'`) === "1");
+        rapport("lead: volgende actie wordt 'Maak een offerte'", /Maak een offerte/.test(await tekst(q)));
+        await q.screenshot({ path: `${UIT}/lead-in-contact-${vn}.png` });
+        await q.getByRole("button", { name: "Markeer als verloren" }).click();
+        await q.getByLabel("Reden").selectOption("Te duur");
+        await q.getByRole("button", { name: "Markeer als verloren" }).last().click();
+        await q.waitForTimeout(2000);
+        rapport("lead: verloren met reden", sql(`select status||'|'||"verlorenReden" from "Lead" where id='lead-nieuw-1'`) === "VERLOREN|Te duur");
+        await q.screenshot({ path: `${UIT}/lead-verloren-${vn}.png` });
+      } else {
+        await q.screenshot({ path: `${UIT}/lead-nieuw-${vn}.png` });
+      }
+      await q.context().close();
+    }
+    // gefactureerde lead met openstaand bedrag, daarna te laat
+    for (const [vn, vp] of VP) {
+      const q = await pagina(b, vp, `/dashboard/leads?lead=${leadId}`);
+      rapport(`leads ${vn}: Jansen staat op Gefactureerd met facturen en tijdlijn`, /Stap 7 van 8: Gefactureerd/.test(await tekst(q)) && /Tijdlijn/.test(await tekst(q)));
+      await q.screenshot({ path: `${UIT}/lead-gefactureerd-${vn}.png` });
+      await q.context().close();
+    }
+    sql(`set session_replication_role = replica; update "Factuur" set vervaldatum = current_date - 5 where id='${ids.totaal}'`);
+    for (const [vn, vp] of VP) {
+      const q = await pagina(b, vp, `/dashboard/leads`);
+      const t = await tekst(q);
+      rapport(`leads ${vn}: filterchips met aantallen, Te laat = 1`, /Te laat 1/.test(t) && /Openstaand 1/.test(t) && /Nieuw \d/.test(t));
+      await q.screenshot({ path: `${UIT}/leads-lijst-${vn}.png` });
+      await q.getByRole("button", { name: /^Te laat/ }).first().click();
+      await q.waitForTimeout(800);
+      rapport(`leads ${vn}: filter Te laat toont alleen die lead`, /Jansen/.test(await tekst(q)) && !/Nieuwe Klant/.test(await tekst(q)));
+      await q.context().close();
+      const d = await pagina(b, vp, `/dashboard`);
+      const dt = await tekst(d);
+      rapport(`overzicht ${vn}: tellers Te factureren/Openstaand/Te laat en melding '5 dagen te laat'`, /Openstaand/.test(dt) && /5 dagen te laat/.test(dt) && /Herinnering sturen/.test(dt));
+      await d.screenshot({ path: `${UIT}/overzicht-${vn}.png`, fullPage: true });
+      await d.context().close();
+    }
+  }
+
+  // ── F7: overzicht en export ──
+  {
+    for (const [vn, vp] of VP) {
+      const p = await pagina(b, vp, `/dashboard/facturen`);
+      const t = await tekst(p);
+      rapport(`facturenoverzicht ${vn}: lijst, filters, export en boekhoudpakket-melding`, p.status === 200 && /F2026-0001/.test(t) && /CSV downloaden/.test(t) && /geen boekhoudpakket/.test(t));
+      await p.screenshot({ path: `${UIT}/facturen-overzicht-${vn}.png`, fullPage: true });
+      await p.context().close();
+    }
+    const ctx = await b.newContext(); await ctx.addCookies([cookie()]);
+    const csv = await ctx.request.get(`${BASE}/api/facturen/export?formaat=csv`);
+    const txt = await csv.text();
+    const regelsCsv = txt.replace("﻿", "").trim().split("\r\n");
+    const dbTot = Number(sql(`select coalesce(sum("totaalInclCenten"),0) from "Factuur" where status <> 'CONCEPT'`));
+    const kop = regelsCsv[0].split(";"); const ix = kop.indexOf("Totaal incl. btw");
+    const som = regelsCsv.slice(1).reduce((s, r) => s + Math.round(Number(r.split(";")[ix].replace(/\./g, "").replace(",", ".")) * 100), 0);
+    rapport("export-CSV: totaal incl. btw is gelijk aan de som van de facturen in de database", csv.status() === 200 && som === dbTot, `${som} = ${dbTot}`);
+    const zip = await ctx.request.get(`${BASE}/api/facturen/export?formaat=zip&ubl=1`);
+    const zb = Buffer.from(await zip.body());
+    rapport("export-ZIP: bevat CSV, PDF's en UBL", zip.status() === 200 && zb.subarray(0, 2).toString() === "PK" && zb.includes(Buffer.from("facturen.csv")) && zb.includes(Buffer.from("ubl/F2026-0001.xml")), `${zb.length} bytes`);
+    rapport("volledige export zet factuurExportOp", sql(`select "factuurExportOp" is not null from "Company" where id='${C1}'`) === "t");
+    fs.writeFileSync(`${UIT}/../voorbeeld-export.csv`, txt);
+    await ctx.close();
   }
 
   fs.writeFileSync(`${UIT}/../controle-resultaten.json`, JSON.stringify(res, null, 2));
