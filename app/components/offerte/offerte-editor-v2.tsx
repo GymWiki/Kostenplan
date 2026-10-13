@@ -486,7 +486,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
       <Download className="h-4 w-4" aria-hidden="true" /> Getekende PDF
     </a>
   );
-  const fouttekst = opslagFout && opslag === "fout" ? <p role="alert" className="px-4 py-2 text-sm font-medium text-destructive">{opslagFout}</p> : null;
+  const fouttekst = opslagFout && opslag === "fout" && !conflict ? <p role="alert" className="px-4 py-2 text-sm font-medium text-destructive">{opslagFout}</p> : null;
 
   const paneelInhoud = (sel: Selectie | null) => {
     if (!sel) {

@@ -6,7 +6,9 @@ const sql = (q: string) => execFileSync("psql", [process.env.DATABASE_URL ?? "po
 // #71: offline bewerken bleef "Opslaan…" en ging verloren. #69: twee tabbladen overschreven elkaar stilzwijgend.
 test.describe("opslaan van de offerte-editor", () => {
   test.use({ gebruiker: "auto" });
-  test.skip(({}, info) => info.project.name === "mobiel", "regels bewerken gaat op mobiel via een sheet; de opslaglogica is dezelfde en staat hier op desktop");
+  test.beforeEach(({}, info) => {
+    test.skip(info.project.name === "mobiel", "regels bewerken gaat op mobiel via een sheet; de opslaglogica is dezelfde en staat hier op desktop");
+  });
 
   const omschrijving = (page: import("@playwright/test").Page) => page.locator('input[aria-label="Omschrijving"]').nth(1);
   const opEditor = async (page: import("@playwright/test").Page, leadSleutel: string, info: import("@playwright/test").TestInfo) => {
