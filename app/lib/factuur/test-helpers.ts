@@ -41,7 +41,7 @@ export function factuurInhoud(opties: { regels?: OfferteRegel[]; soort?: Factuur
     projectadres: { straat: "", postcode: "", plaats: "" },
     onderwerp: "Aanleg tuin",
     introductie: "",
-    secties: [{ id: "s1", titel: "Werkzaamheden", regels }],
+    secties: [{ id: "s1", titel: "Onderdelen", regels }],
     voorwaarden: [],
     herroeping: { aan: false, tekst: "" },
     betaaltermijnen: [],
