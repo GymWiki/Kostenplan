@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import path from "node:path";
 
 // Zonder dit lost vitest de "@/*" -> "./*"-alias uit tsconfig.json niet op
@@ -8,6 +8,8 @@ import path from "node:path";
 // transitief een échte (waarde-)import via een @/-pad binnenhaalt, faalt de
 // module-resolutie zonder deze alias.
 export default defineConfig({
+  // De Playwright-specs in e2e/ draaien met `npm run test:e2e`, niet met vitest.
+  test: { exclude: [...configDefaults.exclude, "e2e/**"] },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
