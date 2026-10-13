@@ -82,7 +82,12 @@ test.describe("betaling registreren (verouderd tabblad, offline)", () => {
     await page.getByRole("button", { name: "Betaling registreren" }).click();
     await page.locator("#bt-bedrag").fill("100,00");
     await page.getByRole("button", { name: "Betaling opslaan" }).click();
-    await expect(page.locator("section[aria-label='Beheer van deze factuur']")).toContainText(/100,00/, { timeout: 15000 });
+    try {
+      await expect(page.locator("section[aria-label='Beheer van deze factuur']")).toContainText(/100,00/, { timeout: 15000 });
+    } catch (e) {
+      console.log("DEBUG betalingen:", sql(`select count(*) from "FactuurBetaling" where "factuurId"='${id}'`), "sheet zichtbaar:", await page.getByRole("button", { name: "Betaling opslaan" }).count(), "tekst:", (await page.locator("body").innerText()).slice(0, 300).replace(/\n/g, " | "));
+      throw e;
+    }
 
     // tab 2 (verouderd: nog het volledige bedrag openstaand) probeert het hele oude bedrag te registreren
     await tab2.bringToFront(); // een tabblad op de achtergrond krijgt van de browser geen animatieframes: React zou niet renderen
