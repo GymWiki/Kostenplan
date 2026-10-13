@@ -15,8 +15,16 @@ for (const f of lees(path.join(root, "test-results/verified"), ".json")) {
   const j = JSON.parse(fs.readFileSync(f, "utf8"));
   for (const k of Object.keys(ver)) ver[k].push(...(j[k] || []));
 }
+// Aanpassingen van de hoofdsessie na de verifier (prioriteit volgens de definitie, titel, samenvoegen), met reden; zichtbaar in het rapport.
+const overrides = fs.existsSync(path.join(root, "test-results/overrides.json")) ? JSON.parse(fs.readFileSync(path.join(root, "test-results/overrides.json"), "utf8")) : {};
 const verrijk = (v) => ({ ...(ruwPerId.get(v.id) || {}), ...v });
-const bevestigd = ver.bevestigd.map(verrijk);
+const pas = (v) => {
+  const o = overrides[v.id];
+  if (!o) return v;
+  return { ...v, ...(o.priority ? { priority_verifier: v.priority, priority: o.priority } : {}), ...(o.title ? { title_oorspronkelijk: v.title, title: o.title } : {}), ...(o.area ? { area: o.area } : {}), ...(o.add_merged ? { merged_ids: [...(v.merged_ids || []), ...o.add_merged] } : {}), ...(o.note ? { hoofdsessie_notitie: o.note } : {}) };
+};
+const weg = new Set(Object.entries(overrides).filter(([, o]) => o.drop).map(([id]) => id));
+const bevestigd = ver.bevestigd.filter((v) => !weg.has(v.id)).map(verrijk).map(pas);
 const onzeker = ver.onzeker.map(verrijk);
 const verworpen = ver.verworpen.map(verrijk);
 const samengevoegd = new Set(bevestigd.flatMap((b) => b.merged_ids || []));
@@ -53,7 +61,7 @@ md += `## Samenvatting\n\n${tab(["P0", "P1", "P2", "P3"].map((p) => [p, String(p
 md += `### Per gebied\n\n${tab(Object.entries(perGebied).sort().map(([g, p]) => [g, ...["P0", "P1", "P2", "P3"].map((x) => String(p[x] || 0))]), ["Gebied", "P0", "P1", "P2", "P3"])}\n\n`;
 md += `## Top 10\n\n`;
 for (const [i, v] of top.entries()) {
-  md += `### ${i + 1}. [${prio(v)}] ${v.title}\n\n- Gebied: ${v.area} · gebruiker ${v.user} · ${v.viewport} · ${v.url}\n- Verwacht: ${esc(v.expected)}\n- Werkelijk: ${esc(v.actual)}\n- Stappen: ${(v.steps || []).map(esc).join(" → ")}\n${v.root_cause_hint ? `- Vermoedelijke oorzaak: ${esc(v.root_cause_hint)}\n` : ""}${v.repro_script ? `- Herhaalscript: \`${v.repro_script}\`\n` : ""}${v.screenshot_rapport ? `\n![${esc(v.title)}](${v.screenshot_rapport})\n` : ""}\n`;
+  md += `### ${i + 1}. [${prio(v)}] ${v.title}\n\n- Gebied: ${v.area} · gebruiker ${v.user} · ${v.viewport} · ${v.url}\n- Verwacht: ${esc(v.expected)}\n- Werkelijk: ${esc(v.actual)}\n- Stappen: ${(v.steps || []).map(esc).join(" → ")}\n${v.root_cause_hint ? `- Vermoedelijke oorzaak: ${esc(v.root_cause_hint)}\n` : ""}${v.hoofdsessie_notitie ? `- Toelichting prioriteit/samenvoeging: ${esc(v.hoofdsessie_notitie)}${v.priority_verifier ? ` (verifier gaf ${v.priority_verifier})` : ""}\n` : ""}${v.repro_script ? `- Herhaalscript: \`${v.repro_script}\`\n` : ""}${v.screenshot_rapport ? `\n![${esc(v.title)}](${v.screenshot_rapport})\n` : ""}\n`;
 }
 md += `## Alle bevestigde bevindingen\n\n${tab(bevestigd.map((v) => [prio(v), v.area, esc(v.title), esc(v.url), v.id]), ["Prio", "Gebied", "Titel", "URL", "Id"])}\n\n`;
 if (onzeker.length) md += `## Onzeker (verifier kon niet bevestigen of verwerpen)\n\n${tab(onzeker.map((v) => [v.area, esc(v.title), esc(v.reden || v.notitie || "")]), ["Gebied", "Titel", "Toelichting"])}\n\n`;
