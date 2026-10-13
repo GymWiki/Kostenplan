@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Bell, Building2, ChevronRight, CreditCard, FileText, LogOut, Palette, SlidersHorizontal, UserRound } from "lucide-react";
+import { Bell, Building2, ChevronRight, CreditCard, FileText, LogOut, MapPin, Palette, SlidersHorizontal, UserRound } from "lucide-react";
 import { KopInstellen } from "@/app/components/mobile/mobiele-kop";
 import { logoutAction } from "@/app/lib/actions/auth";
 
-export type ProfielScherm = "tarieven" | "bedrijf" | "offertegegevens" | "uiterlijk" | "abonnement" | "meldingen" | "account";
+export type ProfielScherm = "tarieven" | "werkgebied" | "bedrijf" | "offertegegevens" | "uiterlijk" | "abonnement" | "meldingen" | "account";
 
 type Rij = { id: ProfielScherm; titel: string; samenvatting: string; icoon: React.ComponentType<{ className?: string }> };
 
@@ -27,6 +27,7 @@ export function ProfielMobiel({
   const groepen: Rij[][] = [
     [
       { id: "tarieven", titel: "Tarieven", samenvatting: samenvattingen.tarieven, icoon: SlidersHorizontal },
+      { id: "werkgebied", titel: "Werkgebied en minimum", samenvatting: samenvattingen.werkgebied, icoon: MapPin },
       { id: "bedrijf", titel: "Bedrijf", samenvatting: samenvattingen.bedrijf, icoon: Building2 },
       { id: "offertegegevens", titel: "Offertegegevens", samenvatting: samenvattingen.offertegegevens, icoon: FileText },
       { id: "uiterlijk", titel: "Uiterlijk", samenvatting: samenvattingen.uiterlijk, icoon: Palette },

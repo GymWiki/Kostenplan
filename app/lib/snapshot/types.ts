@@ -2,6 +2,7 @@ import type { SubscriptionTier } from "@/app/generated/prisma/client";
 import type { ProductWithDetails } from "@/app/portaal/[slug]/calculator";
 import type { Branding, CostSettings } from "@/app/generated/prisma/client";
 import type { AnyCalculatorConfigData } from "@/app/lib/calculator-engine/modulair-types";
+import type { WerkgebiedInstellingen } from "@/app/lib/werkgebied/schema";
 
 // Versie van de vorm van het snapshot-bestand zelf. Ophogen bij een
 // onverenigbare wijziging; de embed weigert (en valt terug) bij een hogere
@@ -41,4 +42,7 @@ export type RekentoolSnapshot = {
     config: AnyCalculatorConfigData;
     materiaalOpties: MateriaalOpties;
   } | null;
+  // Werkgebied en minimale opdracht zoals voor deze rekentool geldt (bedrijf of eigen instelling). Ontbreekt
+  // als beide uit staan, zodat de embed ook zonder onze server kan controleren en bestaande snapshots gelijk blijven.
+  werkgebied?: WerkgebiedInstellingen;
 };

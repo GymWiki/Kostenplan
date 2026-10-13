@@ -5,6 +5,7 @@ import { effectiveTier } from "@/app/lib/subscription";
 import { pushBeschikbaar } from "@/app/lib/push/versturen";
 import { ProfielView } from "./profiel-view";
 import { laadOfferteGegevens } from "@/app/lib/offerte/gegevens-server";
+import { parseWerkgebied } from "@/app/lib/werkgebied/schema";
 
 export const metadata: Metadata = { title: "Profiel" };
 
@@ -44,6 +45,7 @@ export default async function ProfielPage({
         transport: kosten?.transportTarief ?? 0,
       }}
       offertegegevens={offertegegevens}
+      werkgebied={parseWerkgebied(company.werkgebied)}
       branding={tools.map((t) => ({
         toolId: t.id,
         toolNaam: t.naam,

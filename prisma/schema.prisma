@@ -255,6 +255,8 @@ model Company {
   slug           String    @unique
   kvkNummer      String?
   adres          String?
+  // Werkgebied en minimale opdracht van het bedrijf (zie app/lib/werkgebied/schema.ts). Null = alles uit.
+  werkgebied     Json?
 
   // Permanente brug voor bedrijven die zijn ontstaan uit de multi-company-
   // migratie van een bestaande, vóór-migratie User: laat de Mollie-webhook
@@ -357,6 +359,8 @@ model Tool {
   // toolkaartje op /dashboard/tools. Optioneel, puur decoratief.
   icoon  String?
   order  Int        @default(0)
+  // Eigen werkgebied/minimum voor deze rekentool. Null = de instelling van het bedrijf overnemen.
+  werkgebied Json?
 
   // Resultaatinstellingen (prijsweergave/afronding/CTA) en
   // aanvraagformulier-configuratie — bewust Json i.p.v. losse kolommen,

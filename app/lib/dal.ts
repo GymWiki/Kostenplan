@@ -228,6 +228,7 @@ const PUBLIEKE_TOOL_INCLUDE = {
       standaardArbeidTariefUur: true,
       standaardVoorrijTarief: true,
       standaardBtwPercentage: true,
+      werkgebied: true,
       creator: { select: { email: true } },
     },
   },

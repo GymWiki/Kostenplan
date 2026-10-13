@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Copy, Globe, Monitor, Pencil, Settings2, Smartphone, Trash2, X } from "lucide-react";
+import { ArrowLeft, Copy, Globe, MapPin, Monitor, Pencil, Settings2, Smartphone, Trash2, X } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
 import { Logo } from "@/app/components/ui/logo";
 import { Button } from "@/app/components/ui/button";
@@ -38,6 +38,9 @@ import { WerkzaamheidPaneel } from "./werkzaamheid-paneel";
 import { MobieleEditor } from "./mobiele-editor";
 import { KopProvider, MobieleKop } from "@/app/components/mobile/mobiele-kop";
 import { PublicatieStatusLabel } from "./publicatie-status";
+import { Sheet } from "@/app/components/ui/sheet";
+import { WerkgebiedFormulier } from "@/app/components/werkgebied/werkgebied-formulier";
+import type { WerkgebiedInstellingen } from "@/app/lib/werkgebied/schema";
 import type { PublicatieStatus } from "@/app/lib/actions/publicatie";
 
 export type EditorProps = {
@@ -63,6 +66,8 @@ export type EditorProps = {
   };
   anderen: AndereRekentool[];
   magNieuweTool: boolean;
+  // Werkgebied en minimum: de instelling van het bedrijf en (als die afwijkt) die van deze rekentool.
+  werkgebied?: { bedrijf: WerkgebiedInstellingen; tool: WerkgebiedInstellingen | null };
   startPaneel: string;
   // Stand van de gepubliceerde kopie voor de embed (alleen bij een echt account).
   publicatie?: PublicatieStatus;
@@ -130,6 +135,7 @@ export function RekentoolEditor(props: EditorProps) {
   }, [opslag.status]);
   const [melding, setMelding] = useState<string | null>(null);
   const [hernoemOpen, setHernoemOpen] = useState(false);
+  const [werkgebiedOpen, setWerkgebiedOpen] = useState(false);
   const [hernoemTekst, setHernoemTekst] = useState("");
   const [hernoemFout, setHernoemFout] = useState<string | null>(null);
   const [verwijderTool, setVerwijderTool] = useState(false);
@@ -324,6 +330,7 @@ export function RekentoolEditor(props: EditorProps) {
         void duplicateToolAction(fd);
       },
     },
+    ...(props.werkgebied ? [{ label: "Werkgebied en minimum", icon: MapPin, onSelect: () => setWerkgebiedOpen(true) }] : []),
     { label: "Btw en andere prijsinstellingen", icon: Settings2, onSelect: () => router.push(`/dashboard/tools/${toolId}/prijzen`) },
     { label: "Verwijderen", icon: Trash2, destructive: true, onSelect: () => setVerwijderTool(true) },
   ];
@@ -440,6 +447,20 @@ export function RekentoolEditor(props: EditorProps) {
 
   const dialogen = (
     <>
+      {props.werkgebied && (
+        <Sheet key={werkgebiedOpen ? "open" : "dicht"} open={werkgebiedOpen} onClose={() => setWerkgebiedOpen(false)} title="Werkgebied en minimum" description={`Voor ${naam}. Neem de instelling van je bedrijf over of stel hier iets anders in.`} className="sm:max-w-3xl">
+          <WerkgebiedFormulier
+            bereik={{ soort: "tool", toolId, overnemen: props.werkgebied.tool === null }}
+            start={props.werkgebied.tool ?? props.werkgebied.bedrijf}
+            bedrijfInstellingen={props.werkgebied.bedrijf}
+            eigen={props.werkgebied.tool !== null}
+            onOpgeslagen={() => {
+              setWerkgebiedOpen(false);
+              router.refresh();
+            }}
+          />
+        </Sheet>
+      )}
       <Overlay open={hernoemOpen} onClose={() => setHernoemOpen(false)} ariaLabelledBy="hernoem-titel" className="flex items-center justify-center p-4">
         <form
           onSubmit={(e) => {
