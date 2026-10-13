@@ -21,7 +21,7 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next({ request });
   }
   // Online offerte voor de klant (/o/[token]) en de printpagina voor de PDF: publiek, geen sessie nodig.
-  if (pad.startsWith("/o/") || pad.startsWith("/offerte-print/")) {
+  if (pad.startsWith("/o/") || pad.startsWith("/f/") || pad.startsWith("/offerte-print/")) {
     return NextResponse.next({ request });
   }
   if (pad.startsWith("/demo/") || ((pad === "/probeer" || pad.startsWith("/probeer/")) && !pad.startsWith("/probeer/importeren"))) {

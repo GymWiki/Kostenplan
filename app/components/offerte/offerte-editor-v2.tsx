@@ -24,7 +24,8 @@ import type { OfferteInhoud, OfferteRegel } from "@/app/lib/offerte/model";
 import { OFFERTE_V2_STATUS_LABEL, type HerinneringReden } from "@/app/lib/offerte/status";
 import { formatCents } from "@/app/lib/offerte/weergave";
 import * as w from "@/app/lib/offerte/wijzig";
-import { DeelDialoog } from "./deel-dialoog";
+import { DeelDialoog, type DeelOps } from "./deel-dialoog";
+import { bevestigFactuurVerstuurdAction, definitiefMakenAction, maakFactuurDeelklaarAction, volgendFactuurnummerAction } from "@/app/lib/actions/facturen-versturen";
 import { OfferteDocument, type Selectie } from "./offerte-document";
 import { BetalingPaneel, KlantPaneel, MetaPaneel, PlanningPaneel, RegelPaneel, SectiePaneel, TekstPaneel, VoorwaardenPaneel, type Wijzig } from "./offerte-paneel";
 import { VelSchaal } from "./vel-schaal";
@@ -205,6 +206,43 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
       else setSelectie(null);
     }
   }
+
+  // Factuur: eerst definitief maken (controle, nummer, vastleggen), daarna delen; een definitieve factuur gaat direct naar het delen.
+  const [verwachtNummer, setVerwachtNummer] = useState<string | null>(null);
+  useEffect(() => {
+    if (!factuurCfg || factuurCfg.status !== "CONCEPT" || !controleOpen) return;
+    let weg = false;
+    void volgendFactuurnummerAction(factuurCfg.id).then((n) => !weg && setVerwachtNummer(n));
+    return () => {
+      weg = true;
+    };
+  }, [factuurCfg, controleOpen]);
+  const fSoort = isFactuur ? (inhoud as FactuurInhoud).factuur.soort : "factuur";
+  const woord = fSoort === "creditnota" ? "creditnota" : "factuur";
+  const factuurOps: DeelOps | undefined = factuurCfg
+    ? {
+        startStap: factuurCfg.status === "CONCEPT" ? "controle" : "delen",
+        controle: { blokkerend: controle.blokkerend, waarschuwingen: controle.waarschuwingen, ok: [] },
+        controleTitel: `${woord === "creditnota" ? "Creditnota" : "Factuur"} definitief maken`,
+        controleToelichting: `Na definitief maken krijgt deze ${woord} ${verwachtNummer ? `nummer ${verwachtNummer}` : "een nummer"} en kun je hem niet meer wijzigen. Correcties gaan via een creditnota.`,
+        controleKnop: "Definitief maken",
+        terugKnop: "Terug naar de factuur",
+        naControle: async () => {
+          const r = await definitiefMakenAction(factuurCfg.id);
+          if (r.ok) setPasVerstuurd(true);
+          return r.ok ? { ok: true } : { ok: false, error: r.error };
+        },
+        titelDelen: `${woord === "creditnota" ? "Creditnota" : "Factuur"} ${(inhoud as FactuurInhoud).factuur.nummer ?? ""} van ${formatCents(Math.abs(totalen.totaalIncl))} versturen`.replace("  ", " "),
+        maakKlaar: () => maakFactuurDeelklaarAction(factuurCfg.id),
+        bevestig: (kanaal) => bevestigFactuurVerstuurdAction(factuurCfg.id, kanaal),
+        woord,
+        vraag: `Is de ${woord} verstuurd?`,
+        verstuurdTitel: `${woord === "creditnota" ? "Creditnota" : "Factuur"} staat op Verstuurd`,
+        verstuurdTekst: `Verstuurd op ${new Date().toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}. Je ziet in de tijdlijn wanneer de klant de ${woord} bekijkt. Registreer een betaling zodra het geld binnen is.`,
+        neeTekst: `De ${woord} is niet als verstuurd gemarkeerd. Je kunt hem later opnieuw delen via Versturen.`,
+        wachtTekst: `Even geduld, de ${woord} wordt klaargezet…`,
+      }
+    : undefined;
 
   const statusBlok = (
     <span role="status" aria-live="polite" className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -495,14 +533,18 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
             <span className="block text-lg font-bold tabular-nums text-foreground">{formatCents(eind)}</span>
           </div>
           {alleenLezen ? (
-            isFactuur || status === "GEACCEPTEERD" ? null : (
+            isFactuur ? (
+              <Button type="button" size="lg" onClick={() => openDelen("offerte")}>
+                Versturen
+              </Button>
+            ) : status === "GEACCEPTEERD" ? null : (
               <Button type="button" size="lg" onClick={() => void nieuweVersie()}>
                 Nieuwe versie
               </Button>
             )
-          ) : isFactuur ? null : (
+          ) : (
             <Button type="button" size="lg" onClick={() => openDelen("offerte")}>
-              Versturen{aantalProblemen > 0 ? ` (${aantalProblemen})` : ""}
+              {isFactuur ? "Definitief maken" : "Versturen"}{aantalProblemen > 0 ? ` (${aantalProblemen})` : ""}
             </Button>
           )}
         </StickyActiebalk>
@@ -571,7 +613,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
           {sectieSheet && <SectiePaneel inhoud={inhoud} sectieId={sectieSheet} wijzig={wijzig} standaardRegels={standaardRegels} onVerwijderStandaard={verwijderStandaard} onSelect={(s) => (s.soort === "regel" && s.id && s.sectieId ? setRegelSheet({ sectieId: s.sectieId, regelId: s.id }) : setSectieSheet(s.id ?? null))} btwStandaard={btwStandaard} />}
         </MobieleSheet>
 
-        <DeelDialoog modus={deelModus} open={client && controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} />
+        <DeelDialoog modus={deelModus} open={client && controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} ops={factuurOps} />
       </div>
     );
   }
@@ -593,9 +635,14 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
               <Download className="h-4 w-4" aria-hidden="true" /> PDF
             </a>
           )}
-          {!alleenLezen && !isFactuur && (
+          {!alleenLezen && (
             <Button type="button" onClick={() => openDelen("offerte")}>
-              Versturen{aantalProblemen > 0 ? ` (${aantalProblemen})` : ""}
+              {isFactuur ? "Definitief maken" : "Versturen"}{aantalProblemen > 0 ? ` (${aantalProblemen})` : ""}
+            </Button>
+          )}
+          {isFactuur && alleenLezen && (
+            <Button type="button" onClick={() => openDelen("offerte")}>
+              Versturen
             </Button>
           )}
         </div>
@@ -622,7 +669,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
           {alleenLezen ? <div className="flex flex-col gap-4 text-sm"><p className="text-muted-foreground">Deze versie is verstuurd. Maak een nieuwe versie om te wijzigen.</p>{getekendLink}{activiteitLijst}</div> : paneelInhoud(selectie)}
         </aside>
       </div>
-      <DeelDialoog modus={deelModus} open={client && controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} />
+      <DeelDialoog modus={deelModus} open={client && controleOpen} onSluit={sluitControle} offerteId={offerteId} inhoud={inhoud} onGaNaar={gaNaar} onVerstuurd={() => setPasVerstuurd(true)} ops={factuurOps} />
     </div>
   );
 }
