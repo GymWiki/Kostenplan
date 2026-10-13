@@ -1,6 +1,7 @@
 "use client";
 
 import { Field } from "@/app/components/ui/field";
+import { GetalVeld } from "@/app/components/ui/getal-veld";
 import { Input, Select, Textarea } from "@/app/components/ui/input";
 import { plusDagen } from "@/app/lib/factuur/maak";
 import { termijnWaarschuwing } from "@/app/lib/factuur/controle";
@@ -29,17 +30,14 @@ export function FactuurMetaPaneel({ inhoud, wijzig }: { inhoud: FactuurInhoud; w
           />
         </Field>
         {!credit && (
-          <Field label="Betaaltermijn in dagen" htmlFor="fm-dagen">
-            <Input
-              id="fm-dagen"
-              inputMode="numeric"
-              value={String(f.betaaltermijnDagen)}
-              onChange={(e) => {
-                const dagen = Number(e.target.value.replace(/\D/g, "")) || 0;
-                zet({ betaaltermijnDagen: dagen, ...(/^\d{4}-\d{2}-\d{2}$/.test(f.factuurdatum) ? { vervaldatum: plusDagen(f.factuurdatum, dagen) } : {}) });
-              }}
-            />
-          </Field>
+          <GetalVeld
+            id="fm-dagen"
+            label="Betaaltermijn in dagen"
+            geheel
+            max={365}
+            waarde={f.betaaltermijnDagen}
+            onChange={(dagen) => zet({ betaaltermijnDagen: dagen, ...(/^\d{4}-\d{2}-\d{2}$/.test(f.factuurdatum) ? { vervaldatum: plusDagen(f.factuurdatum, dagen) } : {}) })}
+          />
         )}
       </div>
       {!credit && (

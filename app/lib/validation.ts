@@ -1,4 +1,5 @@
 import { pricingInputSchema } from "@/app/lib/pricing/schema";
+import { parseGetal } from "@/app/lib/getal";
 import { z } from "zod";
 import { PRODUCT_ICON_NAMES } from "@/app/lib/icons";
 
@@ -8,7 +9,10 @@ import { PRODUCT_ICON_NAMES } from "@/app/lib/icons";
 // no longer being native <input type="number">, so no browser-level
 // numeric parsing happens before this reaches the server at all.
 function normalizeDecimalInput(val: unknown) {
-  if (typeof val === "string") return val.trim().replace(",", ".");
+  if (typeof val === "string") {
+    const r = parseGetal(val, { negatief: true, soort: "getal" });
+    return r.ok ? String(r.waarde) : val.trim().replace(",", ".");
+  }
   return val;
 }
 

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { ArrowDown, ArrowUp, Copy, Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Field } from "@/app/components/ui/field";
 import { Input, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
+import { BedragVeld, GetalVeld } from "@/app/components/ui/getal-veld";
 import { BETAAL_PRESETS, termijnenKloppen, termijnenVoor } from "@/app/lib/offerte/gegevens";
 import { BTW_TARIEVEN, REGEL_SOORT_LABEL, type RegelSoort } from "@/app/lib/offerte/btw-config";
 import { berekenTotalen, prijsPerEenheidWeergave } from "@/app/lib/offerte/bereken";
@@ -16,51 +16,6 @@ import type { StandaardRegelDto } from "@/app/lib/actions/offerte-v2";
 import type { Selectie } from "./offerte-document";
 
 export type Wijzig = (fn: (i: OfferteInhoud) => OfferteInhoud) => void;
-
-// Bedragveld in euro's met komma; geeft centen terug tijdens het typen. Zolang je typt
-// blijft je eigen tekst staan; bij het verlaten van het veld wordt hij netjes opgemaakt.
-export function BedragVeld({ id, label, centen, onChange, hint }: { id: string; label: string; centen: number; onChange: (c: number) => void; hint?: string }) {
-  const [typen, setTypen] = useState<string | null>(null);
-  return (
-    <Field label={label} htmlFor={id} hint={hint}>
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground" aria-hidden="true">
-          €
-        </span>
-        <Input
-          id={id}
-          inputMode="decimal"
-          value={typen ?? (centen / 100).toFixed(2).replace(".", ",")}
-          onChange={(e) => {
-            setTypen(e.target.value);
-            const v = Number(e.target.value.replace(/\./g, "").replace(",", "."));
-            if (Number.isFinite(v)) onChange(Math.round(v * 100));
-          }}
-          onBlur={() => setTypen(null)}
-        />
-      </div>
-    </Field>
-  );
-}
-
-function GetalVeld({ id, label, waarde, onChange, hint }: { id: string; label: string; waarde: number; onChange: (n: number) => void; hint?: string }) {
-  const [typen, setTypen] = useState<string | null>(null);
-  return (
-    <Field label={label} htmlFor={id} hint={hint}>
-      <Input
-        id={id}
-        inputMode="decimal"
-        value={typen ?? String(waarde).replace(".", ",")}
-        onChange={(e) => {
-          setTypen(e.target.value);
-          const v = Number(e.target.value.replace(",", "."));
-          if (Number.isFinite(v) && v >= 0) onChange(v);
-        }}
-        onBlur={() => setTypen(null)}
-      />
-    </Field>
-  );
-}
 
 function Acties({ children }: { children: React.ReactNode }) {
   return <div className="flex flex-wrap gap-2 border-t border-border pt-3">{children}</div>;
@@ -207,7 +162,7 @@ export function RegelPaneel({
                 ))}
               </Select>
             </Field>
-            <GetalVeld id="rg-korting" label="Korting (%)" waarde={r.kortingPct ?? 0} onChange={(n) => zet({ kortingPct: Math.min(100, n) || undefined })} />
+            <GetalVeld id="rg-korting" label="Korting (%)" max={100} waarde={r.kortingPct ?? 0} onChange={(n) => zet({ kortingPct: Math.min(100, n) || undefined })} />
           </div>
           <Field label="Soort (voor het standaard btw-tarief)" htmlFor="rg-soort">
             <Select
@@ -395,9 +350,7 @@ export function BetalingPaneel({ inhoud, wijzig }: { inhoud: OfferteInhoud; wijz
               <Field label={`Termijn ${i + 1}`} htmlFor={`bt-l${i}`} className="flex-1">
                 <Input id={`bt-l${i}`} value={t.label} onChange={(e) => zet(termijnen.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} />
               </Field>
-              <Field label="%" htmlFor={`bt-p${i}`} className="w-20">
-                <Input id={`bt-p${i}`} inputMode="numeric" value={String(t.percentage)} onChange={(e) => zet(termijnen.map((x, j) => (j === i ? { ...x, percentage: Number(e.target.value.replace(/\D/g, "")) || 0 } : x)))} />
-              </Field>
+<div className="w-24"><GetalVeld id={`bt-p${i}`} label="%" geheel max={100} waarde={t.percentage} onChange={(n) => zet(termijnen.map((x, j) => (j === i ? { ...x, percentage: n } : x)))} /></div>
               <Button type="button" variant="outline" aria-label={`Termijn ${i + 1} verwijderen`} disabled={termijnen.length < 2} onClick={() => zet(termijnen.filter((_, j) => j !== i))}>
                 <Trash2 className="h-4 w-4" aria-hidden="true" />
               </Button>

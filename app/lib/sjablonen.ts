@@ -1,4 +1,5 @@
 import type { ProductSjabloon } from "@/app/generated/prisma/client";
+import { parseGetal as leesGetal } from "@/app/lib/getal";
 
 // ---------------------------------------------------------------------------
 // Veldtype-bibliotheek — vijf herbruikbare bouwstenen, gebruikt zowel voor
@@ -384,10 +385,8 @@ export function vasteEenheidVoorSjabloon(sjabloon: ProductSjabloon, config: unkn
 export function parseGetal(ruw: unknown, standaard = 0): number {
   if (typeof ruw === "number") return Number.isFinite(ruw) ? ruw : standaard;
   if (typeof ruw !== "string") return standaard;
-  const genormaliseerd = ruw.trim().replace(",", ".");
-  if (genormaliseerd === "") return standaard;
-  const getal = Number(genormaliseerd);
-  return Number.isFinite(getal) ? getal : standaard;
+  const r = leesGetal(ruw, { negatief: true, soort: "getal" });
+  return r.ok ? r.waarde : standaard;
 }
 
 export function coerceVeldWaarden(

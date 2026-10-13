@@ -2,6 +2,7 @@
 
 import { Minus, Plus } from "lucide-react";
 import { useState } from "react";
+import { parseGetal } from "@/app/lib/getal";
 import { cn } from "@/app/lib/cn";
 
 // − / waarde / + voor hoeveelheden en werktempo. De waarde zelf is ook
@@ -43,8 +44,8 @@ export function Stepper({
         value={tekst ?? String(waarde).replace(".", ",")}
         onChange={(e) => {
           setTekst(e.target.value);
-          const n = Number(e.target.value.replace(",", "."));
-          if (e.target.value.trim() !== "" && Number.isFinite(n)) onChange(begrens(n));
+          const r = parseGetal(e.target.value, { soort: "aantal", negatief: min < 0 });
+          if (r.ok) onChange(begrens(r.waarde));
         }}
         onBlur={() => setTekst(null)}
         className="h-11 w-20 min-w-0 rounded-lg border-[1.5px] border-input bg-card px-2 text-center text-base font-semibold tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/35"
