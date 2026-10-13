@@ -9,6 +9,7 @@ import { laadOfferteGegevens } from "@/app/lib/offerte/gegevens-server";
 import { bestandsnaam } from "@/app/lib/offerte/weergave";
 import { bouwFactuurBericht, type BerichtSoort } from "@/app/lib/factuur/berichten";
 import { FactuurControleFout, FactuurVergrendeldFout, maakFactuurDefinitief } from "@/app/lib/factuur/opslag";
+import { herberekenFactuurStatus } from "@/app/lib/factuur/beheer";
 import { zorgVoorFactuurPdf } from "@/app/lib/factuur/pdf";
 import type { FactuurInhoud } from "@/app/lib/factuur/model";
 import { formatteerFactuurNummer } from "@/app/lib/factuur/nummer";
@@ -28,6 +29,13 @@ export async function definitiefMakenAction(factuurId: string): Promise<Definiti
   const afzender = afzenderUit(gegevens, { kleur: inh.afzender.kleur, lettertype: inh.afzender.lettertype });
   try {
     const { nummer } = await maakFactuurDefinitief(prismaBasis, { factuurId, companyId: company.id, afzender, prefix: { factuur: gegevens.factuurPrefix, credit: gegevens.creditPrefix } });
+    // Een definitieve creditnota verlaagt wat er op de oorspronkelijke factuur openstaat (of crediteert hem geheel).
+    const credit = await prismaBasis.factuur.findUnique({ where: { id: factuurId }, select: { creditVoorId: true } });
+    if (credit?.creditVoorId) {
+      await herberekenFactuurStatus(prismaBasis, credit.creditVoorId);
+      await prismaBasis.factuurGebeurtenis.create({ data: { factuurId: credit.creditVoorId, soort: "CREDITNOTA", tekst: `Creditnota ${nummer}` } });
+      revalidatePath(`/dashboard/facturen/${credit.creditVoorId}`);
+    }
     // De PDF mislukt zelden; lukt het nu niet, dan wordt hij bij het eerste delen of downloaden alsnog vastgelegd.
     await zorgVoorFactuurPdf(await getBaseUrl(), factuurId, company.id).catch((e) => console.error("[factuur] PDF vastleggen mislukt", e));
     revalidatePath("/dashboard/leads");
