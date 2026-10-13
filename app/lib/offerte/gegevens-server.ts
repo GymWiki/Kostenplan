@@ -14,6 +14,7 @@ import {
 } from "./gegevens";
 import type { RegelSoort } from "./btw-config";
 import { STANDAARD_DEELTEKST, STANDAARD_HERINNERINGSTEKST } from "./berichten";
+import { STANDAARD_FACTUURTEKST } from "@/app/lib/factuur/berichten";
 
 // Laadt de offertegegevens van een bedrijf, aangevuld met wat we al weten
 // (handelsnaam, KvK, adres, logo, e-mail, telefoon) zodat het formulier
@@ -60,5 +61,9 @@ export async function laadOfferteGegevens(company: Pick<Company, "id" | "naam" |
     btwStandaard: (rij?.btwStandaard as Partial<Record<RegelSoort, number>> | null) ?? null,
     deelTekst: s(rij?.deelTekst) || STANDAARD_DEELTEKST,
     herinneringTekst: s(rij?.herinneringTekst) || STANDAARD_HERINNERINGSTEKST,
+    factuurPrefix: rij?.factuurPrefix ?? "F",
+    creditPrefix: rij?.creditPrefix ?? "C",
+    factuurBetaaltermijnDagen: rij?.factuurBetaaltermijnDagen ?? 14,
+    factuurDeelTekst: s(rij?.factuurDeelTekst) || STANDAARD_FACTUURTEKST,
   };
 }

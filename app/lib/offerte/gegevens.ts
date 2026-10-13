@@ -126,6 +126,11 @@ export type OfferteGegevensWaarden = {
   btwStandaard: Partial<Record<RegelSoort, number>> | null;
   deelTekst: string;
   herinneringTekst: string;
+  // Facturen.
+  factuurPrefix: string;
+  creditPrefix: string;
+  factuurBetaaltermijnDagen: number;
+  factuurDeelTekst: string;
 };
 
 export type OntbrekendVeld = { veld: string; label: string; uitleg: string };
@@ -169,6 +174,8 @@ export function valideerFormaat(g: Partial<OfferteGegevensWaarden>): Record<stri
   if (g.email?.trim() && !isGeldigEmail(g.email)) f.email = "Vul een geldig e-mailadres in.";
   if (g.postcode?.trim() && !isGeldigPostcode(g.postcode)) f.postcode = "Een postcode ziet er zo uit: 1234 AB.";
   if (g.geldigheidDagen != null && (!Number.isInteger(g.geldigheidDagen) || g.geldigheidDagen < 1 || g.geldigheidDagen > 365)) f.geldigheidDagen = "Kies tussen 1 en 365 dagen.";
+  if (g.factuurBetaaltermijnDagen != null && (!Number.isInteger(g.factuurBetaaltermijnDagen) || g.factuurBetaaltermijnDagen < 0 || g.factuurBetaaltermijnDagen > 120)) f.factuurBetaaltermijnDagen = "Kies tussen 0 en 120 dagen.";
+  if (g.factuurPrefix != null && g.creditPrefix != null && g.factuurPrefix.trim() !== "" && g.factuurPrefix.trim() === g.creditPrefix.trim()) f.creditPrefix = "Gebruik een ander voorvoegsel dan voor facturen.";
   if (g.betaalPreset === "EIGEN" && g.betaalTermijnen && !termijnenKloppen(g.betaalTermijnen)) f.betaalTermijnen = "De termijnen moeten samen 100% zijn.";
   return f;
 }
