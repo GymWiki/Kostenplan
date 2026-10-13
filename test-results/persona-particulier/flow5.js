@@ -1,0 +1,22 @@
+const c = require("/home/user/Kostenplan/test-results/persona-particulier/common.js");
+(async () => {
+  const s = await c.open(); const p = s.page;
+  await c.vul(s);
+  await p.getByRole("button", { name: "Offerte aanvragen" }).click(); s.stap();
+  await p.waitForTimeout(600);
+  await p.getByLabel("Naam").fill("Test Particulier"); s.stap();
+  await p.getByLabel("E-mailadres").fill("persona-particulier@test.kostenplan.nl"); s.stap();
+  await p.getByLabel(/Telefoonnummer/).fill("0612345678"); s.stap();
+  const f = await p.evaluate(() => [...document.querySelectorAll("form textarea, form input, form select")].map(e=>({n:e.name||e.id, t:e.type, req:e.required, ph:e.placeholder})));
+  console.log("VELDEN", JSON.stringify(f));
+  const ex = await p.evaluate(() => (document.querySelector("form")?.innerText || document.body.innerText).slice(0, 800));
+  console.log("FORM TEKST", ex);
+  console.log("SCHERM formulier-ingevuld", await s.scherm("formulier-ingevuld"));
+  await p.getByRole("button", { name: "Versturen" }).click(); s.stap();
+  await p.waitForTimeout(2000);
+  console.log("URL NA VERSTUREN", p.url());
+  console.log("SCHERM na versturen", await s.scherm("na-versturen"));
+  console.log((await p.innerText("body")).slice(-1500));
+  console.log("CONSOLE", s.consoleFouten, "NET", s.netwerkFouten);
+  await s.sluit();
+})().catch((e) => { console.error("FOUT", e.message); process.exit(1); });

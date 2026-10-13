@@ -1,0 +1,21 @@
+const k = require("/home/user/Kostenplan/scripts/test/agent-lib.js");
+const sd=k.seed().a2;
+(async()=>{
+const s=await k.open({agent:"verifier-07",gebruiker:"a2",viewport:"desktop",pad:`/t/${sd.bedrijfSlug}/${sd.tuinaanlegSlug}`});
+const p=s.page;
+await p.getByPlaceholder(/bijv/).first().fill("8011AB 5"); await p.waitForTimeout(1000);
+await p.getByRole("button",{name:/Voorstraat 5/}).first().click().catch(()=>{});
+const inp=await p.locator("input").evaluateAll(e=>e.map(x=>(x.getAttribute("aria-label")||x.id||x.placeholder)));
+console.log(inp);
+await p.getByLabel(/Aantal Boom planten/).fill("3").catch(e=>console.log("geen aantal boom"));
+await p.waitForTimeout(800);
+const sel=await p.locator("select").all(); console.log("selects",sel.length);
+for (const x of sel) await x.selectOption({index:1}).catch(()=>{});
+await p.waitForTimeout(800);
+console.log((await p.locator("body").innerText()).split("Jouw kostenraming")[1]?.slice(0,500));
+await s.scherm("raming");
+await p.getByRole("button",{name:"Offerte aanvragen"}).click(); await p.waitForTimeout(500);
+await p.getByLabel("Naam").fill("V07 Boom C"); await p.getByLabel("E-mailadres").fill("v07@test.kostenplan.nl");
+await p.getByRole("button",{name:"Versturen"}).click(); await p.waitForTimeout(2500);
+console.log("verstuurd:", (await p.locator("body").innerText()).slice(-300));
+await s.sluit();})();

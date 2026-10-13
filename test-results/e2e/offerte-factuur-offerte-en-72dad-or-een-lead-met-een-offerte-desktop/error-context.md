@@ -1,0 +1,203 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Direct naar de inhoud" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - navigation [ref=e5]:
+        - link "Kostenplan" [ref=e6] [cursor=pointer]:
+          - /url: /dashboard
+          - text: Kostenplan
+        - link "Overzicht" [ref=e8] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e9]
+          - text: Overzicht
+        - link "Rekentools" [ref=e14] [cursor=pointer]:
+          - /url: /dashboard/tools
+          - img [ref=e15]
+          - text: Rekentools
+        - link "Leads" [ref=e17] [cursor=pointer]:
+          - /url: /dashboard/leads
+          - img [ref=e19]
+          - text: Leads
+        - link "Profiel" [ref=e24] [cursor=pointer]:
+          - /url: /dashboard/profiel
+          - img [ref=e25]
+          - text: Profiel
+    - generic [ref=e29]:
+      - banner [ref=e30]:
+        - generic [ref=e31]:
+          - button "Bedrijf wisselen" [ref=e32] [cursor=pointer]:
+            - generic [ref=e33]: Hoveniersbedrijf De Vries
+            - img [ref=e34]
+          - 'button "Uitleg: Bedrijf wisselen" [ref=e37]':
+            - img [ref=e38]
+        - button "Schakel naar donkere modus" [ref=e41] [cursor=pointer]:
+          - img [ref=e42]
+        - button "Uitloggen" [ref=e45] [cursor=pointer]:
+          - img [ref=e46]
+          - generic [ref=e49]: Uitloggen
+      - main [ref=e50]:
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - link "Terug" [ref=e54] [cursor=pointer]:
+              - /url: /dashboard/leads
+              - img [ref=e55]
+              - text: Leads
+            - heading "Offerte 2026-0115" [level=1] [ref=e57]
+            - generic [ref=e58]: Verstuurd
+            - generic [ref=e59]:
+              - status [ref=e60]:
+                - img [ref=e61]
+                - text: Verstuurd
+              - link "PDF" [ref=e63] [cursor=pointer]:
+                - /url: /api/offertes/cmv6w7yin0067fg7dbmjq5h3c/pdf?versie=1
+                - img [ref=e64]
+                - text: PDF
+          - status [ref=e67]:
+            - generic [ref=e68]: Versie 1 is verstuurd en kan niet meer worden gewijzigd.
+            - button "Nieuwe versie maken" [ref=e69] [cursor=pointer]:
+              - img [ref=e70]
+              - text: Nieuwe versie maken
+          - status [ref=e73]:
+            - generic [ref=e74]: De klant heeft al een week niet gereageerd.
+            - button "Herinnering sturen" [ref=e75] [cursor=pointer]
+          - generic [ref=e76]:
+            - generic [ref=e81]:
+              - generic [ref=e82]:
+                - generic [ref=e84]: Hoveniersbedrijf De Vries
+                - generic [ref=e85]:
+                  - strong [ref=e86]: Hoveniersbedrijf De Vries
+                  - generic [ref=e87]: Dennenlaan 1
+                  - generic [ref=e88]: 3511 AB Utrecht
+                  - generic [ref=e89]: 06 12345678
+                  - generic [ref=e90]: jan@devries-hoveniers.nl
+              - generic [ref=e91]:
+                - generic [ref=e92]:
+                  - generic [ref=e93]: Vera Verstuurd
+                  - generic [ref=e94]: Kerkstraat 5
+                  - generic [ref=e95]: 3512 CD Utrecht
+                - generic [ref=e97]:
+                  - term [ref=e98]: Offertenummer
+                  - definition [ref=e99]: 2026-0115
+                  - term [ref=e100]: Datum
+                  - definition [ref=e101]: 20 oktober 2026
+                  - term [ref=e102]: Geldig tot
+                  - definition [ref=e103]: 7 november 2026
+                  - term [ref=e104]: Projectadres
+                  - definition [ref=e105]: Kerkstraat 5, 3512 CD Utrecht
+              - heading "Offerte" [level=1] [ref=e106]
+              - paragraph [ref=e108]: Aanleg tuin
+              - generic [ref=e110]:
+                - paragraph [ref=e111]: Geachte Vera Verstuurd,
+                - paragraph
+              - table [ref=e112]:
+                - rowgroup [ref=e120]:
+                  - row "Omschrijving Aantal Eenheid Prijs Btw Totaal" [ref=e121]:
+                    - cell "Omschrijving" [ref=e122]
+                    - cell "Aantal" [ref=e123]
+                    - cell "Eenheid" [ref=e124]
+                    - cell "Prijs" [ref=e125]
+                    - cell "Btw" [ref=e126]
+                    - cell "Totaal" [ref=e127]
+                - rowgroup [ref=e128]:
+                  - row "Tuin Kerkstraat 5 € 4.493,47" [ref=e129]:
+                    - cell "Tuin Kerkstraat 5" [ref=e130]
+                    - cell "€ 4.493,47" [ref=e131]
+                  - row "Bestrating terras, gebakken klinkers 24 m² € 88,87 21% € 2.132,99" [ref=e132]:
+                    - cell "Bestrating terras, gebakken klinkers" [ref=e133]
+                    - cell "24" [ref=e134]
+                    - cell "m²" [ref=e135]
+                    - cell "€ 88,87" [ref=e136]
+                    - cell "21%" [ref=e137]
+                    - cell "€ 2.132,99" [ref=e138]
+                  - row "Arbeid bestrating 6 dagdeel € 254,10 21% € 1.524,60" [ref=e139]:
+                    - cell "Arbeid bestrating" [ref=e140]
+                    - cell "6" [ref=e141]
+                    - cell "dagdeel" [ref=e142]
+                    - cell "€ 254,10" [ref=e143]
+                    - cell "21%" [ref=e144]
+                    - cell "€ 1.524,60" [ref=e145]
+                  - row "Haag planten, Carpinus betulus 17 stuks € 20,70 9% € 351,88" [ref=e146]:
+                    - cell "Haag planten, Carpinus betulus" [ref=e147]
+                    - cell "17" [ref=e148]
+                    - cell "stuks" [ref=e149]
+                    - cell "€ 20,70" [ref=e150]
+                    - cell "9%" [ref=e151]
+                    - cell "€ 351,88" [ref=e152]
+                  - row "Grondwerk en afvoer Stelpost Geschat bedrag, wordt op nacalculatie afgerekend. 1 post € 484,00 21% € 484,00" [ref=e153]:
+                    - cell "Grondwerk en afvoer Stelpost Geschat bedrag, wordt op nacalculatie afgerekend." [ref=e154]:
+                      - text: Grondwerk en afvoer
+                      - generic [ref=e155]: Stelpost
+                      - generic [ref=e156]: Geschat bedrag, wordt op nacalculatie afgerekend.
+                    - cell "1" [ref=e157]
+                    - cell "post" [ref=e158]
+                    - cell "€ 484,00" [ref=e159]
+                    - cell "21%" [ref=e160]
+                    - cell "€ 484,00" [ref=e161]
+                  - row "Verlichting Optioneel Telt alleen mee in het totaal als u deze regel kiest. 1 post € 302,50 21% € 302,50" [ref=e162]:
+                    - cell "Verlichting Optioneel Telt alleen mee in het totaal als u deze regel kiest." [ref=e163]:
+                      - text: Verlichting
+                      - generic [ref=e164]: Optioneel
+                      - generic [ref=e165]: Telt alleen mee in het totaal als u deze regel kiest.
+                    - cell "1" [ref=e166]
+                    - cell "post" [ref=e167]
+                    - cell "€ 302,50" [ref=e168]
+                    - cell "21%" [ref=e169]
+                    - cell "€ 302,50" [ref=e170]
+              - generic [ref=e171]:
+                - generic [ref=e172]:
+                  - term [ref=e173]: Totaal excl. btw
+                  - definition [ref=e174]: € 3.745,63
+                  - generic [ref=e175]:
+                    - term [ref=e176]: Btw 21% over € 3.422,80
+                    - definition [ref=e177]: € 718,79
+                  - generic [ref=e178]:
+                    - term [ref=e179]: Btw 9% over € 322,83
+                    - definition [ref=e180]: € 29,05
+                - generic [ref=e181]:
+                  - generic [ref=e182]: Totaal incl. btw
+                  - generic [ref=e183]: € 4.493,47
+                - paragraph [ref=e184]: "Niet meegeteld: optionele regels (samen € 302,50)."
+              - generic [ref=e185]:
+                - heading "Betaling" [level=3] [ref=e186]
+                - table [ref=e187]:
+                  - rowgroup [ref=e188]:
+                    - row "Aanbetaling 30% € 1.348,04 incl. btw" [ref=e189]:
+                      - cell "Aanbetaling" [ref=e190]
+                      - cell "30%" [ref=e191]
+                      - cell "€ 1.348,04 incl. btw" [ref=e192]
+                    - row "Bij oplevering 70% € 3.145,43 incl. btw" [ref=e193]:
+                      - cell "Bij oplevering" [ref=e194]
+                      - cell "70%" [ref=e195]
+                      - cell "€ 3.145,43 incl. btw" [ref=e196]
+                - paragraph [ref=e197]: Betaling binnen 14 dagen na factuurdatum, op IBAN NL91 ABNA 0417 1643 00 t.n.v. Hoveniersbedrijf De Vries.
+              - generic [ref=e198]:
+                - paragraph
+                - paragraph [ref=e199]: Met vriendelijke groet,
+              - generic [ref=e200]:
+                - generic [ref=e202]:
+                  - strong [ref=e203]: Jan de Vries
+                  - generic [ref=e204]: Eigenaar, Hoveniersbedrijf De Vries
+                - generic [ref=e205]:
+                  - heading "Akkoord opdrachtgever" [level=3] [ref=e206]
+                  - paragraph [ref=e207]: Ik ga akkoord met deze offerte van € 4.493,47 en de algemene voorwaarden.
+                  - generic [ref=e208]:
+                    - generic [ref=e209]: Naam
+                    - generic [ref=e210]: Datum en tijd
+                    - generic [ref=e211]: Handtekening
+              - generic [ref=e212]:
+                - text: Hoveniersbedrijf De Vries · KvK 12345678 · Btw-id NL123456789B01 · IBAN NL91 ABNA 0417 1643 00 · 06 12345678 · jan@devries-hoveniers.nl
+                - generic [ref=e213]: Offerte 2026-0115 · Pagina 1 van 1
+            - complementary "Aanpassen" [ref=e214]:
+              - heading "Offerte" [level=2] [ref=e216]
+              - generic [ref=e217]:
+                - paragraph [ref=e218]: Deze versie is verstuurd. Maak een nieuwe versie om te wijzigen.
+                - generic [ref=e219]:
+                  - heading "Activiteit" [level=3] [ref=e220]
+                  - list [ref=e221]:
+                    - listitem [ref=e222]: Als verstuurd gemarkeerd · 13 okt, 18:26
+  - alert [ref=e223]
+```

@@ -1,0 +1,128 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Direct naar de inhoud" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - navigation [ref=e5]:
+        - link "Kostenplan" [ref=e6] [cursor=pointer]:
+          - /url: /dashboard
+          - text: Kostenplan
+        - link "Overzicht" [ref=e8] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e9]
+          - text: Overzicht
+        - link "Rekentools" [ref=e14] [cursor=pointer]:
+          - /url: /dashboard/tools
+          - img [ref=e15]
+          - text: Rekentools
+        - link "Leads" [ref=e17] [cursor=pointer]:
+          - /url: /dashboard/leads
+          - img [ref=e18]
+          - text: Leads
+        - link "Profiel" [ref=e23] [cursor=pointer]:
+          - /url: /dashboard/profiel
+          - img [ref=e25]
+          - text: Profiel
+    - generic [ref=e29]:
+      - banner [ref=e30]:
+        - generic [ref=e31]:
+          - button "Bedrijf wisselen" [ref=e32] [cursor=pointer]:
+            - generic [ref=e33]: Hoveniersbedrijf De Vries
+            - img [ref=e34]
+          - 'button "Uitleg: Bedrijf wisselen" [ref=e37]':
+            - img [ref=e38]
+        - button "Schakel naar donkere modus" [ref=e41] [cursor=pointer]:
+          - img [ref=e42]
+        - button "Uitloggen" [ref=e45] [cursor=pointer]:
+          - img [ref=e46]
+          - generic [ref=e49]: Uitloggen
+      - main [ref=e50]:
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - link "Profiel" [ref=e54] [cursor=pointer]:
+              - /url: /dashboard/profiel
+              - img [ref=e55]
+              - text: Profiel
+            - heading "Abonnement" [level=1] [ref=e57]
+          - generic [ref=e58]:
+            - list [ref=e61]:
+              - listitem [ref=e62]:
+                - generic [ref=e63]:
+                  - img [ref=e65]
+                  - generic [ref=e67]:
+                    - generic [ref=e68]: Abonnement
+                    - generic [ref=e69]: Pro · actief
+            - 'heading "Kies je pakket Uitleg: Wisselen van abonnement" [level=2] [ref=e70]':
+              - text: Kies je pakket
+              - 'button "Uitleg: Wisselen van abonnement" [ref=e72]':
+                - img [ref=e73]
+            - generic [ref=e76]:
+              - generic [ref=e77]:
+                - button "Maandelijks" [ref=e78] [cursor=pointer]
+                - button "Jaarlijks tot 16% korting" [ref=e79] [cursor=pointer]:
+                  - text: Jaarlijks
+                  - generic [ref=e80]: tot 16% korting
+              - generic [ref=e81]:
+                - generic [ref=e82]:
+                  - generic [ref=e83]:
+                    - heading "Gratis" [level=3] [ref=e84]
+                    - generic [ref=e86]: € 0,00
+                    - paragraph [ref=e87]: Altijd gratis, geen creditcard nodig
+                  - list [ref=e88]:
+                    - listitem [ref=e89]:
+                      - img [ref=e90]
+                      - text: Eigen rekentool voor je klantenportaal
+                    - listitem [ref=e92]:
+                      - img [ref=e93]
+                      - text: Tot 10 onderdelen
+                    - listitem [ref=e95]:
+                      - img [ref=e96]
+                      - text: Alle kosteninstellingen (arbeid, transport, materiaal, btw)
+                    - listitem [ref=e98]:
+                      - img [ref=e99]
+                      - text: “Powered by Kostenplan”-badge op je portaal
+                  - button "Downgrade naar Gratis" [ref=e101] [cursor=pointer]
+                - generic [ref=e102]:
+                  - generic [ref=e103]: Meest gekozen
+                  - generic [ref=e104]:
+                    - heading "Plus" [level=3] [ref=e105]
+                    - generic [ref=e106]:
+                      - generic [ref=e107]: € 29,00
+                      - generic [ref=e108]: / maand
+                  - list [ref=e109]:
+                    - listitem [ref=e110]:
+                      - img [ref=e111]
+                      - text: Alles van Gratis
+                    - listitem [ref=e113]:
+                      - img [ref=e114]
+                      - text: Onbeperkt aantal onderdelen
+                    - listitem [ref=e116]:
+                      - img [ref=e117]
+                      - text: Eigen logo en merkkleuren, geen badge
+                    - listitem [ref=e119]:
+                      - img [ref=e120]
+                      - text: “Vraag offerte aan”-knop voor leads
+                  - button "Kies Plus" [ref=e123] [cursor=pointer]
+                - generic [ref=e124]:
+                  - generic [ref=e125]: Jouw pakket
+                  - generic [ref=e126]:
+                    - heading "Pro" [level=3] [ref=e127]
+                    - generic [ref=e128]:
+                      - generic [ref=e129]: € 69,00
+                      - generic [ref=e130]: / maand
+                  - list [ref=e131]:
+                    - listitem [ref=e132]:
+                      - img [ref=e133]
+                      - text: Alles van Plus
+                    - listitem [ref=e135]:
+                      - img [ref=e136]
+                      - text: Rekentool insluiten via iframe op je eigen website
+                    - listitem [ref=e138]:
+                      - img [ref=e139]
+                      - text: Prioriteit bij support
+                  - button "Wijzig naar maandelijks" [ref=e142] [cursor=pointer]
+  - alert [ref=e143]
+```

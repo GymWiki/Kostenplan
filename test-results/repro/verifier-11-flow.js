@@ -1,0 +1,41 @@
+const k = require("/home/user/Kostenplan/scripts/test/agent-lib.js");
+(async () => {
+  const s = await k.open({ agent: "verifier-11", gebruiker: "a1", viewport: "desktop", pad: null });
+  const p = s.page;
+  await s.goto("/dashboard/facturen/" + s.seed.a1.facturen.concept);
+  console.log("url", p.url());
+  await p.getByRole("button", { name: /Definitief maken/ }).first().click();
+  await p.waitForTimeout(1000);
+  await s.scherm("dialoog1");
+  console.log("dialoog:", (await p.getByRole("dialog").innerText().catch(()=>"geen dialog")).slice(0,400));
+  await p.getByRole("button", { name: /Definitief maken/ }).last().click();
+  await p.waitForTimeout(3000);
+  await s.scherm("na-definitief");
+  console.log("dialoog2:", (await p.getByRole("dialog").innerText().catch(()=>"geen dialog")).slice(0,500));
+  console.log("console:", s.consoleFouten);
+  console.log("status span:", await p.locator('[role=status]').allInnerTexts());
+  // sluit dialoog
+  await p.keyboard.press("Escape"); await p.waitForTimeout(1000);
+  console.log("kop status:", await p.locator('[role=status]').allInnerTexts());
+  console.log("beheer:", (await p.locator('section[aria-label="Beheer van deze factuur"]').innerText().catch(()=>"geen beheer")).replace(/\n+/g," | ").slice(0,300));
+  await s.scherm("kop");
+  // betaling
+  await p.getByRole("button", { name: /Betaling registreren/ }).first().click();
+  const inp = p.getByLabel(/Bedrag/i).first();
+  console.log("default:", await inp.inputValue());
+  await inp.fill("40,00");
+  await p.getByRole("button", { name: /Betaling opslaan/ }).click();
+  await p.waitForTimeout(3000);
+  console.log("na opslaan:", (await p.locator('section[aria-label="Beheer van deze factuur"]').innerText()).replace(/\n+/g," | ").slice(0,300));
+  await p.getByRole("button", { name: /Verwijderen/ }).first().click();
+  await p.waitForTimeout(800);
+  await s.scherm("verwijder-dialoog");
+  const d = p.getByRole("alertdialog").or(p.getByRole("dialog"));
+  console.log("verwijderdialoog:", (await d.innerText()).slice(0,200));
+  await d.getByRole("button", { name: /Verwijder/ }).last().click();
+  await p.waitForTimeout(4000);
+  console.log("na verwijderen:", (await p.locator('section[aria-label="Beheer van deze factuur"]').innerText()).replace(/\n+/g," | ").slice(0,300));
+  await p.reload({waitUntil:"networkidle"});
+  console.log("na herladen:", (await p.locator('section[aria-label="Beheer van deze factuur"]').innerText()).replace(/\n+/g," | ").slice(0,300));
+  await s.sluit();
+})().catch((e) => { console.error(e); process.exit(1); });

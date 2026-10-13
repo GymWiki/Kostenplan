@@ -1,0 +1,81 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Direct naar de inhoud" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - heading "Offerte 2026-0102" [level=1] [ref=e6]
+      - link "Terug (Offerte 2026-0102)" [ref=e7] [cursor=pointer]:
+        - /url: /dashboard/leads
+        - img [ref=e8]
+        - generic [ref=e10]: Offerte 2026-0102
+      - status [ref=e12]:
+        - img [ref=e13]
+        - text: Verstuurd
+    - main [ref=e15]:
+      - generic [ref=e17]:
+        - status [ref=e18]:
+          - generic [ref=e19]: Versie 1 is verstuurd en kan niet meer worden gewijzigd.
+          - button "Nieuwe versie maken" [ref=e20] [cursor=pointer]:
+            - img [ref=e21]
+            - text: Nieuwe versie maken
+        - status [ref=e24]:
+          - generic [ref=e25]: De klant heeft al een week niet gereageerd.
+          - button "Herinnering sturen" [ref=e26] [cursor=pointer]
+        - radiogroup "Weergave" [ref=e27]:
+          - radio "Bewerken" [checked] [ref=e28] [cursor=pointer]
+          - radio "Voorbeeld" [ref=e29] [cursor=pointer]
+        - list [ref=e30]:
+          - listitem [ref=e31]:
+            - button "Klant Vera Verstuurd · Utrecht" [ref=e32] [cursor=pointer]:
+              - generic [ref=e33]:
+                - generic [ref=e34]: Klant
+                - generic [ref=e35]: Vera Verstuurd · Utrecht
+              - img [ref=e36]
+          - listitem [ref=e38]:
+            - button "Onderdelen 1 sectie · 5 regels · € 4.493,47" [ref=e39] [cursor=pointer]:
+              - generic [ref=e40]:
+                - generic [ref=e41]: Onderdelen
+                - generic [ref=e42]: 1 sectie · 5 regels · € 4.493,47
+              - img [ref=e43]
+          - listitem [ref=e45]:
+            - button "Onderwerp en teksten Aanleg tuin" [ref=e46] [cursor=pointer]:
+              - generic [ref=e47]:
+                - generic [ref=e48]: Onderwerp en teksten
+                - generic [ref=e49]: Aanleg tuin
+              - img [ref=e50]
+          - listitem [ref=e52]:
+            - button "Voorwaarden 0 voorwaarden" [ref=e53] [cursor=pointer]:
+              - generic [ref=e54]:
+                - generic [ref=e55]: Voorwaarden
+                - generic [ref=e56]: 0 voorwaarden
+              - img [ref=e57]
+          - listitem [ref=e59]:
+            - button "Betaling en planning 30% / 70%" [ref=e60] [cursor=pointer]:
+              - generic [ref=e61]:
+                - generic [ref=e62]: Betaling en planning
+                - generic [ref=e63]: 30% / 70%
+              - img [ref=e64]
+          - listitem [ref=e66]:
+            - button "Nummer en datums Geldig tot 07-11-2026" [ref=e67] [cursor=pointer]:
+              - generic [ref=e68]:
+                - generic [ref=e69]: Nummer en datums
+                - generic [ref=e70]: Geldig tot 07-11-2026
+              - img [ref=e71]
+        - generic [ref=e74]:
+          - heading "Activiteit" [level=3] [ref=e75]
+          - list [ref=e76]:
+            - listitem [ref=e77]: Als verstuurd gemarkeerd · 13 okt, 18:26
+        - link "PDF bekijken" [ref=e78] [cursor=pointer]:
+          - /url: /api/offertes/cmv6w7y2r001kfg7dazqti3yp/pdf?versie=1
+          - img [ref=e79]
+          - text: PDF bekijken
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - generic [ref=e85]: Totaal incl. btw
+            - generic [ref=e86]: € 4.493,47
+          - button "Nieuwe versie" [ref=e87] [cursor=pointer]
+  - alert [ref=e88]
+```

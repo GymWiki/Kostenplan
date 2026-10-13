@@ -1,0 +1,228 @@
+[
+ {
+  "id": "copy-auditor-1-14",
+  "agent": "copy-auditor-1",
+  "area": "copy",
+  "title": "Privacy-pagina heet 'Privacyverklaring' in de footer en 'Privacybeleid' op de pagina",
+  "url": "/privacybeleid",
+  "viewport": "1440x900",
+  "user": "anoniem",
+  "steps": [
+   "Lees de footer op een publieke pagina",
+   "Open /privacybeleid"
+  ],
+  "expected": "Zelfde naam voor link en pagina",
+  "actual": "Footer: \"Privacyverklaring\"; pagina-titel \"Privacybeleid · Kostenplan\" en kop \"Privacybeleid Kostenplan\"",
+  "screenshot": "",
+  "console_errors": [],
+  "confidence": 0.6,
+  "bewijs": "test-results/copy-dump.txt"
+ },
+ {
+  "id": "copy-auditor-1-15",
+  "agent": "copy-auditor-1",
+  "area": "copy",
+  "title": "Hoofdlettergebruik 'Algemene Voorwaarden' in titel/kop vs 'Algemene voorwaarden' in de footer",
+  "url": "/algemene-voorwaarden",
+  "viewport": "1440x900",
+  "user": "anoniem",
+  "steps": [
+   "Open /algemene-voorwaarden",
+   "Vergelijk titel/kop met de footer-link"
+  ],
+  "expected": "Zelfde schrijfwijze",
+  "actual": "titel \"Algemene Voorwaarden · Kostenplan\", kop \"Algemene Voorwaarden Kostenplan\"; footer \"Algemene voorwaarden\"",
+  "screenshot": "",
+  "console_errors": [],
+  "confidence": 0.45,
+  "bewijs": "test-results/copy-dump.txt"
+ },
+ {
+  "id": "copy-auditor-1-16",
+  "agent": "copy-auditor-1",
+  "area": "copy",
+  "title": "Factuurbedrag op de publieke factuur zonder € en zonder duizendtalscheiding",
+  "url": "/f/K_OUEbC_cPu_B4ZKN7XmDmgc35vy3Y0Q",
+  "viewport": "1440x900",
+  "user": "anoniem",
+  "steps": [
+   "Open factuurlink /f/<token>",
+   "Lees het veld 'Bedrag' en de zin eronder"
+  ],
+  "expected": "Zelfde getalnotatie als de rest van de pagina",
+  "actual": "veld Bedrag: \"5037,97\"; elders op dezelfde pagina: \"Graag € 5.037,97 betalen vóór 23 oktober 2026.\"",
+  "screenshot": "",
+  "console_errors": [],
+  "confidence": 0.55,
+  "bewijs": "test-results/copy-dump.txt"
+ },
+ {
+  "id": "copy-auditor-1-17",
+  "agent": "copy-auditor-1",
+  "area": "copy",
+  "title": "Datumnotatie wisselt tussen desktop en mobiel",
+  "url": "/dashboard/leads/cmv6wsvcv001g9c7dbbuz10jc/offerte",
+  "viewport": "412x915",
+  "user": "a1",
+  "steps": [
+   "Open offerte op mobiel: lees 'Datums en btw'",
+   "Vergelijk met desktop: 'Geldig tot 7 november 2026'"
+  ],
+  "expected": "Eén datumnotatie",
+  "actual": "Mobiel: \"Geldig tot 07-11-2026\", \"Vervalt 23-10-2026\"; desktop: \"7 november 2026\"",
+  "screenshot": "",
+  "console_errors": [],
+  "confidence": 0.5,
+  "bewijs": "test-results/copy-dump.txt"
+ },
+ {
+  "id": "copy-auditor-1-18",
+  "agent": "copy-auditor-1",
+  "area": "bug",
+  "title": "Route /dashboard/profiel/meldingen toont 'Pagina niet gevonden'",
+  "url": "/dashboard/profiel/meldingen",
+  "viewport": "1440x900 en 412x915",
+  "user": "a1",
+  "steps": [
+   "Log in als a1",
+   "Ga naar /dashboard/profiel/meldingen (desktop en mobiel)",
+   "Het profielmenu toont geen link naar Meldingen"
+  ],
+  "expected": "Meldingen-pagina of geen route",
+  "actual": "\"Pagina niet gevonden\" / \"Deze pagina bestaat niet (meer)…\"",
+  "screenshot": "",
+  "console_errors": [],
+  "confidence": 0.5,
+  "bewijs": "test-results/copy-dump.txt"
+ },
+ {
+  "id": "copy-auditor-1-19",
+  "agent": "copy-auditor-1",
+  "area": "copy",
+  "title": "Engels 'embed' en 'iframe' naast 'insluiten'; code is geen iframe",
+  "url": "/dashboard/tools/cmv6wsv7800039c7dyyrhvqtv/publiceren",
+  "viewport": "1440x900",
+  "user": "a1",
+  "steps": [
+   "Open tab Publiceren van een rekentool",
+   "Lees de kopjes en de instructie"
+  ],
+  "expected": "Consistente, Nederlandse termen; juiste technische benaming",
+  "actual": "\"Kopieer embedcode\", \"Open ... het insluiten-tabblad\" (op andere pagina), \"plak de code in een embed-blok\", \"Hoe de iframe eruitziet\"; de code is een <div> met een <script>, geen iframe",
+  "screenshot": "",
+  "console_errors": [],
+  "confidence": 0.4,
+  "bewijs": "test-results/copy-dump.txt"
+ },
+ {
+  "id": "copy-auditor-1-20",
+  "agent": "copy-auditor-1",
+  "area": "copy",
+  "title": "Wisselende aanspreekvorm (u / je) in standaardteksten van de rekentool-editor",
+  "url": "/dashboard/tools/cmv6wsv7800039c7dyyrhvqtv?paneel=uiterlijk",
+  "viewport": "1440x900",
+  "user": "a1",
+  "steps": [
+   "Open Uiterlijk van een rekentool",
+   "Lees de placeholders van de teksten"
+  ],
+  "expected": "Eén aanspreekvorm binnen de app",
+  "actual": "placeholders: \"Bereken uw project met {bedrijfsnaam}…\", \"Fijn dat u een offerte overweegt!…\", \"Bedankt voor uw aanvraag!…\"; de rest van de app gebruikt \"je\"",
+  "screenshot": "",
+  "console_errors": [],
+  "confidence": 0.35,
+  "bewijs": "test-results/copy-dump.txt"
+ },
+ {
+  "id": "copy-auditor-1-21",
+  "agent": "copy-auditor-1",
+  "area": "copy",
+  "title": "Factuurstatus 'Verstuurd' dubbel in de kop",
+  "url": "/dashboard/facturen/cmv6wsvig002q9c7dgsgo3m5o",
+  "viewport": "1440x900",
+  "user": "a1",
+  "steps": [
+   "Open definitieve factuur F2026-0001 (a1, desktop)",
+   "Lees de koptekst"
+  ],
+  "expected": "Eén statusweergave",
+  "actual": "\"Factuur F2026-0001\" gevolgd door \"Verstuurd\" en nogmaals \"Verstuurd\"",
+  "screenshot": "",
+  "console_errors": [],
+  "confidence": 0.4,
+  "bewijs": "test-results/copy-dump.txt"
+ },
+ {
+  "id": "copy-auditor-1-22",
+  "agent": "copy-auditor-1",
+  "area": "ux",
+  "title": "Totaalbedrag in beheerpaneel toonde eenmaal € 0,00 (niet opnieuw gezien)",
+  "url": "/dashboard/facturen/cmv6wsvig002q9c7dgsgo3m5o",
+  "viewport": "1440x900",
+  "user": "a1",
+  "steps": [
+   "Open definitieve factuur F2026-0001 en lees het beheerpaneel na networkidle"
+  ],
+  "expected": "Totaal € 5.037,97, Openstaand € 5.037,97",
+  "actual": "Eerste keer: \"Totaal € 0,00 Openstaand · vervalt 23 oktober 2026\"; tweede keer (zelfde pagina): \"Totaal € 5.037,97 Betaald € 0,00 Openstaand\"",
+  "screenshot": "",
+  "console_errors": [],
+  "confidence": 0.3,
+  "bewijs": "test-results/copy-dump.txt"
+ },
+ {
+  "id": "copy-auditor-1-23",
+  "agent": "copy-auditor-1",
+  "area": "copy",
+  "title": "Titel van de 404-pagina voor een ongeldige offertelink luidt 'Jouw offerte'",
+  "url": "/o/ongeldige-token-123",
+  "viewport": "1440x900",
+  "user": "anoniem",
+  "steps": [
+   "Open /o/ongeldige-token-123 (anoniem)"
+  ],
+  "expected": "Titel passend bij 'pagina niet gevonden'",
+  "actual": "<title>Jouw offerte · Kostenplan</title> met de tekst \"Pagina niet gevonden\"",
+  "screenshot": "",
+  "console_errors": [],
+  "confidence": 0.35,
+  "bewijs": "test-results/copy-dump.txt"
+ },
+ {
+  "id": "copy-auditor-1-24",
+  "agent": "copy-auditor-1",
+  "area": "copy",
+  "title": "Offerte-regels: unit-prijs x aantal wijkt af van getoond bedrag",
+  "url": "/o/jmTRwYJPcVOzoCMQbeODcwpJSwjv_Vzt",
+  "viewport": "1440x900",
+  "user": "anoniem",
+  "steps": [
+   "Open online offerte 2026-0102",
+   "Reken de regels na"
+  ],
+  "expected": "Regeltotaal = aantal x prijs",
+  "actual": "\"24 m² · € 88,87 · € 2.132,99\" (24 x 88,87 = 2.132,88); \"17 stuks · € 20,70 · € 351,88\" (17 x 20,70 = 351,90)",
+  "screenshot": "",
+  "console_errors": [],
+  "confidence": 0.35,
+  "bewijs": "test-results/copy-dump.txt"
+ },
+ {
+  "id": "copy-auditor-1-25",
+  "agent": "copy-auditor-1",
+  "area": "copy",
+  "title": "Kolomkop 'Staal' op de onderdelen-tabel is onduidelijk",
+  "url": "/",
+  "viewport": "1440x900",
+  "user": "anoniem",
+  "steps": [
+   "Open homepage, sectie 'Onderdelen'"
+  ],
+  "expected": "Duidelijke kolomkop",
+  "actual": "\"Pos. | Staal | Onderdeel | Rekenmethode | Voorbeeld\"",
+  "screenshot": "",
+  "console_errors": [],
+  "confidence": 0.3,
+  "bewijs": "test-results/copy-dump.txt"
+ }
+]

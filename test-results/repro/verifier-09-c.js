@@ -1,0 +1,22 @@
+const k = require("/home/user/Kostenplan/scripts/test/agent-lib.js");
+const txt = async (p, n=3500) => (await p.innerText("body")).replace(/\n+/g, " | ").slice(0, n);
+(async () => {
+  const s = await k.open({ agent: "verifier-09", gebruiker: "a3", viewport: "desktop", pad: "/dashboard/leads" });
+  const p = s.page; await p.waitForTimeout(1000);
+  await p.getByText("Ahmed Akkoord").first().click();
+  await p.waitForTimeout(1200);
+  console.log("DRAWER:", await txt(p, 3500));
+  await s.scherm("drawer");
+  await p.getByRole("button", { name: /Factuur maken/ }).first().click();
+  await p.waitForTimeout(600);
+  console.log("SHEET:", await txt(p, 800));
+  await s.scherm("sheet");
+  await p.getByRole("button", { name: "Termijnfacturen volgens de offerte" }).click();
+  await p.waitForURL(/facturen\//, { timeout: 20000 });
+  await p.waitForTimeout(1500);
+  console.log("URL", p.url());
+  console.log("FACTUUR:", await txt(p, 5000));
+  await s.scherm("factuur-concept");
+  console.log("ERR", s.consoleFouten);
+  await s.sluit();
+})();
