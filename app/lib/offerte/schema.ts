@@ -17,6 +17,7 @@ const regel = z.object({
   soort: z.enum(["arbeid", "materiaal", "planten", "transport", "overig"]),
   kortingPct: z.number().min(0).max(100).optional(),
   toelichting: tekst(300).optional(),
+  label: z.enum(["meerwerk", "reeds-gefactureerd", "stelpost-open"]).optional(),
 });
 
 const afzender = z.object({
