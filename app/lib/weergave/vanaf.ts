@@ -13,8 +13,8 @@ export function heeftVanafPrijs(product: Pick<BronProduct, "sjabloon">): boolean
 }
 
 // De invoer voor één onderdeel met een gegeven maat (in de eenheid van het onderdeel): hoeveelheid, of 1 m breed.
-export function maatInvoer(product: Pick<BronProduct, "sjabloon">, maat: number) {
-  if (product.sjabloon === "AFMETINGEN") return { sjabloonInvoer: { lengte: maat, breedte: 1, diepte: 1 } as Record<string, unknown> };
+export function maatInvoer(product: Pick<BronProduct, "sjabloon">, maat: number): { hoeveelheid?: number; sjabloonInvoer?: Record<string, unknown> } {
+  if (product.sjabloon === "AFMETINGEN") return { sjabloonInvoer: { lengte: maat, breedte: 1, diepte: 1 } };
   return { hoeveelheid: maat };
 }
 
@@ -42,8 +42,8 @@ export function vanafPrijsCenten(product: BronProduct, kosten: CalcCostSettings,
   const m = maatInvoer(product, maat);
   const invoer = invoerVanKlant({
     producten: [product],
-    hoeveelheden: "hoeveelheid" in m ? { [product.id]: m.hoeveelheid } : undefined,
-    sjabloonInvoer: "sjabloonInvoer" in m ? { [product.id]: m.sjabloonInvoer } : undefined,
+    hoeveelheden: m.hoeveelheid !== undefined ? { [product.id]: m.hoeveelheid } : undefined,
+    sjabloonInvoer: m.sjabloonInvoer ? { [product.id]: m.sjabloonInvoer } : undefined,
     materiaalKeuzes: goedkoopsteMaterialen(product),
   });
   const r = berekenPrijs(config, invoer);
