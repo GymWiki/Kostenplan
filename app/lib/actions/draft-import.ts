@@ -1,4 +1,5 @@
 "use server";
+import { NIEUWE_REKENTOOL_WEERGAVE } from "@/app/lib/weergave/config";
 
 import { revalidatePath } from "next/cache";
 import { canCreateTool, requireActiveCompany, requireUser } from "@/app/lib/dal";
@@ -97,6 +98,7 @@ export async function importDraftAction(ruw: unknown, modus?: "toevoegen" | "weg
         naam: draft.calculator.name,
         slug: await generateUniqueToolSlug(company.id, draft.calculator.name, tx),
         importSleutel: draft.id,
+        weergaveConfig: NIEUWE_REKENTOOL_WEERGAVE,
         order: await tx.tool.count({ where: { companyId: company.id } }),
         costSettings: {
           create: {

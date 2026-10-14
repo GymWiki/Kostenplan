@@ -8,7 +8,7 @@ import { generateUniqueToolSlug } from "@/app/lib/slug";
 import { prisma } from "@/app/lib/prisma";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
 import type { Prisma } from "@/app/generated/prisma/client";
-import { parseWeergaveConfig } from "@/app/lib/weergave/config";
+import { NIEUWE_REKENTOOL_WEERGAVE, parseWeergaveConfig } from "@/app/lib/weergave/config";
 
 // Acties van de rekentool-editor en het Rekentools-overzicht. Retourneren
 // { ok } i.p.v. te redirecten, zodat de UI zelf een melding met "Ongedaan
@@ -206,7 +206,7 @@ export async function maakRekentoolAction(naam: string): Promise<{ ok: true; id:
     select: { arbeidStapEenheid: true, arbeidTariefUur: true, arbeidTariefDagdeel: true, arbeidTariefDag: true, voorrijTarief: true, transportTarief: true },
   });
   const tool = await prisma.tool.create({
-    data: { companyId: company.id, naam: schoon, icoon: "", slug, order, costSettings: { create: bestaand ?? {} }, branding: { create: {} } },
+    data: { companyId: company.id, naam: schoon, icoon: "", slug, order, weergaveConfig: NIEUWE_REKENTOOL_WEERGAVE, costSettings: { create: bestaand ?? {} }, branding: { create: {} } },
     select: { id: true },
   });
   revalidatePath("/dashboard/tools");

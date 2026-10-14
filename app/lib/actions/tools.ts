@@ -1,4 +1,5 @@
 "use server";
+import { NIEUWE_REKENTOOL_WEERGAVE } from "@/app/lib/weergave/config";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -62,6 +63,8 @@ export async function createToolAction(_prevState: ToolFormState, formData: Form
       icoon: parsed.data.icoon,
       slug,
       order: count,
+      // Nieuwe rekentools beginnen met tegels; bestaande rekentools blijven "Alles op één pagina" tot de hovenier zelf kiest.
+      weergaveConfig: NIEUWE_REKENTOOL_WEERGAVE,
       costSettings: { create: {} },
     },
   });
@@ -307,6 +310,7 @@ export async function duplicateToolAction(formData: FormData) {
       order,
       status: "CONCEPT",
       resultaatConfig: origineel.resultaatConfig as Prisma.InputJsonValue,
+      weergaveConfig: (origineel.weergaveConfig ?? {}) as Prisma.InputJsonValue,
       leadFormConfig: origineel.leadFormConfig as Prisma.InputJsonValue,
       branding: origineel.branding
         ? {
