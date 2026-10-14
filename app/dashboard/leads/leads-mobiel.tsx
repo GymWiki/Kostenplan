@@ -167,7 +167,7 @@ export function LeadsMobiel({
                     <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
                       <span className={cn("inline-block rounded-full px-2 py-0.5 text-xs font-semibold", nieuw ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground")}>{FASE_LABEL[l.voortgang.fase]}</span>
                       {l.voortgang.teLaatDagen ? <span className="inline-block rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">{l.voortgang.teLaatDagen} d te laat</span> : null}
-                      {l.offerte && <OfferteStatusBadge offerte={l.offerte} />}
+                      {l.offerte && <OfferteStatusBadge offerte={l.offerte} fase={l.voortgang.fase} />}
                       {l.offerte && !l.offerte.reactieGezien && <span className="animate-soft-pulse h-2 w-2 rounded-full bg-accent" aria-label="Klant heeft gereageerd" />}
                     </span>
                   </span>

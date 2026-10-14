@@ -169,7 +169,8 @@ export function valtOnderFilter(u: FaseUitkomst, f: FaseFilter): boolean {
     case "offerte":
       return u.fase === "in-contact" || u.fase === "offerte-verstuurd";
     case "akkoord":
-      return u.fase === "akkoord" || u.fase === "ingepland" || u.fase === "opgeleverd";
+      // Alleen leads die nog ingepland moeten worden; ingepland en opgeleverd staan onder "Te factureren" zolang er geen eindfactuur is.
+      return u.fase === "akkoord";
     case "te-factureren":
       return u.teFactureren;
     case "openstaand":

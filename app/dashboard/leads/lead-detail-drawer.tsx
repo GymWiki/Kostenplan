@@ -180,7 +180,7 @@ export function LeadDetailDrawer({
                   <LinkButton href={`/dashboard/leads/${lead.id}/offerte`} variant="secondary" className="w-full max-md:h-12">
                     <FileText className="h-4 w-4" />
                     Offerte bekijken/bewerken
-                    <OfferteStatusBadge offerte={lead.offerte} />
+                    <OfferteStatusBadge offerte={lead.offerte} fase={lead.voortgang.fase} />
                   </LinkButton>
                 )}
                 <Button
@@ -198,7 +198,7 @@ export function LeadDetailDrawer({
                 <LinkButton href={`/dashboard/leads/${lead.id}/offerte`} variant="secondary" className="w-full max-md:h-12">
                   <FileText className="h-4 w-4" />
                   Offerte bekijken/bewerken
-                  <OfferteStatusBadge offerte={lead.offerte} />
+                  <OfferteStatusBadge offerte={lead.offerte} fase={lead.voortgang.fase} />
                 </LinkButton>
                 <button
                   type="button"

@@ -88,4 +88,10 @@ describe("te laat, openstaand en filters", () => {
     expect(volgendeActie(fase({ offerte: offerte("GEACCEPTEERD"), opgeleverdOp: nu }), true)?.soort).toBe("factureren");
     expect(volgendeActie(fase({ offerte: offerte("GEACCEPTEERD"), facturen: [factuur({ status: "BETAALD", openstaandCenten: 0 })] }), true)).toBeNull();
   });
+  it("Akkoord en Te factureren tonen niet dezelfde leads: ingepland en opgeleverd vallen alleen onder Te factureren", () => {
+    const filters = (u: ReturnType<typeof fase>) => FASE_FILTERS.filter((c) => valtOnderFilter(u, c.waarde)).map((c) => c.waarde);
+    expect(filters(fase({ offerte: offerte("GEACCEPTEERD"), ingeplandStartweek: "2026-W45" }))).toEqual(["alle", "te-factureren"]);
+    expect(filters(fase({ offerte: offerte("GEACCEPTEERD"), opgeleverdOp: nu }))).toEqual(["alle", "te-factureren"]);
+    expect(filters(fase({ offerte: offerte("GEACCEPTEERD") }))).toEqual(["alle", "akkoord", "te-factureren"]);
+  });
 });

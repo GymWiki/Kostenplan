@@ -83,8 +83,10 @@ export function LeadVoortgangBlok({ leadId, naam, voortgang: v }: { leadId: stri
       case "factureren":
         return setDialoog("factureren");
       case "factuur-openen":
-      case "herinneren":
         return router.push(`/dashboard/facturen/${a.factuurId}`);
+      case "herinneren":
+        // Opent de factuur met meteen de herinneringsdialoog (niet alleen de factuur).
+        return router.push(`/dashboard/facturen/${a.factuurId}?herinnering=1`);
     }
   }
 

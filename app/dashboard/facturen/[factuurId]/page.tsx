@@ -14,8 +14,9 @@ import { OfferteEditorV2 } from "@/app/components/offerte/offerte-editor-v2";
 export const maxDuration = 60;
 export const metadata: Metadata = { title: "Factuur" };
 
-export default async function FactuurPagina({ params }: { params: Promise<{ factuurId: string }> }) {
+export default async function FactuurPagina({ params, searchParams }: { params: Promise<{ factuurId: string }>; searchParams: Promise<{ herinnering?: string }> }) {
   const { factuurId } = await params;
+  const { herinnering } = await searchParams;
   const { company } = await requireActiveCompany();
   const f = await prisma.factuur.findFirst({
     where: { id: factuurId, companyId: company.id },
@@ -55,6 +56,7 @@ export default async function FactuurPagina({ params }: { params: Promise<{ fact
     <OfferteEditorV2
       offerteId={f.id}
       revisie={f.revisie}
+      startFactuurHerinnering={herinnering === "1" ? beheer?.volgende ?? null : null}
       status="CONCEPT"
       vergrendeld={false}
       begin={inhoud}

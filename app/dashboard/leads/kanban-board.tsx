@@ -172,7 +172,7 @@ function LeadCard({
       <LocatieLabels snapshot={lead.snapshot} className="mt-1.5" />
       {lead.offerte && (
         <div className="mt-1.5">
-          <OfferteStatusBadge offerte={lead.offerte} />
+          <OfferteStatusBadge offerte={lead.offerte} fase={lead.voortgang.fase} />
         </div>
       )}
       <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">

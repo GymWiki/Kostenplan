@@ -50,6 +50,8 @@ type Props = {
   // De huidige versie is als PDF klaargezet om te delen, maar nog niet als verstuurd gemarkeerd.
   deelklaar?: boolean;
   startHerinnering?: boolean;
+  // Factuur: opent meteen de herinneringsdialoog voor deze stap (vanuit "Stuur een herinnering" bij de lead).
+  startFactuurHerinnering?: HerinneringStap | null;
   herinnering?: HerinneringReden | null;
   activiteit?: { id: string; soort: string; tekst: string | null; op: string }[];
   heeftGetekend?: boolean;
@@ -96,7 +98,7 @@ export function OfferteEditorV2(props: Props) {
 
 const GEEN_KEUZE: string[] = [];
 
-function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergrendeld, begin, versies, standaardRegels: startStandaard, btwStandaard, deelklaar = false, startHerinnering = false, herinnering = null, activiteit = [], heeftGetekend = false, gekozenOptioneel = GEEN_KEUZE, factuur: factuurCfg, naVerzenden }: Props & { naVerzenden: () => void }) {
+function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergrendeld, begin, versies, standaardRegels: startStandaard, btwStandaard, deelklaar = false, startHerinnering = false, startFactuurHerinnering = null, herinnering = null, activiteit = [], heeftGetekend = false, gekozenOptioneel = GEEN_KEUZE, factuur: factuurCfg, naVerzenden }: Props & { naVerzenden: () => void }) {
   const router = useRouter();
   const isMobiel = useIsMobiel();
   const [inhoud, setInhoud] = useState<OfferteInhoud>(begin);
@@ -113,7 +115,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
   const [standaardRegels, setStandaardRegels] = useState(startStandaard);
   const client = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [deelModus, setDeelModus] = useState<"offerte" | "herinnering">(startHerinnering ? "herinnering" : "offerte");
-  const [controleOpen, setControleOpen] = useState(startHerinnering);
+  const [controleOpen, setControleOpen] = useState(startHerinnering || Boolean(startFactuurHerinnering));
   const [mobielModus, setMobielModus] = useState<"bewerken" | "voorbeeld">("bewerken");
   const [sheet, setSheet] = useState<null | "klant" | "meta" | "onderdelen" | "voorwaarden" | "betaling" | "teksten">(null);
   const [regelSheet, setRegelSheet] = useState<{ sectieId: string; regelId: string } | null>(null);
@@ -355,7 +357,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
   // Factuur: eerst definitief maken (controle, nummer, vastleggen), daarna delen; een definitieve factuur gaat direct naar het delen.
   const [verwachtNummer, setVerwachtNummer] = useState<string | null>(null);
   const [nieuwNummer, setNieuwNummer] = useState<string | null>(null);
-  const [berichtSoort, setBerichtSoort] = useState<BerichtSoort>("factuur");
+  const [berichtSoort, setBerichtSoort] = useState<BerichtSoort>(startFactuurHerinnering ?? "factuur");
   const stuurHerinnering = (stap: HerinneringStap) => {
     setBerichtSoort(stap);
     openDelen("offerte");

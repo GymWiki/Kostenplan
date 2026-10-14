@@ -114,7 +114,7 @@ export function LeadsTable({
                   <td className="px-4 py-3">
                     {lead.offerte ? (
                       <div className="flex items-center gap-1.5">
-                        <OfferteStatusBadge offerte={lead.offerte} />
+                        <OfferteStatusBadge offerte={lead.offerte} fase={lead.voortgang.fase} />
                         {!lead.offerte.reactieGezien && <span className="animate-soft-pulse h-2 w-2 rounded-full bg-accent" aria-label="Klant heeft gereageerd" />}
                       </div>
                     ) : (
@@ -160,7 +160,7 @@ export function LeadsTable({
                 </div>
                 {lead.offerte ? (
                   <div className="flex items-center gap-1.5">
-                    <OfferteStatusBadge offerte={lead.offerte} />
+                    <OfferteStatusBadge offerte={lead.offerte} fase={lead.voortgang.fase} />
                     {!lead.offerte.reactieGezien && <span className="animate-soft-pulse h-2 w-2 rounded-full bg-accent" aria-label="Klant heeft gereageerd" />}
                   </div>
                 ) : (
