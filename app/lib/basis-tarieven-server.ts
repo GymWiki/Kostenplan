@@ -1,6 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
+import "@/app/lib/zod-nl";
 import { prisma } from "@/app/lib/prisma";
 import { parseGetal } from "@/app/lib/sjablonen";
 import type { ArbeidStapEenheid } from "@/app/generated/prisma/client";

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import "@/app/lib/zod-nl";
 import { requireActiveCompany } from "@/app/lib/dal";
 import { prismaBasis } from "@/app/lib/prisma";
 import { laadOfferteGegevens } from "@/app/lib/offerte/gegevens-server";

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import "@/app/lib/zod-nl";
 import { parseGetal } from "@/app/lib/sjablonen";
 import { nieuweId } from "@/app/lib/draft-id";
 

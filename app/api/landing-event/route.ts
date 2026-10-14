@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
+import "@/app/lib/zod-nl";
 
 export const dynamic = "force-dynamic";
 

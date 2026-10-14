@@ -1,4 +1,5 @@
 import { z } from "zod";
+import "@/app/lib/zod-nl";
 import { BTW_TARIEVEN } from "./btw-config";
 import type { OfferteInhoud } from "./model";
 

@@ -93,15 +93,16 @@ export function MobieleKop({ rechts }: { rechts?: React.ReactNode }) {
             const inhoud = (
               <>
                 <ChevronLeft className="h-6 w-6 shrink-0" aria-hidden="true" />
+                <span className="sr-only">Terug naar </span>
                 <span className={cn("min-w-0 truncate font-bold transition-[font-size] motion-reduce:transition-none", klein ? "text-base" : "text-lg")}>{titel}</span>
               </>
             );
             return onTerug ? (
-              <button type="button" onClick={onTerug} aria-label={`Terug (${titel})`} className={klas}>
+              <button type="button" onClick={onTerug} className={klas}>
                 {inhoud}
               </button>
             ) : (
-              <Link href={terug!} aria-label={`Terug (${titel})`} className={klas} draggable={false}>
+              <Link href={terug!} className={klas} draggable={false}>
                 {inhoud}
               </Link>
             );

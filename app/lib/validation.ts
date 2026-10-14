@@ -1,6 +1,7 @@
 import { pricingInputSchema } from "@/app/lib/pricing/schema";
 import { parseGetal } from "@/app/lib/getal";
 import { z } from "zod";
+import "@/app/lib/zod-nl";
 import { PRODUCT_ICON_NAMES } from "@/app/lib/icons";
 
 // Dutch (and most non-US) mobile keyboards produce a decimal comma, which

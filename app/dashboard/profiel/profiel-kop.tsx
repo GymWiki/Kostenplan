@@ -137,7 +137,6 @@ export function ProfielKop({ actief, domein, bedrijven }: { actief: WisselBedrij
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={`Bedrijf wisselen, huidig: ${actief.naam}`}
         aria-haspopup="dialog"
         aria-expanded={open}
         className="flex min-h-[72px] w-full cursor-pointer items-center gap-4 rounded-xl border border-border bg-card px-4 py-3 text-left hover:bg-secondary/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
@@ -146,6 +145,7 @@ export function ProfielKop({ actief, domein, bedrijven }: { actief: WisselBedrij
         <span className="min-w-0 flex-1">
           <span className="block truncate text-lg font-semibold text-foreground">{actief.naam}</span>
           {domein && <span className="block truncate text-sm text-muted-foreground">{domein}</span>}
+          <span className="sr-only">Bedrijf wisselen</span>
         </span>
         <ChevronsUpDown className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
       </button>
