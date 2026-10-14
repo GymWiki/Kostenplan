@@ -1,3 +1,4 @@
+import { parseWeergaveConfig } from "@/app/lib/weergave/config";
 import { prisma } from "@/app/lib/prisma";
 import { parseLeadFormConfig, parseResultaatConfig } from "@/app/lib/tools";
 import { resolveCostSettings } from "@/app/lib/tools";
@@ -43,6 +44,7 @@ export async function ToolCalculatorPreview({ company, tool }: { company: Compan
       products={products}
       toelichting={parseResultaatConfig(tool.resultaatConfig).toelichting}
       ctaTekst={parseResultaatConfig(tool.resultaatConfig).ctaTekst}
+      weergave={parseWeergaveConfig(tool.weergaveConfig)}
       vraagTelefoon={parseLeadFormConfig(tool.leadFormConfig).vraagTelefoon}
       werkgebied={isActief(werkgebied) ? werkgebied : null}
     />

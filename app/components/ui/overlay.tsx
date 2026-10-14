@@ -44,6 +44,8 @@ export function Overlay({
   ariaLabelledBy,
   backdropClassName = "bg-black/50 backdrop-blur-sm",
   className,
+  portalDoel,
+  zichtbaarGebied,
 }: {
   open: boolean;
   onClose: () => void;
@@ -52,6 +54,12 @@ export function Overlay({
   ariaLabelledBy?: string;
   backdropClassName?: string;
   className?: string;
+  // Waar de overlay in de pagina komt (standaard: het admin-thema of de body). De klant-rekentool geeft hier zijn eigen
+  // schil mee, zodat de merkkleuren (CSS-variabelen) ook in de overlay gelden.
+  portalDoel?: HTMLElement | null;
+  // Alleen voor een rekentool die in een iframe op de site van de hovenier staat: het deel van de iframe dat de bezoeker
+  // nu ziet. De overlay beslaat dan alleen dat deel (anders staat hij ergens in de hoge iframe buiten beeld).
+  zichtbaarGebied?: { top: number; height: number } | null;
 }) {
   const dialoog = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
@@ -115,7 +123,7 @@ export function Overlay({
 
   // Binnen het admin-thema renderen (anders valt de overlay buiten de
   // thema-variabelen van het dashboard).
-  const doel = document.querySelector<HTMLElement>("[data-admin-theme], [data-lp]") ?? document.body;
+  const doel = portalDoel ?? document.querySelector<HTMLElement>("[data-admin-theme], [data-lp]") ?? document.body;
   return createPortal(
     <div
       ref={dialoog}
@@ -124,7 +132,8 @@ export function Overlay({
       tabIndex={-1}
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
-      className={cn("fixed inset-0 z-[100] outline-none", className)}
+      className={cn(zichtbaarGebied ? "absolute inset-x-0 z-[100] outline-none" : "fixed inset-0 z-[100] outline-none", className)}
+      style={zichtbaarGebied ? { top: zichtbaarGebied.top, height: zichtbaarGebied.height } : undefined}
     >
       <button
         type="button"
