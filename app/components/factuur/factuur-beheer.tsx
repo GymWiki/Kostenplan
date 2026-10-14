@@ -54,6 +54,7 @@ const vandaag = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Amste
 export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData; onHerinnering: (stap: HerinneringStap) => void }) {
   const router = useRouter();
   const [bezig, start] = useTransition();
+  const [betalen, setBetalen] = useState(false);
   const [betaalOpen, setBetaalOpen] = useState(false);
   const [creditOpen, setCreditOpen] = useState(false);
   const [weg, setWeg] = useState<string | null>(null);
@@ -84,6 +85,7 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
     if (!p.ok) return setBedragFout(p.fout);
     if (p.centen < 1) return setBedragFout("Vul een bedrag boven € 0,00 in.");
     const c = p.centen;
+    setBetalen(true);
     start(async () => {
       try {
         const r = await registreerBetalingAction({ factuurId: data.id, bedragCenten: c, datum, methode: methode as "OVERBOEKING", notitie, sleutel });
@@ -100,6 +102,9 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
         }
       } catch {
         setFout("Geen verbinding. De betaling is niet opgeslagen; probeer het opnieuw zodra je weer online bent.");
+      } finally {
+        // De knop hangt aan de actie zelf, niet aan de transitie: een trage verversing houdt hem niet vast.
+        setBetalen(false);
       }
     });
   }
@@ -178,7 +183,7 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
         </Field>
         <Field label="Notitie (optioneel)" htmlFor="bt-notitie"><Input id="bt-notitie" value={notitie} onChange={(e) => setNotitie(e.target.value)} /></Field>
         {fout && <p role="alert" className="text-sm text-destructive">{fout}</p>}
-        <Button type="button" onClick={betaal} disabled={bezig}>{bezig ? "Opslaan…" : "Betaling opslaan"}</Button>
+        <Button type="button" onClick={betaal} disabled={betalen}>{betalen ? "Opslaan…" : "Betaling opslaan"}</Button>
       </Sheet>
 
       <Sheet open={creditOpen} onClose={() => { setCreditOpen(false); setFout(null); }} title="Creditnota maken" description="Je maakt een concept-creditnota. Controleer hem en maak hem daarna definitief; de factuur zelf blijft ongewijzigd.">
