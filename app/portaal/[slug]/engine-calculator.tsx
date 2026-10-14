@@ -508,10 +508,10 @@ function ResultaatKaart({
         <CardContent className="flex flex-col gap-4">
           <h3 className="font-semibold text-foreground">Jouw kostenraming</h3>
 
-          {state?.success ? (
-            <p className="rounded-lg bg-[var(--brand-primary)]/10 px-3 py-3 text-sm text-foreground">{bedankTekst}</p>
-          ) : (
+          {(
             <>
+              {/* Na het versturen blijven de prijs en "Bewaar als PDF" staan; alleen het formulier maakt plaats voor de bedanktekst. */}
+              {state?.success && <p role="status" className="rounded-lg bg-[var(--brand-primary)]/10 px-3 py-3 text-sm text-foreground">{bedankTekst}</p>}
               {weergave === "UITGEBREID" && zichtbareRegels.length > 0 && (
                 <div className="flex flex-col gap-2 text-sm tabular-nums">
                   {onderdeelGroepen
@@ -556,7 +556,7 @@ function ResultaatKaart({
                 <p className="rounded-md border border-dashed border-border px-3 py-2 text-center text-xs text-muted-foreground print:hidden">
                   Dit is een voorbeeld — hier kan niemand echt een aanvraag versturen.
                 </p>
-              ) : formOpen ? (
+              ) : formOpen && !state?.success ? (
                 <form action={formAction} noValidate className="flex flex-col gap-3">
                   <input type="hidden" name="snapshot" value={JSON.stringify(snapshot)} />
                   <div className="flex flex-col gap-1.5">
@@ -611,20 +611,20 @@ function ResultaatKaart({
                   </div>
                 </form>
               ) : (
-                <div className="flex flex-col gap-2 print:hidden sm:flex-row">
-                  {magOfferteAanvragen && (
+                <div className="flex flex-col gap-2 print:hidden sm:flex-row sm:flex-wrap">
+                  {magOfferteAanvragen && !state?.success && (
                     <Button
                       type="button"
                       variant="primary"
                       size="lg"
-                      className="w-full border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90 sm:flex-1"
+                      className="w-full whitespace-nowrap border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90 sm:flex-1"
                       onClick={() => setFormOpen(true)}
                     >
                       <Mail className="h-4 w-4" aria-hidden="true" />
                       {ctaTekst}
                     </Button>
                   )}
-                  <Button type="button" variant="ghost" size="lg" className="w-full sm:flex-1" onClick={() => window.print()}>
+                  <Button type="button" variant="ghost" size="lg" className="w-full whitespace-nowrap sm:flex-1" onClick={() => window.print()}>
                     <Printer className="h-4 w-4" aria-hidden="true" />
                     Bewaar als PDF
                   </Button>

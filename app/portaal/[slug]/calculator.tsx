@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseGetal as leesGetal } from "@/app/lib/getal";
+import { MAX_HOEVEELHEID } from "@/app/lib/pricing/rond";
+import { LopendTotaal } from "./lopend-totaal";
 import Link from "next/link";
 import { Minus, Plus, Printer, Mail, Phone, Image as ImageIcon, Check } from "lucide-react";
 import { bedragTop, type Bedrag, type BreakdownRange } from "@/app/lib/calculate";
@@ -1025,6 +1027,7 @@ function Summary({
   heeftOntbrekendeVerplichteMaterialen: boolean;
 }) {
   const [formOpen, setFormOpen] = useState(false);
+  const kaartRef = useRef<HTMLDivElement>(null);
   const testmodus = useEditorHaak() !== null;
   const [state, formAction, pending] = useLeadVersturen({ toolId, bedrijfsnaam, contact, uitgeschakeld: testmodus });
   // Los bijgehouden (niet defaultValue): React reset uncontrolled velden na
@@ -1069,6 +1072,7 @@ function Summary({
 
   return (
     <>
+      <div ref={kaartRef}>
       <Bewerkbaar doel="resultaat" label="Resultaat">
       <Card className="border-[var(--brand-primary)]/30">
         <CardContent className="flex flex-col gap-4">
@@ -1080,12 +1084,14 @@ function Summary({
             <p className="text-sm text-muted-foreground">
               Kies een onderdeel om een schatting te zien.
             </p>
-          ) : state?.success ? (
-            <p className="rounded-lg bg-[var(--brand-primary)]/10 px-3 py-3 text-sm text-foreground">
-              {bedankTekst}
-            </p>
           ) : (
             <>
+              {/* Na het versturen blijven de prijs en "Bewaar als PDF" staan; alleen het aanvraagformulier maakt plaats voor de bedanktekst. */}
+              {state?.success && (
+                <p role="status" className="rounded-lg bg-[var(--brand-primary)]/10 px-3 py-3 text-sm text-foreground">
+                  {bedankTekst}
+                </p>
+              )}
               {rows.length > 0 && (
                 <div className="flex flex-col gap-2 text-sm tabular-nums">
                   {rows.map((row) => (
@@ -1150,7 +1156,7 @@ function Summary({
               )}
 
               <Bewerkbaar doel="aanvraag" label="Aanvraagformulier">
-              {formOpen ? (
+              {formOpen && !state?.success ? (
                 <form
                   action={formAction}
                   onSubmit={testmodus ? (e) => e.preventDefault() : undefined}
@@ -1237,16 +1243,16 @@ function Summary({
                   )}
                 </form>
               ) : (
-                <div className="flex flex-col gap-2 print:hidden sm:flex-row">
+                <div className="flex flex-col gap-2 print:hidden sm:flex-row sm:flex-wrap">
                   {/* Primaire actie eerst (bovenaan op mobiel, voorop in de
                       rij op desktop) — "Bewaar als PDF" is bewust ghost, zo
                       blijft de aandacht op het aanvragen liggen. */}
-                  {magOfferteAanvragen && !aanvraagGeblokkeerd && (
+                  {magOfferteAanvragen && !aanvraagGeblokkeerd && !state?.success && (
                     <Button
                       type="button"
                       variant="primary"
                       size="lg"
-                      className="w-full border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90 sm:flex-1"
+                      className="w-full whitespace-nowrap border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90 sm:flex-1"
                       onClick={() => setFormOpen(true)}
                       disabled={heeftOntbrekendeVerplichteMaterialen}
                     >
@@ -1258,7 +1264,7 @@ function Summary({
                     type="button"
                     variant="ghost"
                     size="lg"
-                    className="w-full sm:flex-1"
+                    className="w-full whitespace-nowrap sm:flex-1"
                     onClick={() => window.print()}
                   >
                     <Printer className="h-4 w-4" />
@@ -1274,6 +1280,8 @@ function Summary({
         </CardContent>
       </Card>
       </Bewerkbaar>
+      </div>
+      {breakdown.heeftSelectie && !adresNog && !state?.success && <LopendTotaal tekst={formatCurrencyRange(breakdown.totaal)} kaartRef={kaartRef} />}
     </>
   );
 }
@@ -1314,17 +1322,32 @@ function DecimalField({
     }
   }
 
+  const [fout, setFout] = useState<string | null>(null);
+
+  // Ongeldige invoer (letters, te groot) wordt gemeld bij het veld; de prijs blijft die van de laatste geldige waarde.
+  // Niets wordt stil afgekapt of op 0 gezet.
   function handleChange(raw: string) {
     setText(raw);
     if (raw.trim() === "") {
+      setFout(null);
       onChange(0);
       return;
     }
-    const parsed = parseDecimal(raw);
-    if (!Number.isNaN(parsed)) {
-      onChange(Math.max(0, parsed));
-    }
+    const r = leesGetal(raw, { soort: "aantal", negatief: false, max: MAX_HOEVEELHEID });
+    if (r.ok) {
+      setFout(null);
+      onChange(r.waarde);
+    } else setFout(r.fout);
   }
 
-  return <DecimalInput value={text} onChange={(e) => handleChange(e.target.value)} {...props} />;
+  return (
+    <>
+      <DecimalInput value={text} onChange={(e) => handleChange(e.target.value)} aria-invalid={fout ? true : undefined} {...props} />
+      {fout && (
+        <p role="alert" className="mt-1 text-sm font-medium text-destructive">
+          {fout}
+        </p>
+      )}
+    </>
+  );
 }
