@@ -44,6 +44,22 @@ export function OnderdeelNaam({
   const startSelectie = useRef(false);
   // Alleen na een tik op de naam selecteren we hier alles; anders zou het wissen van de "eerste keer"-vlag je net getypte tekst opnieuw selecteren.
   const naTik = useRef(false);
+  const herstel = useRef(0);
+  const gemonteerd = useRef(0);
+  const gebruikerBezig = useRef(false);
+  useEffect(() => {
+    gemonteerd.current = Date.now();
+    // Een tik of toets van jou telt altijd als "zelf gedaan": dan herstellen we de focus nooit.
+    const eigen = () => {
+      gebruikerBezig.current = true;
+    };
+    document.addEventListener("pointerdown", eigen, true);
+    document.addEventListener("keydown", eigen, true);
+    return () => {
+      document.removeEventListener("pointerdown", eigen, true);
+      document.removeEventListener("keydown", eigen, true);
+    };
+  }, []);
 
   // Cursor in het veld en de tekst geselecteerd: typen vervangt de naam. (Pas na een korte tel: het paneel of de sheet is dan klaar met openen.)
   useEffect(() => {
@@ -138,6 +154,7 @@ export function OnderdeelNaam({
           onChange={(e) => {
             const nieuw = e.target.value;
             // Je bent aan het typen: de "eerste keer"-focus is gelukt.
+            gebruikerBezig.current = true;
             onGefocust?.();
             setTekst(nieuw);
             if (nieuw.trim() === "") {
@@ -152,6 +169,7 @@ export function OnderdeelNaam({
             }
           }}
           onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === "Escape") gebruikerBezig.current = true;
             if (e.key === "Enter") {
               e.preventDefault();
               if (bevestig(false)) {
@@ -175,7 +193,14 @@ export function OnderdeelNaam({
               e.currentTarget.select();
             }
           }}
-          onBlur={() => {
+          onBlur={(e) => {
+            // Raakte het veld de focus kwijt zonder dat jij iets deed (bijv. omdat het voorbeeld ververst)? Dan zetten we de cursor er kort daarna terug.
+            if (focusBijStart && !gebruikerBezig.current && e.relatedTarget === null && herstel.current < 3 && Date.now() - gemonteerd.current < 3000) {
+              herstel.current += 1;
+              setTimeout(() => {
+                if (document.activeElement === document.body || document.activeElement?.tagName === "IFRAME") veld.current?.focus({ preventScroll: true });
+              }, 80);
+            }
             // Een blur zonder dat je iets typte (bijv. door een herhaalde montage) laat het veld staan: focusBijStart blijft dan aan tot je typt.
             bevestig(true);
           }}
