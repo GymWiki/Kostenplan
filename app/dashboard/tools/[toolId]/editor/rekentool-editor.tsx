@@ -358,9 +358,10 @@ export function RekentoolEditor(props: EditorProps) {
     if (opties?.focusNaam) setFocusNaamId(productId);
     const lokaal = repo.laadProducten?.();
     if (lokaal) setProducten((cur) => [...cur, ...lokaal.filter((p) => !cur.some((c) => c.id === p.id))]);
-    // Eerst de URL bijwerken, dan pas verversen: een replaceState tijdens een lopende refresh breekt die af en Next valt dan terug op een volledige paginalading (state weg).
+    // Eerst de URL bijwerken en het paneel laten openen, dan pas verversen: een refresh die samenvalt met de replaceState/pushState van het paneel of de sheet
+    // laat Next soms terugvallen op een volledige paginalading (en dan is de cursor in het naamveld weg).
     setPaneel(`werkzaamheid:${productId}`);
-    if (!lokaal) router.refresh();
+    if (!lokaal) setTimeout(() => router.refresh(), 400);
   }
 
   const menu = gast ? [{ label: "Naam wijzigen", icon: Pencil, onSelect: () => { setHernoemTekst(naam); setHernoemFout(null); setHernoemOpen(true); } }] : [
