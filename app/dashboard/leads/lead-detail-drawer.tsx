@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { kostenRijen } from "@/app/lib/lead-kosten";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { X, Mail, MessageCircle, Pencil, Check, Plus, FileText } from "lucide-react";
 import { formatCurrency } from "@/app/lib/format";
@@ -283,10 +284,9 @@ export function LeadDetailDrawer({
               })}
             </div>
             <div className="flex flex-col gap-1.5 rounded-lg bg-secondary/40 p-3 text-sm tabular-nums">
-              <TotalRow label="Arbeidskosten" value={lead.snapshot.arbeidskosten} />
-              <TotalRow label="Materiaalkosten" value={lead.snapshot.materiaalkosten} />
-              <TotalRow label="Transportkosten" value={lead.snapshot.transportkosten} />
-              <TotalRow label="Voorrijkosten" value={lead.snapshot.voorrijkosten} />
+              {kostenRijen(lead.snapshot).map((r) => (
+                <TotalRow key={r.label} label={r.label} value={r.waarde} />
+              ))}
               <div className="my-1 border-t border-border" />
               <TotalRow label="Subtotaal" value={lead.snapshot.subtotaal} />
               <TotalRow label="Btw" value={lead.snapshot.btw} />

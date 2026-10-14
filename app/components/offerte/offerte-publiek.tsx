@@ -262,8 +262,8 @@ function MobieleWeergave({ inhoud, gekozen, onToggle, kanKiezen, kleur }: { inho
           </>
         )}
         <div className="mt-2 flex items-baseline justify-between border-t-2 pt-2 text-lg font-bold" style={{ borderColor: kleur }}>
-          <span>{t.kor ? "Totaal" : t.toonIncl ? "Totaal incl. btw" : "Totaal excl. btw"}</span>
-          <span className="tabular-nums" style={{ color: kleur }}>{formatCents(eind)}</span>
+          <span>{t.kor ? "Totaal" : "Totaal incl. btw"}</span>
+          <span className="tabular-nums" style={{ color: kleur }}>{formatCents(t.kor ? eind : t.totaalIncl)}</span>
         </div>
         {t.kor && <p className="mt-1 text-xs text-neutral-600">{a.korTekst}</p>}
       </section>
