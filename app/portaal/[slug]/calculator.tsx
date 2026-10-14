@@ -5,6 +5,7 @@ import { parseGetal as leesGetal } from "@/app/lib/getal";
 import { MAX_HOEVEELHEID } from "@/app/lib/pricing/rond";
 import { LopendTotaal } from "./lopend-totaal";
 import { STANDAARD_WEERGAVE_CONFIG, type WeergaveConfig } from "@/app/lib/weergave/config";
+import { vindOnderdeel } from "@/app/lib/weergave/embed-opties";
 import { actieveProducten, bewaarTuinplan, leegTuinplan, leesTuinplan, planInvoer, verwijderUitPlan, type Tuinplan } from "@/app/lib/weergave/tuinplan";
 import { vanafPrijsCenten } from "@/app/lib/weergave/vanaf";
 import { TegelsWeergave } from "./weergaven/tegels";
@@ -84,6 +85,10 @@ type Props = {
   werkgebied?: WerkgebiedInstellingen | null;
   // Weergave (tegels / stappen / alles op één pagina). Ontbreekt = "Alles op één pagina", zoals vóór de keuze bestond.
   weergave?: WeergaveConfig | null;
+  // Deep link: dit onderdeel (id of naam-slug) staat meteen open.
+  openSleutel?: string | null;
+  // De rekentool staat in een pop-up op de site van de hovenier (de iframe is het hele venster).
+  popup?: boolean;
 };
 
 // Moet gelijk blijven aan de Kostenplan-standaardkleuren in globals.css
@@ -125,8 +130,9 @@ function klantEenheidLabel(eenheid: string) {
 }
 
 // Beginstand van het tuinplan. In de editor staat bij het eerste voorbeeld alvast een hoeveelheid en het eerste materiaal.
-function beginPlan(products: ProductWithDetails[], inEditor: boolean, weergave: WeergaveConfig["weergave"]): Tuinplan {
+function beginPlan(products: ProductWithDetails[], inEditor: boolean, weergave: WeergaveConfig["weergave"], gekozen: string | null = null): Tuinplan {
   const plan = leegTuinplan();
+  if (gekozen) plan.toegevoegd = [gekozen];
   const eerste = products[0];
   if (inEditor && eerste) {
     if (eerste.sjabloon === "ENKELE_HOEVEELHEID") plan.hoeveelheden[eerste.id] = voorbeeldHoeveelheid(eerste.eenheid);
@@ -151,13 +157,16 @@ export function Calculator({
   vraagTelefoon = true,
   werkgebied = null,
   weergave = null,
+  openSleutel = null,
+  popup = false,
 }: Props) {
   const inEditor = Boolean(editor);
   const wc = weergave ?? STANDAARD_WEERGAVE_CONFIG;
-  const weergaveSoort = wc.weergave;
+  // Eén onderdeel: direct de configurator, geen raster en geen kiesstap (dat doet de tegelweergave).
+  const weergaveSoort = products.length === 1 && wc.weergave === "stappen" ? "tegels" : wc.weergave;
   // Het "tuinplan" van de klant: wat hij heeft gekozen en ingevuld. Alle weergaven delen deze state en dezelfde
   // functie die er de invoer voor de rekenkern van maakt (zie app/lib/weergave/tuinplan.ts).
-  const [plan, setPlan] = useState<Tuinplan>(() => beginPlan(products, Boolean(editor), weergaveSoort));
+  const [plan, setPlan] = useState<Tuinplan>(() => beginPlan(products, Boolean(editor), weergaveSoort, weergaveSoort === "stappen" ? vindOnderdeel(products, openSleutel) : null));
   const productSjabloonInvoer = plan.sjabloonInvoer;
   const materialSelections = plan.materiaalKeuzes;
   const extraSelections = plan.extraKeuzes;
@@ -166,9 +175,11 @@ export function Calculator({
   const zetMateriaal = (categoryId: string, materiaalId: string) => setPlan((pl) => ({ ...pl, materiaalKeuzes: { ...pl.materiaalKeuzes, [categoryId]: materiaalId } }));
   const zetExtra = (extraId: string, aantal: number) => setPlan((pl) => ({ ...pl, extraKeuzes: { ...pl.extraKeuzes, [extraId]: aantal } }));
   // Welk scherm (tegels en stappen) en welk onderdeel open staat / welke stap actief is.
+  const linkId = useMemo(() => vindOnderdeel(products, openSleutel), [products, openSleutel]);
   const [scherm, setScherm] = useState<"kiezen" | "overzicht">("kiezen");
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [stap, setStap] = useState(0);
+  // Deep link: dat onderdeel staat meteen open (tegels), is meteen gekozen en aan de beurt (stappen), of wordt in beeld gebracht (lijst).
+  const [openId, setOpenId] = useState<string | null>(weergaveSoort === "tegels" && products.length > 2 ? linkId : null);
+  const [stap, setStap] = useState(weergaveSoort === "stappen" && linkId ? 1 : 0);
   const [verstuurd, setVerstuurd] = useState(false);
   const [schil, setSchil] = useState<HTMLElement | null>(null);
   const smal = useSmalScherm();
@@ -243,6 +254,24 @@ export function Calculator({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Deep link in de lijst: het onderdeel in beeld brengen. In een pop-up: Escape meldt aan de pagina erachter dat hij moet sluiten.
+  useEffect(() => {
+    if (weergaveSoort !== "lijst" || !linkId) return;
+    document.querySelector(`[data-onderdeel="${linkId}"]`)?.scrollIntoView({ block: "start" });
+  }, [weergaveSoort, linkId]);
+  useEffect(() => {
+    if (!popup) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      // Eerst sluit wat er binnen de rekentool open staat (venster, onderdeel-paneel, lijst met adressen); pas daarna de pop-up.
+      const actief = document.activeElement;
+      if (document.querySelector('[role="dialog"][aria-modal="true"], #tegel-paneel') || actief?.getAttribute("aria-expanded") === "true") return;
+      window.parent.postMessage({ type: "kostenplan:sluit", toolId }, "*");
+    }
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [popup, toolId]);
+
   // De ene rekenkern (app/lib/pricing): dezelfde berekening als de server bij het versturen van de
   // aanvraag en als de offerte. Hier alleen de configuratie en de keuzes van de klant erin stoppen.
   // Werkgebied: de eerste vraag is het adres. De afstand hemelsbreed tot het startadres komt hier in de invoer,
@@ -255,9 +284,11 @@ export function Calculator({
     // Pas na de eerste render (server en browser tonen eerst hetzelfde), dan het bewaarde plan terugzetten.
     queueMicrotask(() => {
       if (!inEditor) {
-        const bewaard = leesTuinplan(toolId, products);
+        let bewaard = leesTuinplan(toolId, products);
+        if (bewaard && weergaveSoort === "stappen" && linkId && !bewaard.toegevoegd.includes(linkId)) bewaard = { ...bewaard, toegevoegd: [...bewaard.toegevoegd, linkId] };
         if (bewaard) {
           setPlan(bewaard);
+          if (weergaveSoort === "stappen" && linkId) setStap(products.filter((x) => bewaard!.toegevoegd.includes(x.id)).findIndex((x) => x.id === linkId) + 1);
           if (bewaard.adres.soort !== "leeg") setAdres(bewaard.adres);
         }
       }
@@ -684,6 +715,7 @@ export function ProductCard({
 
   return (
     <Card
+      data-onderdeel={product.id}
       className={
         kaal
           ? "border-0 bg-transparent shadow-none"

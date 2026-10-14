@@ -6,6 +6,7 @@ import { alleVeldenVanConfig, parseCalculatorConfig, publicCalculatorConfig } fr
 import { bouwSnapshotInhoud, maakSnapshot } from "@/app/lib/snapshot/bouw";
 import { blobGeconfigureerd, leesSnapshot } from "@/app/lib/snapshot/opslag";
 import type { MateriaalOpties, RekentoolSnapshot } from "@/app/lib/snapshot/types";
+import { parseEmbedParams } from "@/app/lib/weergave/embed-opties";
 import { SnapshotWeergave } from "./snapshot-weergave";
 
 export const metadata: Metadata = {
@@ -50,8 +51,10 @@ async function snapshotUitDatabase(toolId: string): Promise<RekentoolSnapshot | 
 // wordt alleen gelezen als er (nog) geen snapshot is. Lukt niets, dan gooien
 // we bewust een fout: Next blijft dan de laatst geslaagde pagina tonen, en het
 // laadscript op de site toont anders de contactkaart.
-export default async function EmbedPage({ params }: { params: Promise<{ toolId: string }> }) {
+export default async function EmbedPage({ params, searchParams }: { params: Promise<{ toolId: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { toolId } = await params;
+  // Per plek op de site van de hovenier kan de code een andere weergave, een selectie onderdelen of een deep link meegeven.
+  const embedParams = parseEmbedParams(await searchParams);
 
   const uitSnapshot = blobGeconfigureerd() || process.env.SNAPSHOT_MIRROR_URL ? await leesSnapshot(toolId) : null;
   let snapshot: RekentoolSnapshot | null = uitSnapshot?.snapshot ?? null;
@@ -72,5 +75,5 @@ export default async function EmbedPage({ params }: { params: Promise<{ toolId: 
   }
 
   if (!snapshot.beschikbaar) return <NietBeschikbaar naam={snapshot.bedrijf.naam} />;
-  return <SnapshotWeergave snapshot={snapshot} />;
+  return <SnapshotWeergave snapshot={snapshot} opties={embedParams} />;
 }

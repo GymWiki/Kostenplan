@@ -3,10 +3,12 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { bouwEmbedCode, bouwIframeCode } from "@/app/lib/embed-code";
 import { DEFAULT_EMBED_CONFIG } from "@/app/lib/tools";
+import { zuiverVariant } from "@/app/lib/weergave/embed-opties";
 
 // Testpagina voor de embed (alleen in de testomgeving: TEST_PAGES=1). Toont de embedcode van een rekentool zoals een hovenier
 // hem op zijn site plakt, tussen opzettelijk agressieve CSS van de "host-site": de rekentool mag daar niet door veranderen.
-//   /test-embed?tool=<toolId>&modus=script|iframe   (script = het laadscript met Shadow DOM, standaard)
+//   /test-embed?tool=<toolId>&modus=script|iframe[&weergave=tegels&plaatsing=popup&knop=Tekst&positie=rechtsonder&onderdelen=id1,id2]
+//   (script = het laadscript, standaard). Een deep link op de pagina zelf (?kp=schutting of #schutting) opent dat onderdeel.
 export const metadata: Metadata = { title: "Test: embed", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
@@ -19,13 +21,14 @@ const AGRESSIEF = `
   img, svg { filter: grayscale(1) !important; max-width: 30px !important; }
 `;
 
-export default async function TestEmbedPagina({ searchParams }: { searchParams: Promise<{ tool?: string; modus?: string }> }) {
+export default async function TestEmbedPagina({ searchParams }: { searchParams: Promise<{ tool?: string; modus?: string; weergave?: string; plaatsing?: string; knop?: string; positie?: string; onderdelen?: string }> }) {
   if (process.env.TEST_PAGES !== "1") notFound();
-  const { tool, modus } = await searchParams;
+  const { tool, modus, weergave, plaatsing, knop, positie, onderdelen } = await searchParams;
   if (!tool) return <p>Geef ?tool=&lt;toolId&gt; mee.</p>;
   const h = await headers();
   const baseUrl = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
-  const opties = { toolId: tool, toolNaam: "Testrekentool", baseUrl, embedConfig: DEFAULT_EMBED_CONFIG, contact: { naam: "Hoveniersbedrijf De Vries", telefoon: "06 12345678", email: "jan@devries-hoveniers.nl" } };
+  const opties = { toolId: tool, toolNaam: "Testrekentool", baseUrl, embedConfig: DEFAULT_EMBED_CONFIG, contact: { naam: "Hoveniersbedrijf De Vries", telefoon: "06 12345678", email: "jan@devries-hoveniers.nl" },
+    variant: zuiverVariant({ weergave: weergave as never, plaatsing: plaatsing as never, knopTekst: knop, knopPositie: positie as never, onderdelen: onderdelen?.split(",") }) };
   const code = modus === "iframe" ? bouwIframeCode(opties) : bouwEmbedCode(opties);
   const i = code.lastIndexOf("<script>");
   const html = code.slice(0, i);
