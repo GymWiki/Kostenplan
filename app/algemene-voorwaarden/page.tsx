@@ -3,7 +3,7 @@ import { MarketingShell } from "@/app/components/landing/marketing-shell";
 import { LegalSection } from "@/app/components/marketing/legal-section";
 
 export const metadata: Metadata = {
-  title: "Algemene Voorwaarden",
+  title: "Algemene voorwaarden",
   description:
     "Lees de algemene voorwaarden van Kostenplan, de rekentool voor hoveniers.",
   alternates: { canonical: "/algemene-voorwaarden" },
@@ -15,7 +15,7 @@ export default function AlgemeneVoorwaardenPage() {
       <main id="main-content" className="mx-auto w-full max-w-3xl flex-1 px-4 py-16 sm:px-6 sm:py-20">
         <div className="border-b border-border pb-8">
           <h1 className="text-3xl font-bold tracking-tight text-balance text-foreground sm:text-4xl">
-            Algemene Voorwaarden Kostenplan
+            Algemene voorwaarden Kostenplan
           </h1>
           <p className="mt-3 text-sm text-muted-foreground">Laatst gewijzigd: 14 juli 2026</p>
         </div>

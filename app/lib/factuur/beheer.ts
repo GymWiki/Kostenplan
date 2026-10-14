@@ -46,14 +46,16 @@ async function vergrendel(tx: Db, id: string, companyId: string): Promise<void> 
 
 export async function registreerBetaling(
   db: PrismaClient,
-  { factuurId, companyId, bedragCenten, datum, methode = "OVERBOEKING", notitie }: { factuurId: string; companyId: string; bedragCenten: number; datum: string; methode?: "OVERBOEKING" | "CONTANT" | "PIN" | "BETAALLINK" | "OVERIG"; notitie?: string }
+  { factuurId, companyId, bedragCenten, datum, methode = "OVERBOEKING", notitie, sleutel }: { factuurId: string; companyId: string; bedragCenten: number; datum: string; methode?: "OVERBOEKING" | "CONTANT" | "PIN" | "BETAALLINK" | "OVERIG"; notitie?: string; sleutel?: string }
 ): Promise<void> {
   await db.$transaction(async (tx) => {
     await vergrendel(tx, factuurId, companyId);
+    // Dezelfde idempotentiesleutel is al verwerkt (dubbele klik, herhaalde aanvraag): niets nog eens doen.
+    if (sleutel && (await tx.factuurBetaling.findFirst({ where: { factuurId, sleutel }, select: { id: true } }))) return;
     const s = await laadStand(tx, factuurId, companyId);
     const fout = valideerBetaling({ bedragCenten, datum }, s, s.status as Parameters<typeof valideerBetaling>[2]);
     if (fout) throw new BeheerFout(fout === "te-hoog" ? `Dit is meer dan het openstaande bedrag (${formatCents(openstaandCenten(s))}). Controleer het bedrag: de factuur is intussen aangepast.` : BETALING_FOUT_TEKST[fout]);
-    await tx.factuurBetaling.create({ data: { factuurId, datum: new Date(`${datum}T00:00:00Z`), bedragCenten, methode, notitie: notitie?.trim() || null } });
+    await tx.factuurBetaling.create({ data: { factuurId, datum: new Date(`${datum}T00:00:00Z`), bedragCenten, methode, notitie: notitie?.trim() || null, sleutel: sleutel ?? null } });
     await tx.factuurGebeurtenis.create({ data: { factuurId, soort: "BETALING", bedragCenten, tekst: notitie?.trim() || null } });
     await herberekenFactuurStatus(tx, factuurId, companyId);
   });

@@ -29,7 +29,7 @@ export function BedrijfVerwijderen({ company, abonnementLoopt, facturen = { aant
           </p>
           <p className="text-foreground">
             {abonnementLoopt
-              ? "Het abonnement van dit bedrijf loopt nog. Zeg het eerst op via Abonnement wijzigen; daarna kun je het bedrijf verwijderen."
+              ? "Het abonnement van dit bedrijf loopt nog. Zeg het eerst op via Profiel → Abonnement; daarna kun je het bedrijf verwijderen."
               : "Er loopt geen abonnement meer voor dit bedrijf, dus je betaalt er na het verwijderen niets meer voor."}
           </p>
           {facturen.aantal > 0 && (

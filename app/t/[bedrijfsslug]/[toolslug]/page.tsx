@@ -26,7 +26,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { bedrijfsslug, toolslug } = await params;
   const tool = await getPublicTool(bedrijfsslug, toolslug);
-  if (!tool) return { title: "Kostencalculator" };
+  if (!tool) return { title: "Rekentool" };
 
   const title = `${tool.naam} — ${tool.company.naam}`;
   const description = `Bereken direct een schatting van de kosten voor jouw project bij ${tool.company.naam}.`;

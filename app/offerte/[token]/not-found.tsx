@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { FileX2 } from "lucide-react";
 import { Logo } from "@/app/components/ui/logo";
@@ -9,6 +10,9 @@ import { LinkButton } from "@/app/components/ui/button";
 // ondernemer kan tonen (zie offerte-presentatie.tsx). Dit vangt alleen het
 // "bestaat niet (meer)"-geval af, met tekst die uitlegt wat een klant nu kan
 // doen — in plaats van Next.js' kale standaardpagina.
+// De titel van een ongeldige of verwijderde offertelink: niet "Jouw offerte" (dat suggereert dat er een offerte is).
+export const metadata: Metadata = { title: "Offerte niet gevonden", robots: { index: false, follow: false } };
+
 export default function OfferteNotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-4 py-12 text-center">

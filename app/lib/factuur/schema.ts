@@ -1,4 +1,5 @@
 import { z } from "zod";
+import "@/app/lib/zod-nl";
 import { offerteInhoudSchema } from "@/app/lib/offerte/schema";
 import type { FactuurInhoud } from "./model";
 

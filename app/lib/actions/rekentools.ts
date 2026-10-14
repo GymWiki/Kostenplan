@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import "@/app/lib/zod-nl";
 import { canCreateTool, requireActiveCompany, requireActiveTool } from "@/app/lib/dal";
 import { generateUniqueToolSlug } from "@/app/lib/slug";
 import { prisma } from "@/app/lib/prisma";

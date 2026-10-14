@@ -52,6 +52,8 @@ export const OFFERTE_CSS = `
 .og-klein{font-size:8.5pt;color:#374151}
 .og-doc{position:relative}
 .og-watermerk{position:absolute;left:0;right:0;top:95mm;text-align:center;font-size:30pt;font-weight:800;letter-spacing:.04em;color:rgba(180,83,9,.13);transform:rotate(-24deg);pointer-events:none;z-index:2;white-space:nowrap}
+.og-afsluiting{break-inside:avoid;page-break-inside:avoid}
+.og-concept{width:max-content;margin:0 0 4mm auto;border:.5mm solid #b45309;color:#b45309;padding:1mm 4mm;font-size:11pt;font-weight:700;letter-spacing:.12em;border-radius:1.5mm}
 .og-ondertekening{display:grid;grid-template-columns:1fr 1fr;gap:12mm;margin-top:9mm;break-inside:avoid;page-break-inside:avoid}
 .og-handtekening{border-top:.25mm solid #6b7280;margin-top:16mm;padding-top:1.4mm;font-size:8.5pt;color:#374151}
 .og-akkoord{border:.3mm solid #9ca3af;border-radius:1.5mm;padding:3.5mm 4mm}
@@ -61,7 +63,7 @@ export const OFFERTE_CSS = `
 .og-akkoord .veld b{display:block;color:#111827;font-size:10pt;font-weight:600}
 .og-getekend{border-color:var(--og-kleur);background:#f0fdf4}
 .og-voet{margin-top:10mm;padding-top:2.5mm;border-top:.2mm solid #d1d5db;font-size:7pt;color:#6b7280;text-align:center}
-.og-voet .pagina{display:block;margin-top:.8mm;color:#9ca3af}
+.og-voet .pagina{display:block;margin-top:.8mm;color:#4b5563}
 .og-pdf .og-voet{display:none}
 .og-wijzigbaar{cursor:pointer;border-radius:1mm;outline:.3mm solid transparent;outline-offset:1mm;transition:outline-color .12s}
 .og-wijzigbaar:hover{outline-color:#86efac}

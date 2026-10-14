@@ -1,6 +1,7 @@
 import { formatAantal as formatAantalGedeeld, formatCenten } from "@/app/lib/pricing/format";
 import { RECHTSVORM_LABEL, heeftStatutaireGegevens } from "./gegevens";
 import type { Adres, OfferteAfzender, OfferteInhoud } from "./model";
+import { datumLangTijd } from "@/app/lib/datum";
 
 export const formatCents = formatCenten;
 
@@ -10,7 +11,7 @@ export function formatDatum(iso: string): string {
   if (!j || !m || !d) return iso;
   return datumFmt.format(new Date(j, m - 1, d));
 }
-export const formatDatumTijd = (d: Date) => `${new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long", year: "numeric" }).format(d)} om ${new Intl.DateTimeFormat("nl-NL", { hour: "2-digit", minute: "2-digit" }).format(d)}`;
+export const formatDatumTijd = datumLangTijd;
 
 // "2026-W20" → "week 20 van 2026"; vrije tekst blijft zoals hij is.
 export function formatWeek(v: string): string {

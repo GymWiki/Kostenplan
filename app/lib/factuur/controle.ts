@@ -63,7 +63,7 @@ export function controleerFactuur(inhoud: FactuurInhoud, nu: Date = new Date()):
   const regels = inhoud.secties.flatMap((s) => s.regels).filter((r) => r.type !== "tekst");
   if (regels.length === 0) blokkerend.push({ id: "geenregels", bericht: "Er is nog geen regel met een bedrag." });
   const open = regels.filter((r) => r.label === "stelpost-open");
-  if (open.length > 0) blokkerend.push({ id: "stelpost", bericht: open.length === 1 ? `De stelpost "${open[0].omschrijving || "zonder omschrijving"}" heeft nog geen werkelijke hoeveelheid.` : `${open.length} stelposten hebben nog geen werkelijke hoeveelheid.` });
+  if (open.length > 0) blokkerend.push({ id: "stelpost", bericht: open.length === 1 ? `De stelpost "${open[0].omschrijving || "zonder omschrijving"}" heeft nog geen werkelijke hoeveelheid. Open de regel en vul de werkelijke hoeveelheid in, of kies "Hoeveelheid klopt".` : `${open.length} stelposten hebben nog geen werkelijke hoeveelheid. Open elke stelpost en vul de werkelijke hoeveelheid in, of kies "Hoeveelheid klopt".` });
   const nul = regels.filter((r) => r.label !== "stelpost-open" && Math.round(r.aantal * r.prijsCenten) === 0);
   if (nul.length > 0) blokkerend.push({ id: "nulregels", bericht: nul.length === 1 ? `De regel "${nul[0].omschrijving || "zonder omschrijving"}" heeft een bedrag van €0. Vul een prijs in of verwijder de regel.` : `${nul.length} regels hebben een bedrag van €0. Vul een prijs in of verwijder ze.` });
 

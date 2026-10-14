@@ -162,7 +162,7 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
   return (
     <form id="probeer-formulier" onSubmit={maak} className="flex flex-col gap-8 max-md:pb-24" noValidate>
       <div className="md:hidden" role="group" aria-label={`Stap ${stap + 1} van 3`}>
-        <div className="h-2 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuemin={1} aria-valuemax={3} aria-valuenow={stap + 1}>
+        <div className="h-2 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label="Voortgang" aria-valuetext={`Stap ${stap + 1} van 3`} aria-valuemin={1} aria-valuemax={3} aria-valuenow={stap + 1}>
           <div className="h-full rounded-full bg-primary transition-[width] motion-reduce:transition-none" style={{ width: `${((stap + 1) / 3) * 100}%` }} />
         </div>
         <p className="mt-2 text-sm text-muted-foreground">Stap {stap + 1} van 3</p>

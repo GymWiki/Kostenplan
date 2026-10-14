@@ -45,7 +45,7 @@ export function LoginForm({ volgende }: { volgende?: string }) {
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Wachtwoord</Label>
-            <Link href="/wachtwoord-vergeten" className="text-xs font-medium text-primary hover:underline">
+            <Link href="/wachtwoord-vergeten" className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline">
               Wachtwoord vergeten?
             </Link>
           </div>
@@ -62,7 +62,7 @@ export function LoginForm({ volgende }: { volgende?: string }) {
             </p>
           )}
         </div>
-        <Button type="submit" disabled={pending} className="mt-2 w-full">
+        <Button type="submit" disabled={pending} className="mt-2 min-h-11 w-full">
           {pending ? "Bezig met inloggen…" : "Inloggen"}
         </Button>
       </form>

@@ -60,7 +60,12 @@ export default async function OffertePage({
         activiteit={gebeurtenissen.map((g) => ({ id: g.id, soort: g.soort, tekst: g.tekst, op: g.createdAt.toISOString() }))}
         heeftGetekend={Boolean(akkoord)}
         gekozenOptioneel={geldendeInhoud({ inhoud: huidig.inhoud, akkoorden: akkoord ? [akkoord] : [] }).gekozenOptioneel}
-        begin={huidig.inhoud as unknown as OfferteInhoud}
+        // Een concept volgt altijd de actuele algemene voorwaarden uit Profiel (anders blijft "geen voorwaarden bijgevoegd" staan na een upload).
+        begin={
+          huidig.vergrendeld
+            ? (huidig.inhoud as unknown as OfferteInhoud)
+            : { ...(huidig.inhoud as unknown as OfferteInhoud), bijlagen: gegevens.voorwaardenPdfUrl ? [{ naam: gegevens.voorwaardenPdfNaam || "Algemene voorwaarden.pdf", url: gegevens.voorwaardenPdfUrl }] : [] }
+        }
         versies={versies.map((v) => ({ versie: v.versie, vergrendeld: v.vergrendeld, verstuurdOp: v.verstuurdOp?.toISOString() ?? null }))}
         standaardRegels={standaardRegels.map((r) => ({ id: r.id, omschrijving: r.omschrijving, eenheid: r.eenheid, prijsCenten: r.prijsCenten, btw: r.btw, soort: r.soort }))}
         btwStandaard={gegevens.btwStandaard as Partial<Record<RegelSoort, number>> | null}

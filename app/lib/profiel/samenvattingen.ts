@@ -1,10 +1,11 @@
 import type { MollieSubscriptionStatus, SubscriptionTier } from "@/app/generated/prisma/client";
 import type { WerkgebiedInstellingen } from "@/app/lib/werkgebied/schema";
+import { datumDagMaand } from "@/app/lib/datum";
 
 // Teksten voor de regels op Profiel → Bedrijf. Alleen weergave: de gegevens komen ongewijzigd uit de database.
 
 const PLAN_NAAM: Record<SubscriptionTier, string> = { GRATIS: "Gratis", PLUS: "Plus", PRO: "Pro" };
-const datum = (d: Date) => new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long" }).format(d);
+const datum = datumDagMaand;
 
 // Korte planaanduiding in de bedrijfswisselaar: "Pro", "Gratis", "Pro · opgezegd".
 export function planKort(b: { plan: SubscriptionTier; status: MollieSubscriptionStatus; handmatigToegekend?: boolean }): string {
@@ -61,8 +62,15 @@ export function tarievenRegel(t: { eenheid: keyof typeof EENHEID_WOORD; tarief: 
 }
 
 // "6 gegevens ontbreken voor offertes", of null als alles compleet is.
-export function ontbreektTekst(aantal: number): string | null {
-  return aantal === 0 ? null : `${aantal} ${aantal === 1 ? "gegeven ontbreekt" : "gegevens ontbreken"} voor offertes`;
+// Met `namen` staat erbij welke: "3 gegevens ontbreken voor offertes: KvK-nummer, IBAN en Telefoon" (bij meer dan 3: "… en 2 andere").
+export function ontbreektTekst(aantal: number, namen: string[] = []): string | null {
+  if (aantal === 0) return null;
+  const basis = `${aantal} ${aantal === 1 ? "gegeven ontbreekt" : "gegevens ontbreken"} voor offertes`;
+  if (namen.length === 0) return basis;
+  const getoond = namen.slice(0, 3);
+  const rest = namen.length - getoond.length;
+  const lijst = rest > 0 ? `${getoond.join(", ")} en ${rest} ${rest === 1 ? "andere" : "andere"}` : getoond.length > 1 ? `${getoond.slice(0, -1).join(", ")} en ${getoond[getoond.length - 1]}` : getoond[0];
+  return `${basis}: ${lijst}`;
 }
 
 // "25 km rond Zwolle · vanaf €250", "Postcodegebieden", "Uit".

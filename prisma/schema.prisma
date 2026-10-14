@@ -1329,8 +1329,11 @@ model FactuurBetaling {
   bedragCenten Int
   methode   BetaalMethode @default(OVERBOEKING)
   notitie   String?
+  // Idempotentiesleutel van de aanvraag (zie registreerBetaling): dezelfde sleutel maakt nooit een tweede betaling.
+  sleutel   String?
   createdAt DateTime @default(now())
 
+  @@unique([factuurId, sleutel])
   @@index([factuurId])
 }
 

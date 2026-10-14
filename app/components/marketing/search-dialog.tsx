@@ -22,11 +22,11 @@ export function SearchDialog() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Doorzoek de kennisbank"
         className="flex h-10 w-10 items-center justify-center gap-2 rounded-full border border-border bg-secondary/40 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:w-auto sm:px-4"
       >
         <Search className="h-4 w-4" />
-        <span className="hidden sm:inline">Zoeken…</span>
+        <span className="sr-only sm:not-sr-only">Zoeken</span>
+        <span className="sr-only"> in de kennisbank</span>
       </button>
 
       {open && <SearchDialogContent onClose={() => setOpen(false)} />}

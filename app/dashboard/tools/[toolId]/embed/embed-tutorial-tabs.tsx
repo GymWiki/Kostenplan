@@ -86,7 +86,7 @@ export function EmbedTutorialTabs({
         <code>{embedCode}</code>
       </pre>
       <div>
-        <CopyButton text={embedCode} label="Kopieer embedcode" />
+        <CopyButton text={embedCode} label="Kopieer insluitcode" />
       </div>
       <p className="text-sm text-muted-foreground">
         {heeftContact

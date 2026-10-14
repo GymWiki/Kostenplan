@@ -188,7 +188,7 @@ export default function RekentoolPage() {
                   nummer={3}
                   icon={Globe2}
                   titel="Plaats de tool op je site"
-                  tekst="Deel de directe link of plaats de rekentool met een embedcode op je eigen website."
+                  tekst="Deel de directe link of plaats de rekentool met een insluitcode op je eigen website."
                 />
               </Reveal>
               <Reveal delay={300}>

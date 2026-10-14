@@ -24,9 +24,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const tool = await getLegacyPortalData(slug);
-  if (!tool) return { title: "Kostencalculator" };
+  if (!tool) return { title: "Rekentool" };
 
-  const title = `Kostencalculator ${tool.company.naam}`;
+  const title = `Rekentool ${tool.company.naam}`;
   const description = `Bereken direct een schatting van de kosten voor jouw project bij ${tool.company.naam}.`;
   // Deze legacy-route toont exact dezelfde tool als /t/[bedrijfsslug]/[toolslug]
   // (zie de comment bij getLegacyToolForCompanySlug in dal.ts). Zonder een

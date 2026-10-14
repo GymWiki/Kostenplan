@@ -46,6 +46,9 @@ describe("tarieven en ontbrekende gegevens", () => {
     expect(ontbreektTekst(0)).toBeNull();
     expect(ontbreektTekst(1)).toBe("1 gegeven ontbreekt voor offertes");
     expect(ontbreektTekst(6)).toBe("6 gegevens ontbreken voor offertes");
+    expect(ontbreektTekst(2, ["KvK-nummer", "IBAN"])).toBe("2 gegevens ontbreken voor offertes: KvK-nummer en IBAN");
+    expect(ontbreektTekst(1, ["Telefoon"])).toBe("1 gegeven ontbreekt voor offertes: Telefoon");
+    expect(ontbreektTekst(5, ["KvK-nummer", "IBAN", "Telefoon", "Btw-id", "Adres"])).toBe("5 gegevens ontbreken voor offertes: KvK-nummer, IBAN, Telefoon en 2 andere");
   });
 });
 

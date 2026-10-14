@@ -19,6 +19,7 @@ export default async function OffertePrintPagina({ params }: { params: Promise<{
   let inhoud: OfferteInhoud;
   let akkoord: { naam: string; tijdstip: Date } | undefined;
   let gekozen: string[] = [];
+  let concept = false;
   if (p.k === "voorbeeld") {
     if (process.env.OFFERTE_VOORBEELDEN !== "1") notFound();
     const bouw = VOORBEELDEN[p.n as keyof typeof VOORBEELDEN] ?? VOORBEELD_FACTUREN[p.n as keyof typeof VOORBEELD_FACTUREN];
@@ -35,6 +36,8 @@ export default async function OffertePrintPagina({ params }: { params: Promise<{
     const v = await prisma.offerteVersie.findFirst({ where: { offerteId: p.o, versie: p.v }, include: { akkoorden: true } });
     if (!v) notFound();
     inhoud = v.inhoud as unknown as OfferteInhoud;
+    // Alleen de voorbeeld-pdf van een concept krijgt de markering; de pdf die wordt klaargezet om te versturen nooit.
+    concept = p.concept === true && !v.vergrendeld && v.akkoorden.length === 0;
     if (p.akkoord && v.akkoorden[0]) {
       akkoord = { naam: v.akkoorden[0].naam, tijdstip: v.akkoorden[0].tijdstip };
       gekozen = v.akkoorden[0].gekozenRegelIds as string[];
@@ -42,7 +45,7 @@ export default async function OffertePrintPagina({ params }: { params: Promise<{
   }
   return (
     <div style={{ background: "#fff" }}>
-      <OfferteDocument inhoud={inhoud} modus="pdf" akkoord={akkoord} gekozenOptioneel={gekozen} />
+      <OfferteDocument inhoud={inhoud} modus="pdf" akkoord={akkoord} gekozenOptioneel={gekozen} concept={concept} />
     </div>
   );
 }

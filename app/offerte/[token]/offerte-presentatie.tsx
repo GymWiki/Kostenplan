@@ -4,8 +4,9 @@ import { brandingFontVariables } from "@/app/lib/fonts";
 import { OFFERTE_STATUS_LABELS, berekenOfferteTotalen, regelTotaal, type OfferteRegel } from "@/app/lib/offertes";
 import { OfferteReactieForm } from "./offerte-reactie-form";
 import type { OfferteStatus } from "@/app/generated/prisma/client";
+import { datumLang } from "@/app/lib/datum";
 
-const dateFormatter = new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long", year: "numeric" });
+const dateFormatter = { format: datumLang };
 
 // Puur presentationeel (geen data-fetching) zodat dit los van de echte
 // database te renderen/testen is — zie page.tsx voor het ophalen en

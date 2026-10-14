@@ -1,4 +1,5 @@
 import { z } from "zod";
+import "@/app/lib/zod-nl";
 
 // Configuratie en invoer van de rekenkern. Alle bedragen in de configuratie zijn in centen
 // (een prijs per eenheid mag een deel van een cent bevatten, bijv. 12,345 euro per m²:

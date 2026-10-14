@@ -32,10 +32,10 @@ export function CompanySwitcher({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Bedrijf wisselen"
         className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-secondary cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <span className="min-w-0 truncate text-sm font-medium text-foreground">{actief.naam}</span>
+        <span className="sr-only">Bedrijf wisselen</span>
         <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
       </button>
       <HelpTip contentKey="dashboard.companySwitcher" />

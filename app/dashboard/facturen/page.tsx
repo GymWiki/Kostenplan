@@ -6,6 +6,7 @@ import { laadExportFacturen } from "@/app/lib/factuur/export-server";
 import { dagenTeLaat } from "@/app/lib/factuur/betaling";
 import { FACTUUR_STATUS_LABEL } from "@/app/lib/factuur/model";
 import { formatCents, formatDatum } from "@/app/lib/offerte/weergave";
+import { meervoud } from "@/app/lib/meervoud";
 
 export const metadata: Metadata = { title: "Facturen" };
 
@@ -77,7 +78,7 @@ export default async function FacturenPagina({ searchParams }: { searchParams: P
                     <span className="block truncate text-base font-semibold text-foreground">{r.nummer} · {r.inhoud.klant.bedrijfsnaam || r.inhoud.klant.naam}</span>
                     <span className="block truncate text-sm text-muted-foreground">{r.factuurdatum ? formatDatum(r.factuurdatum) : ""}{openR > 0 ? ` · ${formatCents(openR)} openstaand` : ""}</span>
                   </span>
-                  {laat ? <Badge variant="warning">{laat} d te laat</Badge> : null}
+                  {laat ? <Badge variant="warning">{meervoud(laat, "dag", "dagen")} te laat</Badge> : null}
                   <Badge variant={r.status === "BETAALD" ? "success" : "default"}>{FACTUUR_STATUS_LABEL[r.status as keyof typeof FACTUUR_STATUS_LABEL]}</Badge>
                   <span className="shrink-0 text-base font-semibold tabular-nums">{formatCents(r.totaalInclCenten)}</span>
                 </Link>

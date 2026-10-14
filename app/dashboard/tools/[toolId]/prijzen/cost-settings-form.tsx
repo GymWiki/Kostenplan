@@ -267,7 +267,7 @@ export function CostSettingsForm({
           {bandbreedteModus === "PER_PRODUCT" && (
             <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
               Onderdelen met een bandbreedte-prijs (in te stellen bij het onderdeel zelf) tellen mee
-              als bandbreedte. Items met een vaste prijs tellen in beide scenario&apos;s hetzelfde
+              als bandbreedte. Onderdelen met een vaste prijs tellen in beide scenario&apos;s hetzelfde
               mee.
             </p>
           )}

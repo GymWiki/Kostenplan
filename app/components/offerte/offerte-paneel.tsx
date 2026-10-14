@@ -41,7 +41,7 @@ export function KlantPaneel({ inhoud, wijzig }: { inhoud: OfferteInhoud; wijzig:
   );
   return (
     <div className="flex flex-col gap-4">
-      <Field label="Soort klant" htmlFor="kl-type" hint="Particulieren zien prijzen incl. btw, zakelijke klanten excl. btw.">
+      <Field label="Soort klant" htmlFor="kl-type" hint={`Particulieren zien prijzen incl. btw, zakelijke klanten excl. btw.${"factuur" in inhoud && k.type === "zakelijk" ? " Btw verlegd (onderaanneming) kies je bij Datums en btw." : ""}`}>
         <Select id="kl-type" value={k.type} onChange={(e) => wijzig((i) => w.zetKlantType(i, e.target.value as "particulier" | "zakelijk"))}>
           <option value="particulier">Particulier</option>
           <option value="zakelijk">Zakelijk</option>
@@ -140,6 +140,18 @@ export function RegelPaneel({
           ))}
         </Select>
       </Field>
+      {r.label === "stelpost-open" && (
+        <div role="note" className="flex flex-col gap-2 rounded-lg border border-example/60 bg-example/15 p-3 text-sm text-foreground">
+          <p>
+            <strong>Stelpost.</strong> In de offerte was dit een schatting. Vul hieronder de werkelijke hoeveelheid in. Klopt de geschatte hoeveelheid al, bevestig dat dan zodat je de factuur definitief kunt maken.
+          </p>
+          <div>
+            <Button type="button" size="sm" variant="outline" onClick={() => zet({ label: undefined, toelichting: `Werkelijke hoeveelheid ${r.aantal} ${r.eenheid}` })}>
+              Hoeveelheid klopt
+            </Button>
+          </div>
+        </div>
+      )}
       <Field label="Omschrijving" htmlFor="rg-omschr">
         <Input id="rg-omschr" value={r.omschrijving} onChange={(e) => zet({ omschrijving: e.target.value })} />
       </Field>

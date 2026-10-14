@@ -34,6 +34,19 @@ describe.skipIf(!url)("betalingen en creditnota's (database)", () => {
     await db.$disconnect();
   });
 
+  it("idempotentiesleutel: twee gelijktijdige aanvragen met dezelfde sleutel maken één betaling (dubbele klik in dezelfde tik)", async () => {
+    const id = await nieuweFactuur();
+    const invoer = { factuurId: id, companyId, bedragCenten: 5000, datum: "2026-10-20", sleutel: "dubbele-klik-sleutel-1" };
+    await Promise.all([registreerBetaling(db, invoer), registreerBetaling(db, invoer)]);
+    expect(await db.factuurBetaling.count({ where: { factuurId: id } })).toBe(1);
+    // een herhaling later (bijv. na een time-out) doet ook niets; een nieuwe sleutel is een nieuwe betaling
+    await registreerBetaling(db, invoer);
+    expect(await db.factuurBetaling.count({ where: { factuurId: id } })).toBe(1);
+    await registreerBetaling(db, { ...invoer, sleutel: "andere-sleutel-2" });
+    expect(await db.factuurBetaling.count({ where: { factuurId: id } })).toBe(2);
+    expect(await status(id)).toBe("DEELS_BETAALD");
+  });
+
   it("deelbetalingen: deels betaald, daarna betaald; te veel kan niet; verwijderen herstelt de status", async () => {
     const id = await nieuweFactuur();
     const totaal = (await db.factuur.findUniqueOrThrow({ where: { id } })).totaalInclCenten;

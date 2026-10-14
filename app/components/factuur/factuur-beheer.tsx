@@ -13,6 +13,7 @@ import { registreerBetalingAction, verwijderBetalingAction, maakCreditnotaAction
 import { HERINNERING_LABEL, type HerinneringStap } from "@/app/lib/factuur/betaling";
 import { FACTUUR_STATUS_LABEL } from "@/app/lib/factuur/model";
 import { formatCents, formatDatum, formatDatumTijd } from "@/app/lib/offerte/weergave";
+import { meervoud } from "@/app/lib/meervoud";
 
 export type BeheerData = {
   id: string;
@@ -46,18 +47,22 @@ const SOORT: Record<string, string> = {
   NOTITIE: "Notitie",
 };
 
+const nieuweSleutel = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 const vandaag = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Amsterdam" }).format(new Date());
 
 // Beheer van een definitieve factuur: status, betalingen, herinneringen, creditnota en tijdlijn.
 export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData; onHerinnering: (stap: HerinneringStap) => void }) {
   const router = useRouter();
   const [bezig, start] = useTransition();
+  const [betalen, setBetalen] = useState(false);
   const [betaalOpen, setBetaalOpen] = useState(false);
   const [creditOpen, setCreditOpen] = useState(false);
   const [weg, setWeg] = useState<string | null>(null);
   const [fout, setFout] = useState<string | null>(null);
   const [bedrag, setBedrag] = useState("");
   const [bedragFout, setBedragFout] = useState<string | undefined>();
+  // Eén sleutel per geopend betaalvenster: een tweede klik of herhaling (bijv. na een time-out) maakt geen tweede betaling.
+  const [sleutel, setSleutel] = useState(() => nieuweSleutel());
   const [datum, setDatum] = useState(vandaag());
   const [methode, setMethode] = useState("OVERBOEKING");
   const [notitie, setNotitie] = useState("");
@@ -68,6 +73,7 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
   function opent() {
     setBedrag(formatBedragInvoer(data.openstaandCenten));
     setBedragFout(undefined);
+    setSleutel(nieuweSleutel());
     setDatum(vandaag());
     setFout(null);
     setBetaalOpen(true);
@@ -79,12 +85,14 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
     if (!p.ok) return setBedragFout(p.fout);
     if (p.centen < 1) return setBedragFout("Vul een bedrag boven € 0,00 in.");
     const c = p.centen;
+    setBetalen(true);
     start(async () => {
       try {
-        const r = await registreerBetalingAction({ factuurId: data.id, bedragCenten: c, datum, methode: methode as "OVERBOEKING", notitie });
+        const r = await registreerBetalingAction({ factuurId: data.id, bedragCenten: c, datum, methode: methode as "OVERBOEKING", notitie, sleutel });
         if (r.ok) {
           setBetaalOpen(false);
           setNotitie("");
+          setSleutel(nieuweSleutel());
           router.refresh();
         } else {
           setFout(r.error);
@@ -94,6 +102,9 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
         }
       } catch {
         setFout("Geen verbinding. De betaling is niet opgeslagen; probeer het opnieuw zodra je weer online bent.");
+      } finally {
+        // De knop hangt aan de actie zelf, niet aan de transitie: een trage verversing houdt hem niet vast.
+        setBetalen(false);
       }
     });
   }
@@ -112,7 +123,7 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
   return (
     <section aria-label="Beheer van deze factuur" className="flex flex-col gap-4 border-b border-border bg-card px-4 py-4">
       <div className="flex flex-wrap items-center gap-2">
-        {data.dagenTeLaat ? <Badge variant="warning">{data.dagenTeLaat} {data.dagenTeLaat === 1 ? "dag" : "dagen"} te laat</Badge> : null}
+        {data.dagenTeLaat ? <Badge variant="warning">{meervoud(data.dagenTeLaat, "dag", "dagen")} te laat</Badge> : null}
         {data.creditVoor && <span className="text-sm text-muted-foreground">Creditnota bij factuur {data.creditVoor.nummer}</span>}
       </div>
       {!data.isCreditnota && (
@@ -172,7 +183,7 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
         </Field>
         <Field label="Notitie (optioneel)" htmlFor="bt-notitie"><Input id="bt-notitie" value={notitie} onChange={(e) => setNotitie(e.target.value)} /></Field>
         {fout && <p role="alert" className="text-sm text-destructive">{fout}</p>}
-        <Button type="button" onClick={betaal} disabled={bezig}>{bezig ? "Opslaan…" : "Betaling opslaan"}</Button>
+        <Button type="button" onClick={betaal} disabled={betalen}>{betalen ? "Opslaan…" : "Betaling opslaan"}</Button>
       </Sheet>
 
       <Sheet open={creditOpen} onClose={() => { setCreditOpen(false); setFout(null); }} title="Creditnota maken" description="Je maakt een concept-creditnota. Controleer hem en maak hem daarna definitief; de factuur zelf blijft ongewijzigd.">

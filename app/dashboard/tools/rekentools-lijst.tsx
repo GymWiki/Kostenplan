@@ -20,6 +20,7 @@ import {
   maakRekentoolAction,
   verwijderRekentoolAction,
 } from "@/app/lib/actions/rekentools";
+import { meervoud } from "@/app/lib/meervoud";
 
 export type RekentoolKaartData = {
   id: string;
@@ -278,7 +279,7 @@ function Kaart({ tool, magDupliceren, onVerwijderd }: { tool: RekentoolKaartData
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <Package className="h-4 w-4" aria-hidden="true" />
-            {tool.aantalWerkzaamheden} {tool.aantalWerkzaamheden === 1 ? "item" : "items"}
+            {meervoud(tool.aantalWerkzaamheden, "onderdeel", "onderdelen")}
           </span>
           <Badge variant={tool.live ? "success" : "muted"}>{tool.live ? "Live op je website" : "Nog niet op je website"}</Badge>
         </div>

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import "@/app/lib/zod-nl";
 
 // Instellingen voor "Werkgebied en minimum": per bedrijf, en per rekentool optioneel een eigen versie.
 // Alles staat standaard uit: een rekentool zonder deze instellingen gedraagt zich precies zoals voorheen.

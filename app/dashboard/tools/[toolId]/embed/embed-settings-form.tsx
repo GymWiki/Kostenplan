@@ -25,7 +25,7 @@ export function EmbedSettingsForm({
     <Card>
       <CardHeader>
         <CardTitle>Instellingen</CardTitle>
-        <CardDescription>Hoe de iframe eruitziet op de website van je klant.</CardDescription>
+        <CardDescription>Hoe de ingesloten rekentool eruitziet op de website van je klant.</CardDescription>
       </CardHeader>
       <CardContent>
         <form action={formAction} className="flex flex-col gap-4">

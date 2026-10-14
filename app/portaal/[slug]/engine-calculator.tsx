@@ -188,7 +188,7 @@ export function EngineCalculator({
   const brandPrimaryForeground = accessibleTextColor(primaireKleur);
   const fontFamily = fontFamilyFor(magPersonaliserenUiterlijk ? (branding?.lettertype ?? "MODERN") : "MODERN");
   const titel = branding?.customTitel?.trim() ? branding.customTitel.replaceAll("{bedrijfsnaam}", bedrijfsnaam) : null;
-  const bedankTekst = branding?.bedankTekst?.trim() || "Bedankt voor uw aanvraag! Wij nemen binnen 24 uur contact met u op.";
+  const bedankTekst = branding?.bedankTekst?.trim() || "Bedankt voor je aanvraag! Wij nemen binnen 24 uur contact met je op.";
   const contactPositie = branding?.contactPositie ?? "BOVENAAN";
   const contact = {
     telefoonnummer: branding?.toonTelefoonnummer ? branding.telefoonnummer : null,
@@ -308,7 +308,7 @@ export function EngineCalculator({
               <h1 className="truncate text-xl font-semibold text-[var(--brand-primary-foreground)]">{titel}</h1>
             ) : (
               <>
-                <p className="text-sm text-[var(--brand-primary-foreground)]/80">Kostencalculator van</p>
+                <p className="text-sm font-medium text-[var(--brand-primary-foreground)]">Rekentool van</p>
                 <h1 className="truncate text-xl font-semibold text-[var(--brand-primary-foreground)]">{bedrijfsnaam}</h1>
               </>
             )}
@@ -508,10 +508,10 @@ function ResultaatKaart({
         <CardContent className="flex flex-col gap-4">
           <h3 className="font-semibold text-foreground">Jouw kostenraming</h3>
 
-          {state?.success ? (
-            <p className="rounded-lg bg-[var(--brand-primary)]/10 px-3 py-3 text-sm text-foreground">{bedankTekst}</p>
-          ) : (
+          {(
             <>
+              {/* Na het versturen blijven de prijs en "Bewaar als PDF" staan; alleen het formulier maakt plaats voor de bedanktekst. */}
+              {state?.success && <p role="status" className="rounded-lg bg-[var(--brand-primary)]/10 px-3 py-3 text-sm text-foreground">{bedankTekst}</p>}
               {weergave === "UITGEBREID" && zichtbareRegels.length > 0 && (
                 <div className="flex flex-col gap-2 text-sm tabular-nums">
                   {onderdeelGroepen
@@ -556,9 +556,10 @@ function ResultaatKaart({
                 <p className="rounded-md border border-dashed border-border px-3 py-2 text-center text-xs text-muted-foreground print:hidden">
                   Dit is een voorbeeld — hier kan niemand echt een aanvraag versturen.
                 </p>
-              ) : formOpen ? (
+              ) : formOpen && !state?.success ? (
                 <form action={formAction} noValidate className="flex flex-col gap-3">
                   <input type="hidden" name="snapshot" value={JSON.stringify(snapshot)} />
+                  <p className="text-sm text-muted-foreground">Vul je gegevens in en verstuur je aanvraag. Het bedrijf neemt contact met je op en stuurt je vrijblijvend een offerte; je bent niets verplicht.</p>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="lead-naam">Naam</Label>
                     <Input id="lead-naam" name="naam" autoComplete="name" value={leadNaam} onChange={(e) => setLeadNaam(e.target.value)} required />
@@ -611,20 +612,20 @@ function ResultaatKaart({
                   </div>
                 </form>
               ) : (
-                <div className="flex flex-col gap-2 print:hidden sm:flex-row">
-                  {magOfferteAanvragen && (
+                <div className="flex flex-col gap-2 print:hidden sm:flex-row sm:flex-wrap">
+                  {magOfferteAanvragen && !state?.success && (
                     <Button
                       type="button"
                       variant="primary"
                       size="lg"
-                      className="w-full border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90 sm:flex-1"
+                      className="w-full whitespace-nowrap border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90 sm:flex-1"
                       onClick={() => setFormOpen(true)}
                     >
                       <Mail className="h-4 w-4" aria-hidden="true" />
                       {ctaTekst}
                     </Button>
                   )}
-                  <Button type="button" variant="ghost" size="lg" className="w-full sm:flex-1" onClick={() => window.print()}>
+                  <Button type="button" variant="ghost" size="lg" className="w-full whitespace-nowrap sm:flex-1" onClick={() => window.print()}>
                     <Printer className="h-4 w-4" aria-hidden="true" />
                     Bewaar als PDF
                   </Button>

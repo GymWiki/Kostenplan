@@ -37,6 +37,7 @@ import type {
   Product,
   ProductSjabloon,
 } from "@/app/generated/prisma/client";
+import { formatGetalInvoer } from "@/app/lib/getal";
 
 type ProductMetRelaties = Product & {
   materiaalCategorieen: (MaterialCategory & { materialen: MaterialOption[] })[];
@@ -189,10 +190,10 @@ export function ProductForm({
 
   const primaireCategorie = product?.materiaalCategorieen?.[0];
   const primaireOptie = primaireCategorie?.materialen?.[0];
-  const [materiaalPrijs, setMateriaalPrijs] = useState(primaireOptie ? String(primaireOptie.prijs) : "0");
+  const [materiaalPrijs, setMateriaalPrijs] = useState(primaireOptie ? formatGetalInvoer(primaireOptie.prijs) : "0");
 
   const [productiviteit, setProductiviteit] = useState(
-    product?.productiviteit != null ? String(product.productiviteit) : ""
+    product?.productiviteit != null ? formatGetalInvoer(product.productiviteit) : ""
   );
   const companyArbeidTarief = arbeidTariefVoorStapEenheid(pricingSettings, pricingSettings.arbeidStapEenheid);
   const [arbeidTarief, setArbeidTarief] = useState(

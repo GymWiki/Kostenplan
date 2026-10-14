@@ -30,14 +30,9 @@ import { OfferteStatusBadge } from "./offerte-status-badge";
 import { AfhandelKeuzeModal } from "./afhandel-keuze-modal";
 import type { LeadWithNotes } from "./leads-view";
 import type { LeadNote, LeadStatus } from "@/app/generated/prisma/client";
+import { datumLangMetTijd } from "@/app/lib/datum";
 
-const dateFormatter = new Intl.DateTimeFormat("nl-NL", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
+const dateFormatter = { format: datumLangMetTijd };
 
 export type LeadStart = { lat: number; lon: number; straalKm: number | null; label: string };
 
@@ -60,7 +55,7 @@ function LocatieBlok({ snapshot, start }: { snapshot: LeadWithNotes["snapshot"];
         <p className="font-medium text-foreground">{adres}</p>
         {afstand && <p className="text-muted-foreground">{afstand} hemelsbreed vanaf je startadres</p>}
         <LocatieLabels snapshot={snapshot} metAfstand={false} />
-        {!loc.gecontroleerd && <p className="text-xs text-muted-foreground">PDOK was niet bereikbaar, dus dit adres en de afstand zijn niet gecontroleerd.</p>}
+        {!loc.gecontroleerd && <p className="text-xs text-muted-foreground">De adressendienst was niet bereikbaar, dus dit adres en de afstand zijn niet gecontroleerd.</p>}
       </div>
       {heeftPunt && (
         <WerkgebiedKaart
@@ -185,7 +180,7 @@ export function LeadDetailDrawer({
                   <LinkButton href={`/dashboard/leads/${lead.id}/offerte`} variant="secondary" className="w-full max-md:h-12">
                     <FileText className="h-4 w-4" />
                     Offerte bekijken/bewerken
-                    <OfferteStatusBadge offerte={lead.offerte} />
+                    <OfferteStatusBadge offerte={lead.offerte} fase={lead.voortgang.fase} />
                   </LinkButton>
                 )}
                 <Button
@@ -203,7 +198,7 @@ export function LeadDetailDrawer({
                 <LinkButton href={`/dashboard/leads/${lead.id}/offerte`} variant="secondary" className="w-full max-md:h-12">
                   <FileText className="h-4 w-4" />
                   Offerte bekijken/bewerken
-                  <OfferteStatusBadge offerte={lead.offerte} />
+                  <OfferteStatusBadge offerte={lead.offerte} fase={lead.voortgang.fase} />
                 </LinkButton>
                 <button
                   type="button"
@@ -331,7 +326,7 @@ export function LeadDetailDrawer({
               Offerte
             </LinkButton>
           ) : (
-            <Button type="button" variant="secondary" size="lg" className="flex-1 px-3" onClick={() => setKeuzeModal({ open: true, startStap: "keuze" })}>
+            <Button type="button" variant="secondary" size="lg" className="flex-1 whitespace-nowrap px-3" onClick={() => setKeuzeModal({ open: true, startStap: "keuze" })}>
               Offerte maken
             </Button>
           )}

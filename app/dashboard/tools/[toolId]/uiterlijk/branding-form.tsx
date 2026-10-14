@@ -160,7 +160,7 @@ export function BrandingForm({
             <Input
               id="customTitel"
               name="customTitel"
-              placeholder="Bereken uw project met {bedrijfsnaam}…"
+              placeholder="Bereken je project met {bedrijfsnaam}…"
               value={customTitel}
               onChange={(e) => setCustomTitel(e.target.value)}
             />
@@ -175,7 +175,7 @@ export function BrandingForm({
             <Textarea
               id="welkomstTekst"
               name="welkomstTekst"
-              placeholder="Fijn dat u een offerte overweegt! Stel hieronder uw project samen.…"
+              placeholder="Fijn dat je een offerte overweegt! Stel hieronder je project samen.…"
               value={welkomstTekst}
               onChange={(e) => setWelkomstTekst(e.target.value)}
             />
@@ -261,7 +261,7 @@ export function BrandingForm({
             <Textarea
               id="offerteIntroTekst"
               name="offerteIntroTekst"
-              placeholder="Bedankt voor uw aanvraag! Hierbij onze offerte.…"
+              placeholder="Bedankt voor je aanvraag! Hierbij onze offerte.…"
               defaultValue={branding.offerteIntroTekst ?? ""}
               rows={3}
             />

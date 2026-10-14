@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: "%s · Kostenplan",
   },
   description:
-    "Kostenplan helpt hoveniers een online kostencalculator te bouwen zodat klanten direct een duidelijke schatting krijgen van de kosten van hun project.",
+    "Kostenplan helpt hoveniers een online rekentool te bouwen zodat klanten direct een duidelijke schatting krijgen van de kosten van hun project.",
 };
 
 export default function RootLayout({

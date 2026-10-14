@@ -10,7 +10,7 @@ import { ConfirmDialog } from "@/app/components/ui/confirm-dialog";
 import type { ToolStatus } from "@/app/generated/prisma/client";
 
 const OPTIES: { status: ToolStatus; label: string; beschrijving: string; icon: typeof Rocket }[] = [
-  { status: "GEPUBLICEERD", label: "Gepubliceerd", beschrijving: "Zichtbaar voor iedereen via de publieke link en embed.", icon: Rocket },
+  { status: "GEPUBLICEERD", label: "Gepubliceerd", beschrijving: "Zichtbaar voor iedereen via de publieke link en de ingesloten versie.", icon: Rocket },
   { status: "GEPAUZEERD", label: "Gepauzeerd", beschrijving: "Niet zichtbaar voor klanten, maar alle data blijft bewaard.", icon: PauseCircle },
   { status: "CONCEPT", label: "Concept", beschrijving: "Nog in opbouw, nooit publiek zichtbaar geweest of niet meer.", icon: FileEdit },
 ];
@@ -99,7 +99,7 @@ export function PublicerenActions({
           setPendingStatus(null);
         }}
         title="Rekentool offline halen?"
-        description="Klanten kunnen de publieke link en embed vanaf nu niet meer gebruiken. Al je data blijft bewaard en je kunt de tool op elk moment weer publiceren."
+        description="Klanten kunnen de publieke link en de ingesloten versie vanaf nu niet meer gebruiken. Al je data blijft bewaard en je kunt de tool op elk moment weer publiceren."
       />
     </>
   );

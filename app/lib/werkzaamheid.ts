@@ -7,6 +7,7 @@ import type {
   ProductSjabloon,
 } from "@/app/generated/prisma/client";
 import { parseGetal } from "@/app/lib/sjablonen";
+import { formatGetalInvoer } from "@/app/lib/getal";
 
 // Het nieuwe, simpele model van een werkzaamheid (= Product) voor het
 // bewerkscherm en de aanmaak-wizard. Pure functies, geen database: de UI
@@ -152,7 +153,7 @@ export function legeRij(): MateriaalRij {
   };
 }
 
-const naarTekst = (n: number | null | undefined) => (n == null ? "" : String(n));
+const naarTekst = (n: number | null | undefined) => (n == null ? "" : formatGetalInvoer(n));
 
 export function legeExtra(altijd: boolean): ExtraRij {
   return { sleutel: nieuweSleutel(), naam: "", prijs: "", type: altijd ? "PER_STUK" : "PER_STUK", altijd };
@@ -166,7 +167,7 @@ export function draftVanProduct(product: ProductMetRelaties): WerkzaamheidDraft 
     sleutel: m.id,
     id: m.id,
     naam: m.naam,
-    prijs: String(m.prijs),
+    prijs: formatGetalInvoer(m.prijs),
     prijsMin: naarTekst(m.prijsMin ?? m.prijs),
     prijsMax: naarTekst(m.prijsMax ?? m.prijs),
     productiviteitOverride: naarTekst(m.productiviteitOverride),
@@ -184,7 +185,7 @@ export function draftVanProduct(product: ProductMetRelaties): WerkzaamheidDraft 
       sleutel: e.id,
       id: e.id,
       naam: e.naam,
-      prijs: String(e.prijs),
+      prijs: formatGetalInvoer(e.prijs),
       type: e.type,
       altijd: e.altijd,
     })),
@@ -219,15 +220,18 @@ export function bestaandeExtras(product: ProductMetRelaties): string[] {
 
 export type RijFout = { sleutel: string; veld: "naam" | "prijs" | "prijsMin" | "prijsMax" | "tempo"; melding: string };
 
+// Een materiaalprijs boven dit bedrag per eenheid is vrijwel zeker een tikfout (een extra nul).
+export const MAX_MATERIAALPRIJS = 100_000;
+
 export function valideerMaterialen(d: WerkzaamheidDraft): RijFout[] {
   const fouten: RijFout[] = [];
   for (const r of d.materialen) {
     if (r.naam.trim() === "") fouten.push({ sleutel: r.sleutel, veld: "naam", melding: "Geef het materiaal een naam." });
     const check = (veld: "prijs" | "prijsMin" | "prijsMax", waarde: string) => {
       const getal = parseGetal(waarde, NaN);
-      if (Number.isNaN(getal) || getal < 0) {
-        fouten.push({ sleutel: r.sleutel, veld, melding: "Vul een prijs in." });
-      }
+      if (Number.isNaN(getal)) fouten.push({ sleutel: r.sleutel, veld, melding: "Vul een geldige prijs in, bijvoorbeeld 12,50." });
+      else if (getal < 0) fouten.push({ sleutel: r.sleutel, veld, melding: "Een prijs onder nul kan niet. Vul 0 of meer in." });
+      else if (getal > MAX_MATERIAALPRIJS) fouten.push({ sleutel: r.sleutel, veld, melding: `Deze prijs is erg hoog (meer dan € ${MAX_MATERIAALPRIJS.toLocaleString("nl-NL")} per eenheid). Controleer of je hem goed hebt ingevuld.` });
     };
     if (d.bandbreedte) {
       check("prijsMin", r.prijsMin);

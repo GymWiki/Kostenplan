@@ -83,8 +83,10 @@ export function LeadVoortgangBlok({ leadId, naam, voortgang: v }: { leadId: stri
       case "factureren":
         return setDialoog("factureren");
       case "factuur-openen":
-      case "herinneren":
         return router.push(`/dashboard/facturen/${a.factuurId}`);
+      case "herinneren":
+        // Opent de factuur met meteen de herinneringsdialoog (niet alleen de factuur).
+        return router.push(`/dashboard/facturen/${a.factuurId}?herinnering=1`);
     }
   }
 
@@ -174,6 +176,7 @@ export function LeadVoortgangBlok({ leadId, naam, voortgang: v }: { leadId: stri
             <>
               <Button type="button" disabled={bezig} onClick={() => start(async () => naarFactuur(await maakFactuurUitOfferteAction(v.offerteId!, "totaal")))}>Eén factuur voor het totaal</Button>
               <Button type="button" variant="outline" disabled={bezig} onClick={() => start(async () => naarFactuur(await maakFactuurUitOfferteAction(v.offerteId!, "termijnen")))}>Termijnfacturen volgens de offerte</Button>
+              <p className="text-sm text-muted-foreground">Maakt de termijnfacturen uit de betaalvoorwaarden van de offerte (bijvoorbeeld de aanbetaling). De eindfactuur met de werkelijke hoeveelheden maak je na de laatste termijn.</p>
             </>
           )}
           {v.offerteId && heeftTermijn && !heeftEind && (

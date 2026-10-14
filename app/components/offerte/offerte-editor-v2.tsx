@@ -26,7 +26,7 @@ import { controleerOfferte, type ControlePunt } from "@/app/lib/offerte/controle
 import type { RegelSoort } from "@/app/lib/offerte/btw-config";
 import type { OfferteInhoud, OfferteRegel } from "@/app/lib/offerte/model";
 import { OFFERTE_V2_STATUS_LABEL, type HerinneringReden } from "@/app/lib/offerte/status";
-import { formatCents } from "@/app/lib/offerte/weergave";
+import { formatCents, formatDatum } from "@/app/lib/offerte/weergave";
 import * as w from "@/app/lib/offerte/wijzig";
 import { DeelDialoog, type DeelOps } from "./deel-dialoog";
 import { bevestigFactuurVerstuurdAction, definitiefMakenAction, maakFactuurDeelklaarAction, volgendFactuurnummerAction } from "@/app/lib/actions/facturen-versturen";
@@ -34,6 +34,8 @@ import { OfferteDocument, type Selectie } from "./offerte-document";
 import { BetalingPaneel, KlantPaneel, MetaPaneel, PlanningPaneel, RegelPaneel, SectiePaneel, TekstPaneel, VoorwaardenPaneel, type Wijzig } from "./offerte-paneel";
 import { VelSchaal } from "./vel-schaal";
 import type { FactuurStatus, OfferteV2Status } from "@/app/generated/prisma/client";
+import { datumKortTijd, datumLang, datumNumeriek } from "@/app/lib/datum";
+import { meervoud } from "@/app/lib/meervoud";
 
 type Props = {
   offerteId: string;
@@ -48,6 +50,8 @@ type Props = {
   // De huidige versie is als PDF klaargezet om te delen, maar nog niet als verstuurd gemarkeerd.
   deelklaar?: boolean;
   startHerinnering?: boolean;
+  // Factuur: opent meteen de herinneringsdialoog voor deze stap (vanuit "Stuur een herinnering" bij de lead).
+  startFactuurHerinnering?: HerinneringStap | null;
   herinnering?: HerinneringReden | null;
   activiteit?: { id: string; soort: string; tekst: string | null; op: string }[];
   heeftGetekend?: boolean;
@@ -94,7 +98,7 @@ export function OfferteEditorV2(props: Props) {
 
 const GEEN_KEUZE: string[] = [];
 
-function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergrendeld, begin, versies, standaardRegels: startStandaard, btwStandaard, deelklaar = false, startHerinnering = false, herinnering = null, activiteit = [], heeftGetekend = false, gekozenOptioneel = GEEN_KEUZE, factuur: factuurCfg, naVerzenden }: Props & { naVerzenden: () => void }) {
+function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergrendeld, begin, versies, standaardRegels: startStandaard, btwStandaard, deelklaar = false, startHerinnering = false, startFactuurHerinnering = null, herinnering = null, activiteit = [], heeftGetekend = false, gekozenOptioneel = GEEN_KEUZE, factuur: factuurCfg, naVerzenden }: Props & { naVerzenden: () => void }) {
   const router = useRouter();
   const isMobiel = useIsMobiel();
   const [inhoud, setInhoud] = useState<OfferteInhoud>(begin);
@@ -111,7 +115,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
   const [standaardRegels, setStandaardRegels] = useState(startStandaard);
   const client = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [deelModus, setDeelModus] = useState<"offerte" | "herinnering">(startHerinnering ? "herinnering" : "offerte");
-  const [controleOpen, setControleOpen] = useState(startHerinnering);
+  const [controleOpen, setControleOpen] = useState(startHerinnering || Boolean(startFactuurHerinnering));
   const [mobielModus, setMobielModus] = useState<"bewerken" | "voorbeeld">("bewerken");
   const [sheet, setSheet] = useState<null | "klant" | "meta" | "onderdelen" | "voorwaarden" | "betaling" | "teksten">(null);
   const [regelSheet, setRegelSheet] = useState<{ sectieId: string; regelId: string } | null>(null);
@@ -353,7 +357,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
   // Factuur: eerst definitief maken (controle, nummer, vastleggen), daarna delen; een definitieve factuur gaat direct naar het delen.
   const [verwachtNummer, setVerwachtNummer] = useState<string | null>(null);
   const [nieuwNummer, setNieuwNummer] = useState<string | null>(null);
-  const [berichtSoort, setBerichtSoort] = useState<BerichtSoort>("factuur");
+  const [berichtSoort, setBerichtSoort] = useState<BerichtSoort>(startFactuurHerinnering ?? "factuur");
   const stuurHerinnering = (stap: HerinneringStap) => {
     setBerichtSoort(stap);
     openDelen("offerte");
@@ -392,7 +396,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
         woord: isHerinnering ? "herinnering" : woord,
         vraag: `Is de ${isHerinnering ? "herinnering" : woord} verstuurd?`,
         verstuurdTitel: isHerinnering ? "Herinnering is vastgelegd in de tijdlijn" : `${woord === "creditnota" ? "Creditnota" : "Factuur"} staat op Verstuurd`,
-        verstuurdTekst: `Verstuurd op ${new Date().toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}. Je ziet in de tijdlijn wanneer de klant de ${woord} bekijkt. Registreer een betaling zodra het geld binnen is.`,
+        verstuurdTekst: `Verstuurd op ${datumLang(new Date())}. Je ziet in de tijdlijn wanneer de klant de ${woord} bekijkt. Registreer een betaling zodra het geld binnen is.`,
         neeTekst: `De ${woord} is niet als verstuurd gemarkeerd. Je kunt hem later opnieuw delen via Versturen.`,
         wachtTekst: `Even geduld, de ${woord} wordt klaargezet…`,
       }
@@ -478,7 +482,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
       <ul className="flex flex-col gap-1 text-muted-foreground">
         {activiteit.map((a) => (
           <li key={a.id}>
-            <span className="text-foreground">{ACTIVITEIT_LABEL[a.soort] ?? a.soort}</span> · {new Date(a.op).toLocaleDateString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+            <span className="text-foreground">{ACTIVITEIT_LABEL[a.soort] ?? a.soort}</span> · {datumKortTijd(a.op)}
             {a.tekst ? <span className="block whitespace-pre-wrap">“{a.tekst}”</span> : null}
           </li>
         ))}
@@ -561,7 +565,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
               <ul className="text-muted-foreground">
                 {versies.map((v) => (
                   <li key={v.versie}>
-                    Versie {v.versie}: {v.vergrendeld ? `verstuurd${v.verstuurdOp ? ` op ${new Date(v.verstuurdOp).toLocaleDateString("nl-NL")}` : ""}` : "concept"}
+                    Versie {v.versie}: {v.vergrendeld ? `verstuurd${v.verstuurdOp ? ` op ${datumNumeriek(v.verstuurdOp)}` : ""}` : "concept"}
                   </li>
                 ))}
               </ul>
@@ -692,13 +696,13 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
           <>
             <ul className="overflow-hidden rounded-xl border border-border bg-card">
               {rij("Klant", klantSamenvatting, () => setSheet("klant"), controle.blokkerend.some((p) => p.id === "klant"))}
-              {rij("Onderdelen", `${inhoud.secties.length} ${inhoud.secties.length === 1 ? "sectie" : "secties"} · ${aantalRegels} regels · ${formatCents(eind)}`, () => setSheet("onderdelen"), controle.blokkerend.some((p) => p.id === "nulregels" || p.id === "geenregels"))}
+              {rij("Onderdelen", `${meervoud(inhoud.secties.length, "sectie", "secties")} · ${meervoud(aantalRegels, "regel", "regels")} · ${formatCents(eind)}`, () => setSheet("onderdelen"), controle.blokkerend.some((p) => p.id === "nulregels" || p.id === "geenregels"))}
               {rij("Onderwerp en teksten", inhoud.onderwerp || "Nog geen onderwerp", () => setSheet("teksten"))}
               {!isFactuur && rij("Voorwaarden", `${inhoud.voorwaarden.length} voorwaarden${inhoud.klant.type === "particulier" && inhoud.herroeping.aan ? " · herroepingsrecht" : ""}`, () => setSheet("voorwaarden"))}
               {!isFactuur && rij("Betaling en planning", inhoud.betaaltermijnen.map((t) => `${t.percentage}%`).join(" / ") + (inhoud.planning.startweek ? " · start gepland" : ""), () => setSheet("betaling"))}
               {isFactuur
-                ? rij("Datums en btw", `Vervalt ${(inhoud as FactuurInhoud).factuur.vervaldatum.split("-").reverse().join("-")}${(inhoud as FactuurInhoud).factuur.btwModus === "verlegd" ? " · btw verlegd" : ""}`, () => setSheet("meta"), controle.blokkerend.some((p) => ["datum", "uitvoering", "uitvoering-periode", "vervaldatum", "verlegd-btwid", "verlegd-klant"].includes(p.id)))
-                : rij("Nummer en datums", `Geldig tot ${inhoud.geldigTot.split("-").reverse().join("-")}`, () => setSheet("meta"), controle.blokkerend.some((p) => p.id === "geldig"))}
+                ? rij("Datums en btw", `Vervalt ${formatDatum((inhoud as FactuurInhoud).factuur.vervaldatum)}${(inhoud as FactuurInhoud).factuur.btwModus === "verlegd" ? " · btw verlegd" : ""}`, () => setSheet("meta"), controle.blokkerend.some((p) => ["datum", "uitvoering", "uitvoering-periode", "vervaldatum", "verlegd-btwid", "verlegd-klant"].includes(p.id)))
+                : rij("Nummer en datums", `Geldig tot ${formatDatum(inhoud.geldigTot)}`, () => setSheet("meta"), controle.blokkerend.some((p) => p.id === "geldig"))}
             </ul>
             {melding && <p role="status" className="rounded-lg bg-accent px-3 py-2 text-sm text-foreground">{melding}</p>}
             {(activiteit.length > 0 || heeftGetekend) && <div className="flex flex-col gap-3 text-sm">{getekendLink}{activiteitLijst}</div>}
@@ -803,7 +807,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
   return (
     <div className="-mx-4 -my-6 hidden h-[calc(100dvh-4rem)] min-h-[32rem] flex-col md:-mx-8 md:-my-8 md:flex">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
-        <Link href={terug} className="flex h-11 items-center gap-1 rounded-md px-2 text-sm font-semibold text-foreground hover:bg-secondary" aria-label="Terug">
+        <Link href={terug} className="flex h-11 items-center gap-1 rounded-md px-2 text-sm font-semibold text-foreground hover:bg-secondary">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {isFactuur ? "Terug" : "Leads"}
         </Link>
         <h1 className="min-w-0 truncate text-base font-bold text-foreground">{titelTekst}</h1>
@@ -836,7 +840,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
       {herinneringBanner}
       {fouttekst}
       <div className="flex min-h-0 flex-1">
-        <div className="min-w-0 flex-1 overflow-auto bg-muted p-6" onClick={(e) => { if (e.target === e.currentTarget) setSelectie(null); }}>
+        <div className="min-w-0 flex-1 overflow-auto bg-muted p-6" tabIndex={0} role="region" aria-label="Voorbeeld van het document" onClick={(e) => { if (e.target === e.currentTarget) setSelectie(null); }}>
           <VelSchaal marge={24}>{doc}</VelSchaal>
         </div>
         <aside aria-label="Aanpassen" className="w-[400px] shrink-0 overflow-y-auto overscroll-contain border-l border-border bg-background p-4">

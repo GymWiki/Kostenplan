@@ -25,7 +25,7 @@ const FEATURES: Record<SubscriptionTier, string[]> = {
   ],
   PRO: [
     "Alles van Plus",
-    "Rekentool insluiten via iframe op je eigen website",
+    "Rekentool op je eigen website insluiten",
     "Prioriteit bij support",
   ],
 };

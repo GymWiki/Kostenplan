@@ -11,8 +11,9 @@ import { OfferteStatusBadge } from "./offerte-status-badge";
 import { FASE_LABEL } from "@/app/lib/lead-fase";
 import type { LeadWithNotes } from "./leads-view";
 import type { LeadStatus } from "@/app/generated/prisma/client";
+import { datumKortJaar } from "@/app/lib/datum";
 
-const dateFormatter = new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "short", year: "numeric" });
+const dateFormatter = { format: datumKortJaar };
 
 type Kolom = "naam" | "waarde" | "aangemaakt";
 type Sortering = { kolom: Kolom; richting: "asc" | "desc" };
@@ -113,7 +114,7 @@ export function LeadsTable({
                   <td className="px-4 py-3">
                     {lead.offerte ? (
                       <div className="flex items-center gap-1.5">
-                        <OfferteStatusBadge offerte={lead.offerte} />
+                        <OfferteStatusBadge offerte={lead.offerte} fase={lead.voortgang.fase} />
                         {!lead.offerte.reactieGezien && <span className="animate-soft-pulse h-2 w-2 rounded-full bg-accent" aria-label="Klant heeft gereageerd" />}
                       </div>
                     ) : (
@@ -159,7 +160,7 @@ export function LeadsTable({
                 </div>
                 {lead.offerte ? (
                   <div className="flex items-center gap-1.5">
-                    <OfferteStatusBadge offerte={lead.offerte} />
+                    <OfferteStatusBadge offerte={lead.offerte} fase={lead.voortgang.fase} />
                     {!lead.offerte.reactieGezien && <span className="animate-soft-pulse h-2 w-2 rounded-full bg-accent" aria-label="Klant heeft gereageerd" />}
                   </div>
                 ) : (

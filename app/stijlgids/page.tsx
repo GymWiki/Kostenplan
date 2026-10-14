@@ -231,7 +231,7 @@ function maakBranding(primaireKleur: string, achtergrondKleur: string): Branding
     lettertype: "MODERN",
     customTitel: null,
     welkomstTekst: null,
-    bedankTekst: "Bedankt voor uw aanvraag! Wij nemen binnen 24 uur contact met u op.",
+    bedankTekst: "Bedankt voor je aanvraag! Wij nemen binnen 24 uur contact met je op.",
     toonTelefoonnummer: true,
     telefoonnummer: "0612345678",
     toonEmail: true,

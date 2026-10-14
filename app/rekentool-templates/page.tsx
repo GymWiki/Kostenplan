@@ -12,6 +12,7 @@ import { getProductIcon } from "@/app/lib/icons";
 import { CALCULATOR_TEMPLATES } from "@/app/lib/calculator-engine/templates";
 import { MODULAIRE_CALCULATOR_TEMPLATES } from "@/app/lib/calculator-engine/templates-modulair";
 import { onderdeelTemplateById } from "@/app/lib/calculator-engine/templates-onderdeel";
+import { meervoud } from "@/app/lib/meervoud";
 
 const TITLE = "Rekentool templates voor vakbedrijven";
 const DESCRIPTION =
@@ -134,7 +135,7 @@ export default function RekentoolTemplatesPage() {
                         </span>
                         <Badge variant="muted" className="shrink-0 gap-1">
                           <Layers className="h-3 w-3" aria-hidden="true" />
-                          {template.onderdeelTemplateIds.length} onderdelen
+                          {meervoud(template.onderdeelTemplateIds.length, "onderdeel", "onderdelen")}
                         </Badge>
                       </div>
                       <div>
