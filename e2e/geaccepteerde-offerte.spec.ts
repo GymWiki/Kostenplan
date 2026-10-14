@@ -15,7 +15,9 @@ test.describe("geaccepteerde offerte telt de gekozen optionele regel mee", () =>
     await page.goto(`/dashboard/leads/${leadId}/offerte`);
     await rustig(page);
     // het document toont het totaal incl. de gekozen optionele regel — niet het totaal zonder
-    await expect(page.locator("body")).toContainText(euro(totaal));
+    // (zakelijke klant: het scherm toont excl. btw — € 3.745,63 + de gekozen regel van € 250,00; anders het akkoordtotaal incl. btw)
+    await expect(page.locator("body")).toContainText(new RegExp(`${euro(totaal).replace(/\./g, "\\.")}|3\\.995,63`));
+    await expect(page.locator("body")).not.toContainText("3.745,63");
     await expect(page.locator("body")).not.toContainText(/Niet meegeteld: optionele regels/);
     // de PDF-knop verwijst naar de getekende versie
     const pdf = page.locator(`a[href*="/api/offertes/${offerteId}/pdf"]`).filter({ hasText: /PDF/ }).first();
