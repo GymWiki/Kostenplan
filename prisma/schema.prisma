@@ -375,6 +375,9 @@ model Tool {
   // Embedinstellingen (breedte/minimale hoogte/transparantie/border-radius) —
   // zelfde Json-patroon, vorm + defaults in ToolEmbedConfig (app/lib/tools.ts).
   embedConfig     Json @default("{}")
+  // Hoe de klant-rekentool eruitziet (tegels/stappen/lijst) en waar hij staat (in de pagina of als pop-up). Leeg = "Alles op
+  // één pagina", zodat bestaande rekentools niet veranderen. Vorm + defaults: app/lib/weergave/config.ts.
+  weergaveConfig  Json @default("{}")
 
   // Soft delete — een verwijderde tool blijft (met al zijn historische
   // leads/offertes/analytics) gewoon in de database staan, maar verdwijnt

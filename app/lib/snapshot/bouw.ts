@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { resolveCostSettings, parseLeadFormConfig, parseResultaatConfig } from "@/app/lib/tools";
 import { effectiveTier } from "@/app/lib/subscription";
 import { isActief, resolveWerkgebied } from "@/app/lib/werkgebied/schema";
+import { parseWeergaveConfig, STANDAARD_WEERGAVE_CONFIG } from "@/app/lib/weergave/config";
 import { parseCalculatorConfig, publicCalculatorConfig } from "@/app/lib/calculator-engine";
 import type { getToolForSnapshot } from "@/app/lib/dal";
 import { SNAPSHOT_SCHEMA_VERSIE, type MateriaalOpties, type RekentoolSnapshot } from "./types";
@@ -28,6 +29,8 @@ export function bouwSnapshotInhoud(
   const resultaat = parseResultaatConfig(tool.resultaatConfig);
   const branding = tool.branding;
   const werkgebied = resolveWerkgebied(tool.company.werkgebied, tool.werkgebied);
+  const weergave = parseWeergaveConfig(tool.weergaveConfig);
+  const weergaveIsStandaard = JSON.stringify(weergave) === JSON.stringify(STANDAARD_WEERGAVE_CONFIG);
   const engineConfig = tool.activeCalculatorConfig
     ? publicCalculatorConfig(parseCalculatorConfig(tool.activeCalculatorConfig.config))
     : null;
@@ -53,6 +56,7 @@ export function bouwSnapshotInhoud(
     vraagTelefoon: parseLeadFormConfig(tool.leadFormConfig).vraagTelefoon,
     engine: engineConfig ? { config: engineConfig, materiaalOpties } : null,
     ...(isActief(werkgebied) ? { werkgebied } : {}),
+    ...(weergaveIsStandaard ? {} : { weergave }),
   };
 }
 
