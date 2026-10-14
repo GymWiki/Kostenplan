@@ -1,8 +1,31 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/app/lib/cn";
+
+const FOCUSBAAR = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
+
+// De bovenste open overlay: alleen die reageert op Escape en Tab (een sheet boven een drawer sluit eerst zichzelf).
+const stapel: symbol[] = [];
+
+function focusbaar(dialoog: HTMLElement): HTMLElement[] {
+  return [...dialoog.querySelectorAll<HTMLElement>(FOCUSBAAR)].filter((el) => !el.closest("[inert]") && el.getAttribute("aria-hidden") !== "true" && el.tabIndex !== -1 && el.getClientRects().length > 0);
+}
+
+// Maakt alles buiten de dialoog inert (niet te focussen, niet te klikken, verborgen voor schermlezers) en geeft een
+// functie terug die precies dat weer terugdraait. Werkt ook voor een overlay boven een overlay.
+function maakRestInert(dialoog: HTMLElement): () => void {
+  const gezet: HTMLElement[] = [];
+  for (let knoop: HTMLElement = dialoog; knoop.parentElement && knoop !== document.body; knoop = knoop.parentElement) {
+    for (const zus of knoop.parentElement.children) {
+      if (zus === knoop || !(zus instanceof HTMLElement) || zus.hasAttribute("inert")) continue;
+      zus.setAttribute("inert", "");
+      gezet.push(zus);
+    }
+  }
+  return () => gezet.forEach((el) => el.removeAttribute("inert"));
+}
 
 // Gedeelde mechaniek achter elke overlay in de app (modal, drawer, mobiel
 // menu, dropdown): portal naar document.body, Escape-toets sluit 'm, en de
@@ -30,19 +53,63 @@ export function Overlay({
   backdropClassName?: string;
   className?: string;
 }) {
+  const dialoog = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Open: focus naar binnen, de rest van de pagina inert, Tab blijft in de dialoog, Escape sluit de bovenste, scroll-lock.
+  // Dicht: alles terug en de focus naar wat de overlay opende.
   useEffect(() => {
     if (!open) return;
+    const el = dialoog.current;
+    if (!el) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const id = Symbol("overlay");
+    stapel.push(id);
+    const herstelInert = maakRestInert(el);
+    const eerste = focusbaar(el).find((x) => !x.hasAttribute("data-sluiten")) ?? focusbaar(el)[0];
+    if (eerste) eerste.focus();
+    else el.focus();
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (stapel[stapel.length - 1] !== id) return;
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab" || !el) return;
+      const lijst = focusbaar(el);
+      if (lijst.length === 0) {
+        event.preventDefault();
+        el.focus();
+        return;
+      }
+      const eerstE = lijst[0]!;
+      const laatste = lijst[lijst.length - 1]!;
+      const actief = document.activeElement;
+      if (event.shiftKey && (actief === eerstE || actief === el || !el.contains(actief))) {
+        event.preventDefault();
+        laatste.focus();
+      } else if (!event.shiftKey && (actief === laatste || !el.contains(actief))) {
+        event.preventDefault();
+        eerstE.focus();
+      }
     }
     document.addEventListener("keydown", onKeyDown);
+    const vorigeOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = "";
+      document.body.style.overflow = stapel.length > 1 ? "hidden" : vorigeOverflow;
+      herstelInert();
+      stapel.splice(stapel.indexOf(id), 1);
+      // Focus terug naar de opener (als die er nog is); anders blijft de focus waar de browser hem zet.
+      if (opener && opener.isConnected) opener.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -51,15 +118,18 @@ export function Overlay({
   const doel = document.querySelector<HTMLElement>("[data-admin-theme], [data-lp]") ?? document.body;
   return createPortal(
     <div
+      ref={dialoog}
       role="dialog"
       aria-modal="true"
+      tabIndex={-1}
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
-      className={cn("fixed inset-0 z-[100]", className)}
+      className={cn("fixed inset-0 z-[100] outline-none", className)}
     >
       <button
         type="button"
         aria-label="Sluiten"
+        data-sluiten
         onClick={onClose}
         className={cn("absolute inset-0 cursor-pointer", backdropClassName)}
       />
