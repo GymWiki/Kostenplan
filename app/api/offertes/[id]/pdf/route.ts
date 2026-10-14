@@ -34,7 +34,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   // Een klaargezette of verstuurde versie komt exact zoals hij is bewaard.
   if (v.pdfData) return koppen(v.pdfData);
   try {
-    const pdf = await maakOffertePdf(`${url.origin}/offerte-print/${maakPrintToken({ k: "versie", o: id, v: versieNr })}`, inhoud);
+    const pdf = await maakOffertePdf(`${url.origin}/offerte-print/${maakPrintToken({ k: "versie", o: id, v: versieNr, concept: true })}`, inhoud);
     return koppen(pdf);
   } catch (e) {
     console.error("[offerte] voorbeeld-PDF mislukt", e);

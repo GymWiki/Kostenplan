@@ -50,6 +50,8 @@ export type OfferteDocumentProps = {
   // Publieke pagina: de klant vinkt optionele regels aan.
   optioneelKeuze?: { onToggle: (regelId: string) => void; uitgeschakeld?: boolean };
   akkoord?: AkkoordWeergave;
+  // Een nog niet verstuurde offerte (concept): de pdf draagt de markering "Concept" zodat hij niet voor een definitieve offerte wordt aangezien.
+  concept?: boolean;
   // Ruimte voor een eigen blok onder het akkoordblok (niet gebruikt in de PDF).
   className?: string;
 };
@@ -71,7 +73,7 @@ function Wijzigbaar({ sel, bewerk, children, className = "", as: Tag = "div" }: 
   );
 }
 
-export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [], bewerk, optioneelKeuze, akkoord, className = "" }: OfferteDocumentProps) {
+export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [], bewerk, optioneelKeuze, akkoord, concept = false, className = "" }: OfferteDocumentProps) {
   const a = inhoud.afzender;
   // Een factuur is een offerte-inhoud met factuurgegevens; dezelfde pagina, tabel en totalen.
   const factuur = (inhoud as Partial<FactuurInhoud>).factuur;
@@ -95,6 +97,7 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
     <div className={`og-doc ${modus === "pdf" ? "og-pdf" : "og-scherm"} ${brandingFontVariables()} ${className}`} style={stijl} data-offerte-document>
       <style dangerouslySetInnerHTML={{ __html: OFFERTE_CSS }} />
       {fInhoud ? <FactuurWatermerk inhoud={fInhoud} /> : null}
+      {concept && !fInhoud ? <div className="og-concept" role="note">CONCEPT</div> : null}
 
       <Wijzigbaar sel={{ soort: "afzender" }} bewerk={bewerk} className="og-kop">
         <div>
@@ -348,6 +351,8 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
         </Wijzigbaar>
       )}
 
+      {/* De groet en de ondertekening blijven bij elkaar op één pagina (anders staat de groet op p.1 en de handtekening alleen op p.2). */}
+      <div className="og-afsluiting">
       <Wijzigbaar sel={{ soort: "slot" }} bewerk={bewerk} className="og-blok">
         {bewerk ? <AutoTekst label="Slottekst" waarde={inhoud.slottekst} onChange={(v) => bewerk.onTekst("slottekst", v)} /> : <p className="og-tekst" style={{ marginTop: 0 }}>{inhoud.slottekst}</p>}
         <p style={{ marginTop: "3mm" }}>Met vriendelijke groet,</p>
@@ -376,10 +381,11 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
           </div>
         </div>}
       </div>
+      </div>
 
       <div className="og-voet">
         {voettekstTekst(a)}
-        <span className="pagina">{voetPaginaTekst(inhoud)} · Pagina 1 van 1</span>
+        <span className="pagina">{voetPaginaTekst(inhoud)}</span>
       </div>
     </div>
   );

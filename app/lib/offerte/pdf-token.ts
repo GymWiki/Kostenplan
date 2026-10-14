@@ -5,7 +5,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // (/offerte-print/[token]) van één offerte mag openen. De token bevat alleen
 // wát getoond wordt, niet de inhoud; die komt uit de database.
 export type PrintPayload =
-  | { k: "versie"; o: string; v: number; akkoord?: boolean; exp: number }
+  | { k: "versie"; o: string; v: number; akkoord?: boolean; concept?: boolean; exp: number }
   | { k: "voorbeeld"; n: string; akkoord?: boolean; optioneel?: boolean; exp: number }
   | { k: "factuur"; f: string; exp: number };
 
