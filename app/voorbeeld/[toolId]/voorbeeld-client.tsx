@@ -150,7 +150,7 @@ export function VoorbeeldClient({
 
   return (
     <Calculator
-      key={`${actieve.map((p) => p.id).join(",") === "" ? "leeg" : "gevuld"}-${data.weergave?.weergave ?? "lijst"}`}
+      key={actieve.map((p) => p.id).join(",") === "" ? "leeg" : "gevuld"}
       toolId={toolId}
       bedrijfsnaam={bedrijfsnaam}
       email={email}

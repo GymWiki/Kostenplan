@@ -254,6 +254,19 @@ export function Calculator({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // In de editor kan de weergave wisselen terwijl de rekentool openstaat: wat al is ingevuld blijft staan en komt in het plan.
+  const vorigeWeergave = useRef(weergaveSoort);
+  useEffect(() => {
+    if (vorigeWeergave.current === weergaveSoort) return;
+    vorigeWeergave.current = weergaveSoort;
+    queueMicrotask(() => {
+      setScherm("kiezen");
+      setOpenId(null);
+      setStap(0);
+      setPlan((pl) => (weergaveSoort === "lijst" ? pl : { ...pl, toegevoegd: products.filter((x) => (pl.hoeveelheden[x.id] ?? 0) > 0 || pl.sjabloonInvoer[x.id] !== undefined).map((x) => x.id) }));
+    });
+  }, [weergaveSoort, products]);
+
   // Deep link in de lijst: het onderdeel in beeld brengen. In een pop-up: Escape meldt aan de pagina erachter dat hij moet sluiten.
   useEffect(() => {
     if (weergaveSoort !== "lijst" || !linkId) return;

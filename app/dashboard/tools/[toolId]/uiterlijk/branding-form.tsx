@@ -205,6 +205,7 @@ export function BrandingForm({
           <label className="flex items-start gap-3 rounded-md border border-border p-3">
             <Switch
               name="toonEmail"
+              aria-label="E-mailadres tonen"
               defaultChecked={branding.toonEmail}
               className="mt-0.5"
             />
@@ -220,6 +221,7 @@ export function BrandingForm({
             <label className="flex items-start gap-3">
               <Switch
                 name="toonTelefoonnummer"
+                aria-label="Telefoonnummer tonen"
                 checked={toonTelefoonnummer}
                 onChange={(e) => setToonTelefoonnummer(e.target.checked)}
                 className="mt-0.5"
