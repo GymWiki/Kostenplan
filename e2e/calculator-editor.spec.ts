@@ -79,6 +79,7 @@ test.describe.configure({ mode: "serial" });
     await rustig(page);
     await kies(page, "Plaatsing", /Knop met pop-up/);
     await page.getByLabel("Tekst op de knop").fill("Bereken je tuin");
+    await expect.poll(() => sql(`SELECT "weergaveConfig"->>'knopTekst' FROM "Tool" WHERE id = '${toolId}'`), { timeout: 10000 }).toBe("Bereken je tuin");
     await page.getByRole("button", { name: "Terug naar overzicht" }).click();
     await page.goto(`/dashboard/tools/${toolId}?paneel=website`);
     await rustig(page);

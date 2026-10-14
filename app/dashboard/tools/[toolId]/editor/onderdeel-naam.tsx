@@ -47,10 +47,9 @@ export function OnderdeelNaam({
     const t = setTimeout(() => {
       veld.current?.focus({ preventScroll: true });
       veld.current?.select();
-      onGefocust?.();
     }, 60);
     return () => clearTimeout(t);
-  }, [focusBijStart, onGefocust]);
+  }, [focusBijStart]);
 
   // Tikken op de naam: het veld verschijnt, de cursor staat erin.
   useEffect(() => {
@@ -152,7 +151,11 @@ export function OnderdeelNaam({
               else veld.current?.blur();
             }
           }}
-          onBlur={() => bevestig(true)}
+          onBlur={() => {
+            bevestig(true);
+            // Pas als je het veld verlaat is het "eerste keer focussen" klaar; een herhaalde montage van het paneel zet de cursor er dan opnieuw in.
+            if (focusBijStart) onGefocust?.();
+          }}
           className={cn(
             "h-11 w-full min-w-0 rounded-md border bg-transparent pl-2 pr-9 text-lg font-bold text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/35",
             fout ? "border-destructive" : modus === "vast" ? "border-transparent hover:border-input" : "border-input"
