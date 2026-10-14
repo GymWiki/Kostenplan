@@ -68,6 +68,16 @@ describe("herberekenAanvraag met werkgebied", () => {
     expect(r.snapshot.locatie?.afstandKm).toBeCloseTo(10, 0);
   });
 
+  it("weigert een interactieve aanvraag zonder invoer (geen omweg langs werkgebied en minimum); de reserve-opname blijft kunnen", async () => {
+    const { herberekenAanvraag, MELDING_INVOER_ONTBREEKT } = await import("./server");
+    const i = straal("GEEN_AANVRAAG");
+    zetTool(i);
+    const sn = await snapshotVan(i, { postcode: "9999ZZ", afstandKm: 2 });
+    const zonder = { ...sn, totaal: 1.21, rekenkern: undefined };
+    expect((await herberekenAanvraag("t", zonder, { zoekAdres: gevonden(80) })).geweigerd).toBe(MELDING_INVOER_ONTBREEKT);
+    expect((await herberekenAanvraag("t", zonder, { bron: "reserve", zoekAdres: gevonden(80) })).geweigerd).toBeUndefined();
+  });
+
   it("weigert een aanvraag zonder postcode wanneer het werkgebied aan staat", async () => {
     const { herberekenAanvraag } = await import("./server");
     const i = straal("GEEN_AANVRAAG");

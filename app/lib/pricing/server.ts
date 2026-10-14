@@ -62,6 +62,7 @@ function meldAfwijking(toolId: string, details: Record<string, unknown>) {
   console.warn("[prijs] servertotaal wijkt af van de browser", JSON.stringify({ toolId, ...details }));
 }
 
+export const MELDING_INVOER_ONTBREEKT = "Je aanvraag is niet compleet. Ververs de pagina en probeer het opnieuw.";
 export const MELDING_ADRES_ONTBREEKT = "Vul je postcode en huisnummer in om je aanvraag te versturen.";
 export const MELDING_ADRES_ONBEKEND = "We vinden dit adres niet. Controleer je postcode en huisnummer.";
 
@@ -84,11 +85,15 @@ async function bepaalLocatie(
 export async function herberekenAanvraag(toolId: string, snapshot: LeadSnapshot, opties: HerberekenOpties = {}): Promise<Nagerekend> {
   const invoer = snapshot.rekenkern?.invoer;
   const waarden = snapshot.modulair?.waarden;
+  const cfg = await laadPricingConfig(toolId);
   if (!invoer && !waarden) {
     console.warn("[prijs] aanvraag zonder invoer, niet nagerekend", JSON.stringify({ toolId, totaal: snapshot.totaal }));
+    // Een interactieve aanvraag voor een rekentool die de server kan narekenen moet de invoer meesturen. Zonder invoer
+    // zou het bedrag van de browser, werkgebied en minimum voorbij, ongecontroleerd worden opgeslagen.
+    // Alleen de reserve-opname (oudere aanvragen) blijft zonder invoer toegestaan.
+    if (cfg && (opties.bron ?? "interactief") === "interactief") return { snapshot, nagerekend: false, geweigerd: MELDING_INVOER_ONTBREEKT };
     return { snapshot, nagerekend: false };
   }
-  const cfg = await laadPricingConfig(toolId);
   if (!cfg) return { snapshot, nagerekend: false };
 
   // Formule-gebaseerde ("Aangepaste") rekentool: dezelfde berekening als de browser, uit de ingevulde waarden.
