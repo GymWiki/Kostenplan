@@ -35,7 +35,7 @@ test.describe("tegels", () => {
   test("kiezen, aanpassen, verwijderen, overzicht en herladen behoudt het tuinplan", async ({ page }, info) => {
     await open(page, info.project.name, { weergave: "tegels" });
     await expect(page.getByRole("heading", { name: "Waar kunnen we je mee helpen?" })).toBeVisible();
-    const tegel = page.getByRole("button", { name: /^Schutting/ });
+    const tegel = page.locator("button[aria-expanded]").filter({ hasText: /^Schutting/ });
     await expect(tegel).toHaveAttribute("aria-expanded", "false");
     await expect(tegel).toContainText(/vanaf\s*€/);
     await tegel.click();
@@ -67,13 +67,13 @@ test.describe("tegels", () => {
 
     // Aanpassen en verwijderen.
     await page.getByRole("button", { name: "Schutting verwijderen" }).click();
-    await expect(page.getByRole("button", { name: /^Schutting/ })).toHaveAttribute("aria-expanded", "false");
+    await expect(page.locator("button[aria-expanded]").filter({ hasText: /^Schutting/ })).toHaveAttribute("aria-expanded", "false");
     await expect(page.getByRole("region", { name: "Jouw tuinplan" })).toHaveCount(0);
   });
 
   test("Escape sluit het paneel en zet de focus terug; een niet-toegevoegd onderdeel laat niets achter", async ({ page, axe }, info) => {
     await open(page, info.project.name, { weergave: "tegels" });
-    const tegel = page.getByRole("button", { name: /^Schutting/ });
+    const tegel = page.locator("button[aria-expanded]").filter({ hasText: /^Schutting/ });
     await tegel.click();
     const paneel = info.project.name === "mobiel" ? page.getByRole("dialog") : page.locator("#tegel-paneel");
     await paneel.getByLabel(/Aantal Schutting/).fill("12");
@@ -95,7 +95,7 @@ test.describe("stappen", () => {
     await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "1");
     const volgende = page.getByRole("button", { name: "Volgende" });
     await expect(volgende).toBeDisabled();
-    const schutting = page.getByRole("button", { name: /^Schutting/ });
+    const schutting = page.locator("button[aria-pressed]").filter({ hasText: /^Schutting/ });
     await schutting.click();
     await expect(schutting).toHaveAttribute("aria-pressed", "true");
     await axe("stappen: kiezen");

@@ -742,7 +742,7 @@ export function ProductCard({
                   <Label htmlFor={`materiaal-${category.id}`}>
                     {category.naam}
                     {category.verplicht && (
-                      <span className="ml-1.5 text-xs font-normal text-destructive">
+                      <span className="ml-1.5 text-xs font-medium text-foreground">
                         Verplicht
                       </span>
                     )}
@@ -1315,7 +1315,7 @@ function Summary({
                 className="flex flex-col gap-1 rounded-lg px-4 py-4"
                 style={{ backgroundColor: "var(--brand-primary)" }}
               >
-                <span className="text-xs font-medium uppercase tracking-wide text-[var(--brand-primary-foreground)]/75">
+                <span className="text-xs font-medium uppercase tracking-wide text-[var(--brand-primary-foreground)]">
                   Totaal (incl. btw)
                 </span>
                 <span className="text-3xl font-bold leading-tight tracking-tight tabular-nums text-[var(--brand-primary-foreground)]">
@@ -1324,7 +1324,7 @@ function Summary({
                 {breakdown.modus === "TOTAAL" &&
                   breakdown.margeOmlaag != null &&
                   breakdown.margeOmhoog != null && (
-                    <span className="text-xs text-[var(--brand-primary-foreground)]/60">
+                    <span className="text-xs text-[var(--brand-primary-foreground)]">
                       Indicatie −{breakdown.margeOmlaag}% / +{breakdown.margeOmhoog}%
                     </span>
                   )}

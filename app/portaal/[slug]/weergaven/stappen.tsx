@@ -58,7 +58,7 @@ export function StappenWeergave({
   const totaalStappen = 1 + volgorde.length + 1;
   const huidig = stap === 0 ? null : volgorde[stap - 1] ?? null;
   const geldig = stap === 0 ? volgorde.length > 0 : huidig ? onderdeelIsGeldig(resultaat, huidig.id) : false;
-  const laatste = stap >= volgorde.length;
+  const laatste = volgorde.length > 0 && stap >= volgorde.length;
   const label = stap === 0 ? "Kies je onderdelen" : huidig?.naam ?? "";
 
   return (
