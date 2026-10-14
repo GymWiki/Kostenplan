@@ -21,9 +21,12 @@ const AGRESSIEF = `
   img, svg { filter: grayscale(1) !important; max-width: 30px !important; }
 `;
 
-export default async function TestEmbedPagina({ searchParams }: { searchParams: Promise<{ tool?: string; modus?: string; weergave?: string; plaatsing?: string; knop?: string; positie?: string; onderdelen?: string }> }) {
+// Voor schermafbeeldingen: een gewone, rustige pagina van een hovenier.
+const NETJES = `body { font-family: system-ui, sans-serif; background: #ffffff; color: #1f2937; line-height: 1.6; margin: 0 auto; max-width: 860px; padding: 24px 16px; } h1 { font-size: 28px; }`;
+
+export default async function TestEmbedPagina({ searchParams }: { searchParams: Promise<{ tool?: string; modus?: string; weergave?: string; plaatsing?: string; knop?: string; positie?: string; onderdelen?: string; stijl?: string }> }) {
   if (process.env.TEST_PAGES !== "1") notFound();
-  const { tool, modus, weergave, plaatsing, knop, positie, onderdelen } = await searchParams;
+  const { tool, modus, weergave, plaatsing, knop, positie, onderdelen, stijl } = await searchParams;
   if (!tool) return <p>Geef ?tool=&lt;toolId&gt; mee.</p>;
   const h = await headers();
   const baseUrl = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
@@ -35,7 +38,7 @@ export default async function TestEmbedPagina({ searchParams }: { searchParams: 
   const script = code.slice(i + "<script>".length, code.lastIndexOf("</script>"));
   return (
     <main>
-      <style dangerouslySetInnerHTML={{ __html: AGRESSIEF }} />
+      <style dangerouslySetInnerHTML={{ __html: stijl === "neutraal" ? NETJES : AGRESSIEF }} />
       <h1>Website van een hovenier (testpagina)</h1>
       <p>Deze tekst en alles eromheen heeft opzettelijk lelijke CSS. De rekentool hieronder hoort daar geen last van te hebben.</p>
       <div data-testid="embed-host" dangerouslySetInnerHTML={{ __html: html }} />

@@ -114,7 +114,7 @@ export function StappenWeergave({
           </Bewerkbaar>
         ) : null}
 
-        <div className="sticky bottom-0 -mx-4 flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 sm:-mx-6 sm:px-6">
+        <div className="sticky bottom-0 -mx-5 -mb-5 flex items-center justify-between gap-3 rounded-b-xl border-t border-border bg-card px-5 py-3">
           <Button type="button" variant="ghost" size="lg" onClick={() => onStap(stap - 1)} disabled={stap === 0}>
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Terug
