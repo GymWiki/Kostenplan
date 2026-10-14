@@ -38,7 +38,10 @@ export function WerkgebiedKaart({
     (async () => {
       const L = (await import("leaflet")).default;
       if (weg || !ref.current) return;
-      kaart = L.map(ref.current, { zoomControl: true, attributionControl: true, scrollWheelZoom: false, zoomAnimation: false, fadeAnimation: false, markerZoomAnimation: false });
+      kaart = L.map(ref.current, { zoomControl: false, attributionControl: true, scrollWheelZoom: false, zoomAnimation: false, fadeAnimation: false, markerZoomAnimation: false });
+      // Nederlandse teksten bij de zoomknoppen en geen Engelse "Leaflet"-prefix in de bronvermelding.
+      L.control.zoom({ zoomInTitle: "Inzoomen", zoomOutTitle: "Uitzoomen" }).addTo(kaart);
+      kaart.attributionControl.setPrefix("");
       L.tileLayer(PDOK_TEGELS, { minZoom: 6, maxZoom: 19, attribution: "Kaartgegevens © Kadaster" }).addTo(kaart);
       const groep: import("leaflet").LatLngExpression[] = [];
       const kleur = "#15803d";
@@ -75,5 +78,5 @@ export function WerkgebiedKaart({
     };
   }, [sleutel]);
 
-  return <div ref={ref} role="img" aria-label={ariaLabel} style={{ height: hoogte }} className={cn("z-0 w-full overflow-hidden rounded-xl border border-border bg-muted", className)} />;
+  return <div ref={ref} role="group" aria-label={ariaLabel} style={{ height: hoogte }} className={cn("z-0 w-full overflow-hidden rounded-xl border border-border bg-muted", className)} />;
 }

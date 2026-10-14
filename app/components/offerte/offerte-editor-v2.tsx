@@ -26,7 +26,7 @@ import { controleerOfferte, type ControlePunt } from "@/app/lib/offerte/controle
 import type { RegelSoort } from "@/app/lib/offerte/btw-config";
 import type { OfferteInhoud, OfferteRegel } from "@/app/lib/offerte/model";
 import { OFFERTE_V2_STATUS_LABEL, type HerinneringReden } from "@/app/lib/offerte/status";
-import { formatCents } from "@/app/lib/offerte/weergave";
+import { formatCents, formatDatum } from "@/app/lib/offerte/weergave";
 import * as w from "@/app/lib/offerte/wijzig";
 import { DeelDialoog, type DeelOps } from "./deel-dialoog";
 import { bevestigFactuurVerstuurdAction, definitiefMakenAction, maakFactuurDeelklaarAction, volgendFactuurnummerAction } from "@/app/lib/actions/facturen-versturen";
@@ -701,8 +701,8 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
               {!isFactuur && rij("Voorwaarden", `${inhoud.voorwaarden.length} voorwaarden${inhoud.klant.type === "particulier" && inhoud.herroeping.aan ? " · herroepingsrecht" : ""}`, () => setSheet("voorwaarden"))}
               {!isFactuur && rij("Betaling en planning", inhoud.betaaltermijnen.map((t) => `${t.percentage}%`).join(" / ") + (inhoud.planning.startweek ? " · start gepland" : ""), () => setSheet("betaling"))}
               {isFactuur
-                ? rij("Datums en btw", `Vervalt ${(inhoud as FactuurInhoud).factuur.vervaldatum.split("-").reverse().join("-")}${(inhoud as FactuurInhoud).factuur.btwModus === "verlegd" ? " · btw verlegd" : ""}`, () => setSheet("meta"), controle.blokkerend.some((p) => ["datum", "uitvoering", "uitvoering-periode", "vervaldatum", "verlegd-btwid", "verlegd-klant"].includes(p.id)))
-                : rij("Nummer en datums", `Geldig tot ${inhoud.geldigTot.split("-").reverse().join("-")}`, () => setSheet("meta"), controle.blokkerend.some((p) => p.id === "geldig"))}
+                ? rij("Datums en btw", `Vervalt ${formatDatum((inhoud as FactuurInhoud).factuur.vervaldatum)}${(inhoud as FactuurInhoud).factuur.btwModus === "verlegd" ? " · btw verlegd" : ""}`, () => setSheet("meta"), controle.blokkerend.some((p) => ["datum", "uitvoering", "uitvoering-periode", "vervaldatum", "verlegd-btwid", "verlegd-klant"].includes(p.id)))
+                : rij("Nummer en datums", `Geldig tot ${formatDatum(inhoud.geldigTot)}`, () => setSheet("meta"), controle.blokkerend.some((p) => p.id === "geldig"))}
             </ul>
             {melding && <p role="status" className="rounded-lg bg-accent px-3 py-2 text-sm text-foreground">{melding}</p>}
             {(activiteit.length > 0 || heeftGetekend) && <div className="flex flex-col gap-3 text-sm">{getekendLink}{activiteitLijst}</div>}

@@ -43,6 +43,7 @@ import {
 import { berekenOfferteTotalen, heeftVerouderdeBerekening, regelTotaal, type OfferteRegel } from "@/app/lib/offertes";
 import { formatCurrency } from "@/app/lib/format";
 import type { Branding, Offerte } from "@/app/generated/prisma/client";
+import { formatDatum } from "@/app/lib/offerte/weergave";
 
 type EditRegel = { id: string; omschrijving: string; aantal: string; eenheid: string; prijsPerEenheid: string };
 
@@ -427,7 +428,7 @@ export function OfferteEditor({
             <span>{formatCurrency(totalen.btw)}</span>
           </div>
         </div>
-        <SamenvattingRij id="teksten" titel="Teksten en geldigheid" samenvatting={`Geldig tot ${geldigTot.split("-").reverse().join("-")}`} open={tekstenOpen} onToggle={() => setTekstenOpen((o) => !o)}>
+        <SamenvattingRij id="teksten" titel="Teksten en geldigheid" samenvatting={`Geldig tot ${formatDatum(geldigTot)}`} open={tekstenOpen} onToggle={() => setTekstenOpen((o) => !o)}>
           <label className="flex flex-col gap-1.5 text-sm font-semibold text-foreground">
             Introtekst
             <Textarea value={introTekst} onChange={(e) => setIntroTekst(e.target.value)} rows={3} />
