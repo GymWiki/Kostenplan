@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/app/generated/prisma/client";
-import { bewaarConcept, bewaarDeelklaarPdf, maakNieuweVersie, maakOfferte, OfferteVergrendeldFout, vergrendelVersie } from "./opslag";
+import { RevisieConflictFout, bewaarConcept, bewaarDeelklaarPdf, maakNieuweVersie, maakOfferte, OfferteVergrendeldFout, vergrendelVersie } from "./opslag";
 import type { OfferteInhoud } from "./model";
 
 const url = process.env.TEST_DATABASE_URL;
@@ -69,5 +69,23 @@ describe.skipIf(!url)("offerte-opslag (database)", () => {
     await vergrendelVersie(db, { offerteId: id, versie: 1 });
     await db.offerteV2.update({ where: { id }, data: { status: "GEACCEPTEERD" } });
     await expect(maakNieuweVersie(db, { offerteId: id, companyId })).rejects.toBeInstanceOf(OfferteVergrendeldFout);
+  });
+
+  it("optimistic locking: een opslag met een verouderde revisie wordt geweigerd (twee tabbladen, beide volgordes) (#69)", async () => {
+    const { id, nummer } = await maakOfferte(db, { companyId, leadId: null, prefix: "R", bouw: (n) => inhoudVoor(n) });
+    const start = (await db.offerteVersie.findFirstOrThrow({ where: { offerteId: id, versie: 1 } })).revisie;
+    // tabblad 1 en tabblad 2 openen dezelfde stand
+    const r1 = await bewaarConcept(db, { offerteId: id, companyId, inhoud: inhoudVoor(nummer, 11000), verwachteRevisie: start });
+    expect(r1).toBe(start + 1);
+    // tabblad 2 slaat op een verouderde stand: geweigerd, en de inhoud van tabblad 1 blijft staan
+    await expect(bewaarConcept(db, { offerteId: id, companyId, inhoud: inhoudVoor(nummer, 22000), verwachteRevisie: start })).rejects.toBeInstanceOf(RevisieConflictFout);
+    expect((await db.offerteVersie.findFirstOrThrow({ where: { offerteId: id, versie: 1 } })).totaalExclCenten).toBe(11000);
+    // andersom: tabblad 2 laadt de nieuwste stand en slaat dan op; nu is tabblad 1 verouderd
+    const r2 = await bewaarConcept(db, { offerteId: id, companyId, inhoud: inhoudVoor(nummer, 33000), verwachteRevisie: r1 });
+    expect(r2).toBe(r1 + 1);
+    await expect(bewaarConcept(db, { offerteId: id, companyId, inhoud: inhoudVoor(nummer, 44000), verwachteRevisie: r1 })).rejects.toMatchObject({ huidigeRevisie: r2 });
+    // doorlopend opslaan met de teruggegeven revisie blijft werken
+    const r3 = await bewaarConcept(db, { offerteId: id, companyId, inhoud: inhoudVoor(nummer, 55000), verwachteRevisie: r2 });
+    expect(r3).toBe(r2 + 1);
   });
 });

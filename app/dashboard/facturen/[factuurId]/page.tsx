@@ -53,6 +53,7 @@ export default async function FactuurPagina({ params }: { params: Promise<{ fact
   return (
     <OfferteEditorV2
       offerteId={f.id}
+      revisie={f.revisie}
       status="CONCEPT"
       vergrendeld={false}
       begin={inhoud}

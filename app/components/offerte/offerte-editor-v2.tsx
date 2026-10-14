@@ -14,13 +14,13 @@ import { useIsMobiel } from "@/app/components/mobile/use-mobiel";
 import { FactuurBeheerPaneel, type BeheerData } from "@/app/components/factuur/factuur-beheer";
 import { HERINNERING_LABEL, type HerinneringStap } from "@/app/lib/factuur/betaling";
 import type { BerichtSoort } from "@/app/lib/factuur/berichten";
-import { bewaarFactuurAction } from "@/app/lib/actions/facturen-bewerken";
+import { bewaarFactuurAction, laadFactuurConceptAction } from "@/app/lib/actions/facturen-bewerken";
 import { controleerFactuur } from "@/app/lib/factuur/controle";
 import type { FactuurInhoud } from "@/app/lib/factuur/model";
 import { factuurStatusKop } from "@/app/lib/factuur/status-kop";
 import { normaliseerFactuur, voegMeerwerkToe } from "@/app/lib/factuur/maak";
 import { FactuurMetaPaneel } from "@/app/components/factuur/factuur-paneel";
-import { bevestigVerstuurdAction, bewaarOfferteAction, nieuweVersieAction, slaStandaardRegelOpAction, verwijderStandaardRegelAction, type StandaardRegelDto } from "@/app/lib/actions/offerte-v2";
+import { bevestigVerstuurdAction, bewaarOfferteAction, laadOfferteConceptAction, nieuweVersieAction, slaStandaardRegelOpAction, verwijderStandaardRegelAction, type StandaardRegelDto } from "@/app/lib/actions/offerte-v2";
 import { berekenTotalen } from "@/app/lib/offerte/bereken";
 import { controleerOfferte, type ControlePunt } from "@/app/lib/offerte/controle";
 import type { RegelSoort } from "@/app/lib/offerte/btw-config";
@@ -37,6 +37,8 @@ import type { FactuurStatus, OfferteV2Status } from "@/app/generated/prisma/clie
 
 type Props = {
   offerteId: string;
+  // Stand van het opgeslagen concept (optimistic locking): elke opslag stuurt die mee.
+  revisie: number;
   status: OfferteV2Status;
   vergrendeld: boolean;
   begin: OfferteInhoud;
@@ -88,7 +90,7 @@ export function OfferteEditorV2(props: Props) {
   return <OfferteEditorBinnen key={`${props.offerteId}-${props.begin.versie}-${opnieuw}`} {...props} naVerzenden={() => setOpnieuw((n) => n + 1)} />;
 }
 
-function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, standaardRegels: startStandaard, btwStandaard, deelklaar = false, startHerinnering = false, herinnering = null, activiteit = [], heeftGetekend = false, factuur: factuurCfg, naVerzenden }: Props & { naVerzenden: () => void }) {
+function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergrendeld, begin, versies, standaardRegels: startStandaard, btwStandaard, deelklaar = false, startHerinnering = false, herinnering = null, activiteit = [], heeftGetekend = false, factuur: factuurCfg, naVerzenden }: Props & { naVerzenden: () => void }) {
   const router = useRouter();
   const isMobiel = useIsMobiel();
   const [inhoud, setInhoud] = useState<OfferteInhoud>(begin);
@@ -116,7 +118,6 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
   const isFactuur = Boolean(factuurCfg);
   const alleenLezen = isFactuur ? factuurCfg!.status !== "CONCEPT" : vergrendeld || status === "GEACCEPTEERD";
   const laatste = useRef(inhoud);
-  const teller = useRef(0);
   const eerste = useRef(true);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -126,19 +127,143 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
     setOpslag("wijzigingen");
   }, [isFactuur]);
 
+  // ── Opslaan ──
+  // Eén opslag tegelijk (de revisie van de vorige is nodig voor de volgende); fouten (ook "offline") worden
+  // opgevangen: status "Niet opgeslagen" met "Opnieuw proberen", automatisch opnieuw bij `online` en met
+  // oplopende wachttijd. Wijzigingen blijven in de editor en als vangnet in sessionStorage tot ze bevestigd zijn.
+  const revisieRef = useRef(beginRevisie);
+  const bezig = useRef(false);
+  const wachtOpnieuw = useRef(false);
+  const conflictRef = useRef(false);
+  const pogingen = useRef(0);
+  const herpoging = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [conflict, setConflict] = useState(false);
+  const [laadt, setLaadt] = useState(false);
+  const backupSleutel = `kp-concept:${factuurCfg ? "f" : "o"}:${factuurCfg?.id ?? offerteId}`;
+  const wisBackup = useCallback(() => {
+    try {
+      sessionStorage.removeItem(backupSleutel);
+    } catch {}
+  }, [backupSleutel]);
+
+  const bewaarRef = useRef<() => Promise<void>>(async () => {});
+  const plannHerpoging = useCallback(() => {
+    if (herpoging.current) clearTimeout(herpoging.current);
+    const wacht = Math.min(30000, 2000 * 2 ** pogingen.current);
+    pogingen.current += 1;
+    herpoging.current = setTimeout(() => void bewaarRef.current(), wacht);
+  }, []);
   const bewaar = useCallback(async () => {
-    const mijn = ++teller.current;
-    setOpslag("opslaan");
-    const r = factuurCfg ? await bewaarFactuurAction(factuurCfg.id, laatste.current) : await bewaarOfferteAction(offerteId, laatste.current);
-    if (mijn !== teller.current) return; // er is intussen iets nieuwers gewijzigd
-    if (r.ok) {
+    if (conflictRef.current) return;
+    if (bezig.current) {
+      wachtOpnieuw.current = true;
+      return;
+    }
+    bezig.current = true;
+    try {
+      do {
+        wachtOpnieuw.current = false;
+        const verstuurd = laatste.current;
+        setOpslag("opslaan");
+        let r: Awaited<ReturnType<typeof bewaarOfferteAction>>;
+        try {
+          r = factuurCfg ? await bewaarFactuurAction(factuurCfg.id, verstuurd, revisieRef.current) : await bewaarOfferteAction(offerteId, verstuurd, revisieRef.current);
+        } catch {
+          setOpslag("fout");
+          setOpslagFout("Geen verbinding. Je wijzigingen staan nog in dit scherm.");
+          plannHerpoging();
+          return;
+        }
+        if (r.ok) {
+          revisieRef.current = r.revisie;
+          pogingen.current = 0;
+          setOpslagFout(null);
+          if (laatste.current === verstuurd) {
+            setOpslag("klaar");
+            wisBackup();
+          } else setOpslag("wijzigingen");
+        } else if (r.conflict) {
+          conflictRef.current = true;
+          setConflict(true);
+          setOpslag("fout");
+          setOpslagFout(r.error);
+          return;
+        } else {
+          setOpslag("fout");
+          setOpslagFout(r.error);
+          return;
+        }
+      } while (wachtOpnieuw.current);
+    } finally {
+      bezig.current = false;
+    }
+  }, [offerteId, factuurCfg, plannHerpoging, wisBackup]);
+  useEffect(() => {
+    bewaarRef.current = bewaar;
+  }, [bewaar]);
+
+  async function laadNieuwste() {
+    setLaadt(true);
+    try {
+      const r = factuurCfg ? await laadFactuurConceptAction(factuurCfg.id) : await laadOfferteConceptAction(offerteId);
+      if (!r.ok) {
+        setMelding(r.error);
+        return;
+      }
+      revisieRef.current = r.revisie;
+      conflictRef.current = false;
+      setConflict(false);
+      laatste.current = r.inhoud;
+      eerste.current = true; // de geladen stand is al opgeslagen: niet opnieuw bewaren
+      setInhoud(r.inhoud);
       setOpslag("klaar");
       setOpslagFout(null);
-    } else {
-      setOpslag("fout");
-      setOpslagFout(r.error);
+      wisBackup();
+    } catch {
+      setMelding("Laden is niet gelukt. Controleer je verbinding en probeer het opnieuw.");
+    } finally {
+      setLaadt(false);
     }
-  }, [offerteId, factuurCfg]);
+  }
+
+  const opslagRef = useRef(opslag);
+  useEffect(() => {
+    opslagRef.current = opslag;
+  }, [opslag]);
+  // Terug online: meteen opnieuw proberen.
+  useEffect(() => {
+    const f = () => {
+      if (!conflictRef.current && opslagRef.current !== "klaar") void bewaarRef.current();
+    };
+    window.addEventListener("online", f);
+    return () => window.removeEventListener("online", f);
+  }, []);
+  useEffect(
+    () => () => {
+      if (herpoging.current) clearTimeout(herpoging.current);
+    },
+    []
+  );
+
+  // Vangnet: niet-bevestigde wijzigingen overleven een verversing van de pagina.
+  const hersteld = useRef(false);
+  useEffect(() => {
+    if (hersteld.current) return;
+    hersteld.current = true;
+    try {
+      const ruw = sessionStorage.getItem(backupSleutel);
+      if (!ruw) return;
+      const b = JSON.parse(ruw) as { inhoud: OfferteInhoud; revisie: number };
+      if (JSON.stringify(b.inhoud) === JSON.stringify(begin)) return wisBackup();
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sessionStorage bestaat alleen in de browser: herstellen kan pas na het mounten
+      setInhoud(b.inhoud);
+      setOpslag("wijzigingen");
+      if (b.revisie !== beginRevisie) {
+        conflictRef.current = true;
+        setConflict(true);
+      }
+    } catch {}
+  }, [backupSleutel, begin, beginRevisie, wisBackup]);
 
   useEffect(() => {
     laatste.current = inhoud;
@@ -147,12 +272,15 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
       return;
     }
     if (alleenLezen) return;
+    try {
+      sessionStorage.setItem(backupSleutel, JSON.stringify({ inhoud, revisie: revisieRef.current }));
+    } catch {}
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => void bewaar(), 600);
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [inhoud, alleenLezen, bewaar]);
+  }, [inhoud, alleenLezen, bewaar, backupSleutel]);
 
   // Waarschuwing bij verlaten met niet-opgeslagen wijzigingen.
   useEffect(() => {
@@ -292,6 +420,16 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
     </span>
   );
 
+  const conflictBanner = conflict && !alleenLezen && (
+    <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border-b border-destructive/40 bg-destructive/10 px-4 py-2.5 text-sm text-foreground">
+      <span>
+        Deze {isFactuur ? "factuur" : "offerte"} is in een ander tabblad of door iemand anders gewijzigd. Laad de nieuwste versie. Je eigen wijziging staat nog in beeld tot je dat doet.
+      </span>
+      <Button type="button" size="sm" onClick={() => void laadNieuwste()} disabled={laadt}>
+        {laadt ? "Laden…" : "Nieuwste versie laden"}
+      </Button>
+    </div>
+  );
   const banner = alleenLezen && isFactuur && (
     <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-accent px-4 py-2.5 text-sm text-foreground">
       <span>Deze factuur is definitief en kan niet meer worden gewijzigd. Correcties gaan via een creditnota.</span>
@@ -348,7 +486,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
       <Download className="h-4 w-4" aria-hidden="true" /> Getekende PDF
     </a>
   );
-  const fouttekst = opslagFout && opslag === "fout" ? <p role="alert" className="px-4 py-2 text-sm font-medium text-destructive">{opslagFout}</p> : null;
+  const fouttekst = opslagFout && opslag === "fout" && !conflict ? <p role="alert" className="px-4 py-2 text-sm font-medium text-destructive">{opslagFout}</p> : null;
 
   const paneelInhoud = (sel: Selectie | null) => {
     if (!sel) {
@@ -531,6 +669,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
       <div className="flex flex-col gap-4 pb-28 md:hidden">
         <KopInstellen titel={titelTekst} terug={terug} />
         <KopActie>{statusBlokMobiel}</KopActie>
+        {conflictBanner}
         {banner}
         {beheerPaneel}
         {offerteBanner}
@@ -684,6 +823,7 @@ function OfferteEditorBinnen({ offerteId, status, vergrendeld, begin, versies, s
           )}
         </div>
       </header>
+      {conflictBanner}
       {banner}
       {beheerPaneel}
       {offerteBanner}

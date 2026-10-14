@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/app/generated/prisma/client";
-import { bewaarFactuurConcept, FactuurControleFout, FactuurVergrendeldFout, maakFactuurConcept, maakFactuurDefinitief, slaFactuurPdfOp, verwijderFactuurConcept } from "./opslag";
+import { FactuurRevisieConflictFout, bewaarFactuurConcept, FactuurControleFout, FactuurVergrendeldFout, maakFactuurConcept, maakFactuurDefinitief, slaFactuurPdfOp, verwijderFactuurConcept } from "./opslag";
 import { formatteerFactuurNummer } from "./nummer";
 import { AFZENDER_OK, factuurInhoud } from "./test-helpers";
 
@@ -108,5 +108,18 @@ describe.skipIf(!url)("factuur-opslag (database)", () => {
     expect(await db.factuur.count({ where: { id: f.id } })).toBe(0);
     await db.user.delete({ where: { id: user.id } });
     await db.$executeRaw`DELETE FROM "FactuurNummerTeller" WHERE "companyId" = ${c.id}`;
+  });
+
+  it("optimistic locking: een opslag met een verouderde revisie wordt geweigerd (#69)", async () => {
+    const f = await maak({});
+    const start = (await db.factuur.findFirstOrThrow({ where: { id: f.id } })).revisie;
+    const r1 = await bewaarFactuurConcept(db, { factuurId: f.id, companyId, inhoud: factuurInhoud(), verwachteRevisie: start });
+    expect(r1).toBe(start + 1);
+    await expect(bewaarFactuurConcept(db, { factuurId: f.id, companyId, inhoud: factuurInhoud(), verwachteRevisie: start })).rejects.toBeInstanceOf(FactuurRevisieConflictFout);
+    const r2 = await bewaarFactuurConcept(db, { factuurId: f.id, companyId, inhoud: factuurInhoud(), verwachteRevisie: r1 });
+    expect(r2).toBe(r1 + 1);
+    // een definitieve factuur blijft "vergrendeld" (geen revisie-conflict)
+    await definitief(f.id);
+    await expect(bewaarFactuurConcept(db, { factuurId: f.id, companyId, inhoud: factuurInhoud(), verwachteRevisie: r2 })).rejects.toBeInstanceOf(FactuurVergrendeldFout);
   });
 });

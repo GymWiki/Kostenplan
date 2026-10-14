@@ -1146,6 +1146,8 @@ model OfferteVersie {
   inhoud            Json
   totaalExclCenten  Int @default(0)
   totaalInclCenten  Int @default(0)
+  // Optimistic locking: elke opslag van het concept verhoogt dit; een opslag met een oudere waarde wordt geweigerd.
+  revisie           Int @default(0)
 
   // Vanaf het versturen onveranderlijk; wijzigen maakt een nieuwe versie.
   vergrendeld Boolean   @default(false)
@@ -1266,6 +1268,8 @@ model Factuur {
   offerteId String?
   offerte   OfferteV2? @relation(fields: [offerteId], references: [id], onDelete: SetNull)
   offerteVersie Int?
+  // Optimistic locking: zie OfferteVersie.revisie.
+  revisie   Int     @default(0)
 
   // Reeks "F" (facturen) of "C" (creditnota's): elk een eigen doorlopende teller per bedrijf en jaar.
   reeks     String  @default("F")
