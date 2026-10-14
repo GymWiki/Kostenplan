@@ -1,3 +1,4 @@
+import { parseWeergaveConfig } from "@/app/lib/weergave/config";
 import type { Metadata } from "next";
 import { getMateriaalOptiesVoorEngineVelden, getToolCostSettings, requireActiveTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
@@ -59,6 +60,7 @@ export default async function VoorbeeldPage({ params }: { params: Promise<{ tool
         ctaTekst: parseResultaatConfig(tool.resultaatConfig).ctaTekst,
         vraagTelefoon: parseLeadFormConfig(tool.leadFormConfig).vraagTelefoon,
         werkgebied: isActief(werkgebied) ? werkgebied : null,
+        weergave: parseWeergaveConfig(tool.weergaveConfig),
       }}
       engine={engine}
     />

@@ -102,7 +102,9 @@ export function TegelsWeergave(p: TegelsProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <h3 className="text-lg font-semibold text-foreground">{p.wc.kop}</h3>
+      <Bewerkbaar doel="weergave" label="Kop en weergave">
+        <h3 className="text-lg font-semibold text-foreground">{p.wc.kop}</h3>
+      </Bewerkbaar>
       <ul ref={rasterRef} className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4" style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {p.producten.flatMap((product, i) => {
           const { tekst, toegevoegd } = tegelTekst(product);
@@ -174,6 +176,7 @@ function TegelsBalk(p: TegelsProps) {
       {/* Plek houden, zodat de vaste balk niets afdekt. */}
       <div aria-hidden="true" className="h-16" />
       <VasteBalk zichtbaar={p.zichtbaar} label="Jouw tuinplan">
+        <Bewerkbaar doel="weergave" label="Onderbalk">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 border-t border-border bg-card px-4 py-2.5 shadow-[0_-4px_16px_rgba(0,0,0,0.12)] sm:px-6">
           <p aria-live="polite" aria-atomic="true" className="min-w-0 text-sm font-semibold tabular-nums text-foreground">
             {planSamenvatting(p.toegevoegd.length, p.totaalCenten)}
@@ -182,6 +185,7 @@ function TegelsBalk(p: TegelsProps) {
             Bekijk en vraag aan
           </Button>
         </div>
+        </Bewerkbaar>
       </VasteBalk>
     </>
   );

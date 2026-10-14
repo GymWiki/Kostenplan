@@ -1,7 +1,8 @@
 import { after } from "next/server";
 import { canCreateTool, canPublishTool, requireActiveTool } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
-import { getToolEmbedCode, getToolIframeCode, getToolUrl } from "@/app/lib/url";
+import { getEmbedOpties, getToolEmbedCode, getToolIframeCode, getToolUrl } from "@/app/lib/url";
+import { parseWeergaveConfig } from "@/app/lib/weergave/config";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
 import { parseEmbedConfig, parseLeadFormConfig, parseResultaatConfig } from "@/app/lib/tools";
 import { blobGeconfigureerd } from "@/app/lib/snapshot/opslag";
@@ -52,10 +53,11 @@ export async function laadEditorProps(toolId: string, paneel: string | undefined
     kleur: tier === "GRATIS" ? null : branding.primaireKleur,
     achtergrond: tier === "GRATIS" ? null : branding.achtergrondKleur,
   };
-  const [toolUrl, embedCode, iframeCode] = await Promise.all([
+  const [toolUrl, embedCode, iframeCode, embedOpties] = await Promise.all([
     getToolUrl(company.slug, tool.slug),
     magEmbedden ? getToolEmbedCode(toolId, tool.naam, embedConfig, contact) : Promise.resolve(null),
     magEmbedden ? getToolIframeCode(toolId, tool.naam, embedConfig, contact) : Promise.resolve(null),
+    magEmbedden ? getEmbedOpties(toolId, tool.naam, embedConfig, contact) : Promise.resolve(null),
   ]);
 
   // Liep een eerdere publicatie vast (bijv. opslag even onbereikbaar)? Dan
@@ -87,7 +89,8 @@ export async function laadEditorProps(toolId: string, paneel: string | undefined
       ctaTekst: resultaat.ctaTekst ?? "",
     },
     aanvraag: { vraagTelefoon: aanvraag.vraagTelefoon, bedankTekst: branding.bedankTekst },
-    website: { toolUrl, embedCode, iframeCode, heeftContact: Boolean(contact.telefoon || contact.email), embedConfig, magEmbedden, magPubliceren, limiet: PLAN_LIMITS[tier].maxActiveTools },
+    weergave: parseWeergaveConfig(tool.weergaveConfig),
+    website: { toolUrl, embedCode, iframeCode, embedOpties, heeftContact: Boolean(contact.telefoon || contact.email), embedConfig, magEmbedden, magPubliceren, limiet: PLAN_LIMITS[tier].maxActiveTools },
     anderen: andereTools.map((t) => ({ id: t.id, naam: t.naam, werkzaamheden: t.products })),
     magNieuweTool,
     werkgebied: { bedrijf: parseWerkgebied(company.werkgebied), tool: tool.werkgebied == null ? null : parseWerkgebied(tool.werkgebied) },

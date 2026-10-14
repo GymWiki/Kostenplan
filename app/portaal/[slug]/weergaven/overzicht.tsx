@@ -35,7 +35,7 @@ export function OverzichtWeergave({
 }) {
   const rijen = producten.filter((p) => toegevoegd.includes(p.id));
   return (
-    <Bewerkbaar doel="overzicht" label="Overzicht">
+    <Bewerkbaar doel="weergave" label="Overzicht">
       <Card>
         <CardContent className="flex flex-col gap-4">
           {voortgang}

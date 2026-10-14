@@ -5,6 +5,7 @@ import { Calculator, type ProductWithDetails } from "@/app/portaal/[slug]/calcul
 import { EngineCalculator } from "@/app/portaal/[slug]/engine-calculator";
 import { Bewerkbaar, EditorProvider, type EditorHaken, type Waarschuwing } from "@/app/portaal/[slug]/bewerkbaar";
 import type { WerkgebiedInstellingen } from "@/app/lib/werkgebied/schema";
+import type { WeergaveConfig } from "@/app/lib/weergave/config";
 import type { AnyCalculatorConfigData } from "@/app/lib/calculator-engine";
 import type { Branding, CostSettings, SubscriptionTier } from "@/app/generated/prisma/client";
 
@@ -20,6 +21,7 @@ export type NaarVoorbeeld = {
   toelichting: string | null;
   ctaTekst: string | null;
   vraagTelefoon: boolean;
+  weergave?: WeergaveConfig;
   // Alleen de gast-flow: de bedrijfsnaam verandert daar tijdens het bewerken.
   bedrijfsnaam?: string;
 };
@@ -39,6 +41,7 @@ type Initieel = {
   vraagTelefoon: boolean;
   // Werkgebied en minimum zoals voor deze rekentool geldt (alleen als aan).
   werkgebied?: WerkgebiedInstellingen | null;
+  weergave?: WeergaveConfig;
 };
 
 function stuur(bericht: VanVoorbeeld) {
@@ -81,6 +84,7 @@ export function VoorbeeldClient({
         toelichting: m.toelichting,
         ctaTekst: m.ctaTekst,
         vraagTelefoon: m.vraagTelefoon,
+        weergave: m.weergave,
       });
       if (m.bedrijfsnaam) setBedrijfsnaam(m.bedrijfsnaam);
       setModus(m.modus);
@@ -146,7 +150,7 @@ export function VoorbeeldClient({
 
   return (
     <Calculator
-      key={actieve.map((p) => p.id).join(",") === "" ? "leeg" : "gevuld"}
+      key={`${actieve.map((p) => p.id).join(",") === "" ? "leeg" : "gevuld"}-${data.weergave?.weergave ?? "lijst"}`}
       toolId={toolId}
       bedrijfsnaam={bedrijfsnaam}
       email={email}
@@ -159,6 +163,7 @@ export function VoorbeeldClient({
       ctaTekst={data.ctaTekst}
       vraagTelefoon={data.vraagTelefoon}
       werkgebied={initieel.werkgebied ?? null}
+      weergave={data.weergave ?? null}
     />
   );
 }

@@ -13,7 +13,10 @@ import { Input } from "@/app/components/ui/input";
 import { Overlay } from "@/app/components/ui/overlay";
 import { cn } from "@/app/lib/cn";
 import { duplicateToolAction } from "@/app/lib/actions/tools";
-import { verwijderRekentoolAction } from "@/app/lib/actions/rekentools";
+import { slaWeergaveOpAction, verwijderRekentoolAction } from "@/app/lib/actions/rekentools";
+import { STANDAARD_WEERGAVE_CONFIG, type WeergaveConfig } from "@/app/lib/weergave/config";
+import { heeftVanafPrijs, standaardVoorbeeldmaat } from "@/app/lib/weergave/vanaf";
+import { WeergaveBlok, TegelBlok } from "./paneel-weergave";
 import type { ProductMetRelaties } from "@/app/lib/werkzaamheid";
 import type { Branding, CostSettings, SubscriptionTier, ToolStatus } from "@/app/generated/prisma/client";
 import type { ToolEmbedConfig } from "@/app/lib/tools";
@@ -21,7 +24,7 @@ import type { NaarVoorbeeld, VanVoorbeeld } from "@/app/voorbeeld/[toolId]/voorb
 import type { Waarschuwing } from "@/app/portaal/[slug]/bewerkbaar";
 import { useEditorRepository } from "./repository";
 import { OpslaanStatus } from "../producten/editor/opslaan-status";
-import type { AutosaveStatus } from "../producten/editor/use-autosave";
+import { useAutosave, type AutosaveStatus } from "../producten/editor/use-autosave";
 import { useTarieven } from "../tarieven-context";
 import { PaneelStart } from "./paneel-start";
 import { PaneelToevoegen, type AndereRekentool } from "./paneel-toevoegen";
@@ -54,10 +57,14 @@ export type EditorProps = {
   email: string;
   resultaat: ResultaatStart;
   aanvraag: AanvraagStart;
+  // Weergave en plaatsing van de klant-rekentool (ontbreekt in de gast-flow: alles op één pagina).
+  weergave?: WeergaveConfig;
   website: {
     toolUrl: string;
     embedCode: string | null;
     iframeCode?: string | null;
+    // Basis om de code per plek op de site (varianten) in de editor te bouwen.
+    embedOpties?: import("@/app/lib/embed-code").EmbedCodeOpties | null;
     heeftContact?: boolean;
     embedConfig: ToolEmbedConfig;
     magEmbedden: boolean;
@@ -144,6 +151,29 @@ export function RekentoolEditor(props: EditorProps) {
   const [bezig, setBezig] = useState(false);
   const [resultaat, setResultaat] = useState(props.resultaat);
   const [aanvraag, setAanvraag] = useState(props.aanvraag);
+  const [weergave, setWeergave] = useState<WeergaveConfig>(props.weergave ?? STANDAARD_WEERGAVE_CONFIG);
+  const weergaveGewijzigd = useRef(false);
+  const wijzigWeergave = useCallback((patch: Partial<WeergaveConfig>) => {
+    weergaveGewijzigd.current = true;
+    setWeergave((w) => ({ ...w, ...patch }));
+  }, []);
+  const wijzigOnderdeelWeergave = useCallback((id: string, patch: { tegelTekst?: string | null; voorbeeldmaat?: number | null }) => {
+    weergaveGewijzigd.current = true;
+    setWeergave((w) => {
+      const huidig = w.onderdelen[id] ?? { tegelTekst: null, voorbeeldmaat: null };
+      const nieuw = { ...huidig, ...patch };
+      const rest = Object.fromEntries(Object.entries(w.onderdelen).filter(([k]) => k !== id));
+      return { ...w, onderdelen: nieuw.tegelTekst === null && nieuw.voorbeeldmaat === null ? rest : { ...rest, [id]: nieuw } };
+    });
+  }, []);
+  // Eén opslag voor alles wat bij weergave hoort (het blok in Uiterlijk en de tegel per onderdeel).
+  const weergaveOpslag = useAutosave(weergave, async (w) => {
+    const r = await slaWeergaveOpAction(toolId, w);
+    return r.ok ? { ok: true } : r;
+  }, { uitgeschakeld: Boolean(props.gast) });
+  useEffect(() => {
+    if (weergaveGewijzigd.current) setOpslag({ status: weergaveOpslag.status, fout: weergaveOpslag.fout, ongeldig: false, opnieuw: weergaveOpslag.opnieuw });
+  }, [weergaveOpslag.status, weergaveOpslag.fout, weergaveOpslag.opnieuw]);
 
   // Verse serverdata (na router.refresh of een nieuwe werkzaamheid) samenvoegen
   // met wat hier lokaal al is aangepast.
@@ -194,7 +224,7 @@ export function RekentoolEditor(props: EditorProps) {
   const [iframeKlaar, setIframeKlaar] = useState(false);
 
   const kiesDoel = useCallback(
-    (doel: string) => setPaneel(doel === "uiterlijk-tekst" ? "uiterlijk" : doel),
+    (doel: string) => setPaneel(doel === "uiterlijk-tekst" || doel === "weergave" ? "uiterlijk" : doel),
     [setPaneel]
   );
 
@@ -261,10 +291,11 @@ export function RekentoolEditor(props: EditorProps) {
       toelichting: resultaat.toelichting.trim() || null,
       ctaTekst: resultaat.ctaTekst.trim() || null,
       vraagTelefoon: aanvraag.vraagTelefoon,
+      weergave,
       bedrijfsnaam: gast?.bedrijfsnaam,
     };
     iframeRef.current?.contentWindow?.postMessage(bericht, window.location.origin);
-  }, [iframeKlaar, producten, branding, costSettings, modus, paneel, waarschuwingen, resultaat, aanvraag, gast?.bedrijfsnaam]);
+  }, [iframeKlaar, producten, branding, costSettings, modus, paneel, waarschuwingen, resultaat, aanvraag, weergave, gast?.bedrijfsnaam]);
 
   const updateProduct = useCallback((p: ProductMetRelaties) => {
     bewerkt.current.add(p.id);
@@ -341,6 +372,20 @@ export function RekentoolEditor(props: EditorProps) {
     { id: "web", label: "Staat op je website", klaar: props.toolStatus === "GEPUBLICEERD", paneel: gast ? "account" : "website" },
   ];
 
+  // De tegel van een onderdeel (eigen tekst en maat voor de vanaf-prijs): alleen bij tegels en stappen en niet in de gast-flow.
+  const tegelBlok = (p: ProductMetRelaties) =>
+    gast || weergave.weergave === "lijst" ? null : (
+      <TegelBlok
+        key={`tegel-${p.id}`}
+        naam={p.naam}
+        eenheid={p.eenheid === "m1" ? "m" : p.eenheid === "m2" ? "m²" : p.eenheid === "m3" ? "m³" : p.eenheid}
+        heeftVanaf={heeftVanafPrijs({ sjabloon: p.sjabloon })}
+        waarde={weergave.onderdelen[p.id] ?? { tegelTekst: null, voorbeeldmaat: null }}
+        onChange={(patch) => wijzigOnderdeelWeergave(p.id, patch)}
+        standaardMaat={standaardVoorbeeldmaat(p.eenheid)}
+      />
+    );
+
   const geselecteerdProduct = paneel.startsWith("werkzaamheid:") ? producten.find((p) => p.id === paneel.slice(13)) : undefined;
 
   const paneelInhoud = (
@@ -384,6 +429,7 @@ export function RekentoolEditor(props: EditorProps) {
           onStatus={setOpslag}
           onVerwijder={() => setVerwijderProduct(geselecteerdProduct.id)}
           onGekopieerd={nieuwToegevoegd}
+          extra={tegelBlok(geselecteerdProduct)}
         />
       )}
       {paneel.startsWith("werkzaamheid:") && !geselecteerdProduct && <p className="text-sm text-muted-foreground">Laden…</p>}
@@ -397,6 +443,11 @@ export function RekentoolEditor(props: EditorProps) {
         />
       )}
       {paneel === "uiterlijk" && (gast ? gast.uiterlijkPaneel : <PaneelUiterlijk toolId={toolId} branding={branding} tier={tier} email={email} />)}
+      {paneel === "uiterlijk" && !gast && (
+        <div className="border-t border-border pt-5">
+          <WeergaveBlok waarde={weergave} onChange={wijzigWeergave} />
+        </div>
+      )}
       {paneel === "resultaat" && !gast && <PaneelResultaat toolId={toolId} start={resultaat} onStatus={setOpslag} onWijzig={setResultaat} />}
       {paneel === "aanvraag" && !gast && <PaneelAanvraag toolId={toolId} start={aanvraag} onStatus={setOpslag} onWijzig={setAanvraag} />}
       {gast && (paneel === "resultaat" || paneel === "aanvraag") && (
@@ -417,6 +468,9 @@ export function RekentoolEditor(props: EditorProps) {
           toolUrl={website.toolUrl}
           embedCode={website.embedCode}
           iframeCode={website.iframeCode ?? null}
+          embedOpties={website.embedOpties ?? null}
+          weergave={weergave}
+          producten={producten.filter((p) => p.actief).map((p) => ({ id: p.id, naam: p.naam }))}
           heeftContact={website.heeftContact ?? false}
           embedConfig={website.embedConfig}
           magEmbedden={website.magEmbedden}
@@ -604,6 +658,7 @@ export function RekentoolEditor(props: EditorProps) {
               onGekopieerd={nieuwToegevoegd}
               mobiel={mob}
               onKlaar={() => setPaneel("start")}
+              extra={tegelBlok(product)}
             />
           )}
         />

@@ -64,7 +64,9 @@ export function StappenWeergave({
   return (
     <Card>
       <CardContent className="flex flex-col gap-4">
-        <StappenVoortgang stap={Math.min(stap + 1, totaalStappen)} totaal={totaalStappen} label={label} />
+        <Bewerkbaar doel="weergave" label="Stappen">
+          <StappenVoortgang stap={Math.min(stap + 1, totaalStappen)} totaal={totaalStappen} label={label} />
+        </Bewerkbaar>
         {totaalCenten !== null && !prijsVerborgen && volgorde.length > 0 && (
           <p aria-live="polite" className="text-sm tabular-nums text-muted-foreground">
             Tot nu toe: <strong className="text-foreground">{formatCenten(totaalCenten)}</strong> incl. btw

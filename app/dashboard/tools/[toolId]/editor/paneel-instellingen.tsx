@@ -17,6 +17,9 @@ import { PublicerenActions } from "../publiceren/publiceren-actions";
 import { EmbedSettingsForm } from "../embed/embed-settings-form";
 import { EmbedTutorialTabs } from "../embed/embed-tutorial-tabs";
 import { BrandingForm } from "../uiterlijk/branding-form";
+import { bouwEmbedCode, bouwIframeCode, type EmbedCodeOpties } from "@/app/lib/embed-code";
+import type { WeergaveConfig } from "@/app/lib/weergave/config";
+import { EmbedVarianten } from "./embed-varianten";
 import { useAutosave, type AutosaveStatus } from "../producten/editor/use-autosave";
 import type { Branding, SubscriptionTier, ToolStatus } from "@/app/generated/prisma/client";
 import type { ToolEmbedConfig } from "@/app/lib/tools";
@@ -152,12 +155,19 @@ export function PaneelWebsite({
   toolUrl,
   embedCode,
   iframeCode,
+  embedOpties,
+  weergave,
+  producten,
   heeftContact,
   embedConfig,
   magEmbedden,
   magPubliceren,
   limiet,
 }: {
+  // Voor de code per plek op de site; zonder dit blijft de code van de server staan.
+  embedOpties?: EmbedCodeOpties | null;
+  weergave?: WeergaveConfig;
+  producten?: { id: string; naam: string }[];
   toolId: string;
   toolNaam: string;
   status: ToolStatus;
@@ -170,6 +180,11 @@ export function PaneelWebsite({
   magPubliceren: boolean;
   limiet: number | null;
 }) {
+  // De standaardcode volgt de plaatsing uit het paneel Uiterlijk: bij een pop-up staan knoptekst en positie in de code.
+  const popup = weergave?.plaatsing === "popup";
+  const standaardVariant = popup ? { plaatsing: "popup" as const, knopTekst: weergave.knopTekst, knopPositie: weergave.knopPositie } : undefined;
+  const code = embedOpties ? bouwEmbedCode({ ...embedOpties, variant: standaardVariant }) : embedCode;
+  const iframe = embedOpties ? bouwIframeCode(embedOpties) : iframeCode;
   return (
     <div className="flex flex-col gap-5">
       <Kop titel="Zet op mijn website" uitleg={`Zo komt “${toolNaam}” op je eigen website.`} />
@@ -196,10 +211,11 @@ export function PaneelWebsite({
         <h3 id="embed-titel" className="font-bold text-foreground">
           Plaatsen op je website
         </h3>
-        {magEmbedden && embedCode ? (
+        {magEmbedden && code ? (
           <>
-            <EmbedTutorialTabs embedCode={embedCode} iframeCode={iframeCode} heeftContact={heeftContact} />
-            <EmbedSettingsForm toolId={toolId} embedConfig={embedConfig} />
+            <EmbedTutorialTabs embedCode={code} iframeCode={iframe} heeftContact={heeftContact} />
+            {!popup && <EmbedSettingsForm toolId={toolId} embedConfig={embedConfig} />}
+            {embedOpties && producten && <EmbedVarianten toolId={toolId} opties={embedOpties} producten={producten} live={status === "GEPUBLICEERD"} />}
           </>
         ) : (
           <ProFeatureLock title="Alleen bij Pro" description="Plaats je rekentool op je eigen website. Upgrade naar Pro om de code en uitleg te ontgrendelen." />

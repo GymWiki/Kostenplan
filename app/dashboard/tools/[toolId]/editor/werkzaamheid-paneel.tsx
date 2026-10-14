@@ -62,7 +62,10 @@ export function WerkzaamheidPaneel({
   onGekopieerd,
   mobiel,
   onKlaar,
+  extra,
 }: {
+  // Extra blok onderaan het gewone paneel (bijv. de instellingen van de tegel).
+  extra?: React.ReactNode;
   toolId: string;
   product: ProductMetRelaties;
   onPreview: (p: ProductMetRelaties) => void;
@@ -571,6 +574,7 @@ export function WerkzaamheidPaneel({
         />
       )}
 
+      {extra}
       <KostenOpbouwKaart opbouw={opbouw} eenheid={eenheid} stap={stap} />
       <p className="text-xs text-muted-foreground">Opbouw voor {voorbeeldHoeveelheid} {eenheidKort}, alleen voor jou zichtbaar.</p>
     </div>
