@@ -13,6 +13,7 @@ import { registreerBetalingAction, verwijderBetalingAction, maakCreditnotaAction
 import { HERINNERING_LABEL, type HerinneringStap } from "@/app/lib/factuur/betaling";
 import { FACTUUR_STATUS_LABEL } from "@/app/lib/factuur/model";
 import { formatCents, formatDatum, formatDatumTijd } from "@/app/lib/offerte/weergave";
+import { meervoud } from "@/app/lib/meervoud";
 
 export type BeheerData = {
   id: string;
@@ -112,7 +113,7 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
   return (
     <section aria-label="Beheer van deze factuur" className="flex flex-col gap-4 border-b border-border bg-card px-4 py-4">
       <div className="flex flex-wrap items-center gap-2">
-        {data.dagenTeLaat ? <Badge variant="warning">{data.dagenTeLaat} {data.dagenTeLaat === 1 ? "dag" : "dagen"} te laat</Badge> : null}
+        {data.dagenTeLaat ? <Badge variant="warning">{meervoud(data.dagenTeLaat, "dag", "dagen")} te laat</Badge> : null}
         {data.creditVoor && <span className="text-sm text-muted-foreground">Creditnota bij factuur {data.creditVoor.nummer}</span>}
       </div>
       {!data.isCreditnota && (

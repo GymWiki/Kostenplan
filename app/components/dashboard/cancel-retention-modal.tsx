@@ -20,7 +20,7 @@ const VERLIES_PLUS = [
 ];
 
 const VERLIES_PRO_EXTRA = [
-  "Rekentool insluiten via iframe op je eigen website",
+  "Rekentool op je eigen website insluiten",
   "Prioriteit bij support",
 ];
 

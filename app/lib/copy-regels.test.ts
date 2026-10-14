@@ -6,7 +6,7 @@ import path from "node:path";
 // Copy-regel: in de UI heet het "onderdeel"; het woord "werkzaamheid" komt niet
 // meer voor in teksten die een gebruiker leest. Interne code-, route- en
 // databasenamen (bijv. `werkzaamheid:<id>` in de URL) blijven zoals ze zijn.
-const SKIP_BESTAND = /api\/landing-event|landing\/track\.ts|probeer\/lokale-repository|lib\/draft\.ts|laad-editor|calculator-engine|generated/;
+const SKIP_BESTAND = /api\/landing-event|factuur\/export\.ts|landing\/track\.ts|probeer\/lokale-repository|lib\/draft\.ts|laad-editor|calculator-engine|generated/;
 
 function bestanden(map: string, uit: string[] = []): string[] {
   for (const e of fs.readdirSync(map, { withFileTypes: true })) {
@@ -52,4 +52,20 @@ describe("copy: onderdeel in plaats van werkzaamheid", () => {
     const fout = alle.flatMap((f) => uiTeksten(f).filter((t) => /^["`']?Op je website["`']?$/.test(t.tekst)).map((t) => `${path.relative(process.cwd(), f)}:${t.regel}`));
     expect(fout).toEqual([]);
   }, 20_000);
+
+  // Begrippen en teksten die in de UI niet (meer) mogen voorkomen (testronde 2026-10-13).
+  const verboden: [RegExp, string][] = [
+    [/kostencalculator/i, 'het heet "rekentool", niet "kostencalculator"'],
+    [/\bPDOK\b/, "geen interne bronnamen (PDOK) in de UI"],
+    [/TODO/, "ontwikkelaarsnotities horen in code-commentaar, niet in de UI"],
+    [/(?<![\w-])items?(?![\w-])/i, 'Nederlands: "onderdelen"/"regels", niet "items"'],
+    [/via iframe|link en embed|de iframe|\bembed-blok\b|\bEmbedcode\b/i, 'in de UI heet dit "insluiten" (de code is geen iframe)'],
+    [/\b1 (onderdelen|regels|dagen|vragen)\b/i, 'enkelvoud bij 1 (gebruik meervoud() uit app/lib/meervoud.ts)'],
+  ];
+  for (const [regel, uitleg] of verboden) {
+    it(`UI-teksten: ${uitleg}`, () => {
+      const fout = alle.flatMap((f) => uiTeksten(f).filter((t) => regel.test(t.tekst)).map((t) => `${path.relative(process.cwd(), f)}:${t.regel} ${t.tekst.slice(0, 100)}`));
+      expect(fout).toEqual([]);
+    }, 20_000);
+  }
 });

@@ -11,7 +11,7 @@ import { FaqSection } from "@/app/components/marketing/faq-section";
 
 const TITLE = "Rekentool op je eigen website plaatsen";
 const DESCRIPTION =
-  "Zo voeg je een rekentool toe aan je eigen website: met een korte embedcode of een directe link, zonder ontwikkelaar of hosting. Werkt op WordPress, Wix en elk ander platform.";
+  "Zo voeg je een rekentool toe aan je eigen website: met een korte insluitcode of een directe link, zonder ontwikkelaar of hosting. Werkt op WordPress, Wix en elk ander platform.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -38,12 +38,12 @@ const FAQS = [
   {
     vraag: "Werkt een Kostenplan-rekentool op WordPress, Wix of Squarespace?",
     antwoord:
-      "Ja. De embedcode is een standaard HTML-iframe, dat werkt op elk platform dat aangepaste HTML toestaat — waaronder WordPress (via een HTML-blok), Wix, Squarespace en zelfgebouwde websites. Er is geen plugin nodig.",
+      "Ja. De insluitcode is een standaard stukje HTML, dat werkt op elk platform dat aangepaste HTML toestaat — waaronder WordPress (via een HTML-blok), Wix, Squarespace en zelfgebouwde websites. Er is geen plugin nodig.",
   },
   {
     vraag: "Moet ik zelf kunnen programmeren om de rekentool te plaatsen?",
     antwoord:
-      "Nee. Je kopieert één stukje code vanuit je Kostenplan-dashboard en plakt dat in een HTML- of embed-blok van je website-bouwer. Dat is dezelfde handeling als het insluiten van bijvoorbeeld een YouTube-video.",
+      "Nee. Je kopieert één stukje code vanuit je Kostenplan-dashboard en plakt dat in een HTML-blok of blok voor aangepaste code van je website-bouwer. Dat is dezelfde handeling als het insluiten van bijvoorbeeld een YouTube-video.",
   },
   {
     vraag: "Past de hoogte van de rekentool zich automatisch aan?",
@@ -53,12 +53,12 @@ const FAQS = [
   {
     vraag: "Kan ik de rekentool ook delen zonder hem op mijn website te plaatsen?",
     antwoord:
-      "Ja. Elke rekentool heeft ook een eigen, directe link (bijvoorbeeld in je e-mailhandtekening, op social media of in een Google Bedrijfsprofiel) die los van je website werkt — insluiten met een embedcode is dus een keuze, geen vereiste.",
+      "Ja. Elke rekentool heeft ook een eigen, directe link (bijvoorbeeld in je e-mailhandtekening, op social media of in een Google Bedrijfsprofiel) die los van je website werkt — insluiten met een insluitcode is dus een keuze, geen vereiste.",
   },
   {
     vraag: "Neemt de rekentool de huisstijl van mijn website over?",
     antwoord:
-      "De rekentool gebruikt je eigen logo en kleuren zoals je die in Kostenplan instelt, zodat hij visueel bij je merk past. Hij erft niet automatisch het lettertype of exacte kleurschema van je website zelf, omdat die buiten de iframe valt.",
+      "De rekentool gebruikt je eigen logo en kleuren zoals je die in Kostenplan instelt, zodat hij visueel bij je merk past. Hij erft niet automatisch het lettertype of exacte kleurschema van je website zelf, omdat die buiten de ingesloten rekentool vallen.",
   },
 ];
 
@@ -84,7 +84,7 @@ export default function RekentoolOpEigenWebsitePage() {
             <div className="mt-6 text-left">
               <GeoAnswer>
                 Je voegt een rekentool aan je website toe door hem in Kostenplan te bouwen en
-                daarna óf een korte embedcode op je eigen pagina te plakken, óf simpelweg naar de
+                daarna óf een korte insluitcode op je eigen pagina te plakken, óf simpelweg naar de
                 directe link van je rekentool te verwijzen. Er is geen hosting, server of
                 ontwikkelaar voor nodig.
               </GeoAnswer>
@@ -134,7 +134,7 @@ export default function RekentoolOpEigenWebsitePage() {
                       <Code2 className="h-5 w-5" />
                     </span>
                     <div>
-                      <h3 className="font-semibold text-foreground">Embedcode (iframe)</h3>
+                      <h3 className="font-semibold text-foreground">Insluitcode</h3>
                       <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                         Sluit de rekentool rechtstreeks in het midden van je eigen pagina in, zodat
                         een bezoeker je website nooit verlaat. De hoogte past zich automatisch aan
@@ -166,12 +166,12 @@ export default function RekentoolOpEigenWebsitePage() {
                 tekst: "Zet de rekentool live zodra je tevreden bent met de proefberekening.",
               },
               {
-                titel: "Kopieer de embedcode",
+                titel: "Kopieer de insluitcode",
                 tekst: "Ga naar het insluiten-tabblad van je rekentool en kopieer de kant-en-klare code.",
               },
               {
                 titel: "Plak de code in je website-bouwer",
-                tekst: "Voeg een HTML- of embed-blok toe op de gewenste pagina en plak de code erin.",
+                tekst: "Voeg een HTML-blok of blok voor aangepaste code toe op de gewenste pagina en plak de code erin.",
               },
               {
                 titel: "Test op desktop én mobiel",

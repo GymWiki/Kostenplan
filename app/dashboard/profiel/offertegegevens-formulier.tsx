@@ -366,7 +366,8 @@ export function OfferteGegevensFormulier({
                 </div>
               );
             })}
-            <Field label="Herroepingsrecht (voor particulieren)" htmlFor="og-herroeping" hint="Komt standaard op de offerte als de klant een particulier is. TODO(Pieter): juridisch laten checken.">
+            {/* TODO(Pieter): de standaardtekst juridisch laten checken (zie STANDAARD_HERROEPINGSTEKST). */}
+            <Field label="Herroepingsrecht (voor particulieren)" htmlFor="og-herroeping" hint="Komt standaard op de offerte als de klant een particulier is.">
               <Textarea id="og-herroeping" className="min-h-32" value={g.herroepingTekst} onChange={(e) => zet("herroepingTekst", e.target.value)} />
               <button type="button" className="w-fit text-sm font-semibold underline" onClick={() => zet("herroepingTekst", STANDAARD_HERROEPINGSTEKST)}>
                 Standaardtekst terugzetten

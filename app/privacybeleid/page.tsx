@@ -3,7 +3,7 @@ import { MarketingShell } from "@/app/components/landing/marketing-shell";
 import { LegalSection } from "@/app/components/marketing/legal-section";
 
 export const metadata: Metadata = {
-  title: "Privacybeleid",
+  title: "Privacyverklaring",
   description:
     "Lees hoe Kostenplan omgaat met persoonsgegevens van gebruikers en de klanten die via het portaal een offerte aanvragen.",
   alternates: { canonical: "/privacybeleid" },
@@ -15,7 +15,7 @@ export default function PrivacybeleidPage() {
       <main id="main-content" className="mx-auto w-full max-w-3xl flex-1 px-4 py-16 sm:px-6 sm:py-20">
         <div className="border-b border-border pb-8">
           <h1 className="text-3xl font-bold tracking-tight text-balance text-foreground sm:text-4xl">
-            Privacybeleid Kostenplan
+            Privacyverklaring Kostenplan
           </h1>
           <p className="mt-3 text-sm text-muted-foreground">Laatst gewijzigd: 14 juli 2026</p>
         </div>

@@ -55,7 +55,7 @@ function LocatieBlok({ snapshot, start }: { snapshot: LeadWithNotes["snapshot"];
         <p className="font-medium text-foreground">{adres}</p>
         {afstand && <p className="text-muted-foreground">{afstand} hemelsbreed vanaf je startadres</p>}
         <LocatieLabels snapshot={snapshot} metAfstand={false} />
-        {!loc.gecontroleerd && <p className="text-xs text-muted-foreground">PDOK was niet bereikbaar, dus dit adres en de afstand zijn niet gecontroleerd.</p>}
+        {!loc.gecontroleerd && <p className="text-xs text-muted-foreground">De adressendienst was niet bereikbaar, dus dit adres en de afstand zijn niet gecontroleerd.</p>}
       </div>
       {heeftPunt && (
         <WerkgebiedKaart

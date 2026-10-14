@@ -35,6 +35,7 @@ import { BetalingPaneel, KlantPaneel, MetaPaneel, PlanningPaneel, RegelPaneel, S
 import { VelSchaal } from "./vel-schaal";
 import type { FactuurStatus, OfferteV2Status } from "@/app/generated/prisma/client";
 import { datumKortTijd, datumLang, datumNumeriek } from "@/app/lib/datum";
+import { meervoud } from "@/app/lib/meervoud";
 
 type Props = {
   offerteId: string;
@@ -693,7 +694,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
           <>
             <ul className="overflow-hidden rounded-xl border border-border bg-card">
               {rij("Klant", klantSamenvatting, () => setSheet("klant"), controle.blokkerend.some((p) => p.id === "klant"))}
-              {rij("Onderdelen", `${inhoud.secties.length} ${inhoud.secties.length === 1 ? "sectie" : "secties"} · ${aantalRegels} regels · ${formatCents(eind)}`, () => setSheet("onderdelen"), controle.blokkerend.some((p) => p.id === "nulregels" || p.id === "geenregels"))}
+              {rij("Onderdelen", `${meervoud(inhoud.secties.length, "sectie", "secties")} · ${meervoud(aantalRegels, "regel", "regels")} · ${formatCents(eind)}`, () => setSheet("onderdelen"), controle.blokkerend.some((p) => p.id === "nulregels" || p.id === "geenregels"))}
               {rij("Onderwerp en teksten", inhoud.onderwerp || "Nog geen onderwerp", () => setSheet("teksten"))}
               {!isFactuur && rij("Voorwaarden", `${inhoud.voorwaarden.length} voorwaarden${inhoud.klant.type === "particulier" && inhoud.herroeping.aan ? " · herroepingsrecht" : ""}`, () => setSheet("voorwaarden"))}
               {!isFactuur && rij("Betaling en planning", inhoud.betaaltermijnen.map((t) => `${t.percentage}%`).join(" / ") + (inhoud.planning.startweek ? " · start gepland" : ""), () => setSheet("betaling"))}

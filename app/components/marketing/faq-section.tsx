@@ -20,7 +20,7 @@ const HOMEPAGE_FAQS: Faq[] = [
   {
     vraag: "Kan ik de rekentool op mijn eigen website plaatsen?",
     antwoord:
-      "Ja. Je plaatst de rekentool met een korte embedcode op je eigen pagina, of je deelt de directe link — bijvoorbeeld in je e-mailhandtekening of op social media. Er is geen hosting of ontwikkelaar voor nodig.",
+      "Ja. Je plaatst de rekentool met een korte insluitcode op je eigen pagina, of je deelt de directe link — bijvoorbeeld in je e-mailhandtekening of op social media. Er is geen hosting of ontwikkelaar voor nodig.",
   },
   {
     vraag: "Hoe voeg ik mijn eigen prijzen en tarieven toe?",

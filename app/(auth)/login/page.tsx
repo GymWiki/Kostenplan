@@ -23,7 +23,7 @@ export default async function LoginPage({
       <CardHeader>
         <CardTitle as="h1" className="text-xl">Welkom terug</CardTitle>
         <CardDescription>
-          Log in om je kostencalculator te beheren.
+          Log in om je rekentool te beheren.
         </CardDescription>
       </CardHeader>
       <CardContent>

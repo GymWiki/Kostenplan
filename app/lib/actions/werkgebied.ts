@@ -38,10 +38,10 @@ export async function slaWerkgebiedOpAction(bereik: WerkgebiedBereik, invoer: un
     const s = w.start;
     const r = await zoekPostcodeHuisnummer(s.postcode, s.huisnummer, s.toevoeging);
     if (r.ok) {
-      if (!r.waarde) return { ok: false, error: "Dit adres vind ik niet bij PDOK. Controleer de postcode en het huisnummer." };
+      if (!r.waarde) return { ok: false, error: "Dit adres vind ik niet in het adressenregister. Controleer de postcode en het huisnummer." };
       w.start = { ...s, postcode: r.waarde.postcode, straat: r.waarde.straat, plaats: r.waarde.plaats, lat: r.waarde.lat, lon: r.waarde.lon };
     } else if (!(Number.isFinite(s.lat) && Number.isFinite(s.lon))) {
-      return { ok: false, error: "De adressendienst van PDOK is nu niet bereikbaar. Probeer het over een paar minuten opnieuw." };
+      return { ok: false, error: "De adressendienst is nu niet bereikbaar. Probeer het over een paar minuten opnieuw." };
     }
   }
 

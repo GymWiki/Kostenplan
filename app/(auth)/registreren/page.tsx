@@ -18,7 +18,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
       <CardHeader>
         <CardTitle as="h1" className="text-xl">Start met Kostenplan</CardTitle>
         <CardDescription>
-          Maak in 1 minuut je eigen kostencalculator voor klanten.
+          Maak in 1 minuut je eigen rekentool voor klanten.
         </CardDescription>
       </CardHeader>
       <CardContent>

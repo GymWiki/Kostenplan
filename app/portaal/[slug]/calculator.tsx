@@ -309,7 +309,7 @@ export function Calculator({
               <h1 className="truncate text-xl font-semibold text-[var(--brand-primary-foreground)]">{titel}</h1>
             ) : (
               <>
-                <p className="text-sm text-[var(--brand-primary-foreground)]/80">Kostencalculator van</p>
+                <p className="text-sm font-medium text-[var(--brand-primary-foreground)]">Rekentool van</p>
                 <h1 className="truncate text-xl font-semibold text-[var(--brand-primary-foreground)]">{bedrijfsnaam}</h1>
               </>
             )}
