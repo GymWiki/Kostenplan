@@ -1,6 +1,7 @@
 import { test as basis, expect, type Page } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import { execFileSync } from "node:child_process";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { cookie, GEBRUIKERS } = require("../scripts/test/ids.js");
@@ -16,11 +17,12 @@ export const seed = (): Seed => JSON.parse(fs.readFileSync(path.join(__dirname, 
 // desktop = a2) is er één "slot". Het slot zet de rekentool terug op de standaard (leeg = alles op één pagina) en geeft hem weer vrij.
 const slotSql = (q: string) => execFileSync("psql", [process.env.DATABASE_URL ?? "postgresql://postgres@127.0.0.1:5433/kp", "-t", "-A", "-c", q]).toString().trim();
 
-export const test = basis.extend<{ gebruiker: Gebruiker | "auto" | null; axe: (naam?: string) => Promise<void>; toolSlot: void }>({
+export const test = basis.extend<{ gebruiker: Gebruiker | "auto" | null; axe: (naam?: string) => Promise<void>; toolSlot: void; slotVoor: "a1" | "a2" | null }>({
+  slotVoor: [null, { option: true }],
   toolSlot: [
-    async ({}, gebruik, info) => {
-      const eigen = info.project.name === "mobiel" ? "a1" : "a2";
-      const map = path.join(require("node:os").tmpdir(), `kp-e2e-slot-${eigen}`);
+    async ({ slotVoor }, gebruik, info) => {
+      const eigen = slotVoor ?? (info.project.name === "mobiel" ? "a1" : "a2");
+      const map = path.join(os.tmpdir(), `kp-e2e-slot-${eigen}`);
       const begin = Date.now();
       for (;;) {
         try {

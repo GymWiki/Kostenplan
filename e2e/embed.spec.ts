@@ -1,5 +1,11 @@
 import { test, expect, seed, rustig, pdokNep } from "./fixtures";
 
+// Beide projecten gebruiken hovenier A1; het slot voorkomt dat een andere spec ondertussen de weergave van die rekentool wijzigt.
+test.use({ slotVoor: "a1" });
+test.beforeEach(async ({ toolSlot }) => {
+  void toolSlot;
+});
+
 // De embed (laadscript en iframe) tussen agressieve CSS van de host-site, en een volledige aanvraag door een klant.
 const tool = () => seed().a1.tools.tuinaanleg;
 
