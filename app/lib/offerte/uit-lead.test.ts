@@ -241,3 +241,22 @@ describe("offertetotaal = totaal in de rekentool", () => {
     expect(r.regels.find((x) => /Klinker/.test(x.omschrijving))!.prijsCenten).toBe(4500);
   });
 });
+
+describe("minimumtarief in de offerte", () => {
+  const producten: P[] = [product({ id: "a", naam: "Schutting", eenheid: "m1", productiviteit: 8, materiaalCategorieen: [{ id: "c1", naam: "Hout", materialen: [optie("m1", "Douglas", 12.5)] }] })];
+
+  it("de minimumaanvulling is een eigen regel 'Aanvulling tot minimumtarief' (niet bij Transport) en het totaal is precies het minimum", async () => {
+    const { stelMinimumExactIn } = await import("./minimum");
+    const config = { ...configVanProducten(producten, kosten), minimum: { aan: true, bedragInclCenten: 150000, gedrag: "TARIEF" as const } };
+    const invoer = invoerVanKlant({ producten, hoeveelheden: { a: 10 } });
+    const resultaat = berekenPrijs(config, invoer);
+    expect(resultaat.totaalInclCenten).toBe(150000);
+    const o = bouwOfferteUitLead(bouwLeadSnapshot({ config, invoer, resultaat }));
+    const regels = o.secties.flatMap((s) => s.regels);
+    expect(regels.filter((r) => r.omschrijving === "Aanvulling tot minimumtarief")).toHaveLength(1);
+    expect(regels.filter((r) => /^Transport/.test(r.omschrijving)).every((r) => !/minimum/i.test(r.omschrijving))).toBe(true);
+    expect(o.minimumInclCenten).toBe(150000);
+    const basis = { secties: o.secties, klant: { type: "particulier" }, afzender: { korActief: false }, rekenregel: 3 } as unknown as OfferteInhoud;
+    expect(berekenTotalen(stelMinimumExactIn(basis, o.minimumInclCenten!)).totaalIncl).toBe(150000);
+  });
+});

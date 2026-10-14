@@ -1,3 +1,4 @@
+import { stelMinimumExactIn } from "./minimum";
 import type { Lead } from "@/app/generated/prisma/client";
 import type { LeadSnapshot } from "@/app/lib/leads";
 import { termijnenVoor, voorwaardenTeksten, type OfferteGegevensWaarden } from "./gegevens";
@@ -71,5 +72,5 @@ export function bouwInhoudUitLead({
     rekenregel: 3,
     bron: { leadId: lead.id, totaalRekentoolInclCenten: bouw.totaalRekentoolInclCenten, bandbreedte: bouw.bandbreedte || undefined, waarschuwingen: bouw.waarschuwingen.length > 0 ? bouw.waarschuwingen : undefined },
   };
-  return { inhoud, waarschuwingen: bouw.waarschuwingen };
+  return { inhoud: stelMinimumExactIn(inhoud, bouw.minimumInclCenten ?? 0), waarschuwingen: bouw.waarschuwingen };
 }
