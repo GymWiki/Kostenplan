@@ -41,12 +41,19 @@ export function OnderdeelNaam({
     if (document.activeElement !== veld.current) setTekst(waarde);
   }, [waarde]);
 
+  const startSelectie = useRef(false);
+
   // Cursor in het veld en de tekst geselecteerd: typen vervangt de naam. (Pas na een korte tel: het paneel of de sheet is dan klaar met openen.)
   useEffect(() => {
     if (!focusBijStart) return;
     const t = setTimeout(() => {
-      veld.current?.focus({ preventScroll: true });
-      veld.current?.select();
+      const el = veld.current;
+      if (!el) return;
+      if (document.activeElement !== el) el.focus({ preventScroll: true });
+      if (!startSelectie.current) {
+        startSelectie.current = true;
+        el.select();
+      }
     }, 60);
     return () => clearTimeout(t);
   }, [focusBijStart]);
@@ -149,6 +156,13 @@ export function OnderdeelNaam({
               setFout(null);
               if (modus === "tik") setBewerken(false);
               else veld.current?.blur();
+            }
+          }}
+          onFocus={(e) => {
+            // Ook als een ander focus-effect (bijv. de sheet) het veld eerder focust dan onze timer: eerste keer alles selecteren.
+            if (focusBijStart && !startSelectie.current) {
+              startSelectie.current = true;
+              e.currentTarget.select();
             }
           }}
           onBlur={() => {
