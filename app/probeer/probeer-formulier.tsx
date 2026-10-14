@@ -255,8 +255,11 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
             Terug
           </Button>
         )}
-        {stap < 2 ? (
+        {/* Twee losse knoppen met eigen key: met één knop die van type wisselt, hergebruikt React hetzelfde DOM-element en
+            werd "Volgende" tijdens dezelfde tik een submit-knop, waarna het formulier meteen verstuurd werd (#75). */}
+        {stap < 2 && (
           <Button
+            key="volgende"
             type="button"
             size="lg"
             className="flex-1"
@@ -268,8 +271,9 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
           >
             Volgende
           </Button>
-        ) : (
-          <Button type="submit" form="probeer-formulier" size="lg" className="flex-1" disabled={bezig || gekozen.length === 0}>
+        )}
+        {stap === 2 && (
+          <Button key="maak" type="submit" form="probeer-formulier" size="lg" className="flex-1" disabled={bezig || gekozen.length === 0}>
             {bezig ? "Bezig…" : "Maak mijn rekentool"}
           </Button>
         )}
