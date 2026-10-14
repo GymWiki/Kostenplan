@@ -134,3 +134,51 @@ test.describe("prijs na contactgegevens", () => {
     await expect(page.getByLabel("Naam")).toBeVisible();
   });
 });
+
+test.describe("metingen", () => {
+  test("events per weergave en plaatsing, en de statistiek op het Rekentools-overzicht", async ({ page }, info) => {
+    const toolId = seed()[eigenA(info.project.name)].tools.tuinaanleg;
+    sql(`DELETE FROM "AnalyticsEvent" WHERE "toolId" = '${toolId}'`);
+    await open(page, info.project.name, { weergave: "tegels" });
+    const tegel = page.locator("button[aria-expanded]").filter({ hasText: /^Schutting/ });
+    await tegel.click();
+    const paneel = info.project.name === "mobiel" ? page.getByRole("dialog") : page.locator("#tegel-paneel");
+    await vulSchutting(paneel);
+    await paneel.getByRole("button", { name: "Toevoegen aan mijn tuinplan" }).click();
+    await page.getByRole("region", { name: "Jouw tuinplan" }).getByRole("button", { name: "Bekijk en vraag aan" }).click();
+    await page.getByRole("button", { name: /Offerte aanvragen/ }).click();
+    const tel = (type: string) => Number(sql(`SELECT count(*) FROM "AnalyticsEvent" WHERE "toolId" = '${toolId}' AND type = '${type}' AND weergave = 'tegels' AND plaatsing = 'inline'`));
+    for (const type of ["VISIT", "ONDERDEEL_GEOPEND", "ONDERDEEL_TOEGEVOEGD", "OVERZICHT_BEKEKEN", "AANVRAAG_GESTART"]) {
+      await expect.poll(() => tel(type), { message: type, timeout: 15000 }).toBeGreaterThanOrEqual(1);
+    }
+  });
+});
+
+test.describe("statistiek op het Rekentools-overzicht", () => {
+  test.use({ gebruiker: "auto" });
+  test("de kaart toont de laatste 30 dagen en de weergaven naast elkaar", async ({ page, axe }, info) => {
+    test.skip(info.project.name === "mobiel", "de mobiele lijst toont geen statistiek");
+    const a = seed()[eigenA(info.project.name)];
+    const toolId = a.tools.tuinaanleg;
+    sql(`DELETE FROM "AnalyticsEvent" WHERE "toolId" = '${toolId}'`);
+    const rij = (type: string, weergave: string | null, plaatsing: string | null, n: number) =>
+      sql(`INSERT INTO "AnalyticsEvent" (id, "companyId", "toolId", type, weergave, plaatsing, "createdAt") SELECT 'e2e' || md5(random()::text || g), '${a.company1}', '${toolId}', '${type}', ${weergave ? `'${weergave}'` : "NULL"}, ${plaatsing ? `'${plaatsing}'` : "NULL"}, now() FROM generate_series(1, ${n}) g`);
+    rij("VISIT", "tegels", "inline", 3);
+    rij("VISIT", "lijst", "inline", 2);
+    rij("ONDERDEEL_TOEGEVOEGD", "tegels", "inline", 2);
+    rij("AANVRAAG_VERSTUURD", "tegels", "inline", 1);
+    rij("LEAD", null, null, 1);
+    // Ouder dan 30 dagen telt niet mee.
+    sql(`INSERT INTO "AnalyticsEvent" (id, "companyId", "toolId", type, "createdAt") VALUES ('e2eoud', '${a.company1}', '${toolId}', 'VISIT', now() - interval '31 days')`);
+    await page.goto("/dashboard/tools");
+    await rustig(page);
+    const kaart = page.locator("h2", { hasText: "Tuinaanleg" }).locator("xpath=ancestor::div[contains(@class,'rounded-xl')][1]");
+    await expect(kaart).toContainText("Laatste 30 dagen: 5 bezoekers · 2 onderdelen toegevoegd · 1 aanvraag");
+    await kaart.locator("summary", { hasText: "Per weergave" }).click();
+    const tabel = kaart.getByRole("table");
+    await expect(tabel.getByRole("row", { name: /Tegels, in de pagina 3 2 1/ })).toBeVisible();
+    await expect(tabel.getByRole("row", { name: /Alles op één pagina, in de pagina 2 0 0/ })).toBeVisible();
+    await axe("rekentools met statistiek");
+    sql(`DELETE FROM "AnalyticsEvent" WHERE "toolId" = '${toolId}'`);
+  });
+});
