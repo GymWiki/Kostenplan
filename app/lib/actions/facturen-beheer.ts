@@ -16,6 +16,8 @@ const betalingSchema = z.object({
   datum: z.string(),
   methode: z.enum(["OVERBOEKING", "CONTANT", "PIN", "BETAALLINK", "OVERIG"]),
   notitie: z.string().max(300).optional(),
+  // Idempotentiesleutel: dezelfde sleutel maakt nooit een tweede betaling (dubbele klik, herhaalde aanvraag).
+  sleutel: z.string().min(8).max(80).optional(),
 });
 
 function ververs(factuurId: string) {

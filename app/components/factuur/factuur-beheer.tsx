@@ -47,6 +47,7 @@ const SOORT: Record<string, string> = {
   NOTITIE: "Notitie",
 };
 
+const nieuweSleutel = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 const vandaag = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Amsterdam" }).format(new Date());
 
 // Beheer van een definitieve factuur: status, betalingen, herinneringen, creditnota en tijdlijn.
@@ -59,6 +60,8 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
   const [fout, setFout] = useState<string | null>(null);
   const [bedrag, setBedrag] = useState("");
   const [bedragFout, setBedragFout] = useState<string | undefined>();
+  // Eén sleutel per geopend betaalvenster: een tweede klik of herhaling (bijv. na een time-out) maakt geen tweede betaling.
+  const [sleutel, setSleutel] = useState(() => nieuweSleutel());
   const [datum, setDatum] = useState(vandaag());
   const [methode, setMethode] = useState("OVERBOEKING");
   const [notitie, setNotitie] = useState("");
@@ -69,6 +72,7 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
   function opent() {
     setBedrag(formatBedragInvoer(data.openstaandCenten));
     setBedragFout(undefined);
+    setSleutel(nieuweSleutel());
     setDatum(vandaag());
     setFout(null);
     setBetaalOpen(true);
@@ -82,10 +86,11 @@ export function FactuurBeheerPaneel({ data, onHerinnering }: { data: BeheerData;
     const c = p.centen;
     start(async () => {
       try {
-        const r = await registreerBetalingAction({ factuurId: data.id, bedragCenten: c, datum, methode: methode as "OVERBOEKING", notitie });
+        const r = await registreerBetalingAction({ factuurId: data.id, bedragCenten: c, datum, methode: methode as "OVERBOEKING", notitie, sleutel });
         if (r.ok) {
           setBetaalOpen(false);
           setNotitie("");
+          setSleutel(nieuweSleutel());
           router.refresh();
         } else {
           setFout(r.error);
