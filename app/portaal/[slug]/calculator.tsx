@@ -391,6 +391,8 @@ export function Calculator({
     const pr = productVan(id);
     if (pr) setPlan((pl) => verwijderUitPlan(pl, pr));
     if (openId === id) setOpenId(null);
+    // Stappen: na het verwijderen begint de klant weer bij het kiezen (anders springt hij bij de volgende keuze meteen door).
+    setStap(0);
   };
   const wisselGekozen = (id: string) => (plan.toegevoegd.includes(id) ? haalWeg(id) : voegToe(id));
   const configurator: Configurator = (product, { prijsVerborgen: verborgen }) => (

@@ -115,3 +115,22 @@ describe("zuiver", () => {
     expect(zuiver({ a: nu, createdAt: nu, toolId: "x", b: 1 })).toEqual({ a: nu.toISOString(), b: 1 });
   });
 });
+
+describe("weergave in de momentopname", () => {
+  it("een bestaande rekentool (standaard) laat de momentopname en zijn hash precies zoals ze waren", () => {
+    const zonder = bouwSnapshotInhoud(tool(), {});
+    const leeg = bouwSnapshotInhoud(tool({ weergaveConfig: {} }), {});
+    expect("weergave" in zonder).toBe(false);
+    expect(hashInhoud(leeg)).toBe(hashInhoud(zonder));
+  });
+
+  it("een gekozen weergave en plaatsing zitten in de momentopname, zodat de embed ze ook zonder database kent", () => {
+    const i = bouwSnapshotInhoud(tool({ weergaveConfig: { weergave: "tegels", plaatsing: "popup", knopTekst: "Bereken", onderdelen: { p1: { tegelTekst: "Terrassen", voorbeeldmaat: 12 } } } }), {});
+    expect(i.weergave).toMatchObject({ weergave: "tegels", plaatsing: "popup", knopTekst: "Bereken", onderdelen: { p1: { tegelTekst: "Terrassen", voorbeeldmaat: 12 } } });
+    expect(hashInhoud(i)).not.toBe(hashInhoud(bouwSnapshotInhoud(tool(), {})));
+  });
+
+  it("ongeldige instellingen vallen terug op de standaard", () => {
+    expect("weergave" in bouwSnapshotInhoud(tool({ weergaveConfig: { weergave: "raar", plaatsing: 5 } }), {})).toBe(false);
+  });
+});
