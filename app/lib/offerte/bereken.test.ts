@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { berekenTotalen, regelBedragExcl } from "./bereken";
+import { berekenTotalen, prijsPerEenheidWeergave, regelBedragExcl } from "./bereken";
 import type { OfferteInhoud, OfferteRegel } from "./model";
 
 const afzender = { korActief: false } as OfferteInhoud["afzender"];
@@ -68,5 +68,58 @@ describe("berekenTotalen", () => {
     const t = berekenTotalen(inhoud(regels));
     const som = regels.reduce((s, r) => s + t.regels[r.id].incl, 0);
     expect(t.totaalIncl).toBe(som);
+  });
+});
+
+// #76: aantal × getoonde prijs moet het getoonde regeltotaal zijn (rekenregel 3, particulier).
+describe("berekenTotalen met rekenregel 3 (particulier: aantal × prijs = regeltotaal)", () => {
+  const met3 = (regels: OfferteRegel[], klant = particulier, a = afzender) => ({ ...inhoud(regels, klant, a), rekenregel: 3 as const });
+
+  it("24 × € 88,87 en 17 × € 20,70 (de regels uit factuur F2026-0003)", () => {
+    const r1 = regel({ aantal: 24, prijsCenten: 7345, btw: 21 }); // € 73,45 excl. = € 88,87 incl.
+    const r2 = regel({ aantal: 17, prijsCenten: 1900, btw: 9 }); // € 19,00 excl. = € 20,71 incl.
+    const t = berekenTotalen(met3([r1, r2]));
+    expect(prijsPerEenheidWeergave(r1, true, false)).toBe(8887);
+    expect(t.regels[r1.id].incl).toBe(24 * 8887); // 2.132,88
+    expect(t.regels[r2.id].incl).toBe(17 * prijsPerEenheidWeergave(r2, true, false));
+    expect(t.totaalIncl).toBe(t.regels[r1.id].incl + t.regels[r2.id].incl);
+    expect(t.totaalExcl + t.totaalBtw).toBe(t.totaalIncl);
+  });
+
+  it("voor elke combinatie van aantal en prijs is aantal × getoonde prijs gelijk aan het regeltotaal", () => {
+    for (const prijsCenten of [1, 99, 1234, 7345, 1999, 20700 / 1.09, 33333]) {
+      for (const aantal of [1, 2, 3, 7, 17, 24, 99, 2.5]) {
+        for (const btw of [21, 9, 0]) {
+          const r = regel({ aantal, prijsCenten: Math.round(prijsCenten), btw });
+          const t = berekenTotalen(met3([r]));
+          const verwacht = Math.round(aantal * prijsPerEenheidWeergave(r, true, false));
+          expect(t.regels[r.id].incl, `${aantal} × ${prijsCenten} @ ${btw}%`).toBe(verwacht);
+          expect(t.regels[r.id].incl - t.regels[r.id].excl, "btw = incl − excl").toBe(t.totaalBtw);
+        }
+      }
+    }
+  });
+
+  it("de btw per tarief telt op tot de totaalbtw; zakelijk en KOR rekenen ongewijzigd", () => {
+    const regels = [regel({ aantal: 24, prijsCenten: 7345, btw: 21 }), regel({ aantal: 17, prijsCenten: 1900, btw: 9 })];
+    const t3 = berekenTotalen(met3(regels));
+    expect(t3.btwGroepen.reduce((s, g) => s + g.btw, 0)).toBe(t3.totaalBtw);
+    for (const [klant, a] of [[zakelijk, afzender], [particulier, kor]] as const) {
+      const oud = berekenTotalen({ ...inhoud(regels, klant, a), rekenregel: 2 as const });
+      const nieuw = berekenTotalen(met3(regels, klant, a));
+      expect(nieuw.totaalIncl).toBe(oud.totaalIncl);
+      expect(nieuw.totaalExcl).toBe(oud.totaalExcl);
+    }
+  });
+
+  it("korting wordt op het regeltotaal incl. btw toegepast", () => {
+    const r = regel({ aantal: 10, prijsCenten: 7345, btw: 21, kortingPct: 10 });
+    const t = berekenTotalen(met3([r]));
+    expect(t.regels[r.id].incl).toBe(88870 - 8887);
+  });
+
+  it("offertes zonder rekenregel (of met 2) rekenen exact zoals voorheen", () => {
+    const r = regel({ aantal: 24, prijsCenten: 7345, btw: 21 });
+    expect(berekenTotalen(inhoud([r])).regels[r.id].incl).toBe(Math.round(24 * 7345) + Math.round(24 * 7345 * 0.21));
   });
 });

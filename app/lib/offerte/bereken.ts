@@ -68,9 +68,18 @@ export function berekenTotalen(
     let sIncl = 0;
     for (const r of sectie.regels) {
       const tarief = geenBtw ? 0 : r.btw;
-      const excl = regelBedragExcl(r);
-      const korting = r.type === "tekst" ? 0 : round((r.aantal * r.prijsCenten) - 0) - excl;
-      const incl = excl + round((excl * tarief) / 100);
+      let excl = regelBedragExcl(r);
+      let korting = r.type === "tekst" ? 0 : round((r.aantal * r.prijsCenten) - 0) - excl;
+      let incl = excl + round((excl * tarief) / 100);
+      if (inhoud.rekenregel === 3 && toonIncl && r.type !== "tekst") {
+        // Particulier: de klant ziet de prijs per eenheid incl. btw (op hele centen). Het regeltotaal is aantal × díe prijs,
+        // zodat er op het document altijd klopt wat er staat. De btw volgt daaruit (terugrekenen per tarief).
+        const bruto = round(r.aantal * prijsPerEenheidWeergave(r, true, false));
+        const kortingIncl = r.kortingPct ? round((bruto * r.kortingPct) / 100) : 0;
+        incl = bruto - kortingIncl;
+        excl = tarief === 0 ? incl : round((incl * 100) / (100 + tarief));
+        korting = tarief === 0 ? kortingIncl : round((bruto * 100) / (100 + tarief)) - excl;
+      }
       const meetel = r.type !== "tekst" && (r.type !== "optioneel" || gekozen.has(r.id));
       regels[r.id] = { id: r.id, excl, korting, btw: tarief, incl, meetel };
       if (r.type === "optioneel" && !gekozen.has(r.id)) optioneelNietGekozenIncl += incl;
@@ -86,7 +95,7 @@ export function berekenTotalen(
   // Rekenregel 2 (nieuwe offertes, gelijk aan de rekenkern in app/lib/pricing): de btw is de som van de btw
   // per regel, zodat de getoonde regels altijd optellen tot het totaal. Offertes zonder `rekenregel` rekenen
   // zoals ze verstuurd zijn: de btw per tarief over de som van de regels.
-  const perRegel = inhoud.rekenregel === 2;
+  const perRegel = inhoud.rekenregel === 2 || inhoud.rekenregel === 3;
   const btwGroepen: BtwGroep[] = [...groepExcl.keys()]
     .sort((a, b) => b - a)
     .map((tarief) => {

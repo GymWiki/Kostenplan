@@ -59,7 +59,7 @@ function basisUitOfferte(o: OfferteInhoud, secties: OfferteSectie[], meta: Factu
     planning: { startweek: "", doorlooptijd: "" },
     bijlagen: [],
     slottekst: "",
-    rekenregel: 2,
+    rekenregel: o.rekenregel === 3 ? 3 : 2, // een factuur rekent zoals de offerte waaruit hij komt
     factuur: meta,
   };
 }

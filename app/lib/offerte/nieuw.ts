@@ -68,7 +68,7 @@ export function bouwInhoudUitLead({
     planning: { startweek: "", doorlooptijd: "" },
     bijlagen: gegevens.voorwaardenPdfUrl ? [{ naam: gegevens.voorwaardenPdfNaam || "Algemene voorwaarden.pdf", url: gegevens.voorwaardenPdfUrl }] : [],
     slottekst: gegevens.slotTekst,
-    rekenregel: 2,
+    rekenregel: 3,
     bron: { leadId: lead.id, totaalRekentoolInclCenten: bouw.totaalRekentoolInclCenten, bandbreedte: bouw.bandbreedte || undefined, waarschuwingen: bouw.waarschuwingen.length > 0 ? bouw.waarschuwingen : undefined },
   };
   return { inhoud, waarschuwingen: bouw.waarschuwingen };
