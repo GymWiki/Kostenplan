@@ -98,7 +98,7 @@ async function lead(c: { companyId: string; toolId: string; toolNaam: string; pr
       include: { versies: true },
     });
     if (o.offerte === "GEACCEPTEERD") {
-      await db.offerteAkkoord.create({ data: { offerteId: rij.id, versieId: rij.versies[0].id, naam: o.naam, versieNummer: 1, gekozenRegelIds: ["e"], totaalInclCenten: t.totaalIncl, pdfHash: "testhash" } });
+      await db.offerteAkkoord.create({ data: { offerteId: rij.id, versieId: rij.versies[0].id, naam: o.naam, versieNummer: 1, gekozenRegelIds: ["e"], totaalInclCenten: berekenTotalen(inhoud, ["e"]).totaalIncl, pdfHash: "testhash" } });
     }
     offerte = { id: rij.id, versieId: rij.versies[0].id, inhoud };
   }

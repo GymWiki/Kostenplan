@@ -10,6 +10,7 @@ import { ontbrekendeVerplichteGegevens } from "@/app/lib/offerte/gegevens";
 import type { OfferteInhoud } from "@/app/lib/offerte/model";
 import type { RegelSoort } from "@/app/lib/offerte/btw-config";
 import { herinneringNodig, weergaveStatusV2 } from "@/app/lib/offerte/status";
+import { geldendeInhoud } from "@/app/lib/offerte/geldend";
 import { OfferteEditorV2 } from "@/app/components/offerte/offerte-editor-v2";
 import { OfferteStarter } from "@/app/components/offerte/offerte-starter";
 
@@ -43,7 +44,7 @@ export default async function OffertePage({
     const huidig = versies.find((v) => v.versie === v2.huidigeVersie) ?? versies[versies.length - 1];
     const [gebeurtenissen, akkoord, standaardRegels, gegevens] = await Promise.all([
       prisma.offerteGebeurtenis.findMany({ where: { offerteId: v2.id }, orderBy: { createdAt: "desc" }, take: 15 }),
-      prisma.offerteAkkoord.findFirst({ where: { offerteId: v2.id }, select: { id: true } }),
+      prisma.offerteAkkoord.findFirst({ where: { offerteId: v2.id }, select: { id: true, gekozenRegelIds: true } }),
       prisma.offerteStandaardRegel.findMany({ where: { companyId: company.id }, orderBy: { createdAt: "desc" } }),
       laadOfferteGegevens(company),
     ]);
@@ -58,6 +59,7 @@ export default async function OffertePage({
         herinnering={herinneringNodig({ status: v2.status, geldigTot: v2.geldigTot, verstuurdOp: v2.verstuurdOp })}
         activiteit={gebeurtenissen.map((g) => ({ id: g.id, soort: g.soort, tekst: g.tekst, op: g.createdAt.toISOString() }))}
         heeftGetekend={Boolean(akkoord)}
+        gekozenOptioneel={geldendeInhoud({ inhoud: huidig.inhoud, akkoorden: akkoord ? [akkoord] : [] }).gekozenOptioneel}
         begin={huidig.inhoud as unknown as OfferteInhoud}
         versies={versies.map((v) => ({ versie: v.versie, vergrendeld: v.vergrendeld, verstuurdOp: v.verstuurdOp?.toISOString() ?? null }))}
         standaardRegels={standaardRegels.map((r) => ({ id: r.id, omschrijving: r.omschrijving, eenheid: r.eenheid, prijsCenten: r.prijsCenten, btw: r.btw, soort: r.soort }))}

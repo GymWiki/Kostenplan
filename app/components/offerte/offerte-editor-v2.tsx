@@ -51,6 +51,8 @@ type Props = {
   herinnering?: HerinneringReden | null;
   activiteit?: { id: string; soort: string; tekst: string | null; op: string }[];
   heeftGetekend?: boolean;
+  // De optionele regels die de klant bij het akkoord koos (zie geldend.ts); zonder akkoord telt er geen mee.
+  gekozenOptioneel?: string[];
   // Factuur in plaats van offerte: dezelfde editor, het document en de panelen, met factuurspecifieke velden.
   factuur?: { id: string; status: FactuurStatus; verstuurdOp?: string | null; terug: string; beheer?: BeheerData };
 };
@@ -90,7 +92,9 @@ export function OfferteEditorV2(props: Props) {
   return <OfferteEditorBinnen key={`${props.offerteId}-${props.begin.versie}-${opnieuw}`} {...props} naVerzenden={() => setOpnieuw((n) => n + 1)} />;
 }
 
-function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergrendeld, begin, versies, standaardRegels: startStandaard, btwStandaard, deelklaar = false, startHerinnering = false, herinnering = null, activiteit = [], heeftGetekend = false, factuur: factuurCfg, naVerzenden }: Props & { naVerzenden: () => void }) {
+const GEEN_KEUZE: string[] = [];
+
+function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergrendeld, begin, versies, standaardRegels: startStandaard, btwStandaard, deelklaar = false, startHerinnering = false, herinnering = null, activiteit = [], heeftGetekend = false, gekozenOptioneel = GEEN_KEUZE, factuur: factuurCfg, naVerzenden }: Props & { naVerzenden: () => void }) {
   const router = useRouter();
   const isMobiel = useIsMobiel();
   const [inhoud, setInhoud] = useState<OfferteInhoud>(begin);
@@ -290,7 +294,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
     return () => window.removeEventListener("beforeunload", f);
   }, [opslag]);
 
-  const totalen = useMemo(() => berekenTotalen(inhoud), [inhoud]);
+  const totalen = useMemo(() => berekenTotalen(inhoud, gekozenOptioneel), [inhoud, gekozenOptioneel]);
   const controle: { blokkerend: { id: string; bericht: string; actie?: ControlePunt["actie"]; href?: string }[]; waarschuwingen: { id: string; bericht: string; actie?: ControlePunt["actie"]; href?: string }[] } = useMemo(
     () => (isFactuur ? controleerFactuur(inhoud as FactuurInhoud) : controleerOfferte(inhoud)),
     [inhoud, isFactuur]
@@ -619,6 +623,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
 
   const doc = (
     <OfferteDocument
+      gekozenOptioneel={gekozenOptioneel}
       inhoud={inhoud}
       bewerk={
         alleenLezen
@@ -646,7 +651,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
     ) : (
       statusBlok
     );
-  const pdfHref = factuurCfg ? `/api/facturen/${factuurCfg.id}/pdf` : `/api/offertes/${offerteId}/pdf?versie=${inhoud.versie}`;
+  const pdfHref = factuurCfg ? `/api/facturen/${factuurCfg.id}/pdf` : heeftGetekend ? `/api/offertes/${offerteId}/pdf?getekend=1` : `/api/offertes/${offerteId}/pdf?versie=${inhoud.versie}`;
   const titelTekst = isFactuur ? `${(inhoud as FactuurInhoud).factuur.soort === "creditnota" ? "Creditnota" : "Factuur"} ${(inhoud as FactuurInhoud).factuur.nummer ?? "(concept)"}` : `Offerte ${inhoud.nummer}`;
   const terug = factuurCfg?.terug ?? "/dashboard/leads";
 
@@ -680,7 +685,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
         {mobielModus === "voorbeeld" ? (
           <div className="-mx-4 overflow-x-hidden bg-muted p-3">
             <VelSchaal marge={0}>
-              <OfferteDocument inhoud={inhoud} />
+              <OfferteDocument inhoud={inhoud} gekozenOptioneel={gekozenOptioneel} />
             </VelSchaal>
           </div>
         ) : (

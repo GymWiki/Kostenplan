@@ -5,7 +5,7 @@ import { prisma } from "@/app/lib/prisma";
 import { laadOfferteGegevens } from "@/app/lib/offerte/gegevens-server";
 import type { RegelSoort } from "@/app/lib/offerte/btw-config";
 import type { FactuurInhoud } from "@/app/lib/factuur/model";
-import { regelBedragExcl } from "@/app/lib/offerte/bereken";
+import { berekenTotalen } from "@/app/lib/offerte/bereken";
 import { dagenTeLaat, openstaandCenten, volgendeHerinnering } from "@/app/lib/factuur/betaling";
 import type { BeheerData } from "@/app/components/factuur/factuur-beheer";
 import { OfferteEditorV2 } from "@/app/components/offerte/offerte-editor-v2";
@@ -25,6 +25,7 @@ export default async function FactuurPagina({ params }: { params: Promise<{ fact
   if (!f) notFound();
   const [standaardRegels, gegevens] = await Promise.all([prisma.offerteStandaardRegel.findMany({ where: { companyId: company.id }, orderBy: { createdAt: "desc" } }), laadOfferteGegevens(company)]);
   const inhoud = f.inhoud as unknown as FactuurInhoud;
+  const uit = berekenTotalen(inhoud);
   let beheer: BeheerData | undefined;
   if (f.status !== "CONCEPT") {
     const betaald = f.betalingen.reduce((t, b) => t + b.bedragCenten, 0);
@@ -45,7 +46,7 @@ export default async function FactuurPagina({ params }: { params: Promise<{ fact
       volgende: isCredit ? null : volgendeHerinnering({ herinneringen: aantal("HERINNERING"), aanmaningen: aantal("AANMANING"), laatste: aantal("LAATSTE_HERINNERING") }, inhoud.klant.type),
       betalingen: f.betalingen.map((b) => ({ id: b.id, datum: b.datum.toISOString().slice(0, 10), bedragCenten: b.bedragCenten, methode: b.methode, notitie: b.notitie })),
       gebeurtenissen: f.gebeurtenissen.map((g) => ({ id: g.id, soort: g.soort, tekst: g.tekst, bedragCenten: g.bedragCenten, tijdstip: g.createdAt.toISOString() })),
-      regels: isCredit ? [] : inhoud.secties.flatMap((s) => s.regels).filter((r) => r.type !== "tekst").map((r) => ({ id: r.id, omschrijving: r.omschrijving, bedragExclCenten: regelBedragExcl(r) })),
+      regels: isCredit ? [] : inhoud.secties.flatMap((s) => s.regels).filter((r) => r.type !== "tekst").map((r) => ({ id: r.id, omschrijving: r.omschrijving, bedragExclCenten: uit.regels[r.id]?.excl ?? 0 })),
       creditnotas: f.creditnotas.map((c) => ({ id: c.id, nummer: c.nummer, status: c.status })),
       creditVoor: f.creditVoor,
     };

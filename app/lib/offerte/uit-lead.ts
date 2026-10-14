@@ -28,7 +28,11 @@ export type OfferteBouwResultaat = {
   // Meldingen voor de hovenier (geschatte prijzen, bandbreedte).
   waarschuwingen: string[];
   bandbreedte: boolean;
+  // Het minimumbedrag (incl. btw) waarop de rekentool heeft aangevuld; 0 als er niet is aangevuld. Zie minimum.ts.
+  minimumInclCenten?: number;
 };
+
+export const MINIMUM_OMSCHRIJVING = "Aanvulling tot minimumtarief";
 
 const cent = (euro: number) => Math.round(euro * 100 + 1e-9);
 const rondCent = (x: number) => Math.round(Math.round(x * 1e6) / 1e6);
@@ -98,15 +102,27 @@ function bouwUitRekenkern(snapshot: LeadSnapshot, rk: PricingResult, opties: Bou
   // Vaste kosten die één keer per aanvraag gelden, of de samengevoegde vaste kosten van de onderdelen.
   const vast: OfferteRegel[] = [];
   const nTekst = (n: number) => (n > 1 ? ` (${n} onderdelen)` : "");
+  const eigenRegels: OfferteRegel[] = [];
   for (const p of rk.projectRegels) {
-    if (p.bedragExclCenten > 0) {
+    if (p.bedragExclCenten <= 0) continue;
+    // Afstandstoeslag en minimumaanvulling zijn eigen regels met hun eigen naam; ze horen niet bij "Transport".
+    if (p.soort === "afstand") {
+      const e = exact({ omschrijving: p.omschrijving, eenheid: p.eenheid }, p.aantal, p.bedragExclCenten, p.prijsPerEenheidCenten);
+      eigenRegels.push(regel({ ...e, soort: "transport" }, opties, btwFallback));
+    } else if (p.soort === "minimum") {
+      eigenRegels.push(regel({ omschrijving: MINIMUM_OMSCHRIJVING, aantal: 1, eenheid: "post", prijsCenten: p.bedragExclCenten, soort: "overig" }, opties, btwFallback));
+    } else {
       const bestaand = p.soort === "voorrijkosten" ? vasteVoorrij : vasteTransport;
       bestaand.bedrag += p.bedragExclCenten;
     }
   }
   if (vasteVoorrij.bedrag > 0) vast.push(regel({ omschrijving: `Voorrijkosten${nTekst(vasteVoorrij.n)}`, aantal: 1, eenheid: "post", prijsCenten: vasteVoorrij.bedrag, soort: "transport" }, opties, btwFallback));
   if (vasteTransport.bedrag > 0) vast.push(regel({ omschrijving: `Transport${nTekst(vasteTransport.n)}`, aantal: 1, eenheid: "post", prijsCenten: vasteTransport.bedrag, soort: "transport" }, opties, btwFallback));
+  const afstand = eigenRegels.filter((r) => r.omschrijving !== MINIMUM_OMSCHRIJVING);
+  const minimum = eigenRegels.filter((r) => r.omschrijving === MINIMUM_OMSCHRIJVING);
+  vast.push(...afstand);
   if (vast.length > 0) secties.push({ id: nieuwId("s"), titel: "Voorrijkosten en transport", regels: vast });
+  if (minimum.length > 0) secties.push({ id: nieuwId("s"), titel: "Minimumtarief", regels: minimum });
 
   if (rk.bandbreedte) waarschuwingen.push("De klant zag een prijs van–tot. In deze offerte is het midden van die bandbreedte gebruikt. Controleer de prijzen.");
   if (heeftPlanten && btwFallback !== 9 && opties.btwStandaard?.planten == null) {
@@ -120,6 +136,7 @@ function bouwUitRekenkern(snapshot: LeadSnapshot, rk: PricingResult, opties: Bou
     totaalRekentoolInclCenten: rk.bandbreedte ? rk.bandbreedte.max.totaalInclCenten : rk.totaalInclCenten,
     waarschuwingen,
     bandbreedte: Boolean(rk.bandbreedte),
+    minimumInclCenten: minimum.length > 0 ? rk.minimum.minimumInclCenten : 0,
   };
 }
 

@@ -1,3 +1,4 @@
+import { stelMinimumExactIn } from "./minimum";
 import type { Lead } from "@/app/generated/prisma/client";
 import type { LeadSnapshot } from "@/app/lib/leads";
 import { termijnenVoor, voorwaardenTeksten, type OfferteGegevensWaarden } from "./gegevens";
@@ -68,8 +69,8 @@ export function bouwInhoudUitLead({
     planning: { startweek: "", doorlooptijd: "" },
     bijlagen: gegevens.voorwaardenPdfUrl ? [{ naam: gegevens.voorwaardenPdfNaam || "Algemene voorwaarden.pdf", url: gegevens.voorwaardenPdfUrl }] : [],
     slottekst: gegevens.slotTekst,
-    rekenregel: 2,
+    rekenregel: 3,
     bron: { leadId: lead.id, totaalRekentoolInclCenten: bouw.totaalRekentoolInclCenten, bandbreedte: bouw.bandbreedte || undefined, waarschuwingen: bouw.waarschuwingen.length > 0 ? bouw.waarschuwingen : undefined },
   };
-  return { inhoud, waarschuwingen: bouw.waarschuwingen };
+  return { inhoud: stelMinimumExactIn(inhoud, bouw.minimumInclCenten ?? 0), waarschuwingen: bouw.waarschuwingen };
 }

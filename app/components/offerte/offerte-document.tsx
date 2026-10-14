@@ -279,10 +279,9 @@ export function OfferteDocument({ inhoud, modus = "scherm", gekozenOptioneel = [
           )}
         </dl>
         <div className="eind">
-          <span>{geenBtw ? "Totaal" : toonIncl ? "Totaal incl. btw" : "Totaal excl. btw"}</span>
-          <span>{formatCents(eindTotaal)}</span>
+          <span>{geenBtw ? "Totaal" : "Totaal incl. btw"}</span>
+          <span>{formatCents(geenBtw ? eindTotaal : t.totaalIncl)}</span>
         </div>
-        {!geenBtw && !toonIncl ? <p className="klein">Totaal incl. btw: {formatCents(t.totaalIncl)}</p> : null}
         {t.kor ? <p className="klein">{a.korTekst}</p> : null}
         {t.verlegd ? <p className="klein">{BTW_VERLEGD_TEKST}</p> : null}
         {t.optioneelNietGekozenIncl > 0 ? <p className="klein">Niet meegeteld: optionele regels (samen {formatCents(toonIncl || t.kor ? t.optioneelNietGekozenIncl : Math.round(t.optioneelNietGekozenIncl / 1.21))}).</p> : null}
