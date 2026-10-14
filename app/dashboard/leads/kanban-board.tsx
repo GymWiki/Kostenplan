@@ -17,6 +17,7 @@ import { LocatieLabels } from "./locatie-labels";
 import { OfferteStatusBadge } from "./offerte-status-badge";
 import type { LeadWithNotes } from "./leads-view";
 import type { LeadStatus } from "@/app/generated/prisma/client";
+import { datumKort } from "@/app/lib/datum";
 
 const STATUS_ACCENT: Record<LeadStatus, string> = {
   NIEUW: "border-t-blue-500",
@@ -27,7 +28,7 @@ const STATUS_ACCENT: Record<LeadStatus, string> = {
   EXTERN_AFGEHANDELD: "border-t-slate-400",
 };
 
-const dateFormatter = new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "short" });
+const dateFormatter = { format: datumKort };
 
 export function KanbanBoard({
   leads,

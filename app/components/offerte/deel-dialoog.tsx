@@ -12,6 +12,7 @@ import { mailtoLink, whatsappDeelLink } from "@/app/lib/offerte/berichten";
 import { controleerOfferte, type ControlePunt } from "@/app/lib/offerte/controle";
 import type { OfferteInhoud } from "@/app/lib/offerte/model";
 import { formatCents } from "@/app/lib/offerte/weergave";
+import { datumLang } from "@/app/lib/datum";
 
 type Kanaal = "mail" | "delen" | "whatsapp" | "link";
 
@@ -322,7 +323,7 @@ function DeelInhoud({ onSluit, offerteId, inhoud, modus = "offerte", onGaNaar, o
               {ops ? ops.verstuurdTitel : herinnering ? "Herinnering genoteerd" : "Offerte staat op Verstuurd"}
             </h2>
             <p className="text-sm text-foreground">
-              {ops ? ops.verstuurdTekst : herinnering ? "Je ziet de herinnering terug bij de activiteit van deze offerte." : `Verstuurd op ${new Date().toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}. Je krijgt een melding in de app zodra de klant de offerte bekijkt, akkoord geeft, een vraag stelt of afwijst.`}
+              {ops ? ops.verstuurdTekst : herinnering ? "Je ziet de herinnering terug bij de activiteit van deze offerte." : `Verstuurd op ${datumLang(new Date())}. Je krijgt een melding in de app zodra de klant de offerte bekijkt, akkoord geeft, een vraag stelt of afwijst.`}
             </p>
             <div className="flex justify-end border-t border-border pt-3">
               <Button type="button" onClick={onSluit}>

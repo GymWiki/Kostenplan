@@ -1,10 +1,11 @@
 import type { MollieSubscriptionStatus, SubscriptionTier } from "@/app/generated/prisma/client";
 import type { WerkgebiedInstellingen } from "@/app/lib/werkgebied/schema";
+import { datumDagMaand } from "@/app/lib/datum";
 
 // Teksten voor de regels op Profiel → Bedrijf. Alleen weergave: de gegevens komen ongewijzigd uit de database.
 
 const PLAN_NAAM: Record<SubscriptionTier, string> = { GRATIS: "Gratis", PLUS: "Plus", PRO: "Pro" };
-const datum = (d: Date) => new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long" }).format(d);
+const datum = datumDagMaand;
 
 // Korte planaanduiding in de bedrijfswisselaar: "Pro", "Gratis", "Pro · opgezegd".
 export function planKort(b: { plan: SubscriptionTier; status: MollieSubscriptionStatus; handmatigToegekend?: boolean }): string {

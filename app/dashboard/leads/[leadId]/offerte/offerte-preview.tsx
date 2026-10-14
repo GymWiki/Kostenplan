@@ -3,8 +3,9 @@ import { formatCurrency } from "@/app/lib/format";
 import { fontFamilyFor } from "@/app/lib/fonts";
 import { regelTotaal, berekenOfferteTotalen, type OfferteRegel } from "@/app/lib/offertes";
 import type { Branding } from "@/app/generated/prisma/client";
+import { datumLang } from "@/app/lib/datum";
 
-const dateFormatter = new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long", year: "numeric" });
+const dateFormatter = { format: datumLang };
 
 // Live weergave van hoe de offerte er met de huisstijl uitziet — zelfde
 // kleuren/logo/lettertype-logica als het publieke klantenportaal

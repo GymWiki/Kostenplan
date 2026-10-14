@@ -11,8 +11,9 @@ import { OfferteStatusBadge } from "./offerte-status-badge";
 import { FASE_LABEL } from "@/app/lib/lead-fase";
 import type { LeadWithNotes } from "./leads-view";
 import type { LeadStatus } from "@/app/generated/prisma/client";
+import { datumKortJaar } from "@/app/lib/datum";
 
-const dateFormatter = new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "short", year: "numeric" });
+const dateFormatter = { format: datumKortJaar };
 
 type Kolom = "naam" | "waarde" | "aangemaakt";
 type Sortering = { kolom: Kolom; richting: "asc" | "desc" };

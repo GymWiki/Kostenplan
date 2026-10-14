@@ -30,14 +30,9 @@ import { OfferteStatusBadge } from "./offerte-status-badge";
 import { AfhandelKeuzeModal } from "./afhandel-keuze-modal";
 import type { LeadWithNotes } from "./leads-view";
 import type { LeadNote, LeadStatus } from "@/app/generated/prisma/client";
+import { datumLangMetTijd } from "@/app/lib/datum";
 
-const dateFormatter = new Intl.DateTimeFormat("nl-NL", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
+const dateFormatter = { format: datumLangMetTijd };
 
 export type LeadStart = { lat: number; lon: number; straalKm: number | null; label: string };
 

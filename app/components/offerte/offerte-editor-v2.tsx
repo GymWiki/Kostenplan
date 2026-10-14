@@ -34,6 +34,7 @@ import { OfferteDocument, type Selectie } from "./offerte-document";
 import { BetalingPaneel, KlantPaneel, MetaPaneel, PlanningPaneel, RegelPaneel, SectiePaneel, TekstPaneel, VoorwaardenPaneel, type Wijzig } from "./offerte-paneel";
 import { VelSchaal } from "./vel-schaal";
 import type { FactuurStatus, OfferteV2Status } from "@/app/generated/prisma/client";
+import { datumKortTijd, datumLang, datumNumeriek } from "@/app/lib/datum";
 
 type Props = {
   offerteId: string;
@@ -392,7 +393,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
         woord: isHerinnering ? "herinnering" : woord,
         vraag: `Is de ${isHerinnering ? "herinnering" : woord} verstuurd?`,
         verstuurdTitel: isHerinnering ? "Herinnering is vastgelegd in de tijdlijn" : `${woord === "creditnota" ? "Creditnota" : "Factuur"} staat op Verstuurd`,
-        verstuurdTekst: `Verstuurd op ${new Date().toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}. Je ziet in de tijdlijn wanneer de klant de ${woord} bekijkt. Registreer een betaling zodra het geld binnen is.`,
+        verstuurdTekst: `Verstuurd op ${datumLang(new Date())}. Je ziet in de tijdlijn wanneer de klant de ${woord} bekijkt. Registreer een betaling zodra het geld binnen is.`,
         neeTekst: `De ${woord} is niet als verstuurd gemarkeerd. Je kunt hem later opnieuw delen via Versturen.`,
         wachtTekst: `Even geduld, de ${woord} wordt klaargezet…`,
       }
@@ -478,7 +479,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
       <ul className="flex flex-col gap-1 text-muted-foreground">
         {activiteit.map((a) => (
           <li key={a.id}>
-            <span className="text-foreground">{ACTIVITEIT_LABEL[a.soort] ?? a.soort}</span> · {new Date(a.op).toLocaleDateString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+            <span className="text-foreground">{ACTIVITEIT_LABEL[a.soort] ?? a.soort}</span> · {datumKortTijd(a.op)}
             {a.tekst ? <span className="block whitespace-pre-wrap">“{a.tekst}”</span> : null}
           </li>
         ))}
@@ -561,7 +562,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
               <ul className="text-muted-foreground">
                 {versies.map((v) => (
                   <li key={v.versie}>
-                    Versie {v.versie}: {v.vergrendeld ? `verstuurd${v.verstuurdOp ? ` op ${new Date(v.verstuurdOp).toLocaleDateString("nl-NL")}` : ""}` : "concept"}
+                    Versie {v.versie}: {v.vergrendeld ? `verstuurd${v.verstuurdOp ? ` op ${datumNumeriek(v.verstuurdOp)}` : ""}` : "concept"}
                   </li>
                 ))}
               </ul>

@@ -5,6 +5,7 @@ import { Badge } from "@/app/components/ui/badge";
 import { formatCurrency } from "@/app/lib/format";
 import { LEAD_STATUS_LABELS } from "@/app/lib/leads";
 import type { LeadStatus } from "@/app/generated/prisma/client";
+import { datumKort } from "@/app/lib/datum";
 
 export type RecenteAanvraag = {
   id: string;
@@ -37,7 +38,7 @@ export function relatieveTijd(datum: Date) {
   const diffDagen = Math.floor(diffUur / 24);
   if (diffDagen === 1) return "Gisteren";
   if (diffDagen < 7) return `${diffDagen} dagen geleden`;
-  return new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "short" }).format(datum);
+  return datumKort(datum);
 }
 
 // UX-audit punt 5: vult de lege ruimte na de statistiekkaarten op
