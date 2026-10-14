@@ -114,6 +114,8 @@ const PANEEL_TITEL = (p: string, products: ProductMetRelaties[]) => {
 // (mobiel). Alle gegevens komen via props/EditorBron-achtige data binnen en
 // alle wijzigingen gaan via losse server actions, zodat dezelfde component
 // later in de gast-flow (andere sessie, andere actions) hergebruikt kan worden.
+let onthoudenFocusNaamId: string | null = null;
+
 export function RekentoolEditor(props: EditorProps) {
   const { toolId, branding, tier, email, website, anderen, isAangepast } = props;
   const router = useRouter();
@@ -154,9 +156,14 @@ export function RekentoolEditor(props: EditorProps) {
   const [weergave, setWeergave] = useState<WeergaveConfig>(props.weergave ?? STANDAARD_WEERGAVE_CONFIG);
   // Een net aangemaakt leeg onderdeel: de cursor staat direct in het naamveld. En de verwijzing waarmee de titel van de mobiele
   // sheet de naam in het paneel van het onderdeel wijzigt.
-  const [focusNaamId, setFocusNaamId] = useState<string | null>(null);
+  // Buiten React-state onthouden: de editor kan na het verversen van de serverdata opnieuw gemonteerd worden.
+  const [focusNaamId, setFocusNaamIdState] = useState<string | null>(() => onthoudenFocusNaamId);
+  const setFocusNaamId = useCallback((id: string | null) => {
+    onthoudenFocusNaamId = id;
+    setFocusNaamIdState(id);
+  }, []);
   const hernoemRef = useRef<((naam: string) => void) | null>(null);
-  const naamGefocust = useCallback(() => setFocusNaamId(null), []);
+  const naamGefocust = useCallback(() => setFocusNaamId(null), [setFocusNaamId]);
   const weergaveGewijzigd = useRef(false);
   const wijzigWeergave = useCallback((patch: Partial<WeergaveConfig>) => {
     weergaveGewijzigd.current = true;
