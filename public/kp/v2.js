@@ -424,6 +424,9 @@
           geladen = true;
           frame.src = bouwBron(sleutel, true);
           wachtTimer = setTimeout(veilig(function () { if (!stand.klaar) toonKaart(); }), WACHT + 2000);
+        } else if (frame.contentWindow) {
+          // De rekentool staat er al: laat hem weten dat het venster opnieuw opengaat (voor de statistiek).
+          frame.contentWindow.postMessage({ type: "kostenplan:geopend", toolId: toolId }, "*");
         }
         vensterWortel.appendChild(achtergrond);
         d.body.appendChild(venstergastheer);

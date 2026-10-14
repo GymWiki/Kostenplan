@@ -154,6 +154,13 @@ enum AnalyticsEventType {
   START
   COMPLETE
   LEAD
+  // Weergaven en plaatsing van de klant-rekentool (zonder persoonsgegevens): wat klanten doen, per weergave.
+  ONDERDEEL_GEOPEND
+  ONDERDEEL_TOEGEVOEGD
+  OVERZICHT_BEKEKEN
+  AANVRAAG_GESTART
+  AANVRAAG_VERSTUURD
+  POPUP_GEOPEND
 }
 
 // Doorloopt de pipeline van links (NIEUW) naar rechts (GEWONNEN/VERLOREN) op
@@ -504,6 +511,9 @@ model AnalyticsEvent {
   toolId    String
   tool      Tool               @relation(fields: [toolId], references: [id], onDelete: Cascade)
   type      AnalyticsEventType
+  // Hoe de rekentool er op dat moment uitzag ("tegels" | "stappen" | "lijst", "inline" | "popup"). Leeg bij oudere events.
+  weergave  String?
+  plaatsing String?
 
   createdAt DateTime @default(now())
 

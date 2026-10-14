@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parseGetal as leesGetal } from "@/app/lib/getal";
 import { MAX_HOEVEELHEID } from "@/app/lib/pricing/rond";
 import { LopendTotaal } from "./lopend-totaal";
@@ -47,7 +47,7 @@ import { fontFamilyFor, brandingFontVariables } from "@/app/lib/fonts";
 import { accessibleTextColor } from "@/app/lib/color";
 import { UitgesteldMelding, useLeadVersturen } from "./lead-versturen";
 import { Bewerkbaar, EditorProvider, WerkzaamheidToevoegen, useEditorHaak, type EditorHaken } from "./bewerkbaar";
-import { recordPublicAnalyticsEventAction } from "@/app/lib/actions/analytics";
+import { recordPublicAnalyticsEventAction, type PubliekEvent } from "@/app/lib/actions/analytics";
 import type { LeadSnapshot } from "@/app/lib/leads";
 import { bouwLeadSnapshot } from "@/app/lib/lead-snapshot";
 import type {
@@ -184,6 +184,17 @@ export function Calculator({
   const [schil, setSchil] = useState<HTMLElement | null>(null);
   const smal = useSmalScherm();
   const zichtbaar = useZichtbaarGebied(toolId);
+  // Metingen (zonder persoonsgegevens) per weergave en plaatsing; nooit in de editor.
+  const meetContext = { weergave: weergaveSoort, plaatsing: popup ? "popup" : "inline" };
+  const meetRef = useRef({ inEditor, toolId, ...meetContext });
+  useEffect(() => {
+    meetRef.current = { inEditor, toolId, ...meetContext };
+  });
+  const meet = useCallback((type: PubliekEvent) => {
+    const m = meetRef.current;
+    if (m.inEditor) return;
+    recordPublicAnalyticsEventAction(m.toolId, type, { weergave: m.weergave, plaatsing: m.plaatsing }).catch(() => {});
+  }, []);
 
   // Kleuren en lettertype zijn een Plus/Pro-feature — opnieuw afdwingen bij
   // het renderen (niet alleen in het dashboard), zodat een Gratis-tenant
@@ -250,9 +261,21 @@ export function Calculator({
   useEffect(() => {
     if (visitRecorded.current || inEditor) return;
     visitRecorded.current = true;
-    recordPublicAnalyticsEventAction(toolId, "VISIT").catch(() => {});
+    meet("VISIT");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Pop-up: de rekentool is net geopend (eerste keer: hier; daarna meldt het laadscript elke keer dat het venster opengaat).
+  useEffect(() => {
+    if (!popup) return;
+    meet("POPUP_GEOPEND");
+    function onMessage(e: MessageEvent) {
+      const m = e.data;
+      if (e.source === window.parent && m && typeof m === "object" && m.type === "kostenplan:geopend" && m.toolId === toolId) meet("POPUP_GEOPEND");
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [popup, toolId, meet]);
 
   // In de editor kan de weergave wisselen terwijl de rekentool openstaat: wat al is ingevuld blijft staan en komt in het plan.
   const vorigeWeergave = useRef(weergaveSoort);
@@ -330,6 +353,25 @@ export function Calculator({
     [weergaveSoort, products, costSettings, wc.onderdelen, wc.vanafInclVoorrij]
   );
   const totaalPlanCenten = prijsVerborgen ? null : resultaat.totaalInclCenten;
+  // Metingen die uit de stand volgen: in de lijst telt een onderdeel als toegevoegd zodra er een hoeveelheid staat; bij stappen
+  // opent elke stap een onderdeel; en het overzicht is bekeken zodra het in beeld komt.
+  const gemeld = useRef(new Set<string>());
+  const verzondenGemeld = useRef(false);
+  useEffect(() => {
+    if (weergaveSoort !== "lijst") return;
+    for (const o of resultaatLive.onderdelen) {
+      if (o.hoeveelheid > 0 && !gemeld.current.has(o.id)) {
+        gemeld.current.add(o.id);
+        meet("ONDERDEEL_TOEGEVOEGD");
+      }
+    }
+  }, [weergaveSoort, resultaatLive, meet]);
+  useEffect(() => {
+    if (weergaveSoort === "stappen" && scherm === "kiezen" && stap > 0) meet("ONDERDEEL_GEOPEND");
+  }, [weergaveSoort, scherm, stap, meet]);
+  useEffect(() => {
+    if (scherm === "overzicht") meet("OVERZICHT_BEKEKEN");
+  }, [scherm, meet]);
   const productVan = (id: string) => products.find((x) => x.id === id);
   // Een onderdeel dat de klant opende maar niet toevoegde, laat geen halve invoer achter.
   const gooiConceptWeg = (id: string | null) => {
@@ -338,9 +380,13 @@ export function Calculator({
   };
   const openOnderdeel = (id: string | null) => {
     if (openId && openId !== id) gooiConceptWeg(openId);
+    if (id && id !== openId) meet("ONDERDEEL_GEOPEND");
     setOpenId(id);
   };
-  const voegToe = (id: string) => setPlan((pl) => (pl.toegevoegd.includes(id) ? pl : { ...pl, toegevoegd: [...pl.toegevoegd, id] }));
+  const voegToe = (id: string) => {
+    if (!plan.toegevoegd.includes(id)) meet("ONDERDEEL_TOEGEVOEGD");
+    setPlan((pl) => (pl.toegevoegd.includes(id) ? pl : { ...pl, toegevoegd: [...pl.toegevoegd, id] }));
+  };
   const haalWeg = (id: string) => {
     const pr = productVan(id);
     if (pr) setPlan((pl) => verwijderUitPlan(pl, pr));
@@ -381,13 +427,13 @@ export function Calculator({
     if (inEditor) return;
     if (!startRecorded.current && breakdown.heeftSelectie) {
       startRecorded.current = true;
-      recordPublicAnalyticsEventAction(toolId, "START").catch(() => {});
+      meet("START");
     }
     if (!completeRecorded.current && breakdown.heeftSelectie && !heeftOntbrekendeVerplichteMaterialen && bedragTop(breakdown.totaal) > 0) {
       completeRecorded.current = true;
-      recordPublicAnalyticsEventAction(toolId, "COMPLETE").catch(() => {});
+      meet("COMPLETE");
     }
-  }, [toolId, breakdown, heeftOntbrekendeVerplichteMaterialen, inEditor]);
+  }, [toolId, breakdown, heeftOntbrekendeVerplichteMaterialen, inEditor, meet]);
 
   // Bevroren "wat had de klant aangevinkt" voor de leads-CRM (zie
   // app/lib/leads.ts) — meegestuurd bij "Offerte aanvragen" zodat de vakman
@@ -595,7 +641,12 @@ export function Calculator({
               <div className={cn("flex flex-col gap-4", !gescheiden && "lg:sticky lg:top-6")}>
                 <Summary
                   prijsVerborgen={prijsVerborgen}
-                  onVerstuurd={() => setVerstuurd(true)}
+                  onVerstuurd={() => {
+                    if (!verzondenGemeld.current) meet("AANVRAAG_VERSTUURD");
+                    verzondenGemeld.current = true;
+                    setVerstuurd(true);
+                  }}
+                  onAanvraagGestart={() => meet("AANVRAAG_GESTART")}
                   weergavePlan={gescheiden}
                   toolId={toolId}
                   bedrijfsnaam={bedrijfsnaam}
@@ -1216,8 +1267,10 @@ function Summary({
   adresNog,
   prijsVerborgen,
   onVerstuurd,
+  onAanvraagGestart,
   weergavePlan,
 }: {
+  onAanvraagGestart: () => void;
   // De prijs pas tonen na de contactgegevens (instelling van de hovenier).
   prijsVerborgen: boolean;
   onVerstuurd: () => void;
@@ -1482,7 +1535,10 @@ function Summary({
                       variant="primary"
                       size="lg"
                       className="w-full whitespace-nowrap border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90 sm:flex-1"
-                      onClick={() => setFormOpen(true)}
+                      onClick={() => {
+                        setFormOpen(true);
+                        onAanvraagGestart();
+                      }}
                       disabled={heeftOntbrekendeVerplichteMaterialen}
                     >
                       <Mail className="h-4 w-4" />

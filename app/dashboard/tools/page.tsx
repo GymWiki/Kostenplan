@@ -3,6 +3,7 @@ import { requireActiveCompany, canCreateTool, listToolsVoorCompany } from "@/app
 import { prisma } from "@/app/lib/prisma";
 import { getToolUrl } from "@/app/lib/url";
 import { effectiveTier, PLAN_LIMITS } from "@/app/lib/subscription";
+import { bouwStatistiek } from "@/app/lib/weergave/statistiek";
 import { RekentoolsLijst } from "./rekentools-lijst";
 
 export const metadata: Metadata = { title: "Rekentools" };
@@ -21,7 +22,9 @@ export default async function ToolsOverzichtPage({
   beginVanMaand.setDate(1);
   beginVanMaand.setHours(0, 0, 0, 0);
 
-  const [magNieuweTool, toolUrls, leadsPerTool, nieuwePerToolRijen] = await Promise.all([
+  const dertigDagenGeleden = new Date();
+  dertigDagenGeleden.setDate(dertigDagenGeleden.getDate() - 30);
+  const [magNieuweTool, toolUrls, leadsPerTool, nieuwePerToolRijen, statRijen] = await Promise.all([
     canCreateTool(company.id, tier),
     Promise.all(tools.map((tool) => getToolUrl(company.slug, tool.slug))),
     prisma.lead.groupBy({
@@ -34,7 +37,13 @@ export default async function ToolsOverzichtPage({
       where: { companyId: company.id, status: "NIEUW" },
       _count: { _all: true },
     }),
+    prisma.analyticsEvent.groupBy({
+      by: ["toolId", "type", "weergave", "plaatsing"],
+      where: { companyId: company.id, createdAt: { gte: dertigDagenGeleden }, type: { in: ["VISIT", "ONDERDEEL_TOEGEVOEGD", "AANVRAAG_VERSTUURD", "LEAD"] } },
+      _count: { _all: true },
+    }),
   ]);
+  const statistiek = bouwStatistiek(statRijen.map((r) => ({ toolId: r.toolId, type: r.type, weergave: r.weergave, plaatsing: r.plaatsing, aantal: r._count._all })));
   const perTool = new Map(leadsPerTool.map((r) => [r.toolId, r._count._all]));
   const nieuwePerTool = new Map(nieuwePerToolRijen.map((r) => [r.toolId, r._count._all]));
 
@@ -48,6 +57,7 @@ export default async function ToolsOverzichtPage({
         leadsDezeMaand: perTool.get(t.id) ?? 0,
         nieuweLeads: nieuwePerTool.get(t.id) ?? 0,
         toolUrl: toolUrls[i],
+        statistiek: statistiek.get(t.id),
       }))}
       magNieuweTool={magNieuweTool}
       limiet={PLAN_LIMITS[tier].maxActiveTools}
