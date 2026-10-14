@@ -14,6 +14,7 @@ import { draftOpslag, maakGedebounced, type OpslagStatus } from "@/app/lib/draft
 import { draftNaarBranding, draftNaarKosten, draftNaarProducten, GAST_TOOL_ID } from "@/app/lib/draft-editor";
 import { verkleinLogo } from "@/app/lib/logo-verklein";
 import type { Draft } from "@/app/lib/draft";
+import { NIEUWE_REKENTOOL_WEERGAVE, STANDAARD_WEERGAVE_CONFIG, parseWeergaveConfig } from "@/app/lib/weergave/config";
 import { IMPORT_PAD } from "./importeren-pad";
 import { maakLokaleRepository } from "./lokale-repository";
 
@@ -92,6 +93,8 @@ function GastEditorMetDraft({ beginDraft, beginGeheugen, logoMislukt }: { beginD
     branding,
     tier: "GRATIS",
     email: "",
+    // Een nieuwe rekentool begint met tegels (en de tip).
+    weergave: beginDraft.weergave ? parseWeergaveConfig(beginDraft.weergave) : { ...STANDAARD_WEERGAVE_CONFIG, ...NIEUWE_REKENTOOL_WEERGAVE },
     resultaat: { arbeidZichtbaar: true, materiaalZichtbaar: true, transportZichtbaar: true, voorrijZichtbaar: true, toelichting: "", ctaTekst: "" },
     aanvraag: { vraagTelefoon: false, bedankTekst: branding.bedankTekst ?? "" },
     website: { toolUrl: "", embedCode: null, embedConfig: {} as EditorProps["website"]["embedConfig"], magEmbedden: false, magPubliceren: false, limiet: 1 },

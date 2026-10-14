@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { kopieerWerkzaamheidAction, hernoemRekentoolAction, zetWerkzaamhedenVolgordeAction, type Resultaat } from "@/app/lib/actions/rekentools";
+import { kopieerWerkzaamheidAction, hernoemRekentoolAction, slaWeergaveOpAction, zetWerkzaamhedenVolgordeAction, type Resultaat } from "@/app/lib/actions/rekentools";
+import type { WeergaveConfig } from "@/app/lib/weergave/config";
 import {
   createWerkzaamheidAction,
   deleteWerkzaamheidAction,
@@ -27,6 +28,8 @@ export interface EditorRepository {
   verwijderWerkzaamheid(productId: string): Promise<{ ok: boolean }>;
   zetVolgorde(toolId: string, ids: string[]): Promise<Resultaat>;
   hernoemRekentool(toolId: string, naam: string): Promise<Resultaat>;
+  // Weergave en plaatsing van de klant-rekentool.
+  slaWeergaveOp(toolId: string, config: WeergaveConfig): Promise<Resultaat>;
   slaTarievenOp(toolId: string, invoer: { tarief: string; voorrij: string; transport: string }): Promise<TarievenResultaat>;
   // Alleen server: kopiëren uit een andere rekentool.
   kopieerWerkzaamheid?(bronProductId: string, doelToolId: string): Promise<{ ok: true; productId: string } | { ok: false; error: string }>;
@@ -42,6 +45,7 @@ export const serverRepository: EditorRepository = {
   verwijderWerkzaamheid: (id) => deleteWerkzaamheidAction(id),
   zetVolgorde: (toolId, ids) => zetWerkzaamhedenVolgordeAction(toolId, ids),
   hernoemRekentool: (toolId, naam) => hernoemRekentoolAction(toolId, naam),
+  slaWeergaveOp: (toolId, config) => slaWeergaveOpAction(toolId, config),
   slaTarievenOp: (toolId, invoer) => saveTarievenAction(toolId, invoer),
   kopieerWerkzaamheid: (bron, doel) => kopieerWerkzaamheidAction(bron, doel),
 };

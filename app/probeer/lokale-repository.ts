@@ -20,6 +20,12 @@ export function maakLokaleRepository(bron: DraftBron): EditorRepository {
   return {
     gast: true,
 
+    async slaWeergaveOp(_toolId, config) {
+      // Instellingen per onderdeel horen bij een echte rekentool; in het voorbeeld bewaren we alleen de gekozen weergave.
+      bron.wijzig((d) => ({ ...d, weergave: { ...config, onderdelen: {} } as unknown as Record<string, unknown> }));
+      return { ok: true };
+    },
+
     async slaWerkzaamheidOp(productId, wd) {
       const fout = valideerDraft(wd);
       if (fout) return { ok: false, error: fout };

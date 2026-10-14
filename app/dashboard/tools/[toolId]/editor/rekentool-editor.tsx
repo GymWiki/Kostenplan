@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Copy, Globe, MapPin, Monitor, Pencil, Settings2, Smartphone, Trash2, X } from "lucide-react";
+import { ArrowLeft, Copy, Globe, LayoutGrid, MapPin, Monitor, Pencil, Settings2, Smartphone, Trash2, X } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
 import { Logo } from "@/app/components/ui/logo";
 import { Button } from "@/app/components/ui/button";
@@ -14,6 +14,9 @@ import { Overlay } from "@/app/components/ui/overlay";
 import { cn } from "@/app/lib/cn";
 import { duplicateToolAction } from "@/app/lib/actions/tools";
 import { verwijderRekentoolAction } from "@/app/lib/actions/rekentools";
+import { STANDAARD_WEERGAVE_CONFIG, WEERGAVE_LABEL, type WeergaveConfig } from "@/app/lib/weergave/config";
+import { heeftVanafPrijs, standaardVoorbeeldmaat } from "@/app/lib/weergave/vanaf";
+import { WeergaveBlok, WeergaveTip, TegelBlok } from "./paneel-weergave";
 import type { ProductMetRelaties } from "@/app/lib/werkzaamheid";
 import type { Branding, CostSettings, SubscriptionTier, ToolStatus } from "@/app/generated/prisma/client";
 import type { ToolEmbedConfig } from "@/app/lib/tools";
@@ -21,7 +24,7 @@ import type { NaarVoorbeeld, VanVoorbeeld } from "@/app/voorbeeld/[toolId]/voorb
 import type { Waarschuwing } from "@/app/portaal/[slug]/bewerkbaar";
 import { useEditorRepository } from "./repository";
 import { OpslaanStatus } from "../producten/editor/opslaan-status";
-import type { AutosaveStatus } from "../producten/editor/use-autosave";
+import { useAutosave, type AutosaveStatus } from "../producten/editor/use-autosave";
 import { useTarieven } from "../tarieven-context";
 import { PaneelStart } from "./paneel-start";
 import { PaneelToevoegen, type AndereRekentool } from "./paneel-toevoegen";
@@ -54,10 +57,14 @@ export type EditorProps = {
   email: string;
   resultaat: ResultaatStart;
   aanvraag: AanvraagStart;
+  // Weergave en plaatsing van de klant-rekentool (ontbreekt in de gast-flow: alles op één pagina).
+  weergave?: WeergaveConfig;
   website: {
     toolUrl: string;
     embedCode: string | null;
     iframeCode?: string | null;
+    // Basis om de code per plek op de site (varianten) in de editor te bouwen.
+    embedOpties?: import("@/app/lib/embed-code").EmbedCodeOpties | null;
     heeftContact?: boolean;
     embedConfig: ToolEmbedConfig;
     magEmbedden: boolean;
@@ -98,7 +105,7 @@ function useIsMobiel() {
 const PANEEL_TITEL = (p: string, products: ProductMetRelaties[]) => {
   if (p.startsWith("werkzaamheid:")) return products.find((x) => x.id === p.slice(13))?.naam || "Onderdeel";
   return (
-    { start: "Aan de slag", uiterlijk: "Uiterlijk", resultaat: "Resultaat", aanvraag: "Aanvraagformulier", website: "Zet op mijn website", account: "Account maken", toevoegen: "Onderdeel toevoegen", aangepast: "Aangepaste rekentool" } as Record<string, string>
+    { start: "Aan de slag", uiterlijk: "Uiterlijk", resultaat: "Resultaat", aanvraag: "Aanvraagformulier", weergave: "Weergave voor je klant", website: "Zet op mijn website", account: "Account maken", toevoegen: "Onderdeel toevoegen", aangepast: "Aangepaste rekentool" } as Record<string, string>
   )[p] ?? "Aan de slag";
 };
 
@@ -107,6 +114,8 @@ const PANEEL_TITEL = (p: string, products: ProductMetRelaties[]) => {
 // (mobiel). Alle gegevens komen via props/EditorBron-achtige data binnen en
 // alle wijzigingen gaan via losse server actions, zodat dezelfde component
 // later in de gast-flow (andere sessie, andere actions) hergebruikt kan worden.
+let onthoudenFocusNaamId: string | null = null;
+
 export function RekentoolEditor(props: EditorProps) {
   const { toolId, branding, tier, email, website, anderen, isAangepast } = props;
   const router = useRouter();
@@ -144,6 +153,39 @@ export function RekentoolEditor(props: EditorProps) {
   const [bezig, setBezig] = useState(false);
   const [resultaat, setResultaat] = useState(props.resultaat);
   const [aanvraag, setAanvraag] = useState(props.aanvraag);
+  const [weergave, setWeergave] = useState<WeergaveConfig>(props.weergave ?? STANDAARD_WEERGAVE_CONFIG);
+  // Een net aangemaakt leeg onderdeel: de cursor staat direct in het naamveld. En de verwijzing waarmee de titel van de mobiele
+  // sheet de naam in het paneel van het onderdeel wijzigt.
+  // Buiten React-state onthouden: de editor kan na het verversen van de serverdata opnieuw gemonteerd worden.
+  const [focusNaamId, setFocusNaamIdState] = useState<string | null>(() => onthoudenFocusNaamId);
+  const setFocusNaamId = useCallback((id: string | null) => {
+    onthoudenFocusNaamId = id;
+    setFocusNaamIdState(id);
+  }, []);
+  const hernoemRef = useRef<((naam: string) => void) | null>(null);
+  const naamGefocust = useCallback(() => setFocusNaamId(null), [setFocusNaamId]);
+  const weergaveGewijzigd = useRef(false);
+  const wijzigWeergave = useCallback((patch: Partial<WeergaveConfig>) => {
+    weergaveGewijzigd.current = true;
+    setWeergave((w) => ({ ...w, ...patch }));
+  }, []);
+  const wijzigOnderdeelWeergave = useCallback((id: string, patch: { tegelTekst?: string | null; voorbeeldmaat?: number | null }) => {
+    weergaveGewijzigd.current = true;
+    setWeergave((w) => {
+      const huidig = w.onderdelen[id] ?? { tegelTekst: null, voorbeeldmaat: null };
+      const nieuw = { ...huidig, ...patch };
+      const rest = Object.fromEntries(Object.entries(w.onderdelen).filter(([k]) => k !== id));
+      return { ...w, onderdelen: nieuw.tegelTekst === null && nieuw.voorbeeldmaat === null ? rest : { ...rest, [id]: nieuw } };
+    });
+  }, []);
+  // Eén opslag voor alles wat bij weergave hoort (het blok in Uiterlijk en de tegel per onderdeel).
+  const weergaveOpslag = useAutosave(weergave, async (w) => {
+    const r = await repo.slaWeergaveOp(toolId, w);
+    return r.ok ? { ok: true } : r;
+  });
+  useEffect(() => {
+    if (weergaveGewijzigd.current) setOpslag({ status: weergaveOpslag.status, fout: weergaveOpslag.fout, ongeldig: false, opnieuw: weergaveOpslag.opnieuw });
+  }, [weergaveOpslag.status, weergaveOpslag.fout, weergaveOpslag.opnieuw]);
 
   // Verse serverdata (na router.refresh of een nieuwe werkzaamheid) samenvoegen
   // met wat hier lokaal al is aangepast.
@@ -261,10 +303,11 @@ export function RekentoolEditor(props: EditorProps) {
       toelichting: resultaat.toelichting.trim() || null,
       ctaTekst: resultaat.ctaTekst.trim() || null,
       vraagTelefoon: aanvraag.vraagTelefoon,
+      weergave,
       bedrijfsnaam: gast?.bedrijfsnaam,
     };
     iframeRef.current?.contentWindow?.postMessage(bericht, window.location.origin);
-  }, [iframeKlaar, producten, branding, costSettings, modus, paneel, waarschuwingen, resultaat, aanvraag, gast?.bedrijfsnaam]);
+  }, [iframeKlaar, producten, branding, costSettings, modus, paneel, waarschuwingen, resultaat, aanvraag, weergave, gast?.bedrijfsnaam]);
 
   const updateProduct = useCallback((p: ProductMetRelaties) => {
     bewerkt.current.add(p.id);
@@ -311,11 +354,14 @@ export function RekentoolEditor(props: EditorProps) {
     }
   }
 
-  function nieuwToegevoegd(productId: string) {
+  function nieuwToegevoegd(productId: string, opties?: { focusNaam?: boolean }) {
+    if (opties?.focusNaam) setFocusNaamId(productId);
     const lokaal = repo.laadProducten?.();
     if (lokaal) setProducten((cur) => [...cur, ...lokaal.filter((p) => !cur.some((c) => c.id === p.id))]);
-    else router.refresh();
+    // Eerst de URL bijwerken en het paneel laten openen, dan pas verversen: een refresh die samenvalt met de replaceState/pushState van het paneel of de sheet
+    // laat Next soms terugvallen op een volledige paginalading (en dan is de cursor in het naamveld weg).
     setPaneel(`werkzaamheid:${productId}`);
+    if (!lokaal) setTimeout(() => router.refresh(), 400);
   }
 
   const menu = gast ? [{ label: "Naam wijzigen", icon: Pencil, onSelect: () => { setHernoemTekst(naam); setHernoemFout(null); setHernoemOpen(true); } }] : [
@@ -341,6 +387,28 @@ export function RekentoolEditor(props: EditorProps) {
     { id: "web", label: "Staat op je website", klaar: props.toolStatus === "GEPUBLICEERD", paneel: gast ? "account" : "website" },
   ];
 
+  // De tegel van een onderdeel (eigen tekst en maat voor de vanaf-prijs): alleen bij tegels en stappen en niet in de gast-flow.
+  const tegelBlok = (p: ProductMetRelaties) =>
+    gast || weergave.weergave === "lijst" ? null : (
+      <TegelBlok
+        key={`tegel-${p.id}`}
+        naam={p.naam}
+        eenheid={p.eenheid === "m1" ? "m" : p.eenheid === "m2" ? "m²" : p.eenheid === "m3" ? "m³" : p.eenheid}
+        heeftVanaf={heeftVanafPrijs({ sjabloon: p.sjabloon })}
+        waarde={weergave.onderdelen[p.id] ?? { tegelTekst: null, voorbeeldmaat: null }}
+        onChange={(patch) => wijzigOnderdeelWeergave(p.id, patch)}
+        standaardMaat={standaardVoorbeeldmaat(p.eenheid)}
+      />
+    );
+
+  const weergaveSamenvatting = gast ? WEERGAVE_LABEL[weergave.weergave] : `${WEERGAVE_LABEL[weergave.weergave]} · ${weergave.plaatsing === "popup" ? "knop met pop-up" : "in de pagina"}`;
+  const openWeergave = () => {
+    if (weergave.tip) wijzigWeergave({ tip: false });
+    setModus("bewerken");
+    setPaneel("weergave");
+  };
+  const tipNode = weergave.tip ? <WeergaveTip onKies={openWeergave} onSluit={() => wijzigWeergave({ tip: false })} /> : null;
+
   const geselecteerdProduct = paneel.startsWith("werkzaamheid:") ? producten.find((p) => p.id === paneel.slice(13)) : undefined;
 
   const paneelInhoud = (
@@ -364,6 +432,7 @@ export function RekentoolEditor(props: EditorProps) {
           <span className="underline">Bekijken</span>
         </button>
       )}
+      {paneel === "start" && tipNode}
       {paneel === "start" && (
         <PaneelStart
           werkzaamheden={producten.map((p) => ({ id: p.id, naam: p.naam, actief: p.actief, heeftVoorbeeld: waarschuwingen[`werkzaamheid:${p.id}`]?.soort === "voorbeeld" }))}
@@ -384,6 +453,10 @@ export function RekentoolEditor(props: EditorProps) {
           onStatus={setOpslag}
           onVerwijder={() => setVerwijderProduct(geselecteerdProduct.id)}
           onGekopieerd={nieuwToegevoegd}
+          extra={tegelBlok(geselecteerdProduct)}
+          focusNaam={focusNaamId === geselecteerdProduct.id}
+          onNaamGefocust={naamGefocust}
+          hernoemRef={hernoemRef}
         />
       )}
       {paneel.startsWith("werkzaamheid:") && !geselecteerdProduct && <p className="text-sm text-muted-foreground">Laden…</p>}
@@ -397,6 +470,15 @@ export function RekentoolEditor(props: EditorProps) {
         />
       )}
       {paneel === "uiterlijk" && (gast ? gast.uiterlijkPaneel : <PaneelUiterlijk toolId={toolId} branding={branding} tier={tier} email={email} />)}
+      {paneel === "weergave" && (
+        <div className="flex flex-col gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Weergave voor je klant</h2>
+            <p className="text-sm text-muted-foreground">Hoe je klant kiest wat hij nodig heeft{gast ? "" : " en waar de rekentool staat"}.</p>
+          </div>
+          <WeergaveBlok waarde={weergave} onChange={wijzigWeergave} metPlaatsing={!gast} />
+        </div>
+      )}
       {paneel === "resultaat" && !gast && <PaneelResultaat toolId={toolId} start={resultaat} onStatus={setOpslag} onWijzig={setResultaat} />}
       {paneel === "aanvraag" && !gast && <PaneelAanvraag toolId={toolId} start={aanvraag} onStatus={setOpslag} onWijzig={setAanvraag} />}
       {gast && (paneel === "resultaat" || paneel === "aanvraag") && (
@@ -417,6 +499,9 @@ export function RekentoolEditor(props: EditorProps) {
           toolUrl={website.toolUrl}
           embedCode={website.embedCode}
           iframeCode={website.iframeCode ?? null}
+          embedOpties={website.embedOpties ?? null}
+          weergave={weergave}
+          producten={producten.filter((p) => p.actief).map((p) => ({ id: p.id, naam: p.naam }))}
           heeftContact={website.heeftContact ?? false}
           embedConfig={website.embedConfig}
           magEmbedden={website.magEmbedden}
@@ -562,6 +647,11 @@ export function RekentoolEditor(props: EditorProps) {
           menu={menu}
           gast={Boolean(gast)}
           onTerug={() => void gaTerug(terugHref)}
+          onHernoem={(n) => hernoemRef.current?.(n)}
+          focusNaamId={focusNaamId}
+          onNaamGefocust={naamGefocust}
+          weergaveSamenvatting={weergaveSamenvatting}
+          tipNode={tipNode}
           meldingNode={
             <>
               {gast && (
@@ -604,6 +694,8 @@ export function RekentoolEditor(props: EditorProps) {
               onGekopieerd={nieuwToegevoegd}
               mobiel={mob}
               onKlaar={() => setPaneel("start")}
+              extra={tegelBlok(product)}
+              hernoemRef={hernoemRef}
             />
           )}
         />
@@ -681,7 +773,7 @@ export function RekentoolEditor(props: EditorProps) {
           )}
         </div>
 
-        <div role="group" aria-label="Weergave" className="hidden shrink-0 rounded-lg border border-border p-0.5 md:flex">
+        <div role="group" aria-label="Bewerken of uitproberen" className="hidden shrink-0 rounded-lg border border-border p-0.5 md:flex">
           {(["bewerken", "uitproberen"] as const).map((m) => (
             <button
               key={m}
@@ -697,6 +789,15 @@ export function RekentoolEditor(props: EditorProps) {
             </button>
           ))}
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          aria-pressed={paneel === "weergave"}
+          onClick={openWeergave}
+          className={cn("hidden h-11 shrink-0 md:inline-flex", paneel === "weergave" && "border-primary bg-accent")}
+        >
+          <LayoutGrid className="h-4 w-4" aria-hidden="true" /> Weergave
+        </Button>
         <div role="group" aria-label="Schermgrootte" className="hidden shrink-0 rounded-lg border border-border p-0.5 lg:flex">
           {([["desktop", Monitor, "Computer"], ["mobiel", Smartphone, "Telefoon"]] as const).map(([k, Icoon, label]) => (
             <button

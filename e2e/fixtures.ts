@@ -1,6 +1,8 @@
 import { test as basis, expect, type Page } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
+import { execFileSync } from "node:child_process";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { cookie, GEBRUIKERS } = require("../scripts/test/ids.js");
 
@@ -11,7 +13,43 @@ export type SeedA = { bedrijfSlug: string; tuinaanlegSlug: string; factuurTokens
 export const seed = (): Seed => JSON.parse(fs.readFileSync(path.join(__dirname, "../test-results/seed.json"), "utf8"));
 
 // Een test met een ingelogde testgebruiker:  test.use({ gebruiker: "a1" })
-export const test = basis.extend<{ gebruiker: Gebruiker | "auto" | null; axe: (naam?: string) => Promise<void> }>({
+// Tests die de weergave-instelling van de rekentool wijzigen of daarvan afhangen, wachten op elkaar: per hovenier (mobiel = a1,
+// desktop = a2) is er één "slot". Het slot zet de rekentool terug op de standaard (leeg = alles op één pagina) en geeft hem weer vrij.
+const slotSql = (q: string) => execFileSync("psql", [process.env.DATABASE_URL ?? "postgresql://postgres@127.0.0.1:5433/kp", "-t", "-A", "-c", q]).toString().trim();
+
+export const test = basis.extend<{ gebruiker: Gebruiker | "auto" | null; axe: (naam?: string) => Promise<void>; toolSlot: void; slotVoor: "a1" | "a2" | null }>({
+  slotVoor: [null, { option: true }],
+  toolSlot: [
+    async ({ slotVoor }, gebruik, info) => {
+      const eigen = slotVoor ?? (info.project.name === "mobiel" ? "a1" : "a2");
+      const map = path.join(os.tmpdir(), `kp-e2e-slot-${eigen}`);
+      const begin = Date.now();
+      for (;;) {
+        try {
+          fs.mkdirSync(map);
+          break;
+        } catch {
+          // Een slot dat langer dan 3 minuten bezet is, is van een afgebroken test.
+          try {
+            if (Date.now() - fs.statSync(map).mtimeMs > 180_000) fs.rmdirSync(map);
+          } catch {}
+          if (Date.now() - begin > 600_000) throw new Error("Wachten op het slot van de rekentool duurde te lang.");
+          await new Promise((r) => setTimeout(r, 300));
+        }
+      }
+      const toolId = seed()[eigen].tools.tuinaanleg;
+      slotSql(`UPDATE "Tool" SET "weergaveConfig" = '{}'::jsonb WHERE id = '${toolId}'`);
+      try {
+        await gebruik();
+      } finally {
+        slotSql(`UPDATE "Tool" SET "weergaveConfig" = '{}'::jsonb WHERE id = '${toolId}'`);
+        try {
+          fs.rmdirSync(map);
+        } catch {}
+      }
+    },
+    { auto: false },
+  ],
   gebruiker: [null, { option: true }],
   context: async ({ context, gebruiker, baseURL }, gebruik, info) => {
     const g = gebruiker === "auto" ? (info.project.name === "mobiel" ? "a1" : "a2") : gebruiker;

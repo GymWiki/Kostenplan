@@ -29,6 +29,7 @@ function SheetInhoud({
   open,
   onClose,
   titel,
+  titelNode,
   icoon,
   children,
   voet,
@@ -38,6 +39,8 @@ function SheetInhoud({
   open: boolean;
   onClose: () => void;
   titel: string;
+  // Eigen inhoud voor de titel (bijv. een naam die je ter plekke kunt wijzigen); `titel` blijft de tekst voor schermlezers.
+  titelNode?: React.ReactNode;
   icoon?: React.ReactNode;
   children: React.ReactNode;
   voet?: React.ReactNode;
@@ -79,8 +82,11 @@ function SheetInhoud({
       }
     }
     window.addEventListener("popstate", bijTerug);
-    const vorigeOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    // Scroll vergrendelen op <html>: een inline overflow op <body> maakt van body een eigen
+    // scrollcontainer en dan scrolt de sticky kop weg (en klopt --editor-header-bottom niet meer).
+    const root = document.documentElement;
+    const vorigeOverflow = root.style.overflow;
+    root.style.overflow = "hidden";
 
     const vv = window.visualViewport;
     function bijViewport() {
@@ -99,7 +105,7 @@ function SheetInhoud({
       clearTimeout(t);
       window.removeEventListener("popstate", bijTerug);
       vv?.removeEventListener("resize", bijViewport);
-      document.body.style.overflow = vorigeOverflow;
+      root.style.overflow = vorigeOverflow;
       vorigeFocus?.focus?.({ preventScroll: true });
     };
   }, [open]);
@@ -143,7 +149,8 @@ function SheetInhoud({
         ref={paneel}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={titelId}
+        aria-labelledby={titelNode ? undefined : titelId}
+        aria-label={titelNode ? titel : undefined}
         tabIndex={-1}
         onKeyDown={bijToets}
         style={stijl}
@@ -178,8 +185,8 @@ function SheetInhoud({
           <span className="mb-1 h-1.5 w-12 rounded-full bg-muted-foreground/40" aria-hidden="true" />
           <div className="flex w-full items-center gap-2 px-4">
             {icoon}
-            <h2 id={titelId} className="min-w-0 flex-1 truncate text-lg font-bold text-foreground">
-              {titel}
+            <h2 id={titelId} className={cn("min-w-0 flex-1 text-lg font-bold text-foreground", !titelNode && "truncate")}>
+              {titelNode ?? titel}
             </h2>
             <div id="sheet-actie" className="flex shrink-0 items-center" />
             <button

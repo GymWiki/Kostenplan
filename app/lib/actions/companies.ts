@@ -1,4 +1,5 @@
 "use server";
+import { NIEUWE_REKENTOOL_WEERGAVE } from "@/app/lib/weergave/config";
 
 import { factuurExportStatus } from "@/app/lib/factuur/export-server";
 import { cookies } from "next/headers";
@@ -73,6 +74,8 @@ export async function createCompanyAction(
       companyId: company.id,
       naam: toolNaam,
       slug: await generateUniqueToolSlug(company.id, toolNaam),
+      // Nieuwe rekentools beginnen met tegels; bestaande rekentools blijven "Alles op één pagina" tot de hovenier zelf kiest.
+      weergaveConfig: NIEUWE_REKENTOOL_WEERGAVE,
       costSettings: { create: {} },
     },
   });

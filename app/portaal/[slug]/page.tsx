@@ -7,6 +7,7 @@ import { getLegacyToolForCompanySlug, getMateriaalOptiesVoorEngineVelden } from 
 import { resolveCostSettings } from "@/app/lib/tools";
 import { effectiveTier } from "@/app/lib/subscription";
 import { parseCalculatorConfig, publicCalculatorConfig, alleVeldenVanConfig } from "@/app/lib/calculator-engine";
+import { parseWeergaveConfig } from "@/app/lib/weergave/config";
 import { Calculator } from "./calculator";
 import { EngineCalculator } from "./engine-calculator";
 
@@ -109,6 +110,7 @@ export default async function PortaalPage({
       products={tool.products}
       toelichting={parseResultaatConfig(tool.resultaatConfig).toelichting}
       ctaTekst={parseResultaatConfig(tool.resultaatConfig).ctaTekst}
+      weergave={parseWeergaveConfig(tool.weergaveConfig)}
       vraagTelefoon={parseLeadFormConfig(tool.leadFormConfig).vraagTelefoon}
       werkgebied={werkgebiedVoor(tool.company.werkgebied, tool.werkgebied)}
     />

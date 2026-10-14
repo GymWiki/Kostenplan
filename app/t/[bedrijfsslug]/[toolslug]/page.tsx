@@ -1,3 +1,4 @@
+import { parseWeergaveConfig } from "@/app/lib/weergave/config";
 import { isActief, resolveWerkgebied } from "@/app/lib/werkgebied/schema";
 import type { Metadata } from "next";
 import { parseLeadFormConfig, parseResultaatConfig } from "@/app/lib/tools";
@@ -113,6 +114,7 @@ export default async function ToolPage({
       products={tool.products}
       toelichting={parseResultaatConfig(tool.resultaatConfig).toelichting}
       ctaTekst={parseResultaatConfig(tool.resultaatConfig).ctaTekst}
+      weergave={parseWeergaveConfig(tool.weergaveConfig)}
       vraagTelefoon={parseLeadFormConfig(tool.leadFormConfig).vraagTelefoon}
       werkgebied={werkgebiedVoor(tool.company.werkgebied, tool.werkgebied)}
     />

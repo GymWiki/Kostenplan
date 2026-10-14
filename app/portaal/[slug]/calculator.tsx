@@ -1,13 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parseGetal as leesGetal } from "@/app/lib/getal";
 import { MAX_HOEVEELHEID } from "@/app/lib/pricing/rond";
 import { LopendTotaal } from "./lopend-totaal";
+import { STANDAARD_WEERGAVE_CONFIG, type WeergaveConfig } from "@/app/lib/weergave/config";
+import { vindOnderdeel } from "@/app/lib/weergave/embed-opties";
+import { actieveProducten, bewaarTuinplan, leegTuinplan, leesTuinplan, planInvoer, verwijderUitPlan, type Tuinplan } from "@/app/lib/weergave/tuinplan";
+import { vanafPrijsCenten } from "@/app/lib/weergave/vanaf";
+import { TegelsWeergave } from "./weergaven/tegels";
+import type { Configurator } from "./weergaven/gedeeld";
+import { StappenWeergave, StappenVoortgang } from "./weergaven/stappen";
+import { OverzichtWeergave } from "./weergaven/overzicht";
+import { useSmalScherm, useZichtbaarGebied } from "./weergaven/host-viewport";
 import Link from "next/link";
 import { Minus, Plus, Printer, Mail, Phone, Image as ImageIcon, Check } from "lucide-react";
 import { bedragTop, type Bedrag, type BreakdownRange } from "@/app/lib/calculate";
-import { configVanProducten, invoerVanKlant } from "@/app/lib/pricing/adapters";
+import { configVanProducten } from "@/app/lib/pricing/adapters";
 import { berekenPrijs } from "@/app/lib/pricing/engine";
 import { formatEuro } from "@/app/lib/pricing/format";
 import { breakdownRangeVan } from "@/app/lib/pricing/weergave";
@@ -38,7 +47,7 @@ import { fontFamilyFor, brandingFontVariables } from "@/app/lib/fonts";
 import { accessibleTextColor } from "@/app/lib/color";
 import { UitgesteldMelding, useLeadVersturen } from "./lead-versturen";
 import { Bewerkbaar, EditorProvider, WerkzaamheidToevoegen, useEditorHaak, type EditorHaken } from "./bewerkbaar";
-import { recordPublicAnalyticsEventAction } from "@/app/lib/actions/analytics";
+import { recordPublicAnalyticsEventAction, type PubliekEvent } from "@/app/lib/actions/analytics";
 import type { LeadSnapshot } from "@/app/lib/leads";
 import { bouwLeadSnapshot } from "@/app/lib/lead-snapshot";
 import type {
@@ -74,6 +83,12 @@ type Props = {
   vraagTelefoon?: boolean;
   // Werkgebied en minimale opdracht (uit de momentopname of de database). Ontbreekt of uit = geen verandering.
   werkgebied?: WerkgebiedInstellingen | null;
+  // Weergave (tegels / stappen / alles op één pagina). Ontbreekt = "Alles op één pagina", zoals vóór de keuze bestond.
+  weergave?: WeergaveConfig | null;
+  // Deep link: dit onderdeel (id of naam-slug) staat meteen open.
+  openSleutel?: string | null;
+  // De rekentool staat in een pop-up op de site van de hovenier (de iframe is het hele venster).
+  popup?: boolean;
 };
 
 // Moet gelijk blijven aan de Kostenplan-standaardkleuren in globals.css
@@ -114,6 +129,20 @@ function klantEenheidLabel(eenheid: string) {
   return unitLabel(eenheid);
 }
 
+// Beginstand van het tuinplan. In de editor staat bij het eerste voorbeeld alvast een hoeveelheid en het eerste materiaal.
+function beginPlan(products: ProductWithDetails[], inEditor: boolean, weergave: WeergaveConfig["weergave"], gekozen: string | null = null): Tuinplan {
+  const plan = leegTuinplan();
+  if (gekozen) plan.toegevoegd = [gekozen];
+  const eerste = products[0];
+  if (inEditor && eerste) {
+    if (eerste.sjabloon === "ENKELE_HOEVEELHEID") plan.hoeveelheden[eerste.id] = voorbeeldHoeveelheid(eerste.eenheid);
+    else plan.sjabloonInvoer[eerste.id] = { lengte: 5, breedte: 4, diepte: 0.1 };
+    for (const c of eerste.materiaalCategorieen) if (c.materialen[0]) plan.materiaalKeuzes[c.id] = c.materialen[0].id;
+    if (weergave !== "lijst") plan.toegevoegd = [eerste.id];
+  }
+  return plan;
+}
+
 export function Calculator({
   toolId,
   bedrijfsnaam,
@@ -127,29 +156,45 @@ export function Calculator({
   ctaTekst = null,
   vraagTelefoon = true,
   werkgebied = null,
+  weergave = null,
+  openSleutel = null,
+  popup = false,
 }: Props) {
   const inEditor = Boolean(editor);
-  // Rechtstreeks door de klant bijgehouden hoeveelheid — alleen gebruikt voor
-  // sjabloon ENKELE_HOEVEELHEID (de QuantityStepper). Voor de andere
-  // sjablonen (Afmetingen/Ruimtes/Artikelregels) wordt de hoeveelheid
-  // afgeleid uit productSjabloonInvoer hieronder, zie effectiveProductQty.
-  const [productQty, setProductQty] = useState<Record<string, number>>(() =>
-    editor && products[0] && products[0].sjabloon === "ENKELE_HOEVEELHEID"
-      ? { [products[0].id]: voorbeeldHoeveelheid(products[0].eenheid) }
-      : {}
-  );
-  // Ruwe klantinvoer per sjabloon-veld (bijv. lengte/breedte, of de
-  // ruimtes/artikelregels-lijst) — zie sjablonen.ts's klantVelden().
-  const [productSjabloonInvoer, setProductSjabloonInvoer] = useState<
-    Record<string, Record<string, unknown>>
-  >(() => (editor && products[0] && products[0].sjabloon !== "ENKELE_HOEVEELHEID" ? { [products[0].id]: { lengte: 5, breedte: 4, diepte: 0.1 } } : {}));
-  const [materialSelections, setMaterialSelections] = useState<Record<string, string>>(() =>
-    // In de editor staat bij het eerste voorbeeld alvast het eerste materiaal gekozen.
-    editor && products[0]
-      ? Object.fromEntries(products[0].materiaalCategorieen.filter((c) => c.materialen[0]).map((c) => [c.id, c.materialen[0].id]))
-      : {}
-  );
-  const [extraSelections, setExtraSelections] = useState<Record<string, number>>({});
+  const wc = weergave ?? STANDAARD_WEERGAVE_CONFIG;
+  // Eén onderdeel: direct de configurator, geen raster en geen kiesstap (dat doet de tegelweergave).
+  const weergaveSoort = products.length === 1 && wc.weergave === "stappen" ? "tegels" : wc.weergave;
+  // Het "tuinplan" van de klant: wat hij heeft gekozen en ingevuld. Alle weergaven delen deze state en dezelfde
+  // functie die er de invoer voor de rekenkern van maakt (zie app/lib/weergave/tuinplan.ts).
+  const [plan, setPlan] = useState<Tuinplan>(() => beginPlan(products, Boolean(editor), weergaveSoort, weergaveSoort === "stappen" ? vindOnderdeel(products, openSleutel) : null));
+  const productSjabloonInvoer = plan.sjabloonInvoer;
+  const materialSelections = plan.materiaalKeuzes;
+  const extraSelections = plan.extraKeuzes;
+  const zetHoeveelheid = (id: string, qty: number) => setPlan((pl) => ({ ...pl, hoeveelheden: { ...pl.hoeveelheden, [id]: qty } }));
+  const zetSjabloonInvoer = (id: string, waarden: Record<string, unknown>) => setPlan((pl) => ({ ...pl, sjabloonInvoer: { ...pl.sjabloonInvoer, [id]: waarden } }));
+  const zetMateriaal = (categoryId: string, materiaalId: string) => setPlan((pl) => ({ ...pl, materiaalKeuzes: { ...pl.materiaalKeuzes, [categoryId]: materiaalId } }));
+  const zetExtra = (extraId: string, aantal: number) => setPlan((pl) => ({ ...pl, extraKeuzes: { ...pl.extraKeuzes, [extraId]: aantal } }));
+  // Welk scherm (tegels en stappen) en welk onderdeel open staat / welke stap actief is.
+  const linkId = useMemo(() => vindOnderdeel(products, openSleutel), [products, openSleutel]);
+  const [scherm, setScherm] = useState<"kiezen" | "overzicht">("kiezen");
+  // Deep link: dat onderdeel staat meteen open (tegels), is meteen gekozen en aan de beurt (stappen), of wordt in beeld gebracht (lijst).
+  const [openId, setOpenId] = useState<string | null>(weergaveSoort === "tegels" && products.length > 2 ? linkId : null);
+  const [stap, setStap] = useState(weergaveSoort === "stappen" && linkId ? 1 : 0);
+  const [verstuurd, setVerstuurd] = useState(false);
+  const [schil, setSchil] = useState<HTMLElement | null>(null);
+  const smal = useSmalScherm();
+  const zichtbaar = useZichtbaarGebied(toolId);
+  // Metingen (zonder persoonsgegevens) per weergave en plaatsing; nooit in de editor.
+  const meetContext = { weergave: weergaveSoort, plaatsing: popup ? "popup" : "inline" };
+  const meetRef = useRef({ inEditor, toolId, ...meetContext });
+  useEffect(() => {
+    meetRef.current = { inEditor, toolId, ...meetContext };
+  });
+  const meet = useCallback((type: PubliekEvent) => {
+    const m = meetRef.current;
+    if (m.inEditor) return;
+    recordPublicAnalyticsEventAction(m.toolId, type, { weergave: m.weergave, plaatsing: m.plaatsing }).catch(() => {});
+  }, []);
 
   // Kleuren en lettertype zijn een Plus/Pro-feature — opnieuw afdwingen bij
   // het renderen (niet alleen in het dashboard), zodat een Gratis-tenant
@@ -216,9 +261,52 @@ export function Calculator({
   useEffect(() => {
     if (visitRecorded.current || inEditor) return;
     visitRecorded.current = true;
-    recordPublicAnalyticsEventAction(toolId, "VISIT").catch(() => {});
+    meet("VISIT");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Pop-up: de rekentool is net geopend (eerste keer: hier; daarna meldt het laadscript elke keer dat het venster opengaat).
+  useEffect(() => {
+    if (!popup) return;
+    meet("POPUP_GEOPEND");
+    function onMessage(e: MessageEvent) {
+      const m = e.data;
+      if (e.source === window.parent && m && typeof m === "object" && m.type === "kostenplan:geopend" && m.toolId === toolId) meet("POPUP_GEOPEND");
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [popup, toolId, meet]);
+
+  // In de editor kan de weergave wisselen terwijl de rekentool openstaat: wat al is ingevuld blijft staan en komt in het plan.
+  const vorigeWeergave = useRef(weergaveSoort);
+  useEffect(() => {
+    if (vorigeWeergave.current === weergaveSoort) return;
+    vorigeWeergave.current = weergaveSoort;
+    queueMicrotask(() => {
+      setScherm("kiezen");
+      setOpenId(null);
+      setStap(0);
+      setPlan((pl) => (weergaveSoort === "lijst" ? pl : { ...pl, toegevoegd: products.filter((x) => (pl.hoeveelheden[x.id] ?? 0) > 0 || pl.sjabloonInvoer[x.id] !== undefined).map((x) => x.id) }));
+    });
+  }, [weergaveSoort, products]);
+
+  // Deep link in de lijst: het onderdeel in beeld brengen. In een pop-up: Escape meldt aan de pagina erachter dat hij moet sluiten.
+  useEffect(() => {
+    if (weergaveSoort !== "lijst" || !linkId) return;
+    document.querySelector(`[data-onderdeel="${linkId}"]`)?.scrollIntoView({ block: "start" });
+  }, [weergaveSoort, linkId]);
+  useEffect(() => {
+    if (!popup) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      // Eerst sluit wat er binnen de rekentool open staat (venster, onderdeel-paneel, lijst met adressen); pas daarna de pop-up.
+      const actief = document.activeElement;
+      if (document.querySelector('[role="dialog"][aria-modal="true"], #tegel-paneel') || actief?.getAttribute("aria-expanded") === "true") return;
+      window.parent.postMessage({ type: "kostenplan:sluit", toolId }, "*");
+    }
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [popup, toolId]);
 
   // De ene rekenkern (app/lib/pricing): dezelfde berekening als de server bij het versturen van de
   // aanvraag en als de offerte. Hier alleen de configuratie en de keuzes van de klant erin stoppen.
@@ -226,16 +314,105 @@ export function Calculator({
   // de kern bepaalt wat dat betekent (toeslag, melding, markering).
   const vraagAdres = Boolean(werkgebied?.werkgebied.aan);
   const [adres, setAdres] = useState<AdresKeuze>({ soort: "leeg" });
+  // Het tuinplan overleeft herladen en terug navigeren binnen het bezoek (sessionStorage; mislukt het, dan werkt alles zonder).
+  const [hersteld, setHersteld] = useState(false);
+  useEffect(() => {
+    // Pas na de eerste render (server en browser tonen eerst hetzelfde), dan het bewaarde plan terugzetten.
+    queueMicrotask(() => {
+      if (!inEditor) {
+        let bewaard = leesTuinplan(toolId, products);
+        if (bewaard && weergaveSoort === "stappen" && linkId && !bewaard.toegevoegd.includes(linkId)) bewaard = { ...bewaard, toegevoegd: [...bewaard.toegevoegd, linkId] };
+        if (bewaard) {
+          setPlan(bewaard);
+          if (weergaveSoort === "stappen" && linkId) setStap(products.filter((x) => bewaard!.toegevoegd.includes(x.id)).findIndex((x) => x.id === linkId) + 1);
+          if (bewaard.adres.soort !== "leeg") setAdres(bewaard.adres);
+        }
+      }
+      setHersteld(true);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (hersteld && !inEditor) bewaarTuinplan(toolId, { ...plan, adres });
+  }, [hersteld, inEditor, toolId, plan, adres]);
   const adresKlaar = !vraagAdres || adresIsKlaar(adres);
   const locatie = useMemo(() => (vraagAdres ? locatieInvoerVan(adres, werkgebied) : undefined), [vraagAdres, adres, werkgebied]);
   const config = useMemo(() => configVanProducten(products, costSettings, { werkgebied }), [products, costSettings, werkgebied]);
-  const invoer = useMemo(
-    () => invoerVanKlant({ producten: products, hoeveelheden: productQty, sjabloonInvoer: productSjabloonInvoer, materiaalKeuzes: materialSelections, extraKeuzes: extraSelections, locatie }),
-    [products, productQty, productSjabloonInvoer, materialSelections, extraSelections, locatie]
-  );
-  const resultaat = useMemo(() => berekenPrijs(config, invoer), [config, invoer]);
+  // Wat meetelt: in de lijst alles wat is ingevuld; bij tegels en stappen de onderdelen in het plan. `resultaatLive` telt
+  // daarbij het onderdeel mee dat de klant nu openheeft (voor de prijs in zijn configurator); het totaal, de aanvraag en
+  // de offerte komen altijd uit `resultaat`: alleen wat in het plan zit.
+  const invoerLive = useMemo(() => planInvoer(actieveProducten(products, weergaveSoort, plan, openId), plan, locatie), [products, weergaveSoort, plan, openId, locatie]);
+  const invoer = useMemo(() => (openId ? planInvoer(actieveProducten(products, weergaveSoort, plan, null), plan, locatie) : invoerLive), [openId, products, weergaveSoort, plan, locatie, invoerLive]);
+  const resultaatLive = useMemo(() => berekenPrijs(config, invoerLive), [config, invoerLive]);
+  const resultaat = useMemo(() => (openId ? berekenPrijs(config, invoer) : resultaatLive), [openId, config, invoer, resultaatLive]);
   const breakdown = useMemo(() => breakdownRangeVan(resultaat), [resultaat]);
-  const onderdeelPerId = useMemo(() => new Map(resultaat.onderdelen.map((o) => [o.id, o])), [resultaat]);
+  const onderdeelPerId = useMemo(() => new Map(resultaatLive.onderdelen.map((o) => [o.id, o])), [resultaatLive]);
+  const prijsVerborgen = wc.prijsNaContact && !verstuurd;
+  const vanaf = useMemo(
+    () => (weergaveSoort === "lijst" ? {} : Object.fromEntries(products.map((pr) => [pr.id, vanafPrijsCenten(pr, costSettings, { maat: wc.onderdelen[pr.id]?.voorbeeldmaat, inclVoorrij: wc.vanafInclVoorrij })]))),
+    [weergaveSoort, products, costSettings, wc.onderdelen, wc.vanafInclVoorrij]
+  );
+  const totaalPlanCenten = prijsVerborgen ? null : resultaat.totaalInclCenten;
+  // Metingen die uit de stand volgen: in de lijst telt een onderdeel als toegevoegd zodra er een hoeveelheid staat; bij stappen
+  // opent elke stap een onderdeel; en het overzicht is bekeken zodra het in beeld komt.
+  const gemeld = useRef(new Set<string>());
+  const verzondenGemeld = useRef(false);
+  useEffect(() => {
+    if (weergaveSoort !== "lijst") return;
+    for (const o of resultaatLive.onderdelen) {
+      if (o.hoeveelheid > 0 && !gemeld.current.has(o.id)) {
+        gemeld.current.add(o.id);
+        meet("ONDERDEEL_TOEGEVOEGD");
+      }
+    }
+  }, [weergaveSoort, resultaatLive, meet]);
+  useEffect(() => {
+    if (weergaveSoort === "stappen" && scherm === "kiezen" && stap > 0) meet("ONDERDEEL_GEOPEND");
+  }, [weergaveSoort, scherm, stap, meet]);
+  useEffect(() => {
+    if (scherm === "overzicht") meet("OVERZICHT_BEKEKEN");
+  }, [scherm, meet]);
+  const productVan = (id: string) => products.find((x) => x.id === id);
+  // Een onderdeel dat de klant opende maar niet toevoegde, laat geen halve invoer achter.
+  const gooiConceptWeg = (id: string | null) => {
+    const pr = id ? productVan(id) : undefined;
+    if (pr) setPlan((pl) => (pl.toegevoegd.includes(pr.id) ? pl : verwijderUitPlan(pl, pr)));
+  };
+  const openOnderdeel = (id: string | null) => {
+    if (openId && openId !== id) gooiConceptWeg(openId);
+    if (id && id !== openId) meet("ONDERDEEL_GEOPEND");
+    setOpenId(id);
+  };
+  const voegToe = (id: string) => {
+    if (!plan.toegevoegd.includes(id)) meet("ONDERDEEL_TOEGEVOEGD");
+    setPlan((pl) => (pl.toegevoegd.includes(id) ? pl : { ...pl, toegevoegd: [...pl.toegevoegd, id] }));
+  };
+  const haalWeg = (id: string) => {
+    const pr = productVan(id);
+    if (pr) setPlan((pl) => verwijderUitPlan(pl, pr));
+    if (openId === id) setOpenId(null);
+    // Stappen: na het verwijderen begint de klant weer bij het kiezen (anders springt hij bij de volgende keuze meteen door).
+    setStap(0);
+  };
+  const wisselGekozen = (id: string) => (plan.toegevoegd.includes(id) ? haalWeg(id) : voegToe(id));
+  const configurator: Configurator = (product, { prijsVerborgen: verborgen }) => (
+    <ProductCard
+      product={product}
+      kaal
+      kaartenAltijd
+      prijsVerborgen={verborgen}
+      eigenPrijs={(onderdeelPerId.get(product.id)?.subtotaalExclCenten ?? 0) / 100}
+      qty={onderdeelPerId.get(product.id)?.hoeveelheid ?? 0}
+      onQtyChange={(qty) => zetHoeveelheid(product.id, qty)}
+      sjabloonInvoer={productSjabloonInvoer[product.id] ?? {}}
+      onSjabloonInvoerChange={(waarden) => zetSjabloonInvoer(product.id, waarden)}
+      regelsBedrag={(onderdeelPerId.get(product.id)?.kosten.artikel ?? 0) / 100}
+      materialSelections={materialSelections}
+      onMaterialSelect={zetMateriaal}
+      extraSelections={extraSelections}
+      onExtraChange={zetExtra}
+    />
+  );
 
   // Een verplichte materiaalcategorie zonder keuze houdt de prijsindicatie
   // onvolledig — de klant mag dan geen offerte aanvragen totdat dit is opgelost.
@@ -252,13 +429,13 @@ export function Calculator({
     if (inEditor) return;
     if (!startRecorded.current && breakdown.heeftSelectie) {
       startRecorded.current = true;
-      recordPublicAnalyticsEventAction(toolId, "START").catch(() => {});
+      meet("START");
     }
     if (!completeRecorded.current && breakdown.heeftSelectie && !heeftOntbrekendeVerplichteMaterialen && bedragTop(breakdown.totaal) > 0) {
       completeRecorded.current = true;
-      recordPublicAnalyticsEventAction(toolId, "COMPLETE").catch(() => {});
+      meet("COMPLETE");
     }
-  }, [toolId, breakdown, heeftOntbrekendeVerplichteMaterialen, inEditor]);
+  }, [toolId, breakdown, heeftOntbrekendeVerplichteMaterialen, inEditor, meet]);
 
   // Bevroren "wat had de klant aangevinkt" voor de leads-CRM (zie
   // app/lib/leads.ts) — meegestuurd bij "Offerte aanvragen" zodat de vakman
@@ -275,11 +452,13 @@ export function Calculator({
   const adresTekst = adres.soort === "gevonden" ? adresRegel({ straat: adres.adres.straat, huisnummer: adres.adres.huisnummer, postcode: adres.adres.postcode, plaats: adres.adres.plaats }) : adres.soort === "niet-gecontroleerd" ? `${adres.ruw.postcode.replace(/^(\d{4})([A-Z]{2})$/, "$1 $2")} ${adres.ruw.huisnummer}${adres.ruw.toevoeging ? ` ${adres.ruw.toevoeging}` : ""}` : null;
 
   const isEmpty = products.length === 0;
+  const gescheiden = weergaveSoort !== "lijst";
 
   return (
     <EditorProvider haak={editor}>
     <div
       data-portal-shell
+      ref={setSchil}
       className={cn("flex min-h-screen flex-col", brandingFontVariables())}
       style={
         {
@@ -336,8 +515,9 @@ export function Calculator({
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px]">
+          <div className={gescheiden ? "mx-auto flex w-full max-w-4xl flex-col gap-8" : "grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px]"}>
             <div className="flex flex-col gap-8 lg:order-1">
+              {!(gescheiden && scherm === "overzicht") && (
               <Bewerkbaar doel="uiterlijk-tekst" label="Introtekst">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">
@@ -345,50 +525,45 @@ export function Calculator({
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {welkomstTekst ??
-                    "Geef bij de onderdelen de gewenste hoeveelheid op. Je ziet direct een schatting van de kosten hiernaast."}
+                    (gescheiden
+                      ? "Kies wat je nodig hebt en vul de maten in. Je ziet direct een schatting van de kosten."
+                      : "Geef bij de onderdelen de gewenste hoeveelheid op. Je ziet direct een schatting van de kosten hiernaast.")}
                 </p>
               </div>
               </Bewerkbaar>
+              )}
 
-              {vraagAdres && (
+              {vraagAdres && !(gescheiden && scherm === "overzicht") && (
                 <div className="flex flex-col gap-3">
                   <AdresVraag keuze={adres} onKeuze={setAdres} />
                   {adresKlaar && buitenTekst && <LocatieBericht soort="blokkade" tekst={buitenTekst} contact={contact} />}
                 </div>
               )}
 
-              {products.length > 0 && adresKlaar && (
+              {products.length > 0 && adresKlaar && weergaveSoort === "lijst" && (
                 <section className="flex flex-col gap-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Onderdelen
-                  </h3>
+                  <Bewerkbaar doel="weergave" label="Weergave">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      Onderdelen
+                    </h3>
+                  </Bewerkbaar>
                   <div className="flex flex-col gap-3">
                     {products.map((product) => (
                       <Bewerkbaar key={product.id} doel={`werkzaamheid:${product.id}`} label={product.naam} verplaatsbaar>
                       <ProductCard
                         key={product.id}
                         product={product}
+                        prijsVerborgen={prijsVerborgen}
                         eigenPrijs={(onderdeelPerId.get(product.id)?.subtotaalExclCenten ?? 0) / 100}
                         qty={onderdeelPerId.get(product.id)?.hoeveelheid ?? 0}
-                        onQtyChange={(qty) =>
-                          setProductQty((prev) => ({ ...prev, [product.id]: qty }))
-                        }
+                        onQtyChange={(qty) => zetHoeveelheid(product.id, qty)}
                         sjabloonInvoer={productSjabloonInvoer[product.id] ?? {}}
-                        onSjabloonInvoerChange={(waarden) =>
-                          setProductSjabloonInvoer((prev) => ({ ...prev, [product.id]: waarden }))
-                        }
+                        onSjabloonInvoerChange={(waarden) => zetSjabloonInvoer(product.id, waarden)}
                         regelsBedrag={(onderdeelPerId.get(product.id)?.kosten.artikel ?? 0) / 100}
                         materialSelections={materialSelections}
-                        onMaterialSelect={(categoryId, materialOptionId) =>
-                          setMaterialSelections((prev) => ({
-                            ...prev,
-                            [categoryId]: materialOptionId,
-                          }))
-                        }
+                        onMaterialSelect={zetMateriaal}
                         extraSelections={extraSelections}
-                        onExtraChange={(extraOptionId, aantal) =>
-                          setExtraSelections((prev) => ({ ...prev, [extraOptionId]: aantal }))
-                        }
+                        onExtraChange={zetExtra}
                       />
                       </Bewerkbaar>
                     ))}
@@ -396,11 +571,87 @@ export function Calculator({
                   </div>
                 </section>
               )}
+
+              {products.length > 0 && adresKlaar && weergaveSoort === "tegels" && scherm === "kiezen" && (
+                <div className="flex flex-col gap-3">
+                  <TegelsWeergave
+                    producten={products}
+                    toegevoegd={plan.toegevoegd}
+                    wc={wc}
+                    resultaat={resultaat}
+                    resultaatLive={resultaatLive}
+                    vanaf={vanaf}
+                    prijsVerborgen={prijsVerborgen}
+                    openId={openId}
+                    onOpen={openOnderdeel}
+                    onToevoegen={voegToe}
+                    onVerwijder={haalWeg}
+                    configurator={configurator}
+                    smal={smal}
+                    portalDoel={schil}
+                    zichtbaar={zichtbaar}
+                    totaalCenten={totaalPlanCenten}
+                    onBekijk={() => { setOpenId(null); setScherm("overzicht"); }}
+                    direct={products.length <= 2}
+                  />
+                  <WerkzaamheidToevoegen />
+                </div>
+              )}
+
+              {products.length > 0 && adresKlaar && weergaveSoort === "stappen" && scherm === "kiezen" && (
+                <div className="flex flex-col gap-3">
+                  <StappenWeergave
+                    producten={products}
+                    gekozen={plan.toegevoegd}
+                    stap={Math.min(stap, plan.toegevoegd.length)}
+                    onStap={setStap}
+                    onToggle={wisselGekozen}
+                    resultaat={resultaat}
+                    vanaf={vanaf}
+                    prijsVerborgen={prijsVerborgen}
+                    totaalCenten={totaalPlanCenten}
+                    wc={wc}
+                    configurator={configurator}
+                    onKlaar={() => setScherm("overzicht")}
+                  />
+                  <WerkzaamheidToevoegen />
+                </div>
+              )}
+
+              {products.length > 0 && adresKlaar && gescheiden && scherm === "overzicht" && (
+                <OverzichtWeergave
+                  producten={products}
+                  toegevoegd={plan.toegevoegd}
+                  resultaat={resultaat}
+                  prijsVerborgen={prijsVerborgen}
+                  onAanpassen={(id) => {
+                    setScherm("kiezen");
+                    if (weergaveSoort === "stappen") setStap(products.filter((x) => plan.toegevoegd.includes(x.id)).findIndex((x) => x.id === id) + 1);
+                    else setOpenId(id);
+                  }}
+                  onVerwijder={(id) => {
+                    haalWeg(id);
+                    if (plan.toegevoegd.length <= 1) setScherm("kiezen");
+                  }}
+                  onTerug={() => setScherm("kiezen")}
+                  terugTekst={weergaveSoort === "stappen" ? "Terug naar de stappen" : "Onderdelen aanpassen of toevoegen"}
+                  voortgang={weergaveSoort === "stappen" ? <StappenVoortgang stap={plan.toegevoegd.length + 2} totaal={plan.toegevoegd.length + 2} label="Overzicht" /> : undefined}
+                />
+              )}
             </div>
 
+            {(!gescheiden || scherm === "overzicht") && (
             <div className="lg:order-2">
-              <div className="flex flex-col gap-4 lg:sticky lg:top-6">
+              <div className={cn("flex flex-col gap-4", !gescheiden && "lg:sticky lg:top-6")}>
                 <Summary
+                  prijsVerborgen={prijsVerborgen}
+                  onVerstuurd={() => {
+                    if (!verzondenGemeld.current) meet("AANVRAAG_VERSTUURD");
+                    verzondenGemeld.current = true;
+                    setVerstuurd(true);
+                  }}
+                  onAanvraagGestart={() => meet("AANVRAAG_GESTART")}
+                  weergavePlan={gescheiden}
                   toolId={toolId}
                   bedrijfsnaam={bedrijfsnaam}
                   contact={contact}
@@ -422,6 +673,7 @@ export function Calculator({
                 />
               </div>
             </div>
+            )}
           </div>
         )}
       </main>
@@ -495,7 +747,15 @@ export function ProductCard({
   onMaterialSelect,
   extraSelections,
   onExtraChange,
+  kaal = false,
+  kaartenAltijd = false,
+  prijsVerborgen = false,
 }: {
+  // In een venster of paneel (tegels, stappen): zonder eigen kaartrand, materiaal altijd als keuzekaarten.
+  kaal?: boolean;
+  kaartenAltijd?: boolean;
+  // De prijs pas tonen na de contactgegevens.
+  prijsVerborgen?: boolean;
   product: ProductWithDetails;
   // Het bedrag van dit onderdeel (excl. btw) uit de rekenkern: hetzelfde als in het totaal hiernaast.
   eigenPrijs: number;
@@ -523,11 +783,16 @@ export function ProductCard({
 
   return (
     <Card
+      data-onderdeel={product.id}
       className={
-        active ? "border-[var(--brand-primary)]/40 bg-[var(--brand-primary)]/10" : undefined
+        kaal
+          ? "border-0 bg-transparent shadow-none"
+          : active
+            ? "border-[var(--brand-primary)]/40 bg-[var(--brand-primary)]/10"
+            : undefined
       }
     >
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className={cn("flex flex-col gap-4", kaal && "p-0")}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             {ProductIcon && (
@@ -551,7 +816,8 @@ export function ProductCard({
               onChange={onQtyChange}
             />
           ) : (
-            eigenPrijs > 0 && (
+            eigenPrijs > 0 &&
+            !prijsVerborgen && (
               <span className="shrink-0 text-sm font-semibold text-foreground">
                 ≈ {formatEuro(eigenPrijs)}
               </span>
@@ -576,12 +842,12 @@ export function ProductCard({
                   <Label htmlFor={`materiaal-${category.id}`}>
                     {category.naam}
                     {category.verplicht && (
-                      <span className="ml-1.5 text-xs font-normal text-destructive">
+                      <span className="ml-1.5 text-xs font-medium text-foreground">
                         Verplicht
                       </span>
                     )}
                   </Label>
-                  {hasFotos ? (
+                  {hasFotos || kaartenAltijd ? (
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                       {category.materialen.map((material) => {
                         const isSelected = materialSelections[category.id] === material.id;
@@ -1003,7 +1269,17 @@ function Summary({
   minimumTekst,
   adresTekst,
   adresNog,
+  prijsVerborgen,
+  onVerstuurd,
+  onAanvraagGestart,
+  weergavePlan,
 }: {
+  onAanvraagGestart: () => void;
+  // De prijs pas tonen na de contactgegevens (instelling van de hovenier).
+  prijsVerborgen: boolean;
+  onVerstuurd: () => void;
+  // Tegels en stappen: de selectie staat al in het overzicht erboven.
+  weergavePlan: boolean;
   // Afstand hemelsbreed (km) voor het label van de afstandstoeslag.
   afstandskosten: number | null;
   // De aanvraag mag niet (buiten het werkgebied of onder het minimum): de prijs blijft zichtbaar.
@@ -1026,7 +1302,7 @@ function Summary({
   magOfferteAanvragen: boolean;
   heeftOntbrekendeVerplichteMaterialen: boolean;
 }) {
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(prijsVerborgen);
   const kaartRef = useRef<HTMLDivElement>(null);
   const testmodus = useEditorHaak() !== null;
   const [state, formAction, pending] = useLeadVersturen({ toolId, bedrijfsnaam, contact, uitgeschakeld: testmodus });
@@ -1036,6 +1312,10 @@ function Summary({
   const [leadNaam, setLeadNaam] = useState("");
   const [leadEmail, setLeadEmail] = useState("");
   const [leadTelefoon, setLeadTelefoon] = useState("");
+  const gelukt = Boolean(state?.success);
+  useEffect(() => {
+    if (gelukt) onVerstuurd();
+  }, [gelukt, onVerstuurd]);
 
   const rows: { label: string; value: Bedrag }[] = [];
   if (costSettings.arbeidEnabled && costSettings.arbeidZichtbaar) {
@@ -1092,7 +1372,10 @@ function Summary({
                   {bedankTekst}
                 </p>
               )}
-              {rows.length > 0 && (
+              {prijsVerborgen && !state?.success && (
+                <p className="rounded-lg bg-secondary/60 px-3 py-3 text-sm text-foreground">Vul hieronder je gegevens in en verstuur je aanvraag: dan zie je direct wat het kost.</p>
+              )}
+              {!prijsVerborgen && rows.length > 0 && (
                 <div className="flex flex-col gap-2 text-sm tabular-nums">
                   {rows.map((row) => (
                     <div key={row.label} className="flex items-center justify-between">
@@ -1129,11 +1412,12 @@ function Summary({
                   voorgrondkleur als de header) i.p.v. de vaste accentkleur,
                   met een duidelijk groter cijfer dan de rest van het
                   overzicht. */}
+              {!prijsVerborgen && (
               <div
                 className="flex flex-col gap-1 rounded-lg px-4 py-4"
                 style={{ backgroundColor: "var(--brand-primary)" }}
               >
-                <span className="text-xs font-medium uppercase tracking-wide text-[var(--brand-primary-foreground)]/75">
+                <span className="text-xs font-medium uppercase tracking-wide text-[var(--brand-primary-foreground)]">
                   Totaal (incl. btw)
                 </span>
                 <span className="text-3xl font-bold leading-tight tracking-tight tabular-nums text-[var(--brand-primary-foreground)]">
@@ -1142,11 +1426,12 @@ function Summary({
                 {breakdown.modus === "TOTAAL" &&
                   breakdown.margeOmlaag != null &&
                   breakdown.margeOmhoog != null && (
-                    <span className="text-xs text-[var(--brand-primary-foreground)]/60">
+                    <span className="text-xs text-[var(--brand-primary-foreground)]">
                       Indicatie −{breakdown.margeOmlaag}% / +{breakdown.margeOmhoog}%
                     </span>
                   )}
               </div>
+              )}
               {minimumTekst && <LocatieBericht soort={aanvraagGeblokkeerd ? "blokkade" : "info"} tekst={minimumTekst} contact={aanvraagGeblokkeerd ? contact : undefined} />}
               {heeftOntbrekendeVerplichteMaterialen && (
                 <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning">
@@ -1254,7 +1539,10 @@ function Summary({
                       variant="primary"
                       size="lg"
                       className="w-full whitespace-nowrap border-transparent bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] hover:opacity-90 sm:flex-1"
-                      onClick={() => setFormOpen(true)}
+                      onClick={() => {
+                        setFormOpen(true);
+                        onAanvraagGestart();
+                      }}
                       disabled={heeftOntbrekendeVerplichteMaterialen}
                     >
                       <Mail className="h-4 w-4" />
@@ -1282,7 +1570,7 @@ function Summary({
       </Card>
       </Bewerkbaar>
       </div>
-      {breakdown.heeftSelectie && !adresNog && !state?.success && <LopendTotaal tekst={formatCurrencyRange(breakdown.totaal)} kaartRef={kaartRef} />}
+      {!weergavePlan && !prijsVerborgen && breakdown.heeftSelectie && !adresNog && !state?.success && <LopendTotaal tekst={formatCurrencyRange(breakdown.totaal)} kaartRef={kaartRef} />}
     </>
   );
 }

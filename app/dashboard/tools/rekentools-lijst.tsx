@@ -21,6 +21,7 @@ import {
   verwijderRekentoolAction,
 } from "@/app/lib/actions/rekentools";
 import { meervoud } from "@/app/lib/meervoud";
+import type { ToolStatistiek } from "@/app/lib/weergave/statistiek";
 
 export type RekentoolKaartData = {
   id: string;
@@ -30,6 +31,8 @@ export type RekentoolKaartData = {
   leadsDezeMaand: number;
   nieuweLeads: number;
   toolUrl: string;
+  // Laatste 30 dagen, per weergave naast elkaar.
+  statistiek?: ToolStatistiek;
 };
 
 // Kaarten van het Rekentools-overzicht: naam, aantal werkzaamheden, status,
@@ -284,6 +287,8 @@ function Kaart({ tool, magDupliceren, onVerwijderd }: { tool: RekentoolKaartData
           <Badge variant={tool.live ? "success" : "muted"}>{tool.live ? "Live op je website" : "Nog niet op je website"}</Badge>
         </div>
 
+        {tool.statistiek && tool.live && <Statistiek stat={tool.statistiek} naam={naam} />}
+
         <Link
           href={`/dashboard/leads?tool=${tool.id}`}
           className="inline-flex min-h-11 w-fit items-center rounded-md text-sm font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -349,5 +354,42 @@ function NieuweRekentoolDialoog({ open, onClose }: { open: boolean; onClose: () 
         </div>
       </form>
     </Overlay>
+  );
+}
+
+// Wat klanten in de laatste 30 dagen deden, en per weergave naast elkaar zodra er meer dan één is gebruikt.
+function Statistiek({ stat, naam }: { stat: ToolStatistiek; naam: string }) {
+  return (
+    <div className="flex flex-col gap-1 text-sm">
+      <p className="text-muted-foreground">
+        <span className="font-semibold text-foreground">Laatste 30 dagen:</span> {meervoud(stat.bezoekers, "bezoeker", "bezoekers")} · {meervoud(stat.toevoegingen, "onderdeel toegevoegd", "onderdelen toegevoegd")} · {meervoud(stat.aanvragen, "aanvraag", "aanvragen")}
+      </p>
+      {stat.perWeergave.length > 1 && (
+        <details>
+          <summary className="min-h-11 cursor-pointer py-2.5 font-semibold text-foreground">Per weergave</summary>
+          <table className="w-full text-left">
+            <caption className="sr-only">Bezoekers, toevoegingen en aanvragen per weergave van {naam}, laatste 30 dagen</caption>
+            <thead>
+              <tr className="text-muted-foreground">
+                <th scope="col" className="py-1 pr-2 font-medium">Weergave</th>
+                <th scope="col" className="py-1 pr-2 text-right font-medium">Bezoekers</th>
+                <th scope="col" className="py-1 pr-2 text-right font-medium">Toegevoegd</th>
+                <th scope="col" className="py-1 text-right font-medium">Aanvragen</th>
+              </tr>
+            </thead>
+            <tbody className="tabular-nums">
+              {stat.perWeergave.map((w) => (
+                <tr key={w.sleutel} className="border-t border-border">
+                  <th scope="row" className="py-1 pr-2 font-normal">{w.label}</th>
+                  <td className="py-1 pr-2 text-right">{w.bezoekers}</td>
+                  <td className="py-1 pr-2 text-right">{w.toevoegingen}</td>
+                  <td className="py-1 text-right">{w.aanvragen}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
+      )}
+    </div>
   );
 }

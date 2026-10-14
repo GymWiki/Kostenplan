@@ -1,10 +1,11 @@
 import type { ToolEmbedConfig } from "@/app/lib/tools";
+import { zuiverVariant, type EmbedVariant } from "@/app/lib/weergave/embed-opties";
 
 // Huidige versie van het laadscript. Een nieuwe versie krijgt een nieuw
 // bestand (public/kp/v2.js); bestaande embedcodes blijven naar hun eigen
 // versie wijzen, dus een kapotte uitrol raakt alleen codes die nieuw gekopieerd
 // worden en is terug te draaien door deze constante terug te zetten.
-export const LAADSCRIPT_VERSIE = 1;
+export const LAADSCRIPT_VERSIE = 2;
 export const laadscriptPad = (versie = LAADSCRIPT_VERSIE) => `/kp/v${versie}.js`;
 
 export type EmbedContact = {
@@ -26,6 +27,8 @@ export type EmbedCodeOpties = {
   snapshotUrl?: string | null;
   embedConfig: ToolEmbedConfig;
   contact: EmbedContact;
+  // Een variant voor één plek op de site: andere weergave, pop-up, of alleen bepaalde onderdelen. Zonder: de instellingen van de rekentool.
+  variant?: EmbedVariant;
 };
 
 function esc(waarde: string) {
@@ -73,14 +76,31 @@ function inlineScript(id: string, bronnen: string[]) {
   );
 }
 
+// Het deel van de embed-adres-parameters voor het iframe (weergave en onderdelen; plaatsing regelt het laadscript).
+export function variantQuery(variant: EmbedVariant | undefined): string {
+  const v = zuiverVariant(variant);
+  const q = new URLSearchParams();
+  if (v.weergave) q.set("weergave", v.weergave);
+  if (v.onderdelen?.length) q.set("onderdelen", v.onderdelen.join(","));
+  const t = q.toString();
+  return t ? `?${t}` : "";
+}
+
 export function bouwEmbedCode(o: EmbedCodeOpties): string {
+  const v = zuiverVariant(o.variant);
+  const popup = v.plaatsing === "popup";
   const id = `kp-${o.toolId}`;
   const pad = laadscriptPad();
   const bronnen = [`${o.baseUrl}${pad}`, ...(o.reserveUrl ? [`${o.reserveUrl.replace(/\/$/, "")}${pad}`] : [])];
   const c = o.contact;
   return (
-    `<div id="${id}" class="kostenplan-embed" style="${containerStijl(o.embedConfig)}"\n` +
-    `  data-kp="${esc(o.toolId)}"\n  data-app="${esc(o.baseUrl)}"\n  data-hoogte="${o.embedConfig.minimaleHoogtePx}"\n  data-radius="${o.embedConfig.radiusPx}"` +
+    `<div id="${id}" class="kostenplan-embed" style="${popup ? "" : containerStijl(o.embedConfig)}"\n` +
+    `  data-kostenplan="${esc(o.toolId)}"\n  data-app="${esc(o.baseUrl)}"\n  data-hoogte="${popup ? 0 : o.embedConfig.minimaleHoogtePx}"\n  data-radius="${o.embedConfig.radiusPx}"` +
+    attr("weergave", v.weergave) +
+    attr("plaatsing", v.plaatsing) +
+    attr("knop", v.knopTekst) +
+    attr("positie", v.knopPositie) +
+    attr("onderdelen", v.onderdelen?.join(",")) +
     (o.embedConfig.transparanteAchtergrond ? `\n  data-transparant="1"` : "") +
     attr("snap", o.snapshotUrl) +
     attr("naam", c.naam) +
@@ -109,7 +129,7 @@ export function bouwIframeCode(o: EmbedCodeOpties): string {
     tel || c.email ? "Bereken je prijs telefonisch of per mail" : "Deze rekentool is tijdelijk niet beschikbaar."
   }</p>${knoppen}</div>`;
   return (
-    `<iframe id="${id}" src="${o.baseUrl}/embed/${esc(o.toolId)}" title="${esc(`Rekentool ${o.toolNaam}`)}"\n` +
+    `<iframe id="${id}" src="${o.baseUrl}/embed/${esc(o.toolId)}${esc(variantQuery(o.variant))}" title="${esc(`Rekentool ${o.toolNaam}`)}"\n` +
     `  style="${containerStijl(o.embedConfig)};display:block" height="${o.embedConfig.minimaleHoogtePx}"></iframe>\n` +
     `${kaart}\n` +
     `<script>(function(d,w){var f=d.getElementById(${JSON.stringify(id)}),k=d.getElementById(${JSON.stringify(id + "-kaart")}),ok=0,H=${o.embedConfig.minimaleHoogtePx};` +

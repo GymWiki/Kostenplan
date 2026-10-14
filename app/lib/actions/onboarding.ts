@@ -1,4 +1,5 @@
 "use server";
+import { NIEUWE_REKENTOOL_WEERGAVE } from "@/app/lib/weergave/config";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -38,6 +39,8 @@ export async function createFirstToolAction(
       companyId: company.id,
       naam: parsed.data.naam,
       slug,
+      // Nieuwe rekentools beginnen met tegels; bestaande rekentools blijven "Alles op één pagina" tot de hovenier zelf kiest.
+      weergaveConfig: NIEUWE_REKENTOOL_WEERGAVE,
       costSettings: { create: {} },
     },
   });

@@ -64,6 +64,16 @@ export async function getToolIframeCode(
   return bouwIframeCode(await embedOpties(toolId, toolNaam, embedConfig, contact));
 }
 
+// De basis voor het bouwen van embedcode (ook in de editor, voor varianten per plek op de site).
+export async function getEmbedOpties(
+  toolId: string,
+  toolNaam: string,
+  embedConfig: import("@/app/lib/tools").ToolEmbedConfig,
+  contact: import("@/app/lib/embed-code").EmbedContact
+) {
+  return embedOpties(toolId, toolNaam, embedConfig, contact);
+}
+
 async function embedOpties(
   toolId: string,
   toolNaam: string,

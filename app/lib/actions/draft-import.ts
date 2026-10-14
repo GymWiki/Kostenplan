@@ -1,6 +1,8 @@
 "use server";
+import { NIEUWE_REKENTOOL_WEERGAVE, parseWeergaveConfig } from "@/app/lib/weergave/config";
 
 import { revalidatePath } from "next/cache";
+import type { Prisma } from "@/app/generated/prisma/client";
 import { canCreateTool, requireActiveCompany, requireUser } from "@/app/lib/dal";
 import { prisma } from "@/app/lib/prisma";
 import { generateUniqueSlug, generateUniqueToolSlug } from "@/app/lib/slug";
@@ -97,6 +99,8 @@ export async function importDraftAction(ruw: unknown, modus?: "toevoegen" | "weg
         naam: draft.calculator.name,
         slug: await generateUniqueToolSlug(company.id, draft.calculator.name, tx),
         importSleutel: draft.id,
+        // De weergave die de gast koos; zonder keuze begint een nieuwe rekentool met tegels.
+        weergaveConfig: (draft.weergave ? { ...parseWeergaveConfig(draft.weergave), onderdelen: {} } : NIEUWE_REKENTOOL_WEERGAVE) as Prisma.InputJsonValue,
         order: await tx.tool.count({ where: { companyId: company.id } }),
         costSettings: {
           create: {
