@@ -42,6 +42,8 @@ export function OnderdeelNaam({
   }, [waarde]);
 
   const startSelectie = useRef(false);
+  // Alleen na een tik op de naam selecteren we hier alles; anders zou het wissen van de "eerste keer"-vlag je net getypte tekst opnieuw selecteren.
+  const naTik = useRef(false);
 
   // Cursor in het veld en de tekst geselecteerd: typen vervangt de naam. (Pas na een korte tel: het paneel of de sheet is dan klaar met openen.)
   useEffect(() => {
@@ -60,11 +62,12 @@ export function OnderdeelNaam({
 
   // Tikken op de naam: het veld verschijnt, de cursor staat erin.
   useEffect(() => {
-    if (modus === "tik" && bewerken && !focusBijStart) {
+    if (modus === "tik" && bewerken && naTik.current) {
+      naTik.current = false;
       veld.current?.focus({ preventScroll: true });
       veld.current?.select();
     }
-  }, [modus, bewerken, focusBijStart]);
+  }, [modus, bewerken]);
 
   function bevestig(naarBuiten: boolean): boolean {
     const schoon = tekst.trim();
@@ -95,6 +98,7 @@ export function OnderdeelNaam({
           type="button"
           onClick={() => {
             setFout(null);
+            naTik.current = true;
             setBewerken(true);
           }}
           // De kop van de sheet is een sleepvlak: een tik op de naam mag geen sleepgebaar starten.

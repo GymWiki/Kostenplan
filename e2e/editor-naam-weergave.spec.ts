@@ -65,6 +65,8 @@ test.describe("ingelogd: naam van een onderdeel", () => {
     const veld = naamVeld(page);
     await expect(veld).toBeVisible({ timeout: 20000 });
     await expect(veld).toHaveValue("Nieuw onderdeel");
+    // Een mens typt pas na een moment; wacht tot het verversen van de serverdata klaar is (daarbij kan het paneel opnieuw monteren).
+    await page.waitForLoadState("networkidle");
     await expect(veld).toBeFocused();
     expect(await veld.evaluate((el: HTMLInputElement) => [el.selectionStart, el.selectionEnd])).toEqual([0, "Nieuw onderdeel".length]);
     await page.keyboard.type(naam);
