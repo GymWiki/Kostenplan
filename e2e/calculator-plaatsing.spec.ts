@@ -3,6 +3,11 @@ import type { Page } from "@playwright/test";
 
 // Plaatsing van de klant-rekentool op de site van de hovenier: in de pagina of als knop met pop-up, met een selectie onderdelen en een deep link.
 // De testpagina (/test-embed) heeft opzettelijk agressieve CSS.
+// Deze tests wijzigen de weergave van de rekentool of hangen ervan af: één tegelijk per hovenier (zie toolSlot in fixtures.ts).
+test.beforeEach(async ({ toolSlot }) => {
+  void toolSlot;
+});
+
 test.describe.configure({ mode: "serial" });
 
 const s = (project: string) => seed()[eigenA(project)];

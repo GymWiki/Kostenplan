@@ -18,7 +18,12 @@ const sql = (q: string) => execFileSync("psql", [process.env.DATABASE_URL ?? "po
 
 test.describe("editor: weergave en plaatsing", () => {
   test.use({ gebruiker: "a2" });
-  test.describe.configure({ mode: "serial" });
+  // Deze tests wijzigen de weergave van de rekentool of hangen ervan af: één tegelijk per hovenier (zie toolSlot in fixtures.ts).
+test.beforeEach(async ({ toolSlot }) => {
+  void toolSlot;
+});
+
+test.describe.configure({ mode: "serial" });
   test.beforeEach(({}, info) => test.skip(info.project.name === "mobiel", "de mobiele editor heeft een eigen indeling"));
 
   test("een andere weergave kiezen: direct zichtbaar in het voorbeeld en bewaard", async ({ page, axe }) => {

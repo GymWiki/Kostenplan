@@ -6,6 +6,11 @@ import type { Page } from "@playwright/test";
 // Mobiel gebruikt hovenier A1, desktop A2: zo wijzigen de twee projecten elkaars rekentool niet.
 const sql = (q: string) => execFileSync("psql", [process.env.DATABASE_URL ?? "postgresql://postgres@127.0.0.1:5433/kp", "-t", "-A", "-c", q]).toString().trim();
 
+// Deze tests wijzigen de weergave van de rekentool of hangen ervan af: één tegelijk per hovenier (zie toolSlot in fixtures.ts).
+test.beforeEach(async ({ toolSlot }) => {
+  void toolSlot;
+});
+
 test.describe.configure({ mode: "serial" });
 
 const stel = (toolId: string, config: object) => sql(`UPDATE "Tool" SET "weergaveConfig" = '${JSON.stringify(config)}'::jsonb WHERE id = '${toolId}'`);
