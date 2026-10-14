@@ -57,12 +57,12 @@ export function OverzichtWeergave({
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-primary)]/10 text-foreground">
                       <OnderdeelIcoon product={product} className="h-5 w-5" />
                     </span>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-[8rem] flex-1">
                       <p className="break-words font-medium text-foreground">{product.naam}</p>
                       {o && o.hoeveelheid > 0 && <p className="text-sm text-muted-foreground">{formatHoeveelheid(o.hoeveelheid, o.eenheid)}</p>}
                     </div>
-                    {!prijsVerborgen && <span className="shrink-0 font-semibold tabular-nums text-foreground">{formatCenten(onderdeelInclCenten(resultaat, product.id))}</span>}
-                    <div className="flex shrink-0 gap-1">
+                    <div className="ml-auto flex shrink-0 items-center gap-1">
+                      {!prijsVerborgen && <span className="mr-1 font-semibold tabular-nums text-foreground">{formatCenten(onderdeelInclCenten(resultaat, product.id))}</span>}
                       <Button type="button" variant="ghost" size="icon" aria-label={`${product.naam} aanpassen`} onClick={() => onAanpassen(product.id)}>
                         <Pencil className="h-4 w-4" aria-hidden="true" />
                       </Button>
