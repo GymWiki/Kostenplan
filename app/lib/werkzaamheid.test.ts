@@ -93,6 +93,14 @@ describe("validatie", () => {
     expect(stap2IsGeldig(draft({ methode: null }))).toBe(false);
   });
 
+  it("een negatieve of onrealistisch hoge materiaalprijs geeft een Nederlandse melding (geen stille terugval)", () => {
+    expect(valideerMaterialen(draft({ materialen: [rij("A", "-5")] }))[0].melding).toBe("Een prijs onder nul kan niet. Vul 0 of meer in.");
+    expect(valideerMaterialen(draft({ materialen: [rij("A", "abc")] }))[0].melding).toMatch(/^Vul een geldige prijs in/);
+    expect(valideerMaterialen(draft({ materialen: [rij("A", "1000000000")] }))[0].melding).toMatch(/erg hoog/);
+    expect(valideerMaterialen(draft({ materialen: [rij("A", "100000")] }))).toEqual([]);
+    expect(valideerMaterialen(draft({ materialen: [rij("A", "12.50")] }))).toEqual([]);
+  });
+
   it("accepteert komma's in prijzen", () => {
     expect(valideerMaterialen(draft({ materialen: [rij("A", "7,5")] }))).toEqual([]);
   });

@@ -219,15 +219,18 @@ export function bestaandeExtras(product: ProductMetRelaties): string[] {
 
 export type RijFout = { sleutel: string; veld: "naam" | "prijs" | "prijsMin" | "prijsMax" | "tempo"; melding: string };
 
+// Een materiaalprijs boven dit bedrag per eenheid is vrijwel zeker een tikfout (een extra nul).
+export const MAX_MATERIAALPRIJS = 100_000;
+
 export function valideerMaterialen(d: WerkzaamheidDraft): RijFout[] {
   const fouten: RijFout[] = [];
   for (const r of d.materialen) {
     if (r.naam.trim() === "") fouten.push({ sleutel: r.sleutel, veld: "naam", melding: "Geef het materiaal een naam." });
     const check = (veld: "prijs" | "prijsMin" | "prijsMax", waarde: string) => {
       const getal = parseGetal(waarde, NaN);
-      if (Number.isNaN(getal) || getal < 0) {
-        fouten.push({ sleutel: r.sleutel, veld, melding: "Vul een prijs in." });
-      }
+      if (Number.isNaN(getal)) fouten.push({ sleutel: r.sleutel, veld, melding: "Vul een geldige prijs in, bijvoorbeeld 12,50." });
+      else if (getal < 0) fouten.push({ sleutel: r.sleutel, veld, melding: "Een prijs onder nul kan niet. Vul 0 of meer in." });
+      else if (getal > MAX_MATERIAALPRIJS) fouten.push({ sleutel: r.sleutel, veld, melding: `Deze prijs is erg hoog (meer dan € ${MAX_MATERIAALPRIJS.toLocaleString("nl-NL")} per eenheid). Controleer of je hem goed hebt ingevuld.` });
     };
     if (d.bandbreedte) {
       check("prijsMin", r.prijsMin);
