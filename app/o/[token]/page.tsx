@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
@@ -8,13 +9,23 @@ import { isWaarschijnlijkBot, laadPubliekeOfferte } from "@/app/lib/offerte/publ
 import { registreerBekeken } from "@/app/lib/offerte/publiek-acties";
 
 // Nooit indexeren: een token geeft toegang tot de prijsafspraak van één klant.
-export const metadata: Metadata = { title: "Jouw offerte", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
+
+// Binnen één verzoek hoeft de offerte maar één keer geladen te worden (metadata en pagina).
+const laad = cache(laadPubliekeOfferte);
+
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ v?: string }> }): Promise<Metadata> {
+  const { token } = await params;
+  const { v } = await searchParams;
+  const o = await laad(token, Number(v) || undefined);
+  // Een ongeldige of verwijderde link heet niet "Jouw offerte".
+  return { title: o ? "Jouw offerte" : "Offerte niet gevonden", robots: { index: false, follow: false } };
+}
 
 export default async function PubliekeOffertePagina({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ v?: string }> }) {
   const { token } = await params;
   const { v } = await searchParams;
-  const o = await laadPubliekeOfferte(token, Number(v) || undefined);
+  const o = await laad(token, Number(v) || undefined);
   if (!o) notFound();
 
   // Eerste keer openen: registreren en de hovenier melden (niet voor linkpreviews en scanners).

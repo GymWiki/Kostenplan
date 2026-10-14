@@ -45,7 +45,7 @@ export function LoginForm({ volgende }: { volgende?: string }) {
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Wachtwoord</Label>
-            <Link href="/wachtwoord-vergeten" className="text-xs font-medium text-primary hover:underline">
+            <Link href="/wachtwoord-vergeten" className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline">
               Wachtwoord vergeten?
             </Link>
           </div>

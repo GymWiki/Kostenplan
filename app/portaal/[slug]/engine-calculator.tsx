@@ -559,6 +559,7 @@ function ResultaatKaart({
               ) : formOpen && !state?.success ? (
                 <form action={formAction} noValidate className="flex flex-col gap-3">
                   <input type="hidden" name="snapshot" value={JSON.stringify(snapshot)} />
+                  <p className="text-sm text-muted-foreground">Vul je gegevens in en verstuur je aanvraag. Het bedrijf neemt contact met je op en stuurt je vrijblijvend een offerte; je bent niets verplicht.</p>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="lead-naam">Naam</Label>
                     <Input id="lead-naam" name="naam" autoComplete="name" value={leadNaam} onChange={(e) => setLeadNaam(e.target.value)} required />

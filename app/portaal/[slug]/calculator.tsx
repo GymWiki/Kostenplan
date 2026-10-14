@@ -1164,6 +1164,7 @@ function Summary({
                   className="flex flex-col gap-3"
                 >
                   <input type="hidden" name="snapshot" value={JSON.stringify(snapshot)} />
+                  <p className="text-sm text-muted-foreground">Vul je gegevens in en verstuur je aanvraag. Het bedrijf neemt contact met je op en stuurt je vrijblijvend een offerte; je bent niets verplicht.</p>
                   {adresTekst && (
                     <p className="rounded-md bg-secondary/60 px-3 py-2 text-sm text-foreground">
                       <span className="font-semibold">Adres:</span> {adresTekst}{" "}

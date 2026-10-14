@@ -36,7 +36,7 @@ export default async function LoginPage({
         <LoginForm volgende={volgende} />
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Nog geen account?{" "}
-          <Link href={volgende ? `/registreren?next=${encodeURIComponent(volgende)}` : "/registreren"} className="font-medium text-primary hover:underline">
+          <Link href={volgende ? `/registreren?next=${encodeURIComponent(volgende)}` : "/registreren"} className="inline-flex min-h-11 items-center font-medium text-primary hover:underline">
             Registreer je bedrijf
           </Link>
         </p>
