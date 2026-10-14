@@ -807,7 +807,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
   return (
     <div className="-mx-4 -my-6 hidden h-[calc(100dvh-4rem)] min-h-[32rem] flex-col md:-mx-8 md:-my-8 md:flex">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
-        <Link href={terug} className="flex h-11 items-center gap-1 rounded-md px-2 text-sm font-semibold text-foreground hover:bg-secondary" aria-label="Terug">
+        <Link href={terug} className="flex h-11 items-center gap-1 rounded-md px-2 text-sm font-semibold text-foreground hover:bg-secondary">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {isFactuur ? "Terug" : "Leads"}
         </Link>
         <h1 className="min-w-0 truncate text-base font-bold text-foreground">{titelTekst}</h1>
@@ -840,7 +840,7 @@ function OfferteEditorBinnen({ offerteId, revisie: beginRevisie, status, vergren
       {herinneringBanner}
       {fouttekst}
       <div className="flex min-h-0 flex-1">
-        <div className="min-w-0 flex-1 overflow-auto bg-muted p-6" onClick={(e) => { if (e.target === e.currentTarget) setSelectie(null); }}>
+        <div className="min-w-0 flex-1 overflow-auto bg-muted p-6" tabIndex={0} role="region" aria-label="Voorbeeld van het document" onClick={(e) => { if (e.target === e.currentTarget) setSelectie(null); }}>
           <VelSchaal marge={24}>{doc}</VelSchaal>
         </div>
         <aside aria-label="Aanpassen" className="w-[400px] shrink-0 overflow-y-auto overscroll-contain border-l border-border bg-background p-4">

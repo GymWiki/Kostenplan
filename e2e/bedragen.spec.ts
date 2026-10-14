@@ -38,7 +38,7 @@ test.describe("bedragen typen (hovenier)", () => {
   });
 
   test("betaling registreren met een punt als decimaalteken wordt geaccepteerd (#77)", async ({ page }, info) => {
-    await page.goto(`/dashboard/facturen/${seed()[eigenA(info.project.name)].facturen["verstuurd"]}`);
+    await page.goto(`/dashboard/facturen/${seed()[eigenA(info.project.name)].facturen["te-laat"]}`);
     await rustig(page);
     await page.getByRole("button", { name: "Betaling registreren" }).click();
     const bedrag = page.locator("#bt-bedrag");

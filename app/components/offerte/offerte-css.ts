@@ -63,7 +63,7 @@ export const OFFERTE_CSS = `
 .og-akkoord .veld b{display:block;color:#111827;font-size:10pt;font-weight:600}
 .og-getekend{border-color:var(--og-kleur);background:#f0fdf4}
 .og-voet{margin-top:10mm;padding-top:2.5mm;border-top:.2mm solid #d1d5db;font-size:7pt;color:#6b7280;text-align:center}
-.og-voet .pagina{display:block;margin-top:.8mm;color:#9ca3af}
+.og-voet .pagina{display:block;margin-top:.8mm;color:#4b5563}
 .og-pdf .og-voet{display:none}
 .og-wijzigbaar{cursor:pointer;border-radius:1mm;outline:.3mm solid transparent;outline-offset:1mm;transition:outline-color .12s}
 .og-wijzigbaar:hover{outline-color:#86efac}

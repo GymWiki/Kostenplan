@@ -30,7 +30,7 @@ function GoogleIcon() {
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant="outline" className="w-full" disabled={pending}>
+    <Button type="submit" variant="outline" className="min-h-11 w-full" disabled={pending}>
       <GoogleIcon />
       {pending ? "Bezig…" : "Doorgaan met Google"}
     </Button>
