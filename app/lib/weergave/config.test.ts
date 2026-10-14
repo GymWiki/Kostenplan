@@ -16,6 +16,8 @@ describe("parseWeergaveConfig", () => {
     expect(c.knopTekst).toHaveLength(40);
     expect(c.knopPositie).toBe("linksonder");
     expect(c.prijsNaContact).toBe(true);
+    expect(c.tip).toBe(false);
+    expect(parseWeergaveConfig({ tip: true }).tip).toBe(true);
     expect(c.onderdelen).toEqual({ a: { tegelTekst: "y".repeat(40), voorbeeldmaat: 12 } });
   });
 });

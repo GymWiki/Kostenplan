@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { X } from "lucide-react";
+import { Button } from "@/app/components/ui/button";
 import { Field } from "@/app/components/ui/field";
 import { Input, Select } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
@@ -42,7 +44,7 @@ function Schets({ soort }: { soort: Weergave }) {
 const POSITIE_LABEL: Record<KnopPositie, string> = { rechtsonder: "Rechtsonder in beeld", linksonder: "Linksonder in beeld", inline: "In de pagina, op de plek van de code" };
 
 // Blok "Weergave" en "Plaatsing" in het paneel Uiterlijk. De rekentool in het midden wisselt direct mee.
-export function WeergaveBlok({ waarde, onChange }: { waarde: WeergaveConfig; onChange: (patch: Partial<WeergaveConfig>) => void }) {
+export function WeergaveBlok({ waarde, onChange, metPlaatsing = true }: { waarde: WeergaveConfig; onChange: (patch: Partial<WeergaveConfig>) => void; metPlaatsing?: boolean }) {
   return (
     <div className="flex flex-col gap-5">
       <fieldset className="flex flex-col gap-2">
@@ -55,7 +57,7 @@ export function WeergaveBlok({ waarde, onChange }: { waarde: WeergaveConfig; onC
               <label
                 key={w}
                 className={cn(
-                  "flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border-[1.5px] p-3 transition-colors focus-within:ring-[3px] focus-within:ring-ring/35",
+                  "relative flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border-[1.5px] p-3 transition-colors focus-within:ring-[3px] focus-within:ring-ring/35",
                   aan ? "border-primary bg-accent" : "border-input bg-card hover:bg-secondary"
                 )}
               >
@@ -82,13 +84,14 @@ export function WeergaveBlok({ waarde, onChange }: { waarde: WeergaveConfig; onC
         </Field>
       )}
 
+      {metPlaatsing && (
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-1 text-base font-bold text-foreground">Plaatsing</legend>
         <div role="radiogroup" aria-label="Plaatsing" className="grid gap-2 sm:grid-cols-2">
           {(["inline", "popup"] as Plaatsing[]).map((p) => {
             const aan = waarde.plaatsing === p;
             return (
-              <label key={p} className={cn("flex min-h-11 cursor-pointer flex-col gap-0.5 rounded-lg border-[1.5px] p-3 focus-within:ring-[3px] focus-within:ring-ring/35", aan ? "border-primary bg-accent" : "border-input bg-card hover:bg-secondary")}>
+              <label key={p} className={cn("relative flex min-h-11 cursor-pointer flex-col gap-0.5 rounded-lg border-[1.5px] p-3 focus-within:ring-[3px] focus-within:ring-ring/35", aan ? "border-primary bg-accent" : "border-input bg-card hover:bg-secondary")}>
                 <input type="radio" name="plaatsing" value={p} checked={aan} onChange={() => onChange({ plaatsing: p })} className="sr-only" />
                 <span className="text-sm font-semibold text-foreground">{p === "inline" ? "In de pagina" : "Knop met pop-up"}</span>
                 <span className="text-sm text-muted-foreground">{p === "inline" ? "De rekentool staat op de pagina zelf." : "Een knop opent de rekentool in een venster."}</span>
@@ -114,6 +117,7 @@ export function WeergaveBlok({ waarde, onChange }: { waarde: WeergaveConfig; onC
         )}
         <p className="text-sm text-muted-foreground">Verandert de plaatsing? Kopieer dan de code onder “Zet op mijn website” opnieuw. De weergave past zich vanzelf aan.</p>
       </fieldset>
+      )}
 
       <fieldset className="flex flex-col divide-y divide-border rounded-lg border border-border px-3">
         <legend className="px-1 text-sm font-bold text-foreground">Prijzen</legend>
@@ -190,5 +194,23 @@ export function TegelBlok({
         <p className="text-sm text-muted-foreground">Dit onderdeel heeft geen vaste maat, dus de tegel toont geen vanaf-prijs.</p>
       )}
     </section>
+  );
+}
+
+// Eenmalige tip bij een nieuwe rekentool: wijst naar het weergave-paneel. Wegklikken of het paneel openen zet hem uit, voorgoed.
+export function WeergaveTip({ onKies, onSluit }: { onKies: () => void; onSluit: () => void }) {
+  return (
+    <div role="note" className="flex items-start gap-2 rounded-xl border border-primary/30 bg-accent p-3">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-foreground">Kies hoe je klant de rekentool ziet</p>
+        <p className="text-sm text-muted-foreground">Tegels, stappen of alles op één pagina. Je ziet het direct in het voorbeeld.</p>
+        <Button type="button" className="mt-2 h-11" onClick={onKies}>
+          Weergave kiezen
+        </Button>
+      </div>
+      <button type="button" onClick={onSluit} aria-label="Tip sluiten" className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-md text-foreground hover:bg-secondary">
+        <X className="h-4 w-4" aria-hidden="true" />
+      </button>
+    </div>
   );
 }

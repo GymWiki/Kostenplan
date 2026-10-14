@@ -34,6 +34,8 @@ Wachtwoord voor elke testgebruiker: `Testwachtwoord1!` (de nep-Supabase acceptee
 | Lighthouse CI (landing, `/probeer`, embed, Overzicht; drempels in `scripts/test/lighthouse-budget.json`) | `npm run test:lighthouse` |
 | Alles | `npm run test:all` |
 
+e2e-specs die `Tool.weergaveConfig` van de seed-hovenier wijzigen gebruiken de fixture `toolSlot` (vergrendeling per hovenier in `/tmp/kp-e2e-slot-<a1|a2>`, reset de weergave naar `{}`; na 180 s als verlopen gezien). Blijft een run hangen in `beforeEach`: `rm -rf /tmp/kp-e2e-slot-*`.
+
 Schermafbeeldingen en GIF's van de weergaven van de klant-rekentool (390 en 1440 breed): `BASE=http://localhost:3200 node scripts/test/layouts-media.js` (schrijft naar `docs/calculator-layouts/`).
 
 `AXE_SOFT=1 npm run test:e2e` meldt axe-schendingen zonder te falen. Visuele basislijnen staan in `e2e/__screens__/` (datums en "x dagen geleden" zijn gemaskeerd); na een bedoelde wijziging vernieuw je ze met `test:visueel:bijwerken` en bekijk je de diff in de PR.

@@ -24,6 +24,7 @@ import {
 import { berekenKostenOpbouw, prijsRange } from "@/app/lib/werkzaamheid-kosten";
 import { formatEuroKort } from "@/app/lib/pricing/format";
 import { useTarieven } from "../tarieven-context";
+import { OnderdeelNaam } from "./onderdeel-naam";
 import type { Waarschuwing } from "@/app/portaal/[slug]/bewerkbaar";
 
 export type SnelSoort = "prijzen" | "tempo";
@@ -58,7 +59,19 @@ export function MobieleEditor({
   gast,
   onTerug,
   meldingNode,
+  onHernoem,
+  focusNaamId,
+  onNaamGefocust,
+  weergaveSamenvatting,
+  tipNode,
 }: {
+  // De naam van het open onderdeel wijzigen (titel van de sheet), en de cursor in het veld bij een nieuw leeg onderdeel.
+  onHernoem: (naam: string) => void;
+  focusNaamId: string | null;
+  onNaamGefocust: () => void;
+  // "Tegels · in de pagina": eigen regel in de lijst die het weergave-paneel opent.
+  weergaveSamenvatting: string;
+  tipNode?: React.ReactNode;
   naam: string;
   toolStatus: string;
   isAangepast: boolean;
@@ -89,7 +102,7 @@ export function MobieleEditor({
   const werkId = paneel.startsWith("werkzaamheid:") ? paneel.slice(13) : null;
   const werkProduct = werkId ? producten.find((p) => p.id === werkId) : undefined;
   const snelProduct = snel ? producten.find((p) => p.id === snel.id) : undefined;
-  const sheetPanelen = ["uiterlijk", "resultaat", "aanvraag", "website", "account", "toevoegen", "aangepast"];
+  const sheetPanelen = ["uiterlijk", "resultaat", "aanvraag", "weergave", "website", "account", "toevoegen", "aangepast"];
   const sheetOpen = sheetPanelen.includes(paneel);
 
   const rijen = useMemo(
@@ -133,7 +146,7 @@ export function MobieleEditor({
       </KopActie>
 
       <SegmentedControl
-        label="Weergave"
+        label="Bewerken of voorbeeld"
         waarde={modus}
         onChange={(m) => {
           if (m === "uitproberen") setVoorbeeldGezien(true);
@@ -146,6 +159,7 @@ export function MobieleEditor({
       />
       {meldingNode}
 
+      {modus === "bewerken" && tipNode}
       {modus === "uitproberen" && (
         <p role="status" className="text-center text-sm text-muted-foreground">
           Testmodus: er wordt geen aanvraag verstuurd.
@@ -226,6 +240,23 @@ export function MobieleEditor({
             </ul>
           </section>
 
+          <section aria-labelledby="mk-weergave" className="flex flex-col gap-2">
+            <h2 id="mk-weergave" className="sr-only">
+              Weergave voor je klant
+            </h2>
+            <button
+              type="button"
+              onClick={() => setPaneel("weergave")}
+              className="flex min-h-16 w-full cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block text-base font-semibold text-foreground">Weergave voor je klant</span>
+                <span className="block truncate text-sm text-muted-foreground">{weergaveSamenvatting}</span>
+              </span>
+              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            </button>
+          </section>
+
           <section aria-labelledby="mk-rest" className="flex flex-col gap-2">
             <h2 id="mk-rest" className="text-base font-bold text-foreground">
               Uiterlijk en formulier
@@ -265,6 +296,7 @@ export function MobieleEditor({
         open={Boolean(werkProduct) && modus === "bewerken"}
         onClose={sluitPaneel}
         titel={werkProduct?.naam ?? ""}
+        titelNode={werkProduct ? <OnderdeelNaam key={werkProduct.id} modus="tik" waarde={werkProduct.naam} onSla={onHernoem} focusBijStart={focusNaamId === werkProduct.id} onGefocust={onNaamGefocust} /> : undefined}
         icoon={
           werkProduct ? (
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">

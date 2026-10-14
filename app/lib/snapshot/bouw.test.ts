@@ -133,4 +133,13 @@ describe("weergave in de momentopname", () => {
   it("ongeldige instellingen vallen terug op de standaard", () => {
     expect("weergave" in bouwSnapshotInhoud(tool({ weergaveConfig: { weergave: "raar", plaatsing: 5 } }), {})).toBe(false);
   });
+
+  it("de tip voor de hovenier staat niet in het publieke bestand, en verandert de hash niet", () => {
+    const zonder = bouwSnapshotInhoud(tool({ weergaveConfig: { weergave: "tegels" } }), {});
+    const metTip = bouwSnapshotInhoud(tool({ weergaveConfig: { weergave: "tegels", tip: true } }), {});
+    expect(JSON.stringify(metTip)).not.toContain("tip");
+    expect(hashInhoud(metTip)).toBe(hashInhoud(zonder));
+    // alleen de tip (verder standaard): geen weergave in de momentopname
+    expect("weergave" in bouwSnapshotInhoud(tool({ weergaveConfig: { tip: true } }), {})).toBe(false);
+  });
 });

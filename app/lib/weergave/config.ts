@@ -44,6 +44,9 @@ export type WeergaveConfig = {
   // Voorrijkosten meetellen in de "vanaf"-prijs. Standaard uit ("excl. voorrijkosten").
   vanafInclVoorrij: boolean;
   onderdelen: Record<string, OnderdeelWeergave>;
+  // Eenmalige tip in de editor ("Kies hoe je klant de rekentool ziet"): staat aan bij een nieuwe rekentool tot de hovenier hem wegklikt
+  // of de weergave opent. Hoort niet in de publieke momentopname.
+  tip: boolean;
 };
 
 export const STANDAARD_KOP = "Waar kunnen we je mee helpen?";
@@ -61,10 +64,11 @@ export const STANDAARD_WEERGAVE_CONFIG: WeergaveConfig = {
   prijsNaContact: false,
   vanafInclVoorrij: false,
   onderdelen: {},
+  tip: false,
 };
 
 // Nieuwe rekentools starten met tegels.
-export const NIEUWE_REKENTOOL_WEERGAVE: Partial<WeergaveConfig> = { weergave: "tegels" };
+export const NIEUWE_REKENTOOL_WEERGAVE: Partial<WeergaveConfig> = { weergave: "tegels", tip: true };
 
 const isObject = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === "object" && !Array.isArray(v);
 const tekst = (v: unknown, standaard: string, max: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : standaard);
@@ -91,5 +95,6 @@ export function parseWeergaveConfig(json: unknown): WeergaveConfig {
     prijsNaContact: r.prijsNaContact === true,
     vanafInclVoorrij: r.vanafInclVoorrij === true,
     onderdelen,
+    tip: r.tip === true,
   };
 }

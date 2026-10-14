@@ -89,6 +89,8 @@ export const draftSchema = z.object({
     welkomst: tekst(500).optional(),
     lettertype: z.enum(["MODERN", "KLASSIEK", "VRIENDELIJK", "STOER"]).optional(),
   }),
+  // Weergave van de klant-rekentool (tegels / stappen / lijst); wordt bij het gebruik gecontroleerd (parseWeergaveConfig).
+  weergave: z.record(z.string().max(40), z.unknown()).optional(),
   tarieven: z.object({
     tarief: z.number().min(0).max(10_000),
     voorrijkosten: z.number().min(0).max(10_000),

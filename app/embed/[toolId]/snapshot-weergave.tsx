@@ -10,7 +10,7 @@ import { EmbedSignaal } from "./embed-signaal";
 export function SnapshotWeergave({ snapshot, opties }: { snapshot: RekentoolSnapshot; opties?: EmbedParams }) {
   const email = snapshot.bedrijf.email ?? "";
   // De instellingen van de rekentool, met daarbovenop wat de embed-code van deze plek vraagt.
-  const weergave = { ...(snapshot.weergave ?? STANDAARD_WEERGAVE_CONFIG), ...(opties?.weergave ? { weergave: opties.weergave } : {}) };
+  const weergave = { ...STANDAARD_WEERGAVE_CONFIG, ...snapshot.weergave, ...(opties?.weergave ? { weergave: opties.weergave } : {}) };
   const producten = opties?.onderdelen ? snapshot.producten.filter((p) => opties.onderdelen!.includes(p.id)) : snapshot.producten;
   return (
     <>

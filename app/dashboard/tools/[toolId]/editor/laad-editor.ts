@@ -9,7 +9,7 @@ import { blobGeconfigureerd } from "@/app/lib/snapshot/opslag";
 import type { EditorProps } from "./rekentool-editor";
 import { parseWerkgebied } from "@/app/lib/werkgebied/schema";
 
-const GELDIGE_PANELEN = ["uiterlijk", "resultaat", "aanvraag", "website", "toevoegen", "aangepast", "account"];
+const GELDIGE_PANELEN = ["uiterlijk", "resultaat", "aanvraag", "weergave", "website", "toevoegen", "aangepast", "account"];
 
 // Alle gegevens voor de rekentool-editor van een ingelogde hovenier. (De gast-
 // variant in /probeer heeft geen database en vult de editor zelf, uit de browser.)

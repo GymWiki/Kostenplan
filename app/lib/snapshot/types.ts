@@ -47,5 +47,5 @@ export type RekentoolSnapshot = {
   // als beide uit staan, zodat de embed ook zonder onze server kan controleren en bestaande snapshots gelijk blijven.
   werkgebied?: WerkgebiedInstellingen;
   // Weergave en plaatsing. Ontbreekt bij de standaard ("Alles op één pagina", in de pagina), zodat bestaande snapshots gelijk blijven.
-  weergave?: WeergaveConfig;
+  weergave?: Omit<WeergaveConfig, "tip">;
 };

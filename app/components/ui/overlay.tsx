@@ -107,11 +107,11 @@ export function Overlay({
       }
     }
     document.addEventListener("keydown", onKeyDown);
-    const vorigeOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const vorigeOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = stapel.length > 1 ? "hidden" : vorigeOverflow;
+      document.documentElement.style.overflow = stapel.length > 1 ? "hidden" : vorigeOverflow;
       herstelInert();
       stapel.splice(stapel.indexOf(id), 1);
       // Focus terug naar de opener (als die er nog is); anders blijft de focus waar de browser hem zet.

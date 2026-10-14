@@ -29,7 +29,7 @@ test.describe.configure({ mode: "serial" });
   test("een andere weergave kiezen: direct zichtbaar in het voorbeeld en bewaard", async ({ page, axe }) => {
     const toolId = seed().a2.tools.tuinaanleg;
     sql(`UPDATE "Tool" SET "weergaveConfig" = '{}'::jsonb WHERE id = '${toolId}'`);
-    await page.goto(`/dashboard/tools/${toolId}?paneel=uiterlijk`);
+    await page.goto(`/dashboard/tools/${toolId}?paneel=weergave`);
     await rustig(page);
     await pdokNep(page.context());
     const voorbeeld = page.frameLocator('iframe[title^="Voorbeeld van"]');
@@ -75,7 +75,7 @@ test.describe.configure({ mode: "serial" });
     const toolId = seed().a2.tools.tuinaanleg;
     const schutting = seed().a2.products[1];
     sql(`UPDATE "Tool" SET "weergaveConfig" = '{}'::jsonb WHERE id = '${toolId}'`);
-    await page.goto(`/dashboard/tools/${toolId}?paneel=uiterlijk`);
+    await page.goto(`/dashboard/tools/${toolId}?paneel=weergave`);
     await rustig(page);
     await kies(page, "Plaatsing", /Knop met pop-up/);
     await page.getByLabel("Tekst op de knop").fill("Bereken je tuin");

@@ -30,7 +30,12 @@ export function bouwSnapshotInhoud(
   const branding = tool.branding;
   const werkgebied = resolveWerkgebied(tool.company.werkgebied, tool.werkgebied);
   const weergave = parseWeergaveConfig(tool.weergaveConfig);
-  const weergaveIsStandaard = JSON.stringify(weergave) === JSON.stringify(STANDAARD_WEERGAVE_CONFIG);
+  // De tip voor de hovenier hoort niet in het publieke bestand.
+  const { tip: _tip, ...publiekeWeergave } = weergave;
+  const { tip: _standaardTip, ...standaardWeergave } = STANDAARD_WEERGAVE_CONFIG;
+  void _tip;
+  void _standaardTip;
+  const weergaveIsStandaard = JSON.stringify(publiekeWeergave) === JSON.stringify(standaardWeergave);
   const engineConfig = tool.activeCalculatorConfig
     ? publicCalculatorConfig(parseCalculatorConfig(tool.activeCalculatorConfig.config))
     : null;
@@ -56,7 +61,7 @@ export function bouwSnapshotInhoud(
     vraagTelefoon: parseLeadFormConfig(tool.leadFormConfig).vraagTelefoon,
     engine: engineConfig ? { config: engineConfig, materiaalOpties } : null,
     ...(isActief(werkgebied) ? { werkgebied } : {}),
-    ...(weergaveIsStandaard ? {} : { weergave }),
+    ...(weergaveIsStandaard ? {} : { weergave: publiekeWeergave }),
   };
 }
 

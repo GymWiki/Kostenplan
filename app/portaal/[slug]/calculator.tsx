@@ -542,9 +542,11 @@ export function Calculator({
 
               {products.length > 0 && adresKlaar && weergaveSoort === "lijst" && (
                 <section className="flex flex-col gap-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Onderdelen
-                  </h3>
+                  <Bewerkbaar doel="weergave" label="Weergave">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      Onderdelen
+                    </h3>
+                  </Bewerkbaar>
                   <div className="flex flex-col gap-3">
                     {products.map((product) => (
                       <Bewerkbaar key={product.id} doel={`werkzaamheid:${product.id}`} label={product.naam} verplaatsbaar>

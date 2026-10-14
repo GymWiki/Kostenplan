@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Copy, Globe, MapPin, Monitor, Pencil, Settings2, Smartphone, Trash2, X } from "lucide-react";
+import { ArrowLeft, Copy, Globe, LayoutGrid, MapPin, Monitor, Pencil, Settings2, Smartphone, Trash2, X } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
 import { Logo } from "@/app/components/ui/logo";
 import { Button } from "@/app/components/ui/button";
@@ -13,10 +13,10 @@ import { Input } from "@/app/components/ui/input";
 import { Overlay } from "@/app/components/ui/overlay";
 import { cn } from "@/app/lib/cn";
 import { duplicateToolAction } from "@/app/lib/actions/tools";
-import { slaWeergaveOpAction, verwijderRekentoolAction } from "@/app/lib/actions/rekentools";
-import { STANDAARD_WEERGAVE_CONFIG, type WeergaveConfig } from "@/app/lib/weergave/config";
+import { verwijderRekentoolAction } from "@/app/lib/actions/rekentools";
+import { STANDAARD_WEERGAVE_CONFIG, WEERGAVE_LABEL, type WeergaveConfig } from "@/app/lib/weergave/config";
 import { heeftVanafPrijs, standaardVoorbeeldmaat } from "@/app/lib/weergave/vanaf";
-import { WeergaveBlok, TegelBlok } from "./paneel-weergave";
+import { WeergaveBlok, WeergaveTip, TegelBlok } from "./paneel-weergave";
 import type { ProductMetRelaties } from "@/app/lib/werkzaamheid";
 import type { Branding, CostSettings, SubscriptionTier, ToolStatus } from "@/app/generated/prisma/client";
 import type { ToolEmbedConfig } from "@/app/lib/tools";
@@ -105,7 +105,7 @@ function useIsMobiel() {
 const PANEEL_TITEL = (p: string, products: ProductMetRelaties[]) => {
   if (p.startsWith("werkzaamheid:")) return products.find((x) => x.id === p.slice(13))?.naam || "Onderdeel";
   return (
-    { start: "Aan de slag", uiterlijk: "Uiterlijk", resultaat: "Resultaat", aanvraag: "Aanvraagformulier", website: "Zet op mijn website", account: "Account maken", toevoegen: "Onderdeel toevoegen", aangepast: "Aangepaste rekentool" } as Record<string, string>
+    { start: "Aan de slag", uiterlijk: "Uiterlijk", resultaat: "Resultaat", aanvraag: "Aanvraagformulier", weergave: "Weergave voor je klant", website: "Zet op mijn website", account: "Account maken", toevoegen: "Onderdeel toevoegen", aangepast: "Aangepaste rekentool" } as Record<string, string>
   )[p] ?? "Aan de slag";
 };
 
@@ -152,6 +152,11 @@ export function RekentoolEditor(props: EditorProps) {
   const [resultaat, setResultaat] = useState(props.resultaat);
   const [aanvraag, setAanvraag] = useState(props.aanvraag);
   const [weergave, setWeergave] = useState<WeergaveConfig>(props.weergave ?? STANDAARD_WEERGAVE_CONFIG);
+  // Een net aangemaakt leeg onderdeel: de cursor staat direct in het naamveld. En de verwijzing waarmee de titel van de mobiele
+  // sheet de naam in het paneel van het onderdeel wijzigt.
+  const [focusNaamId, setFocusNaamId] = useState<string | null>(null);
+  const hernoemRef = useRef<((naam: string) => void) | null>(null);
+  const naamGefocust = useCallback(() => setFocusNaamId(null), []);
   const weergaveGewijzigd = useRef(false);
   const wijzigWeergave = useCallback((patch: Partial<WeergaveConfig>) => {
     weergaveGewijzigd.current = true;
@@ -168,9 +173,9 @@ export function RekentoolEditor(props: EditorProps) {
   }, []);
   // Eén opslag voor alles wat bij weergave hoort (het blok in Uiterlijk en de tegel per onderdeel).
   const weergaveOpslag = useAutosave(weergave, async (w) => {
-    const r = await slaWeergaveOpAction(toolId, w);
+    const r = await repo.slaWeergaveOp(toolId, w);
     return r.ok ? { ok: true } : r;
-  }, { uitgeschakeld: Boolean(props.gast) });
+  });
   useEffect(() => {
     if (weergaveGewijzigd.current) setOpslag({ status: weergaveOpslag.status, fout: weergaveOpslag.fout, ongeldig: false, opnieuw: weergaveOpslag.opnieuw });
   }, [weergaveOpslag.status, weergaveOpslag.fout, weergaveOpslag.opnieuw]);
@@ -224,7 +229,7 @@ export function RekentoolEditor(props: EditorProps) {
   const [iframeKlaar, setIframeKlaar] = useState(false);
 
   const kiesDoel = useCallback(
-    (doel: string) => setPaneel(doel === "uiterlijk-tekst" || doel === "weergave" ? "uiterlijk" : doel),
+    (doel: string) => setPaneel(doel === "uiterlijk-tekst" ? "uiterlijk" : doel),
     [setPaneel]
   );
 
@@ -342,7 +347,8 @@ export function RekentoolEditor(props: EditorProps) {
     }
   }
 
-  function nieuwToegevoegd(productId: string) {
+  function nieuwToegevoegd(productId: string, opties?: { focusNaam?: boolean }) {
+    if (opties?.focusNaam) setFocusNaamId(productId);
     const lokaal = repo.laadProducten?.();
     if (lokaal) setProducten((cur) => [...cur, ...lokaal.filter((p) => !cur.some((c) => c.id === p.id))]);
     else router.refresh();
@@ -386,6 +392,14 @@ export function RekentoolEditor(props: EditorProps) {
       />
     );
 
+  const weergaveSamenvatting = gast ? WEERGAVE_LABEL[weergave.weergave] : `${WEERGAVE_LABEL[weergave.weergave]} · ${weergave.plaatsing === "popup" ? "knop met pop-up" : "in de pagina"}`;
+  const openWeergave = () => {
+    if (weergave.tip) wijzigWeergave({ tip: false });
+    setModus("bewerken");
+    setPaneel("weergave");
+  };
+  const tipNode = weergave.tip ? <WeergaveTip onKies={openWeergave} onSluit={() => wijzigWeergave({ tip: false })} /> : null;
+
   const geselecteerdProduct = paneel.startsWith("werkzaamheid:") ? producten.find((p) => p.id === paneel.slice(13)) : undefined;
 
   const paneelInhoud = (
@@ -409,6 +423,7 @@ export function RekentoolEditor(props: EditorProps) {
           <span className="underline">Bekijken</span>
         </button>
       )}
+      {paneel === "start" && tipNode}
       {paneel === "start" && (
         <PaneelStart
           werkzaamheden={producten.map((p) => ({ id: p.id, naam: p.naam, actief: p.actief, heeftVoorbeeld: waarschuwingen[`werkzaamheid:${p.id}`]?.soort === "voorbeeld" }))}
@@ -430,6 +445,9 @@ export function RekentoolEditor(props: EditorProps) {
           onVerwijder={() => setVerwijderProduct(geselecteerdProduct.id)}
           onGekopieerd={nieuwToegevoegd}
           extra={tegelBlok(geselecteerdProduct)}
+          focusNaam={focusNaamId === geselecteerdProduct.id}
+          onNaamGefocust={naamGefocust}
+          hernoemRef={hernoemRef}
         />
       )}
       {paneel.startsWith("werkzaamheid:") && !geselecteerdProduct && <p className="text-sm text-muted-foreground">Laden…</p>}
@@ -443,9 +461,13 @@ export function RekentoolEditor(props: EditorProps) {
         />
       )}
       {paneel === "uiterlijk" && (gast ? gast.uiterlijkPaneel : <PaneelUiterlijk toolId={toolId} branding={branding} tier={tier} email={email} />)}
-      {paneel === "uiterlijk" && !gast && (
-        <div className="border-t border-border pt-5">
-          <WeergaveBlok waarde={weergave} onChange={wijzigWeergave} />
+      {paneel === "weergave" && (
+        <div className="flex flex-col gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Weergave voor je klant</h2>
+            <p className="text-sm text-muted-foreground">Hoe je klant kiest wat hij nodig heeft{gast ? "" : " en waar de rekentool staat"}.</p>
+          </div>
+          <WeergaveBlok waarde={weergave} onChange={wijzigWeergave} metPlaatsing={!gast} />
         </div>
       )}
       {paneel === "resultaat" && !gast && <PaneelResultaat toolId={toolId} start={resultaat} onStatus={setOpslag} onWijzig={setResultaat} />}
@@ -616,6 +638,11 @@ export function RekentoolEditor(props: EditorProps) {
           menu={menu}
           gast={Boolean(gast)}
           onTerug={() => void gaTerug(terugHref)}
+          onHernoem={(n) => hernoemRef.current?.(n)}
+          focusNaamId={focusNaamId}
+          onNaamGefocust={naamGefocust}
+          weergaveSamenvatting={weergaveSamenvatting}
+          tipNode={tipNode}
           meldingNode={
             <>
               {gast && (
@@ -659,6 +686,7 @@ export function RekentoolEditor(props: EditorProps) {
               mobiel={mob}
               onKlaar={() => setPaneel("start")}
               extra={tegelBlok(product)}
+              hernoemRef={hernoemRef}
             />
           )}
         />
@@ -736,7 +764,7 @@ export function RekentoolEditor(props: EditorProps) {
           )}
         </div>
 
-        <div role="group" aria-label="Weergave" className="hidden shrink-0 rounded-lg border border-border p-0.5 md:flex">
+        <div role="group" aria-label="Bewerken of uitproberen" className="hidden shrink-0 rounded-lg border border-border p-0.5 md:flex">
           {(["bewerken", "uitproberen"] as const).map((m) => (
             <button
               key={m}
@@ -752,6 +780,15 @@ export function RekentoolEditor(props: EditorProps) {
             </button>
           ))}
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          aria-pressed={paneel === "weergave"}
+          onClick={openWeergave}
+          className={cn("hidden h-11 shrink-0 md:inline-flex", paneel === "weergave" && "border-primary bg-accent")}
+        >
+          <LayoutGrid className="h-4 w-4" aria-hidden="true" /> Weergave
+        </Button>
         <div role="group" aria-label="Schermgrootte" className="hidden shrink-0 rounded-lg border border-border p-0.5 lg:flex">
           {([["desktop", Monitor, "Computer"], ["mobiel", Smartphone, "Telefoon"]] as const).map(([k, Icoon, label]) => (
             <button

@@ -27,9 +27,9 @@ export const test = basis.extend<{ gebruiker: Gebruiker | "auto" | null; axe: (n
           fs.mkdirSync(map);
           break;
         } catch {
-          // Een slot dat langer dan 6 minuten bezet is, is van een afgebroken test.
+          // Een slot dat langer dan 3 minuten bezet is, is van een afgebroken test.
           try {
-            if (Date.now() - fs.statSync(map).mtimeMs > 360_000) fs.rmdirSync(map);
+            if (Date.now() - fs.statSync(map).mtimeMs > 180_000) fs.rmdirSync(map);
           } catch {}
           if (Date.now() - begin > 600_000) throw new Error("Wachten op het slot van de rekentool duurde te lang.");
           await new Promise((r) => setTimeout(r, 300));

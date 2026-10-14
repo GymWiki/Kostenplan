@@ -13,7 +13,7 @@ import type { ArbeidStapEenheid } from "@/app/generated/prisma/client";
 export type AndereRekentool = { id: string; naam: string; werkzaamheden: { id: string; naam: string }[] };
 
 const IETS_ANDERS: WerkzaamheidDraft = {
-  naam: "Nieuwe onderdeel",
+  naam: "Nieuw onderdeel",
   methode: "M2",
   productiviteit: "",
   transportPerDag: false,
@@ -36,7 +36,8 @@ export function PaneelToevoegen({
   stapEenheid: ArbeidStapEenheid;
   anderen: AndereRekentool[];
   bestaandeNamen: string[];
-  onToegevoegd: (productId: string) => void;
+  // `focusNaam`: een leeg onderdeel ("Iets anders"): de cursor staat direct in het naamveld.
+  onToegevoegd: (productId: string, opties?: { focusNaam?: boolean }) => void;
 }) {
   const repo = useEditorRepository();
   const [bezig, setBezig] = useState<string | null>(null);
@@ -49,7 +50,7 @@ export function PaneelToevoegen({
     setFout(null);
     const r = await repo.maakWerkzaamheid(toolId, draft, presetId);
     setBezig(null);
-    if (r.ok) onToegevoegd(r.productId);
+    if (r.ok) onToegevoegd(r.productId, { focusNaam: presetId === null });
     else setFout(r.error);
   }
 

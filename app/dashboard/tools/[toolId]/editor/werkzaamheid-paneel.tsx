@@ -11,6 +11,7 @@ import { bedragKort } from "./mobiele-editor";
 import { DropdownMenu } from "@/app/components/ui/dropdown-menu";
 import { Field } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
+import { OnderdeelNaam } from "./onderdeel-naam";
 import { SectionCard } from "@/app/components/ui/section-card";
 import { Segmented } from "@/app/components/ui/segmented";
 import { Switch } from "@/app/components/ui/switch";
@@ -63,7 +64,15 @@ export function WerkzaamheidPaneel({
   mobiel,
   onKlaar,
   extra,
+  focusNaam = false,
+  onNaamGefocust,
+  hernoemRef,
 }: {
+  // Een net aangemaakt leeg onderdeel: de cursor staat direct in het naamveld, de tekst is geselecteerd.
+  focusNaam?: boolean;
+  onNaamGefocust?: () => void;
+  // De naam in de kop van de mobiele sheet (een ander onderdeel van de editor) wijzigt de naam via deze verwijzing.
+  hernoemRef?: React.MutableRefObject<((naam: string) => void) | null>;
   // Extra blok onderaan het gewone paneel (bijv. de instellingen van de tegel).
   extra?: React.ReactNode;
   toolId: string;
@@ -134,6 +143,13 @@ export function WerkzaamheidPaneel({
   }, [preview, actief, onPreview]);
 
   const wijzig = (patch: Partial<WerkzaamheidDraft>) => setDraft((d) => ({ ...d, ...patch }));
+  useEffect(() => {
+    if (!hernoemRef || (mobiel && mobiel !== "scherm")) return;
+    hernoemRef.current = (naam) => setDraft((d) => ({ ...d, naam }));
+    return () => {
+      hernoemRef.current = null;
+    };
+  }, [hernoemRef, mobiel]);
 
   const eenheid = preview.eenheid;
   const eenheidKort = kortEenheid(eenheid);
@@ -255,10 +271,6 @@ export function WerkzaamheidPaneel({
         )}
 
         <SamenvattingRij id="basis" titel="Basis" samenvatting={METHODE_OPTIES.find((m) => m.value === draft.methode)?.label ?? "Eigen instelling"} open={openBlok === "basis"} onToggle={() => wissel("basis")}>
-          <label className="flex flex-col gap-1.5 text-sm font-semibold text-foreground">
-            Naam
-            <Input value={draft.naam} maxLength={120} enterKeyHint="done" aria-invalid={draft.naam.trim() === "" ? true : undefined} onChange={(e) => wijzig({ naam: e.target.value })} />
-          </label>
           {draft.methode === null ? (
             <p className="rounded-md bg-muted px-3 py-2 text-sm text-foreground">Dit onderdeel rekent op een eigen manier. Die instelling blijft zoals ze is.</p>
           ) : (
@@ -408,19 +420,7 @@ export function WerkzaamheidPaneel({
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
           <Icoon className="h-5 w-5" aria-hidden="true" />
         </span>
-        <div className="min-w-0 flex-1">
-          <label htmlFor="wz-naam" className="sr-only">
-            Naam van het onderdeel
-          </label>
-          <Input
-            id="wz-naam"
-            value={draft.naam}
-            maxLength={120}
-            aria-invalid={draft.naam.trim() === "" ? true : undefined}
-            onChange={(e) => wijzig({ naam: e.target.value })}
-            className="h-11 border-transparent bg-transparent px-2 text-lg font-bold hover:border-input"
-          />
-        </div>
+        <OnderdeelNaam modus="vast" waarde={draft.naam} onSla={(naam) => wijzig({ naam })} focusBijStart={focusNaam} onGefocust={onNaamGefocust} />
         <DropdownMenu
           ariaLabel="Meer acties voor dit onderdeel"
           items={[
