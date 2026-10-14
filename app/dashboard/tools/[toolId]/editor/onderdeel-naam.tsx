@@ -88,7 +88,7 @@ export function OnderdeelNaam({
 
   const veldId = `onderdeel-naam-${useId()}`;
 
-  if (modus === "tik" && !bewerken) {
+  if (modus === "tik" && !bewerken && !focusBijStart) {
     return (
       <div className={cn("min-w-0 flex-1", className)}>
         <button
@@ -133,6 +133,8 @@ export function OnderdeelNaam({
           onPointerDown={(e) => e.stopPropagation()}
           onChange={(e) => {
             const nieuw = e.target.value;
+            // Je bent aan het typen: de "eerste keer"-focus is gelukt.
+            onGefocust?.();
             setTekst(nieuw);
             if (nieuw.trim() === "") {
               setFout(LEGE_NAAM_MELDING);
@@ -148,10 +150,14 @@ export function OnderdeelNaam({
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              if (bevestig(false)) veld.current?.blur();
+              if (bevestig(false)) {
+                onGefocust?.();
+                veld.current?.blur();
+              }
             } else if (e.key === "Escape") {
               // Alleen het bewerken stopt; de sheet of het paneel blijft open.
               e.stopPropagation();
+              onGefocust?.();
               setTekst(waarde);
               setFout(null);
               if (modus === "tik") setBewerken(false);
@@ -166,9 +172,8 @@ export function OnderdeelNaam({
             }
           }}
           onBlur={() => {
+            // Een blur zonder dat je iets typte (bijv. door een herhaalde montage) laat het veld staan: focusBijStart blijft dan aan tot je typt.
             bevestig(true);
-            // Pas als je het veld verlaat is het "eerste keer focussen" klaar; een herhaalde montage van het paneel zet de cursor er dan opnieuw in.
-            if (focusBijStart) onGefocust?.();
           }}
           className={cn(
             "h-11 w-full min-w-0 rounded-md border bg-transparent pl-2 pr-9 text-lg font-bold text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/35",
