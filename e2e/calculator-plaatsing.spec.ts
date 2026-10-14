@@ -74,6 +74,27 @@ test.describe("knop met pop-up", () => {
     expect(page.url()).toBe(adres);
   });
 
+  test("de pagina van de hovenier verschuift niet bij openen en sluiten (CLS 0)", async ({ page }, info) => {
+    await pdokNep(page.context());
+    await page.addInitScript(() => {
+      (window as unknown as { __cls: number }).__cls = 0;
+      new PerformanceObserver((lijst) => {
+        for (const e of lijst.getEntries()) (window as unknown as { __cls: number }).__cls += (e as unknown as { value: number }).value;
+      }).observe({ type: "layout-shift", buffered: true });
+    });
+    await page.goto(url(info.project.name, { plaatsing: "popup", weergave: "tegels", positie: "rechtsonder" }));
+    const knop = page.getByRole("button", { name: "Bereken je prijs" });
+    await expect(knop).toBeVisible();
+    await page.waitForTimeout(500);
+    await page.evaluate(() => ((window as unknown as { __cls: number }).__cls = 0));
+    await knop.click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.frameLocator("iframe").first().getByRole("heading", { name: "Stel je project samen" })).toBeVisible({ timeout: 20000 });
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toBeHidden();
+    expect(await page.evaluate(() => (window as unknown as { __cls: number }).__cls)).toBe(0);
+  });
+
   test("Escape binnen de rekentool sluit de pop-up ook", async ({ page }, info) => {
     await pdokNep(page.context());
     await page.goto(url(info.project.name, { plaatsing: "popup", positie: "inline" }));
@@ -117,5 +138,16 @@ test.describe("één onderdeel en deep link", () => {
     const frame = page.frameLocator("iframe").first();
     await adresInvullen(frame);
     await expect(frame.getByLabel(/Aantal Schutting/)).toBeVisible({ timeout: 15000 });
+  });
+});
+
+test.describe("iframe-code (zonder laadscript)", () => {
+  test("de weergave en selectie komen mee in het adres van de iframe", async ({ page }, info) => {
+    await pdokNep(page.context());
+    await page.goto(url(info.project.name, { modus: "iframe", weergave: "tegels", onderdelen: SCHUTTING(info.project.name) }));
+    const frame = page.frameLocator("iframe").first();
+    await adresInvullen(frame);
+    await expect(frame.getByLabel(/Aantal Schutting/)).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("iframe").first()).toHaveAttribute("src", /weergave=tegels&onderdelen=/);
   });
 });

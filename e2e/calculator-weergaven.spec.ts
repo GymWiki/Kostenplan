@@ -71,6 +71,19 @@ test.describe("tegels", () => {
     await expect(page.getByRole("region", { name: "Jouw tuinplan" })).toHaveCount(0);
   });
 
+  test("met het toetsenbord: Enter opent een tegel, de focus gaat naar het paneel en Escape zet hem terug", async ({ page }, info) => {
+    await open(page, info.project.name, { weergave: "tegels" });
+    const tegel = page.locator("button[aria-expanded]").filter({ hasText: /^Schutting/ });
+    await tegel.focus();
+    await page.keyboard.press("Enter");
+    await expect(tegel).toHaveAttribute("aria-expanded", "true");
+    if (info.project.name === "mobiel") await expect(page.getByRole("dialog").locator(":focus")).toHaveCount(1);
+    else await expect(page.locator("#tegel-paneel h4")).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(tegel).toBeFocused();
+    await expect(tegel).toHaveAttribute("aria-expanded", "false");
+  });
+
   test("Escape sluit het paneel en zet de focus terug; een niet-toegevoegd onderdeel laat niets achter", async ({ page, axe }, info) => {
     await open(page, info.project.name, { weergave: "tegels" });
     const tegel = page.locator("button[aria-expanded]").filter({ hasText: /^Schutting/ });
