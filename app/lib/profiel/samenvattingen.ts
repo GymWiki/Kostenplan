@@ -62,8 +62,15 @@ export function tarievenRegel(t: { eenheid: keyof typeof EENHEID_WOORD; tarief: 
 }
 
 // "6 gegevens ontbreken voor offertes", of null als alles compleet is.
-export function ontbreektTekst(aantal: number): string | null {
-  return aantal === 0 ? null : `${aantal} ${aantal === 1 ? "gegeven ontbreekt" : "gegevens ontbreken"} voor offertes`;
+// Met `namen` staat erbij welke: "3 gegevens ontbreken voor offertes: KvK-nummer, IBAN en Telefoon" (bij meer dan 3: "… en 2 andere").
+export function ontbreektTekst(aantal: number, namen: string[] = []): string | null {
+  if (aantal === 0) return null;
+  const basis = `${aantal} ${aantal === 1 ? "gegeven ontbreekt" : "gegevens ontbreken"} voor offertes`;
+  if (namen.length === 0) return basis;
+  const getoond = namen.slice(0, 3);
+  const rest = namen.length - getoond.length;
+  const lijst = rest > 0 ? `${getoond.join(", ")} en ${rest} ${rest === 1 ? "andere" : "andere"}` : getoond.length > 1 ? `${getoond.slice(0, -1).join(", ")} en ${getoond[getoond.length - 1]}` : getoond[0];
+  return `${basis}: ${lijst}`;
 }
 
 // "25 km rond Zwolle · vanaf €250", "Postcodegebieden", "Uit".

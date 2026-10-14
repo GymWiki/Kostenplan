@@ -38,7 +38,8 @@ export default async function ProfielPage({ searchParams }: { searchParams: Prom
   const { user, company, alleBedrijven, tools, offertegegevens, werkgebied } = await laadProfiel();
   const [tarieven, abonnementInvoer] = await Promise.all([laadTarieven(company, tools[0]?.id), laadAbonnementInvoer(company)]);
   const abonnement = abonnementRegel(abonnementInvoer);
-  const ontbreekt = ontbrekendeVerplichteGegevens(offertegegevens).length;
+  const ontbrekend = ontbrekendeVerplichteGegevens(offertegegevens);
+  const ontbreekt = ontbrekend.length;
   const logoUrl = tools.map((t) => t.branding?.logoUrl).find(Boolean) ?? offertegegevens.logoUrl ?? null;
   // Logo per bedrijf voor de bedrijfswisselaar (het eerste logo van een rekentool van dat bedrijf).
   const logos = await prisma.tool.findMany({ where: { companyId: { in: alleBedrijven.map((b) => b.id) }, deletedAt: null }, orderBy: { createdAt: "asc" }, select: { companyId: true, branding: { select: { logoUrl: true } } } });
@@ -52,7 +53,7 @@ export default async function ProfielPage({ searchParams }: { searchParams: Prom
       <ProfielKop key={company.id} actief={wisselBedrijven.find((b) => b.id === company.id)!} domein={domeinVan(offertegegevens.website)} bedrijven={wisselBedrijven} />
 
       <SettingsGroup kop="Je bedrijf">
-        <SettingsRow href="/dashboard/profiel/bedrijfsgegevens" icoon={Building2} titel="Bedrijfsgegevens" samenvatting="Naam, adres, KvK, contact" waarschuwing={ontbreektTekst(ontbreekt)} />
+        <SettingsRow href="/dashboard/profiel/bedrijfsgegevens" icoon={Building2} titel="Bedrijfsgegevens" samenvatting="Naam, adres, KvK, contact" waarschuwing={ontbreektTekst(ontbreekt, ontbrekend.map((o) => o.label))} />
         <SettingsRow
           href="/dashboard/profiel/huisstijl"
           icoon={Palette}

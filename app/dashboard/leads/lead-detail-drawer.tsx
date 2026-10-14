@@ -326,7 +326,7 @@ export function LeadDetailDrawer({
               Offerte
             </LinkButton>
           ) : (
-            <Button type="button" variant="secondary" size="lg" className="flex-1 px-3" onClick={() => setKeuzeModal({ open: true, startStap: "keuze" })}>
+            <Button type="button" variant="secondary" size="lg" className="flex-1 whitespace-nowrap px-3" onClick={() => setKeuzeModal({ open: true, startStap: "keuze" })}>
               Offerte maken
             </Button>
           )}
