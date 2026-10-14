@@ -363,7 +363,7 @@ export function WerkzaamheidPaneel({
             onClick={() => setOpbouwOpen(true)}
             className="min-h-11 min-w-0 flex-1 cursor-pointer rounded-lg px-1 text-left text-sm text-foreground"
           >
-            <span className="block text-muted-foreground">Opbouw voor {voorbeeldHoeveelheid} {eenheidKort}</span>
+            <span className="block text-muted-foreground">Opbouw voor {voorbeeldHoeveelheid} {eenheidKort}, excl. btw</span>
             <span className="block text-base font-bold tabular-nums">{formatCurrency(opbouw.totaal)}</span>
           </button>
           <Button type="button" size="lg" className="shrink-0 px-8" onClick={onKlaar}>

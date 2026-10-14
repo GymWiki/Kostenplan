@@ -193,7 +193,7 @@ export function MobieleEditor({
                         <span className="block truncate text-base font-semibold text-foreground">{p.naam}</span>
                         <span className="block break-words text-sm text-muted-foreground">{samenvatting}</span>
                         <span className="block text-sm text-foreground">
-                          {hoeveelheid} {eenheid} kost je klant {formatCurrency(klantPrijs)}
+                          {hoeveelheid} {eenheid} kost je klant {formatCurrency(klantPrijs)} incl. btw
                         </span>
                         {voorbeeldAantal > 0 && (
                           <span className="mt-1 inline-block rounded-full bg-example/25 px-2 py-0.5 text-xs font-semibold text-foreground">
