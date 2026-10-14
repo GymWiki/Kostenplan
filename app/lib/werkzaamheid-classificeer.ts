@@ -3,6 +3,7 @@ import { evalueerOnderdeel } from "@/app/lib/calculator-engine";
 import type { EngineTarieven } from "@/app/lib/werkzaamheid-engine";
 import { MATERIAAL_VELD_ID, werkzaamheidNaarOnderdeel } from "@/app/lib/werkzaamheid-engine";
 import type { ExtraRij, MateriaalRij, Methode, WerkzaamheidDraft } from "@/app/lib/werkzaamheid";
+import { formatGetalInvoer } from "@/app/lib/getal";
 
 // Beoordeelt of een bestaand engine-onderdeel in het standaardmodel van een
 // werkzaamheid past. Werkwijze: haal een kandidaat-werkzaamheid uit het
@@ -93,11 +94,11 @@ function haalKandidaat(o: OnderdeelConfig, materialen: MateriaalBron[]): Werkzaa
       if (prijs === null) continue;
       const veldNaam = variabele(r.hoeveelheid);
       const veld = veldNaam ? vraagVelden.get(veldNaam) : undefined;
-      if (veld?.soort === "AANTAL") extras.push({ sleutel: veld.id, naam: r.label, prijs: String(prijs), type: "PER_STUK", altijd: false });
-      else if (!r.voorwaarde) extras.push({ sleutel: r.id, naam: r.label, prijs: String(prijs), type: "PER_EENHEID", altijd: true });
+      if (veld?.soort === "AANTAL") extras.push({ sleutel: veld.id, naam: r.label, prijs: formatGetalInvoer(prijs), type: "PER_STUK", altijd: false });
+      else if (!r.voorwaarde) extras.push({ sleutel: r.id, naam: r.label, prijs: formatGetalInvoer(prijs), type: "PER_EENHEID", altijd: true });
       else {
         const v = variabele(r.voorwaarde);
-        if (v && vraagVelden.get(v)?.soort === "JA_NEE") extras.push({ sleutel: v, naam: r.label, prijs: String(prijs), type: "PER_EENHEID", altijd: false });
+        if (v && vraagVelden.get(v)?.soort === "JA_NEE") extras.push({ sleutel: v, naam: r.label, prijs: formatGetalInvoer(prijs), type: "PER_EENHEID", altijd: false });
       }
     }
   }
@@ -106,7 +107,7 @@ function haalKandidaat(o: OnderdeelConfig, materialen: MateriaalBron[]): Werkzaa
     sleutel: m.id,
     id: m.id,
     naam: m.naam,
-    prijs: String(m.prijs),
+    prijs: formatGetalInvoer(m.prijs),
     prijsMin: "",
     prijsMax: "",
     productiviteitOverride: perMateriaal[m.id] ?? "",

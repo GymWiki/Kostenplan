@@ -4,6 +4,7 @@ import { Plus, Trash2 } from "lucide-react";
 import type { ProductKeuzeOptieInvoer } from "@/app/lib/actions/calculator-config";
 import { Button } from "@/app/components/ui/button";
 import { DecimalInput, Input, Label } from "@/app/components/ui/input";
+import { formatGetalInvoer } from "@/app/lib/getal";
 
 // Gedeeld tussen VeldFormModal (v1) en VeldSettingsForm (v2) — zie
 // keuze-opties-editor.tsx voor dezelfde reden van bestaan.
@@ -34,7 +35,7 @@ export function ProductOptiesEditor({
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
             <DecimalInput
               aria-label="Prijs van de optie"
-              value={optie.prijs === 0 ? "" : String(optie.prijs)}
+              value={optie.prijs === 0 ? "" : formatGetalInvoer(optie.prijs)}
               onChange={(e) => {
                 const nieuw = [...opties];
                 nieuw[i] = { ...optie, prijs: Number(e.target.value.replace(",", ".")) || 0 };
