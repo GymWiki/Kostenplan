@@ -24,7 +24,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const inhoud = v.inhoud as unknown as OfferteInhoud;
   const koppen = (b: Uint8Array | Buffer) => new NextResponse(new Uint8Array(b), { headers: { "content-type": "application/pdf", "content-disposition": `inline; filename*=UTF-8''${encodeURIComponent(bestandsnaam(inhoud))}`, "cache-control": "private, no-store" } });
   // Getekende PDF na akkoord (voor de hovenier, bij de lead).
-  if (url.searchParams.get("getekend")) {
+  // Na akkoord is de getekende PDF (met de door de klant gekozen optionele regels) de geldende PDF; de oorspronkelijk
+  // verstuurde versie blijft beschikbaar met ?verstuurd=1.
+  const akkoord = await prismaBasis.offerteAkkoord.findFirst({ where: { offerteId: id, versieNummer: versieNr }, select: { id: true } });
+  if (url.searchParams.get("getekend") || (akkoord && !url.searchParams.get("verstuurd"))) {
     const pdf = await zorgVoorGetekendePdf(id, url.origin).catch(() => null);
     return pdf ? koppen(pdf) : new NextResponse("Nog niet getekend", { status: 404 });
   }
