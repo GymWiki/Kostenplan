@@ -104,7 +104,7 @@ export function eenFactuurUitOfferte(bron: OfferteBron, i: FactuurInstellingen, 
 
 // b. een termijnfactuur ("Aanbetaling 30% – offerte 2026-0012"): per btw-tarief één regel met het deel van de offerte.
 export function termijnFactuurUitOfferte(bron: OfferteBron, termijn: { label: string; percentage: number }, i: FactuurInstellingen): FactuurInhoud {
-  const t = berekenTotalen({ secties: regelsVoorFactuur(bron.inhoud, bron.gekozenOptioneel), klant: bron.inhoud.klant, afzender: bron.inhoud.afzender, rekenregel: 2 });
+  const t = berekenTotalen({ secties: regelsVoorFactuur(bron.inhoud, bron.gekozenOptioneel), klant: bron.inhoud.klant, afzender: bron.inhoud.afzender, rekenregel: bron.inhoud.rekenregel === 3 ? 3 : 2 });
   const groepen: BtwGroep[] = t.btwGroepen.filter((g) => g.grondslag !== 0);
   const regels: OfferteRegel[] = groepen.map((g) => ({
     id: nieuwId("t"),
