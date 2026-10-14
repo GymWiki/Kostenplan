@@ -47,7 +47,7 @@ export function draftNaarBranding(draft: Draft): Branding {
     lettertype: draft.company.lettertype ?? "MODERN",
     customTitel: draft.company.titel ?? null,
     welkomstTekst: draft.company.welkomst ?? null,
-    bedankTekst: "Bedankt voor uw aanvraag! Wij nemen binnen 24 uur contact met u op.",
+    bedankTekst: "Bedankt voor je aanvraag! Wij nemen binnen 24 uur contact met je op.",
     toonTelefoonnummer: false,
     telefoonnummer: null,
     toonEmail: false,

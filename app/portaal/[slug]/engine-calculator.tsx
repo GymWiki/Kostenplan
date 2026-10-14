@@ -188,7 +188,7 @@ export function EngineCalculator({
   const brandPrimaryForeground = accessibleTextColor(primaireKleur);
   const fontFamily = fontFamilyFor(magPersonaliserenUiterlijk ? (branding?.lettertype ?? "MODERN") : "MODERN");
   const titel = branding?.customTitel?.trim() ? branding.customTitel.replaceAll("{bedrijfsnaam}", bedrijfsnaam) : null;
-  const bedankTekst = branding?.bedankTekst?.trim() || "Bedankt voor uw aanvraag! Wij nemen binnen 24 uur contact met u op.";
+  const bedankTekst = branding?.bedankTekst?.trim() || "Bedankt voor je aanvraag! Wij nemen binnen 24 uur contact met je op.";
   const contactPositie = branding?.contactPositie ?? "BOVENAAN";
   const contact = {
     telefoonnummer: branding?.toonTelefoonnummer ? branding.telefoonnummer : null,

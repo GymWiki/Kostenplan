@@ -178,7 +178,7 @@ export function Calculator({
   const welkomstTekst = branding?.welkomstTekst?.trim() || null;
   const bedankTekst =
     branding?.bedankTekst?.trim() ||
-    "Bedankt voor uw aanvraag! Wij nemen binnen 24 uur contact met u op.";
+    "Bedankt voor je aanvraag! Wij nemen binnen 24 uur contact met je op.";
   const contactPositie = branding?.contactPositie ?? "BOVENAAN";
   const contact = {
     telefoonnummer: branding?.toonTelefoonnummer ? branding.telefoonnummer : null,
