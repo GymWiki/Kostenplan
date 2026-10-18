@@ -2,6 +2,7 @@ import { berekenHoeveelheidVoorSjabloon, coerceVeldWaarden, klantVeldenVoorSjabl
 import { ceilStap, MAX_BEDRAG_CENTEN, rondCenten, schoonGetal } from "./rond";
 import { regelTotaal, totalenVanRegels, type BtwGroep } from "./totalen";
 import { aanvullingTotMinimum, beoordeelLocatie, beoordeelMinimum, type LocatieBeoordeling } from "./locatie";
+import { urenPerEenheid, type UrenConfig } from "@/app/lib/werktempo";
 import type { ArbeidEenheid, PricingCategorie, PricingConfig, PricingInput, PricingMateriaal, PricingOnderdeel, PricingOnderdeelInvoer } from "./schema";
 
 // De rekenkern: de enige bron van waarheid voor prijzen. Puur TypeScript, zonder React, database
@@ -127,14 +128,15 @@ type Richting = "MIN" | "MAX" | "MIDDEN";
 
 const leegKosten = (): KostenPerSoort => ({ materiaal: 0, arbeid: 0, extra: 0, artikel: 0, transport: 0, voorrijkosten: 0, afstand: 0, minimum: 0 });
 
-export function dagdelenVoorArbeid(tijd: number, eenheid: ArbeidEenheid): number {
-  if (eenheid === "UUR") return (tijd / UREN_PER_DAG) * DAGDELEN_PER_DAG;
-  if (eenheid === "DAG") return tijd * DAGDELEN_PER_DAG;
-  return tijd;
+// Arbeidstijd (in `eenheid`) in dagdelen en in werkdagen, volgens de uren-definities van de hovenier (standaard 4 en 8 uur).
+export function dagdelenVoorArbeid(tijd: number, eenheid: ArbeidEenheid, uren: UrenConfig = { urenPerDagdeel: 4, urenPerDag: 8 }): number {
+  if (eenheid === "DAGDEEL") return tijd;
+  return (tijd * urenPerEenheid(eenheid, uren)) / uren.urenPerDagdeel;
 }
 
-function dagenVoorArbeid(tijd: number, eenheid: ArbeidEenheid): number {
-  return dagdelenVoorArbeid(tijd, eenheid) / DAGDELEN_PER_DAG;
+function dagenVoorArbeid(tijd: number, eenheid: ArbeidEenheid, uren: UrenConfig): number {
+  if (eenheid === "DAG") return tijd;
+  return (tijd * urenPerEenheid(eenheid, uren)) / uren.urenPerDag;
 }
 
 const ARBEID_LABEL: Record<ArbeidEenheid, string> = { UUR: "uur", DAGDEEL: "dagdeel", DAG: "dag" };
@@ -205,6 +207,7 @@ type Kern = {
 
 function rekenKern(config: PricingConfig, invoer: PricingInput, richting: Richting, locatie: LocatieBeoordeling): Kern {
   const t = config.tarieven;
+  const uren: UrenConfig = { urenPerDagdeel: t.urenPerDagdeel, urenPerDag: t.urenPerDag };
   const btw = t.kor ? 0 : t.btwPercentage;
   const waarschuwingen: Waarschuwing[] = [];
   const onderdelen: OnderdeelUitkomst[] = [];
@@ -278,19 +281,22 @@ function rekenKern(config: PricingConfig, invoer: PricingInput, richting: Richti
     let arbeidstijd = 0;
     if (t.arbeidEnabled) {
       if (tempo != null && tempo > 0) {
-        ruweArbeidstijd = qty / tempo;
+        // Het werktempo staat in de eenheid van het onderdeel; de arbeid (en het tarief) in die van de rekentool. Gelijke eenheid: exact
+        // dezelfde som als altijd; anders via uren (uren nodig = hoeveelheid / werktempo × uren per eenheid).
+        const tempoEenheid = od.werktempoEenheid ?? t.arbeidEenheid;
+        ruweArbeidstijd = tempoEenheid === t.arbeidEenheid ? qty / tempo : ((qty / tempo) * urenPerEenheid(tempoEenheid, uren)) / urenPerEenheid(t.arbeidEenheid, uren);
         arbeidstijd = t.arbeidAfronden ? ceilStap(ruweArbeidstijd) : ruweArbeidstijd;
         if (arbeidstijd > 0 && tarief > 0) {
           regels.push(regel({ id: `${od.id}:arbeid`, onderdeelId: od.id, soort: "arbeid", omschrijving: "Arbeid", aantal: arbeidstijd, eenheid: ARBEID_LABEL[t.arbeidEenheid], prijsPerEenheidCenten: tarief, bedrag: arbeidstijd * tarief }));
         }
-        dagdelen += dagdelenVoorArbeid(arbeidstijd, t.arbeidEenheid);
+        dagdelen += dagdelenVoorArbeid(arbeidstijd, t.arbeidEenheid, uren);
       } else if (qty > 0) {
         waarschuwingen.push({ code: "geen-werktempo", onderdeelId: od.id, bericht: `Bij ${od.naam} staat geen werktempo. De arbeid telt niet mee.` });
       }
     }
 
     // Transport en voorrijkosten. Per dag: elke begonnen werkdag telt (minstens één).
-    const dagen = ruweArbeidstijd > 0 ? Math.max(1, ceilStap(dagenVoorArbeid(ruweArbeidstijd, t.arbeidEenheid))) : 1;
+    const dagen = ruweArbeidstijd > 0 ? Math.max(1, ceilStap(dagenVoorArbeid(ruweArbeidstijd, t.arbeidEenheid, uren))) : 1;
     let transportDagen: number | null = null;
     if (t.transportEnabled) {
       const bedrag = od.transportOverrideCenten ?? t.transportTariefCenten;
@@ -408,7 +414,7 @@ export function berekenPrijs(config: PricingConfig, invoer: PricingInput): Prici
     kor: t.kor,
     btwPercentage: t.kor ? 0 : t.btwPercentage,
     bandbreedte,
-    doorlooptijd: midden.dagdelen > 0 ? { dagdelen: midden.dagdelen, werkdagen: Math.max(1, ceilStap(midden.dagdelen / DAGDELEN_PER_DAG)) } : null,
+    doorlooptijd: midden.dagdelen > 0 ? { dagdelen: midden.dagdelen, werkdagen: Math.max(1, ceilStap((midden.dagdelen * t.urenPerDagdeel) / t.urenPerDag)) } : null,
     waarschuwingen: midden.waarschuwingen,
     heeftSelectie,
     serviceArea: { enabled: locatie.enabled, withinServiceArea: locatie.withinServiceArea, distanceKm: locatie.distanceKm, surchargeCenten: locatie.toeslag?.bedragCenten ?? 0, allowed: locatie.allowed, reason: locatie.reason },

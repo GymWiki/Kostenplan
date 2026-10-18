@@ -26,7 +26,7 @@ export type RegressieTool = {
   id: string;
   naam: string;
   bedrijf: string;
-  company: { standaardArbeidTariefUur: number; standaardVoorrijTarief: number; standaardBtwPercentage: number };
+  company: { standaardArbeidTariefUur: number; standaardVoorrijTarief: number; standaardBtwPercentage: number; urenPerDagdeel?: number; urenPerDag?: number };
   costSettings: {
     arbeidEnabled: boolean;
     arbeidStapEenheid: "UUR" | "DAGDEEL" | "DAG";
@@ -111,7 +111,7 @@ function maakScenarios(t: RegressieTool): Scenario[] {
 }
 
 function onderdelenRij(t: RegressieTool, s: Scenario): RegressieRij {
-  const kosten = resolveCostSettings(t.costSettings, t.company);
+  const kosten = resolveCostSettings(t.costSettings, { urenPerDagdeel: 4, urenPerDag: 8, ...t.company });
   const materiaalKeuzes: Record<string, string> = {};
   const extraKeuzes: Record<string, number> = {};
   for (const p of s.producten) {
@@ -215,7 +215,7 @@ function monsterWaarden(config: AnyCalculatorConfigData, t: RegressieTool, facto
 function formulesRijen(t: RegressieTool): RegressieRij[] {
   if (!t.calculatorConfig) return [];
   const config = publicCalculatorConfig(parseCalculatorConfig(t.calculatorConfig));
-  const kosten = resolveCostSettings(t.costSettings, t.company);
+  const kosten = resolveCostSettings(t.costSettings, { urenPerDagdeel: 4, urenPerDag: 8, ...t.company });
   const materiaalPrijzen: Record<string, number> = {};
   for (const p of t.products) for (const c of p.materiaalCategorieen) for (const m of c.materialen) materiaalPrijzen[m.id] = m.prijs;
   const rijen: RegressieRij[] = [];
@@ -251,7 +251,7 @@ export type ToolKenmerken = {
 
 export function kenmerkenVan(t: RegressieTool): ToolKenmerken {
   const p = actieveProducten(t);
-  const kosten = resolveCostSettings(t.costSettings, t.company);
+  const kosten = resolveCostSettings(t.costSettings, { urenPerDagdeel: 4, urenPerDag: 8, ...t.company });
   const heeftVast = p.filter((x) => (kosten.voorrijEnabled && (x.voorrijkostenOverride ?? kosten.voorrijTarief) > 0 && !x.voorrijMeeschalend) || (kosten.transportEnabled && (x.transportkostenOverride ?? kosten.transportTarief) > 0 && !x.transportMeeschalend && !x.transportPerDag)).length;
   return {
     tool: t.naam,

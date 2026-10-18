@@ -15,6 +15,9 @@ export type CalcCostSettings = {
   // Rond de arbeidstijd van een product af op hele arbeidStapEenheid-stappen
   // i.p.v. 'm continu (lineair) door te rekenen. Uit = continu (standaard).
   arbeidAfronden: boolean;
+  // Wat een dagdeel en een dag in uren zijn (zie app/lib/werktempo.ts).
+  urenPerDagdeel?: number;
+  urenPerDag?: number;
   transportEnabled: boolean;
   transportTarief: number;
   voorrijEnabled: boolean;
@@ -75,6 +78,8 @@ export type CalcProduct = {
   // Kostenopbouw — vier blokken. Materiaal loopt via materiaalCategorieen
   // hieronder (blok 1), de rest hier (blok 2-4). Zie berekenProductKosten().
   productiviteit: number | null;
+  // Eenheid van het werktempo; null = die van de rekentool.
+  werktempoEenheid?: "UUR" | "DAGDEEL" | "DAG" | null;
   arbeidTariefOverride: number | null;
   transportkostenOverride: number | null;
   transportMeeschalend: boolean;

@@ -228,6 +228,8 @@ const PUBLIEKE_TOOL_INCLUDE = {
       standaardArbeidTariefUur: true,
       standaardVoorrijTarief: true,
       standaardBtwPercentage: true,
+      urenPerDagdeel: true,
+      urenPerDag: true,
       werkgebied: true,
       creator: { select: { email: true } },
     },
@@ -525,7 +527,7 @@ export async function getBasisTarievenStatus(
 // ontbreekt de rij toch, dan maken we 'm hier met de defaults.
 export async function getToolCostSettings(
   toolId: string,
-  company: { standaardArbeidTariefUur: number; standaardVoorrijTarief: number; standaardBtwPercentage: number }
+  company: { standaardArbeidTariefUur: number; standaardVoorrijTarief: number; standaardBtwPercentage: number; urenPerDagdeel: number; urenPerDag: number }
 ) {
   const cs =
     (await prisma.costSettings.findUnique({ where: { toolId } })) ??

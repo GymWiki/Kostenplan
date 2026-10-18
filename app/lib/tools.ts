@@ -1,3 +1,4 @@
+import type { UrenConfig } from "@/app/lib/werktempo";
 import type {
   ToolCtaType,
   ToolPrijsAfronding,
@@ -142,14 +143,19 @@ export type AccountDefaults = {
   standaardArbeidTariefUur: number;
   standaardVoorrijTarief: number;
   standaardBtwPercentage: number;
+  // Wat een dagdeel en een dag in uren zijn (per hovenier); voor het werktempo in uur/dagdeel/dag, zie app/lib/werktempo.ts.
+  urenPerDagdeel: number;
+  urenPerDag: number;
 };
 
 export function resolveCostSettings<T extends ResolveerbareCostSettings>(
   costSettings: T,
   account: AccountDefaults
-): T {
+): T & UrenConfig {
   return {
     ...costSettings,
+    urenPerDagdeel: account.urenPerDagdeel,
+    urenPerDag: account.urenPerDag,
     arbeidTariefUur: costSettings.gebruiktAccountArbeidTarief
       ? account.standaardArbeidTariefUur
       : costSettings.arbeidTariefUur,

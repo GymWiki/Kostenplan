@@ -4,6 +4,7 @@ import { z } from "zod";
 import "@/app/lib/zod-nl";
 import { prisma } from "@/app/lib/prisma";
 import { parseGetal } from "@/app/lib/sjablonen";
+import { pasRekenEenheidToe } from "@/app/lib/werktempo-server";
 import type { ArbeidStapEenheid } from "@/app/generated/prisma/client";
 
 // Gedeelde kern van de eenmalige "basistarieven"-vraag (wizard stap 3 en
@@ -42,17 +43,13 @@ export async function slaBasisTarievenOp(
 ): Promise<{ error: string } | { opgeslagen: BasisTarieven }> {
   const { arbeidStapEenheid, arbeidTarief, voorrijTarief, transportTarief } = invoer;
 
-  const huidig = await prisma.costSettings.findUnique({ where: { toolId } });
+  let huidig = await prisma.costSettings.findUnique({ where: { toolId } });
   const huidigeEenheid = huidig?.arbeidStapEenheid ?? "UUR";
-  if (arbeidStapEenheid !== huidigeEenheid) {
-    const metProductiviteit = await prisma.product.count({
-      where: { toolId, productiviteit: { not: null } },
-    });
-    if (metProductiviteit > 0) {
-      return {
-        error: `Je bestaande onderdelen rekenen al per ${huidigeEenheid.toLowerCase()}. Wijzig dat via Prijzen, dan pas je daar ook de productiviteit aan.`,
-      };
-    }
+  if (huidig && arbeidStapEenheid !== huidigeEenheid) {
+    // Wisselt de eenheid? Dan gaan de werktempo's van de onderdelen die de standaard volgen mee (de prijs blijft gelijk), in één transactie.
+    // De bevestigingsdialog staat in de schermen die dit aanroepen; hier gebeurt alleen de omzetting.
+    await prisma.$transaction((tx) => pasRekenEenheidToe(tx, companyId, toolId, arbeidStapEenheid));
+    huidig = await prisma.costSettings.findUnique({ where: { toolId } });
   }
 
   const tarieven = {

@@ -478,7 +478,7 @@ export function ProductForm({
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="productiviteit">
                   Hoeveel {unitLabel(effectieveEenheid)} doe je per{" "}
-                  {arbeidEenheidEnkelvoud(pricingSettings.arbeidStapEenheid)}?
+                  {arbeidEenheidEnkelvoud(product?.werktempoEenheid ?? pricingSettings.arbeidStapEenheid)}?
                 </Label>
                 <DecimalInput
                   id="productiviteit"

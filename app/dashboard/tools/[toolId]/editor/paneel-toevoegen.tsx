@@ -6,6 +6,8 @@ import { Ruler } from "lucide-react";
 import { Field } from "@/app/components/ui/field";
 import { Button } from "@/app/components/ui/button";
 import { useEditorRepository } from "./repository";
+import { useTarieven } from "../tarieven-context";
+import { STANDAARD_UREN } from "@/app/lib/werktempo";
 import { HOVENIER_PRESETS, presetNaarDraft, type HovenierPreset } from "@/app/lib/presets";
 import type { WerkzaamheidDraft } from "@/app/lib/werkzaamheid";
 import type { ArbeidStapEenheid } from "@/app/generated/prisma/client";
@@ -40,6 +42,8 @@ export function PaneelToevoegen({
   onToegevoegd: (productId: string, opties?: { focusNaam?: boolean }) => void;
 }) {
   const repo = useEditorRepository();
+  const { costSettings } = useTarieven();
+  const uren = { urenPerDagdeel: costSettings.urenPerDagdeel ?? STANDAARD_UREN.urenPerDagdeel, urenPerDag: costSettings.urenPerDag ?? STANDAARD_UREN.urenPerDag };
   const [bezig, setBezig] = useState<string | null>(null);
   const [fout, setFout] = useState<string | null>(null);
   const [bronTool, setBronTool] = useState(anderen[0]?.id ?? "");
@@ -85,7 +89,7 @@ export function PaneelToevoegen({
               <button
                 type="button"
                 disabled={bezig !== null}
-                onClick={() => maak(p.id, presetNaarDraft(p, stapEenheid), p.id)}
+                onClick={() => maak(p.id, presetNaarDraft(p, stapEenheid, uren), p.id)}
                 className="flex min-h-20 w-full cursor-pointer flex-col items-start gap-2 rounded-lg border-[1.5px] border-input bg-card p-3 text-left text-sm font-semibold text-foreground hover:bg-secondary disabled:opacity-60"
               >
                 <Icoon className="h-5 w-5 text-primary" aria-hidden="true" />

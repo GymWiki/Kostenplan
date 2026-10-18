@@ -122,6 +122,9 @@ export type WerkzaamheidDraft = {
   naam: string;
   methode: Methode | null;
   productiviteit: string;
+  // Eenheid van het werktempo (ook van het werktempo per materiaal): uur, dagdeel, dag; null = die van de rekentool.
+  // Ontbreekt (undefined) = niet aanraken bij opslaan (concepten van gasten kennen dit veld niet).
+  werktempoEenheid?: "UUR" | "DAGDEEL" | "DAG" | null;
   transportPerDag: boolean;
   bandbreedte: boolean;
   werktempoPerMateriaal: boolean;
@@ -177,6 +180,7 @@ export function draftVanProduct(product: ProductMetRelaties): WerkzaamheidDraft 
     naam: product.naam,
     methode: methodeVanProduct(product),
     productiviteit: naarTekst(product.productiviteit),
+    werktempoEenheid: product.werktempoEenheid ?? null,
     transportPerDag: product.transportPerDag,
     bandbreedte: (eerste?.materialen ?? []).some((m) => m.prijsType === "BANDBREEDTE"),
     werktempoPerMateriaal: (eerste?.materialen ?? []).some((m) => m.productiviteitOverride != null),
@@ -363,6 +367,7 @@ export function bouwPreviewProduct({
     eenheid: instelling ? instelling.eenheid : basis.eenheid,
     sjabloonConfig: (instelling ? instelling.sjabloonConfig : basis.sjabloonConfig) as Product["sjabloonConfig"],
     productiviteit: heeftProductiviteit(draft) ? parseGetal(draft.productiviteit, 0) : null,
+    werktempoEenheid: draft.werktempoEenheid !== undefined ? draft.werktempoEenheid : basis.werktempoEenheid,
     transportPerDag: draft.transportPerDag,
   };
 

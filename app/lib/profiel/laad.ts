@@ -21,7 +21,7 @@ export async function laadTarieven(company: Awaited<ReturnType<typeof laadProfie
   const kosten = toolId ? await getToolCostSettings(toolId, company) : null;
   const eenheid = kosten?.arbeidStapEenheid ?? "DAGDEEL";
   const tarief = kosten ? (eenheid === "UUR" ? kosten.arbeidTariefUur : eenheid === "DAG" ? kosten.arbeidTariefDag : kosten.arbeidTariefDagdeel) : 180;
-  return { eenheid, tarief, voorrij: kosten?.voorrijTarief ?? company.standaardVoorrijTarief, transport: kosten?.transportTarief ?? 0 };
+  return { eenheid, tarief, voorrij: kosten?.voorrijTarief ?? company.standaardVoorrijTarief, transport: kosten?.transportTarief ?? 0, urenPerDagdeel: company.urenPerDagdeel, urenPerDag: company.urenPerDag };
 }
 
 export async function laadAbonnementInvoer(company: Awaited<ReturnType<typeof laadProfiel>>["company"]) {

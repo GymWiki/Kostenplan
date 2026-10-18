@@ -13,6 +13,8 @@ import {
   type OpslaanResultaat,
   type TarievenResultaat,
 } from "@/app/lib/actions/werkzaamheden";
+import { wijzigProductEenheidAction } from "@/app/lib/actions/werktempo";
+import type { ProductEenheidInvoer } from "@/app/lib/werktempo-server";
 import type { ProductMetRelaties, WerkzaamheidDraft } from "@/app/lib/werkzaamheid";
 
 // Waar de editor zijn gegevens leest en schrijft. Eén editor, twee opslagplaatsen:
@@ -33,6 +35,8 @@ export interface EditorRepository {
   slaTarievenOp(toolId: string, invoer: { tarief: string; voorrij: string; transport: string }): Promise<TarievenResultaat>;
   // Alleen server: kopiëren uit een andere rekentool.
   kopieerWerkzaamheid?(bronProductId: string, doelToolId: string): Promise<{ ok: true; productId: string } | { ok: false; error: string }>;
+  // Alleen server: de eenheid van het werktempo van één onderdeel wijzigen (eenheid en omgerekend werktempo samen, in één keer).
+  wijzigWerktempoEenheid?(productId: string, invoer: ProductEenheidInvoer): Promise<{ ok: true } | { ok: false; error: string }>;
   // Alleen lokaal: de actuele onderdelen opnieuw opbouwen na een wijziging.
   laadProducten?(): ProductMetRelaties[];
 }
@@ -48,6 +52,7 @@ export const serverRepository: EditorRepository = {
   slaWeergaveOp: (toolId, config) => slaWeergaveOpAction(toolId, config),
   slaTarievenOp: (toolId, invoer) => saveTarievenAction(toolId, invoer),
   kopieerWerkzaamheid: (bron, doel) => kopieerWerkzaamheidAction(bron, doel),
+  wijzigWerktempoEenheid: (id, invoer) => wijzigProductEenheidAction(id, invoer),
 };
 
 const RepositoryContext = createContext<EditorRepository>(serverRepository);
