@@ -1,3 +1,4 @@
+import { renderTemplate } from "@/app/lib/sjabloon/render";
 import { formatCents, formatDatum } from "@/app/lib/offerte/weergave";
 import type { FactuurInhoud } from "./model";
 
@@ -78,7 +79,7 @@ export function bouwFactuurBericht(i: { inhoud: FactuurInhoud; totaalInclCenten:
     link: i.link,
     iban: a.iban,
   };
-  const tekst = sjabloon.replace(/\{(\w+)\}/g, (m, k: string) => waarden[k] ?? m);
+  const tekst = renderTemplate(sjabloon, waarden);
   const voor = { factuur: "Factuur", creditnota: "Creditnota", herinnering: "Betalingsherinnering factuur", aanmaning: "Aanmaning factuur", "laatste-herinnering": "Laatste herinnering factuur" }[i.soort];
   return { onderwerp: `${voor} ${f.nummer ?? ""} – ${a.handelsnaam}`.replace(/\s+/g, " ").trim(), tekst };
 }

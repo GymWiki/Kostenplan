@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { FileText, Trash2, Upload } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Field } from "@/app/components/ui/field";
+import { BerichtEditor } from "@/app/components/ui/bericht-editor";
 import { Input, Select, Textarea } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { saveOfferteGegevensAction, uploadVoorwaardenAction, verwijderVoorwaardenAction } from "@/app/lib/actions/offerte-gegevens";
@@ -396,20 +397,26 @@ export function OfferteGegevensFormulier({
           <fieldset className="flex flex-col gap-3">
             <legend className="mb-1 text-base font-bold text-foreground">Berichten bij het delen</legend>
             <p className="text-sm text-muted-foreground">
-              Zo klinkt het bericht als je een offerte via je eigen mail, WhatsApp of het deelmenu van je telefoon verstuurt. Je ziet en wijzigt het altijd nog voordat je het opent. Beschikbaar: {"{naam}"} {"{nummer}"} {"{onderwerp}"} {"{totaal}"} {"{geldigTot}"} {"{contactNaam}"} {"{handelsnaam}"} {"{link}"}.
+              Zo klinkt het bericht als je een offerte via je eigen mail, WhatsApp of het deelmenu van je telefoon verstuurt. Je ziet en wijzigt het altijd nog voordat je het opent.
             </p>
-            <Field label="Bericht bij een nieuwe offerte" htmlFor="og-deelTekst">
-              <Textarea id="og-deelTekst" className="min-h-44" value={g.deelTekst} onChange={(e) => zet("deelTekst", e.target.value)} />
-              <button type="button" className="w-fit text-sm font-semibold underline" onClick={() => zet("deelTekst", STANDAARD_DEELTEKST)}>
+            <div className="flex flex-col gap-2">
+              <BerichtEditor label="Bericht bij een nieuwe offerte" context="offerte" waarde={g.deelTekst} onChange={(t) => zet("deelTekst", t)} />
+              <button type="button" className="min-h-11 w-fit text-sm font-semibold underline" onClick={() => zet("deelTekst", STANDAARD_DEELTEKST)}>
                 Standaardtekst terugzetten
               </button>
-            </Field>
-            <Field label="Bericht bij een herinnering" htmlFor="og-herinneringTekst" hint="Je krijgt een tip om een herinnering te sturen als een offerte binnen 3 dagen verloopt of 7 dagen zonder reactie openstaat.">
-              <Textarea id="og-herinneringTekst" className="min-h-44" value={g.herinneringTekst} onChange={(e) => zet("herinneringTekst", e.target.value)} />
-              <button type="button" className="w-fit text-sm font-semibold underline" onClick={() => zet("herinneringTekst", STANDAARD_HERINNERINGSTEKST)}>
+            </div>
+            <div className="flex flex-col gap-2">
+              <BerichtEditor
+                label="Bericht bij een herinnering"
+                context="offerte"
+                waarde={g.herinneringTekst}
+                onChange={(t) => zet("herinneringTekst", t)}
+                hint="Je krijgt een tip om een herinnering te sturen als een offerte binnen 3 dagen verloopt of 7 dagen zonder reactie openstaat."
+              />
+              <button type="button" className="min-h-11 w-fit text-sm font-semibold underline" onClick={() => zet("herinneringTekst", STANDAARD_HERINNERINGSTEKST)}>
                 Standaardtekst terugzetten
               </button>
-            </Field>
+            </div>
           </fieldset>
           <fieldset className="flex flex-col gap-4">
             <legend className="mb-1 text-base font-bold text-foreground">Facturen</legend>
@@ -425,12 +432,12 @@ export function OfferteGegevensFormulier({
             <Field label="Betaaltermijn in dagen" htmlFor="og-factuurBetaaltermijnDagen" hint="De vervaldatum is de factuurdatum plus deze termijn. Per factuur aan te passen." error={fouten.factuurBetaaltermijnDagen}>
               <Input id="og-factuurBetaaltermijnDagen" inputMode="numeric" className="max-w-[10rem]" value={String(g.factuurBetaaltermijnDagen)} onChange={(e) => zet("factuurBetaaltermijnDagen", Number(e.target.value.replace(/\D/g, "")) || 0)} />
             </Field>
-            <Field label="Bericht bij het versturen van een factuur" htmlFor="og-factuurDeelTekst" hint="Beschikbaar: {naam} {nummer} {totaal} {vervaldatum} {iban} {handelsnaam} {contactNaam} {link}.">
-              <Textarea id="og-factuurDeelTekst" className="min-h-44" value={g.factuurDeelTekst} onChange={(e) => zet("factuurDeelTekst", e.target.value)} />
-              <button type="button" className="w-fit text-sm font-semibold underline" onClick={() => zet("factuurDeelTekst", STANDAARD_FACTUURTEKST)}>
+            <div className="flex flex-col gap-2">
+              <BerichtEditor label="Bericht bij het versturen van een factuur" context="factuur" waarde={g.factuurDeelTekst} onChange={(t) => zet("factuurDeelTekst", t)} />
+              <button type="button" className="min-h-11 w-fit text-sm font-semibold underline" onClick={() => zet("factuurDeelTekst", STANDAARD_FACTUURTEKST)}>
                 Standaardtekst terugzetten
               </button>
-            </Field>
+            </div>
           </fieldset>
         </>
       )}

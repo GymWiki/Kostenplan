@@ -1,5 +1,7 @@
 "use client";
 
+import { STANDAARD_AFWIJZING_TEKST } from "@/app/lib/werkgebied/afwijzingsmail";
+import { BerichtEditor } from "@/app/components/ui/bericht-editor";
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { Plus, Trash2 } from "lucide-react";
@@ -302,9 +304,17 @@ export function WerkgebiedFormulier({
                       <Field label="Onderwerp" htmlFor="wg-mail-onderwerp">
                         <input id="wg-mail-onderwerp" className="h-11 w-full rounded-md border-[1.5px] border-input bg-card px-3 text-base" value={w.afwijzingsmail.onderwerp} onChange={(e) => setW({ ...w, afwijzingsmail: { ...w.afwijzingsmail, onderwerp: e.target.value } })} placeholder="Je aanvraag bij {bedrijf}" />
                       </Field>
-                      <Field label="Tekst" htmlFor="wg-mail-tekst" hint="Gebruik {naam} en {bedrijf}.">
-                        <Textarea id="wg-mail-tekst" rows={5} value={w.afwijzingsmail.tekst} onChange={(e) => setW({ ...w, afwijzingsmail: { ...w.afwijzingsmail, tekst: e.target.value } })} placeholder={"Beste {naam},\n\nBedankt voor je aanvraag. Je adres ligt helaas buiten ons werkgebied. Neem gerust contact op, dan kijken we of we iets voor je kunnen doen.\n\nMet vriendelijke groet,\n{bedrijf}"} />
-                      </Field>
+                      <BerichtEditor
+                        label="Tekst"
+                        context="afwijzing"
+                        minHoogte="9rem"
+                        waarde={w.afwijzingsmail.tekst}
+                        onChange={(t) => setW({ ...w, afwijzingsmail: { ...w.afwijzingsmail, tekst: t } })}
+                        hint="Laat je het leeg, dan sturen we de standaardtekst."
+                      />
+                      <button type="button" className="min-h-11 w-fit text-sm font-semibold underline" onClick={() => setW({ ...w, afwijzingsmail: { ...w.afwijzingsmail, tekst: STANDAARD_AFWIJZING_TEKST } })}>
+                        Standaardtekst invullen
+                      </button>
                     </>
                   )}
                 </div>

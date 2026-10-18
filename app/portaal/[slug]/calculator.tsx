@@ -1,5 +1,6 @@
 "use client";
 
+import { renderTemplate } from "@/app/lib/sjabloon/render";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parseGetal as leesGetal } from "@/app/lib/getal";
 import { MAX_HOEVEELHEID } from "@/app/lib/pricing/rond";
@@ -218,7 +219,7 @@ export function Calculator({
   const toonPoweredBy = subscriptionTier === "GRATIS";
 
   const titel = branding?.customTitel?.trim()
-    ? branding.customTitel.replaceAll("{bedrijfsnaam}", bedrijfsnaam)
+    ? renderTemplate(branding.customTitel, { bedrijfsnaam })
     : null;
   const welkomstTekst = branding?.welkomstTekst?.trim() || null;
   const bedankTekst =
