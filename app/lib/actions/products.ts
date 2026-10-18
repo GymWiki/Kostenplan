@@ -252,6 +252,7 @@ export async function copyProductAction(formData: FormData) {
       sjabloon: origineel.sjabloon,
       sjabloonConfig: origineel.sjabloonConfig as Prisma.InputJsonValue,
       productiviteit: origineel.productiviteit,
+      werktempoEenheid: origineel.werktempoEenheid,
       arbeidTariefOverride: origineel.arbeidTariefOverride,
       transportkostenOverride: origineel.transportkostenOverride,
       transportMeeschalend: origineel.transportMeeschalend,

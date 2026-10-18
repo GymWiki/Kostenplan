@@ -1,3 +1,4 @@
+import { STANDAARD_UREN } from "@/app/lib/werktempo";
 import type { CalcCostSettings } from "@/app/lib/calculate";
 import type { WerkgebiedInstellingen } from "@/app/lib/werkgebied/schema";
 import { parsePostcodes } from "@/app/lib/werkgebied/postcodes";
@@ -25,6 +26,7 @@ export type BronProduct = {
   sjabloon?: "ENKELE_HOEVEELHEID" | "AFMETINGEN" | "RUIMTES" | "ARTIKELREGELS";
   sjabloonConfig?: unknown;
   productiviteit: number | null;
+  werktempoEenheid?: "UUR" | "DAGDEEL" | "DAG" | null;
   arbeidTariefOverride: number | null;
   transportkostenOverride: number | null;
   transportMeeschalend: boolean;
@@ -83,6 +85,8 @@ export function configVanProducten(producten: readonly BronProduct[], k: CalcCos
       arbeidEenheid: k.arbeidStapEenheid,
       arbeidTariefCenten: arbeidTariefVoorEenheid(k, k.arbeidStapEenheid) * 100,
       arbeidAfronden: k.arbeidAfronden,
+      urenPerDagdeel: k.urenPerDagdeel ?? STANDAARD_UREN.urenPerDagdeel,
+      urenPerDag: k.urenPerDag ?? STANDAARD_UREN.urenPerDag,
       transportEnabled: k.transportEnabled,
       transportTariefCenten: k.transportTarief * 100,
       voorrijEnabled: k.voorrijEnabled,
@@ -98,6 +102,7 @@ export function configVanProducten(producten: readonly BronProduct[], k: CalcCos
       eenheid: p.eenheid ?? "stuks",
       sjabloon: { soort: p.sjabloon ?? "ENKELE_HOEVEELHEID", config: (p.sjabloonConfig as Record<string, unknown> | null) ?? {} },
       werktempo: p.productiviteit != null && p.productiviteit > 0 ? p.productiviteit : null,
+      werktempoEenheid: p.werktempoEenheid ?? null,
       arbeidTariefOverrideCenten: cent(p.arbeidTariefOverride),
       transportOverrideCenten: cent(p.transportkostenOverride),
       transportMeeschalend: p.transportMeeschalend,

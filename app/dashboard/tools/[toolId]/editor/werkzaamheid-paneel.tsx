@@ -37,6 +37,8 @@ import {
   type WerkzaamheidDraft,
 } from "@/app/lib/werkzaamheid";
 import { berekenKostenOpbouw, prijsRange } from "@/app/lib/werkzaamheid-kosten";
+import { STANDAARD_UREN, effectieveEenheid } from "@/app/lib/werktempo";
+import { WerktempoEenheidKeuze } from "./werktempo-eenheid";
 import { useTarieven } from "../tarieven-context";
 import { useEditorRepository } from "./repository";
 import { KostenOpbouwKaart } from "../producten/editor/kosten-opbouw-kaart";
@@ -154,7 +156,14 @@ export function WerkzaamheidPaneel({
   const eenheid = preview.eenheid;
   const eenheidKort = kortEenheid(eenheid);
   const stap = costSettings.arbeidStapEenheid;
-  const woord = STAP_WOORD[stap].enkelvoud;
+  // Het werktempo staat in de eenheid van dit onderdeel (eigen keuze), anders in die van de rekentool; het tarief altijd in die van de rekentool.
+  const tempoEenheid = effectieveEenheid(draft.werktempoEenheid, stap);
+  const woord = STAP_WOORD[tempoEenheid].enkelvoud;
+  const tariefWoord = STAP_WOORD[stap].enkelvoud;
+  const uren = { urenPerDagdeel: costSettings.urenPerDagdeel ?? STANDAARD_UREN.urenPerDagdeel, urenPerDag: costSettings.urenPerDag ?? STANDAARD_UREN.urenPerDag };
+  const eenheidKeuze = (
+    <WerktempoEenheidKeuze productId={product.id} naam={draft.naam} draft={draft} setDraft={setDraft} globaal={stap} uren={uren} eenheidKort={kortEenheid(preview.eenheid)} onFout={setFout} />
+  );
   const voorbeeldHoeveelheid = voorbeeldHoeveelheidVoor(eenheid);
   const opbouw = useMemo(
     () => berekenKostenOpbouw({ product: preview, optieId: null, hoeveelheid: voorbeeldHoeveelheid, costSettings }),
@@ -221,7 +230,8 @@ export function WerkzaamheidPaneel({
   const tempoGetal = Number(String(draft.productiviteit).replace(",", ".")) || 0;
   const tempoBlok = (
     <div className="flex flex-col gap-3">
-      <p className="text-base text-foreground">{arbeidVraag(draft.naam, eenheid, stap)}</p>
+      {eenheidKeuze}
+      <p className="text-base text-foreground">{arbeidVraag(draft.naam, eenheid, tempoEenheid)}</p>
       <Stepper
         label={`Werktempo ${eenheidKort} per ${woord}`}
         waarde={tempoGetal}
@@ -232,7 +242,7 @@ export function WerkzaamheidPaneel({
       />
       <p className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg bg-muted px-3 py-2.5 text-sm text-foreground">
         <span>
-          Je rekent <strong>{formatCurrency(opbouw.arbeidTarief)}</strong> per {woord}.
+          Je rekent <strong>{formatCurrency(opbouw.arbeidTarief)}</strong> per {tariefWoord}.
         </span>
         <button type="button" onClick={openTarieven} className="min-h-11 cursor-pointer font-semibold underline">
           Wijzigen
@@ -485,7 +495,8 @@ export function WerkzaamheidPaneel({
 
       <SectionCard icon={Clock} title="Werktempo" description="Los van het materiaal.">
         <div className="flex flex-col gap-3">
-          <Field label={arbeidVraag(draft.naam, eenheid, stap)} htmlFor="wz-tempo">
+          {eenheidKeuze}
+          <Field label={arbeidVraag(draft.naam, eenheid, tempoEenheid)} htmlFor="wz-tempo">
             <UnitInput
               id="wz-tempo"
               suffix={`${eenheidKort} per ${woord}`}
@@ -496,7 +507,7 @@ export function WerkzaamheidPaneel({
           </Field>
           <p className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg bg-muted px-3 py-2.5 text-sm text-foreground">
             <span>
-              Je rekent <strong>{formatCurrency(opbouw.arbeidTarief)}</strong> per {woord}.
+              Je rekent <strong>{formatCurrency(opbouw.arbeidTarief)}</strong> per {tariefWoord}.
             </span>
             <button type="button" onClick={openTarieven} className="min-h-11 cursor-pointer font-semibold underline">
               Wijzigen

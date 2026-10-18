@@ -332,6 +332,11 @@ model Company {
   standaardVoorrijTarief   Float @default(35)
   standaardBtwPercentage   Float @default(21)
 
+  // Wat een dagdeel en een dag in uren zijn (voor het werktempo per product in uur/dagdeel/dag, zie app/lib/werktempo.ts).
+  // Per hovenier instelbaar; de standaard is wat de rekentool altijd al aannam (dagdeel = 4 uur, dag = 8 uur).
+  urenPerDagdeel Float @default(4)
+  urenPerDag     Float @default(8)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -666,6 +671,9 @@ model Product {
   // CostSettings.arbeidStapEenheid (bijv. 5 m schutting per dagdeel). Leeg
   // betekent dat dit product geen arbeidstijd kost.
   productiviteit       Float?
+  // In welke eenheid `productiviteit` (en het werktempo per materiaal) staat: uur, dagdeel of dag. Leeg = volg de eenheid van de
+  // rekentool (CostSettings.arbeidStapEenheid). Niet te verwarren met `eenheid` hierboven (m², stuks, …).
+  werktempoEenheid     ArbeidStapEenheid?
   // Vervangt het company-tarief (CostSettings.arbeidTariefUur/Dagdeel/Dag,
   // welke van de drie hangt af van arbeidStapEenheid) voor dit product.
   // Leeg = gebruik het tarief uit Kosteninstellingen.

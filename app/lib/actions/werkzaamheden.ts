@@ -57,6 +57,7 @@ export async function saveWerkzaamheidAction(
       data: {
         naam: draft.naam.trim(),
         productiviteit: tempo > 0 ? tempo : null,
+        ...(draft.werktempoEenheid !== undefined ? { werktempoEenheid: draft.werktempoEenheid } : {}),
         transportPerDag: draft.transportPerDag,
         ...(instelling
           ? {

@@ -1,6 +1,10 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
+import { BevestigDialoog } from "@/app/components/ui/bevestig-dialoog";
+import { EenheidWisselUitleg } from "@/app/components/dashboard/eenheid-wissel-uitleg";
+import { previewRekenEenheidAction, wijzigRekenEenheidAction, type RekenEenheidSamenvatting } from "@/app/lib/actions/werktempo";
 import {
   updateCostSettingsAction,
   type CostSettingsFormState,
@@ -43,6 +47,34 @@ export function CostSettingsForm({
     CostSettingsFormState,
     FormData
   >(updateCostSettingsAction.bind(null, toolId), null);
+
+  const router = useRouter();
+  // De eenheid wisselen gaat met een bevestigingsdialog: het werktempo van de onderdelen wordt omgerekend, de prijs blijft gelijk.
+  const [wissel, setWissel] = useState<{ naar: ArbeidStapEenheid; tools: RekenEenheidSamenvatting[] } | null>(null);
+  const [wisselBezig, setWisselBezig] = useState(false);
+  const [wisselFout, setWisselFout] = useState<string | null>(null);
+  async function kiesEenheid(naar: ArbeidStapEenheid) {
+    if (naar === costSettings.arbeidStapEenheid) return;
+    const r = await previewRekenEenheidAction(toolId, naar);
+    if (!r.ok) {
+      setWisselFout(r.error);
+      return;
+    }
+    setWisselFout(null);
+    setWissel({ naar, tools: r.tools });
+  }
+  async function bevestigEenheid() {
+    if (!wissel) return;
+    setWisselBezig(true);
+    const r = await wijzigRekenEenheidAction(toolId, wissel.naar);
+    setWisselBezig(false);
+    if (!r.ok) {
+      setWisselFout(r.error);
+      return;
+    }
+    setWissel(null);
+    router.refresh();
+  }
 
   const [arbeidOn, setArbeidOn] = useState(costSettings.arbeidEnabled);
   const [arbeidStapEenheid, setArbeidStapEenheid] = useState<ArbeidStapEenheid>(
@@ -95,7 +127,7 @@ export function CostSettingsForm({
             id="arbeidStapEenheid"
             name="arbeidStapEenheid"
             value={arbeidStapEenheid}
-            onChange={(e) => setArbeidStapEenheid(e.target.value as ArbeidStapEenheid)}
+            onChange={(e) => void kiesEenheid(e.target.value as ArbeidStapEenheid)}
           >
             <option value="UUR">Uren</option>
             <option value="DAGDEEL">Dagdelen</option>
@@ -103,8 +135,7 @@ export function CostSettingsForm({
           </Select>
         </Field>
         <p className="text-xs text-muted-foreground">
-          Nieuwe onderdelen gebruiken standaard dit tarief. Vul voor de zekerheid alle drie de
-          tarieven in — een onderdeel kan altijd in een andere eenheid rekenen dan hierboven gekozen.
+          Nieuwe onderdelen gebruiken standaard dit tarief en rekenen hun werktempo in de gekozen eenheid; een onderdeel kan daar zelf van afwijken. Wat een dagdeel en een dag in uren zijn, stel je in bij Profiel → Tarieven ({accountDefaults.urenPerDagdeel} en {accountDefaults.urenPerDag} uur).
         </p>
         <div className="grid gap-4 sm:grid-cols-3">
           <AccountDefaultField
@@ -354,6 +385,9 @@ export function CostSettingsForm({
           {pending ? "Opslaan…" : "Instellingen opslaan"}
         </Button>
       </div>
+      <BevestigDialoog open={wissel !== null} titel="Rekenen met een andere eenheid?" onBevestig={() => void bevestigEenheid()} onAnnuleer={() => { setWissel(null); setWisselFout(null); }} bezig={wisselBezig} fout={wisselFout}>
+        {wissel && <EenheidWisselUitleg naar={wissel.naar} tools={wissel.tools} />}
+      </BevestigDialoog>
     </form>
   );
 }

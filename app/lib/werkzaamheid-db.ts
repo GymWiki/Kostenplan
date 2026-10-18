@@ -24,6 +24,7 @@ export function valideerDraft(d: WerkzaamheidDraft): string | null {
   const extraFouten = valideerExtras(d);
   if (extraFouten.length > 0) return extraFouten[0].melding;
   if ((d.extras?.length ?? 0) > 50) return "Er zijn te veel extra's.";
+  if (d.werktempoEenheid != null && !["UUR", "DAGDEEL", "DAG"].includes(d.werktempoEenheid)) return "Kies uur, dagdeel of dag.";
   const tempo = parseGetal(d.productiviteit, 0);
   if (d.productiviteit.trim() !== "" && (!(tempo >= 0) || Number.isNaN(parseGetal(d.productiviteit, NaN)))) {
     return "Vul bij arbeid een getal in.";
@@ -68,6 +69,7 @@ export function productCreateData(
     sjabloon: instelling.sjabloon,
     sjabloonConfig: instelling.sjabloonConfig as Prisma.InputJsonValue,
     productiviteit: tempo > 0 ? tempo : null,
+    werktempoEenheid: draft.werktempoEenheid ?? null,
     transportPerDag: draft.transportPerDag,
     actief: opties.actief ?? true,
     order,

@@ -11,6 +11,7 @@ import { UnitInput } from "@/app/components/ui/unit-input";
 import { useEditorRepository } from "./editor/repository";
 import { arbeidTariefVoorStapEenheid } from "@/app/lib/calculate";
 import { STAP_WOORD } from "@/app/lib/werkzaamheid";
+import type { UrenConfig } from "@/app/lib/werktempo";
 import type { CostSettings } from "@/app/generated/prisma/client";
 
 // De tarieven van deze rekentool (al opgelost met de bedrijfsstandaarden),
@@ -18,7 +19,8 @@ import type { CostSettings } from "@/app/generated/prisma/client";
 // wijziging via "Mijn tarieven" overal direct doorwerkt in de berekeningen.
 type Ctx = {
   toolId: string;
-  costSettings: CostSettings;
+  // Met de uren-definities van de hovenier (ontbreken ze, zoals bij een gast, dan gelden 4 en 8 uur).
+  costSettings: CostSettings & Partial<UrenConfig>;
   tarief: number;
   openTarieven: () => void;
 };
@@ -37,7 +39,7 @@ export function TarievenProvider({
   children,
 }: {
   toolId: string;
-  costSettings: CostSettings;
+  costSettings: CostSettings & Partial<UrenConfig>;
   children: React.ReactNode;
 }) {
   const router = useRouter();

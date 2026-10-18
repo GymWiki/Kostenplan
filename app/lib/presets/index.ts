@@ -1,5 +1,5 @@
 import type { ArbeidStapEenheid, ProductSjabloon } from "@/app/generated/prisma/client";
-import { DAGDELEN_PER_DAG, UREN_PER_DAG } from "@/app/lib/calculate";
+import { STANDAARD_UREN, convertWerktempo, type UrenConfig } from "@/app/lib/werktempo";
 import { HOVENIER_PRESETS } from "./hovenier";
 import type { HovenierPreset, Rekenmethode } from "./types";
 import type { Methode, WerkzaamheidDraft } from "@/app/lib/werkzaamheid";
@@ -26,11 +26,10 @@ export function presetById(id: string): HovenierPreset | undefined {
 // rekent de standaardproductiviteit om naar die gekozen eenheid.
 export function productiviteitVoorStapEenheid(
   preset: HovenierPreset,
-  stapEenheid: ArbeidStapEenheid
+  stapEenheid: ArbeidStapEenheid,
+  uren: UrenConfig = STANDAARD_UREN
 ): number {
-  const factor =
-    stapEenheid === "DAG" ? 1 : stapEenheid === "DAGDEEL" ? 1 / DAGDELEN_PER_DAG : 1 / UREN_PER_DAG;
-  return Math.round(preset.productiviteitPerDag * factor * 100) / 100;
+  return Math.round(convertWerktempo(preset.productiviteitPerDag, "DAG", stapEenheid, uren) * 100) / 100;
 }
 
 // "Eigen werkzaamheid": de uitweg voor alles wat niet in de presets staat.
@@ -102,9 +101,9 @@ const REKENMETHODE_NAAR_METHODE: Record<Rekenmethode, Methode> = {
 // Startpunt van de wizard: de preset als WerkzaamheidDraft, met voorbeeldprijzen
 // (isVoorbeeld) en het werktempo omgerekend naar de arbeidseenheid van de
 // hovenier. "Iets anders" (eigen) begint leeg.
-export function presetNaarDraft(preset: HovenierPreset, stapEenheid: ArbeidStapEenheid): WerkzaamheidDraft {
+export function presetNaarDraft(preset: HovenierPreset, stapEenheid: ArbeidStapEenheid, uren: UrenConfig = STANDAARD_UREN): WerkzaamheidDraft {
   const eigen = preset.id === EIGEN_WERKZAAMHEID.id;
-  const tempo = eigen ? 0 : productiviteitVoorStapEenheid(preset, stapEenheid);
+  const tempo = eigen ? 0 : productiviteitVoorStapEenheid(preset, stapEenheid, uren);
   return {
     naam: eigen ? "" : preset.naam,
     methode: eigen ? null : REKENMETHODE_NAAR_METHODE[preset.rekenmethode],

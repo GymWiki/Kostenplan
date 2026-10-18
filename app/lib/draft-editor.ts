@@ -1,4 +1,4 @@
-import { DAGDELEN_PER_DAG, UREN_PER_DAG } from "@/app/lib/calculate";
+import { convertTarief } from "@/app/lib/werktempo";
 import { HOVENIER_PRESETS, presetById, presetNaarDraft, type HovenierPreset } from "@/app/lib/presets";
 import { bouwPreviewProduct, type ProductMetRelaties, type WerkzaamheidDraft } from "@/app/lib/werkzaamheid";
 import { nieuweId } from "@/app/lib/draft-id";
@@ -67,9 +67,9 @@ export function draftNaarKosten(draft: Draft): CostSettings {
     arbeidZichtbaar: true,
     arbeidStapEenheid: "DAGDEEL",
     gebruiktAccountArbeidTarief: false,
-    arbeidTariefUur: Math.round(((draft.tarieven.tarief * DAGDELEN_PER_DAG) / UREN_PER_DAG) * 100) / 100,
+    arbeidTariefUur: Math.round(convertTarief(draft.tarieven.tarief, "DAGDEEL", "UUR") * 100) / 100,
     arbeidTariefDagdeel: draft.tarieven.tarief,
-    arbeidTariefDag: draft.tarieven.tarief * DAGDELEN_PER_DAG,
+    arbeidTariefDag: convertTarief(draft.tarieven.tarief, "DAGDEEL", "DAG"),
     arbeidAfronden: false,
     transportEnabled: true,
     transportZichtbaar: true,

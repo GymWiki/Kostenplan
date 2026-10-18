@@ -50,6 +50,8 @@ export const onderdeelSchema = z.object({
   sjabloon: z.object({ soort: z.enum(SJABLOON_SOORTEN), config: z.record(z.string(), z.unknown()).default({}) }).default({ soort: "ENKELE_HOEVEELHEID", config: {} }),
   // Hoeveelheid per arbeidseenheid (in de eenheid van het onderdeel). null = geen arbeid.
   werktempo: getal.positive().nullable().default(null),
+  // In welke eenheid het werktempo (en het werktempo per materiaal) staat. null = de eenheid van de rekentool (tarieven.arbeidEenheid).
+  werktempoEenheid: z.enum(ARBEID_EENHEDEN).nullable().default(null),
   arbeidTariefOverrideCenten: prijs.nullable().default(null),
   transportOverrideCenten: prijs.nullable().default(null),
   transportMeeschalend: z.boolean().default(false),
@@ -65,6 +67,9 @@ export const tarievenSchema = z.object({
   arbeidEnabled: z.boolean().default(true),
   arbeidEenheid: z.enum(ARBEID_EENHEDEN).default("DAGDEEL"),
   arbeidTariefCenten: prijs.default(0),
+  // Wat een dagdeel en een dag in uren zijn (per hovenier instelbaar); de interne basis van de arbeidsberekening zijn uren.
+  urenPerDagdeel: z.number().finite().positive().max(24).default(4),
+  urenPerDag: z.number().finite().positive().max(24).default(8),
   // Arbeidstijd naar boven afronden op hele arbeidseenheden.
   arbeidAfronden: z.boolean().default(false),
   transportEnabled: z.boolean().default(true),

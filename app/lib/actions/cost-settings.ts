@@ -69,10 +69,14 @@ export async function updateCostSettingsAction(
     gebruiktAccountBtw: formData.get("gebruiktAccountBtw") === "on",
   };
 
+  // De eenheid van de rekentool wisselt niet via dit formulier: dat gaat met een bevestigingsdialog (wijzigRekenEenheidAction), omdat
+  // dan ook de werktempo's van de onderdelen worden omgerekend. Een formulier dat een andere eenheid meestuurt, wijzigt hem dus niet.
+  const { arbeidStapEenheid, ...zonderEenheid } = data;
+  const bestaat = await prisma.costSettings.findUnique({ where: { toolId }, select: { id: true } });
   await prisma.costSettings.upsert({
     where: { toolId },
     create: { toolId, ...data },
-    update: data,
+    update: bestaat ? zonderEenheid : { arbeidStapEenheid, ...zonderEenheid },
   });
 
   revalidatePath(`/dashboard/tools/${toolId}/prijzen`);

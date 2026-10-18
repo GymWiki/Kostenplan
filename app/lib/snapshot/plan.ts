@@ -34,6 +34,8 @@ const COMPANY_VELDEN = new Set([
   "standaardArbeidTariefUur",
   "standaardVoorrijTarief",
   "standaardBtwPercentage",
+  "urenPerDagdeel",
+  "urenPerDag",
   "werkgebied",
   "subscriptionTier",
   "overrideTier",

@@ -368,6 +368,7 @@ export async function duplicateToolAction(formData: FormData) {
           sjabloon: product.sjabloon,
           sjabloonConfig: product.sjabloonConfig as Prisma.InputJsonValue,
           productiviteit: product.productiviteit,
+          werktempoEenheid: product.werktempoEenheid,
           arbeidTariefOverride: product.arbeidTariefOverride,
           transportkostenOverride: product.transportkostenOverride,
           transportMeeschalend: product.transportMeeschalend,

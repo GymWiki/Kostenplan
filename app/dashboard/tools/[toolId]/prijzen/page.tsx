@@ -44,12 +44,16 @@ export default async function PrijzenPage({
         </p>
       </div>
       <CostSettingsForm
+        // Nieuw formulier zodra de eenheid of de tarieven veranderen (bijv. na het omrekenen), zodat de velden de actuele waarden tonen.
+        key={`${costSettings?.arbeidStapEenheid}-${costSettings?.arbeidTariefUur}-${costSettings?.arbeidTariefDagdeel}-${costSettings?.arbeidTariefDag}`}
         toolId={toolId}
         costSettings={costSettings ?? (await prisma.costSettings.create({ data: { toolId } }))}
         accountDefaults={{
           standaardArbeidTariefUur: company.standaardArbeidTariefUur,
           standaardVoorrijTarief: company.standaardVoorrijTarief,
           standaardBtwPercentage: company.standaardBtwPercentage,
+          urenPerDagdeel: company.urenPerDagdeel,
+          urenPerDag: company.urenPerDag,
         }}
         productCounts={{ totaal, arbeidOverrides, transportOverrides, voorrijOverrides }}
       />

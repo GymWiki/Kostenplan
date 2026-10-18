@@ -117,9 +117,13 @@ export async function kopieerWerkzaamheidAction(
   const { company, tool } = await requireActiveTool(doelToolId);
   const bron = await prisma.product.findFirst({
     where: { id: bronProductId, tool: { companyId: company.id, deletedAt: null } },
-    include: { materiaalCategorieen: { include: { materialen: true } }, extraOpties: true },
+    include: { materiaalCategorieen: { include: { materialen: true } }, extraOpties: true, tool: { select: { costSettings: { select: { arbeidStapEenheid: true } } } } },
   });
   if (!bron) return { ok: false, error: "Dit onderdeel bestaat niet meer." };
+  // Rekent de andere rekentool in een andere eenheid? Dan houdt het gekopieerde onderdeel zijn eigen eenheid, zodat zijn werktempo niets anders gaat betekenen.
+  const doelEenheid = (await prisma.costSettings.findUnique({ where: { toolId: doelToolId }, select: { arbeidStapEenheid: true } }))?.arbeidStapEenheid ?? "UUR";
+  const bronEenheid = bron.werktempoEenheid ?? bron.tool.costSettings?.arbeidStapEenheid ?? "UUR";
+  const kopieEenheid = bronEenheid === doelEenheid ? null : bronEenheid;
 
   const limiet = PLAN_LIMITS[effectiveTier(company)].maxProductsPerCompany;
   if (limiet !== null && (await prisma.product.count({ where: { tool: { companyId: company.id } } })) >= limiet) {
@@ -135,6 +139,7 @@ export async function kopieerWerkzaamheidAction(
       sjabloon: bron.sjabloon,
       sjabloonConfig: bron.sjabloonConfig as Prisma.InputJsonValue,
       productiviteit: bron.productiviteit,
+      werktempoEenheid: kopieEenheid,
       arbeidTariefOverride: bron.arbeidTariefOverride,
       transportkostenOverride: bron.transportkostenOverride,
       transportMeeschalend: bron.transportMeeschalend,
