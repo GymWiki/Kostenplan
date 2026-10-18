@@ -156,12 +156,15 @@ export function LeadsView({
   const selectedLead = optimisticLeads.find((lead) => lead.id === selectedLeadId) ?? null;
 
   const opToolLeads = useMemo(() => (toolFilter === "alle" ? optimisticLeads : optimisticLeads.filter((lead) => lead.toolId === toolFilter)), [optimisticLeads, toolFilter]);
+  // ?status=nieuw: alleen aanvragen met status Nieuw (hetzelfde aantal als de badge op de rekentoolkaart).
+  const nieuwFilter = statusParam === "nieuw";
   const zichtbareLeads = useMemo(() => {
     const opTool = faseFilter === "alle" ? opToolLeads : opToolLeads.filter((lead) => valtOnderFilter(lead.voortgang, faseFilter));
     const opOfferte = offerteFilter === "alle" ? opTool : opTool.filter((lead) => leadOfferteStatus(lead).sleutel === offerteFilter);
     const soort = MARKERING_FILTER_OPTIES.find((o) => o.waarde === markeringFilter)?.soort ?? null;
-    return soort ? opOfferte.filter((lead) => leadMarkeringen(lead.snapshot).includes(soort)) : opOfferte;
-  }, [opToolLeads, faseFilter, offerteFilter, markeringFilter]);
+    const opMarkering = soort ? opOfferte.filter((lead) => leadMarkeringen(lead.snapshot).includes(soort)) : opOfferte;
+    return nieuwFilter ? opMarkering.filter((lead) => lead.status === "NIEUW") : opMarkering;
+  }, [opToolLeads, faseFilter, offerteFilter, markeringFilter, nieuwFilter]);
   // Het filter verschijnt pas als er iets te filteren valt.
   const toonMarkeringFilter = useMemo(() => optimisticLeads.some((lead) => leadMarkeringen(lead.snapshot).length > 0), [optimisticLeads]);
 
@@ -209,8 +212,26 @@ export function LeadsView({
       <Link href="/dashboard/facturen" className="inline-flex min-h-11 items-center self-start text-sm font-semibold text-primary underline-offset-2 hover:underline">Alle facturen en export</Link>
     </div>
   );
+  // Filters die vanaf een link (rekentoolkaart, Vandaag) zijn gezet: altijd zichtbaar, met één knop om ze te wissen.
+  const gekozenTool = tools.find((t) => t.id === toolFilter);
+  const actieveFilters = [nieuwFilter ? "nieuwe aanvragen" : null, gekozenTool ? `rekentool ${gekozenTool.naam}` : null].filter((t): t is string => t !== null);
   return (
     <div className="flex flex-col gap-6">
+      {actieveFilters.length > 0 && (
+        <div data-testid="actief-filter" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg border border-primary/30 bg-primary/5 px-4 py-1">
+          <p className="min-w-0 text-sm font-medium text-foreground">
+            <span className="text-muted-foreground">Filter actief: </span>
+            {actieveFilters.join(" · ")}
+          </p>
+          <button
+            type="button"
+            onClick={() => updateQuery({ status: null, tool: null })}
+            className="inline-flex min-h-11 cursor-pointer items-center rounded-md px-2 text-sm font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Wis filter
+          </button>
+        </div>
+      )}
       <div className="md:hidden">{chips}</div>
       <LeadsMobiel
         leads={zichtbareLeads}
@@ -335,9 +356,11 @@ export function LeadsView({
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Users className="h-6 w-6" />
             </span>
-            <p className="font-medium text-foreground">Nog geen leads</p>
+            <p className="font-medium text-foreground">{nieuwFilter ? "Geen nieuwe aanvragen" : "Nog geen leads"}</p>
             <p className="max-w-sm text-sm text-muted-foreground">
-              {toolFilter === "alle"
+              {nieuwFilter
+                ? "Alle aanvragen zijn al opgepakt. Wis het filter om alles te zien."
+                : toolFilter === "alle"
                 ? "Zodra een bezoeker via je rekentool een offerte aanvraagt, verschijnt die hier."
                 : "Deze rekentool heeft nog geen leads."}
             </p>

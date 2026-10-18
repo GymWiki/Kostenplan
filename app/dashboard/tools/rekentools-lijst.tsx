@@ -151,24 +151,38 @@ export function RekentoolsLijst({
   );
 }
 
+// Eén kaart per rekentool. De kaart is een <div> met een uitgerekte link (de naam) naar de editor; de badge met nieuwe
+// aanvragen is een eigen link erboven, zodat er nooit een link in een link zit.
 function KaartMobiel({ tool }: { tool: RekentoolKaartData }) {
   return (
-    <Link href={`/dashboard/tools/${tool.id}`} className="flex min-h-20 items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+    <div data-kaart={tool.id} className="relative flex min-h-20 items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-lg font-semibold text-foreground">{tool.naam}</span>
+        <Link href={`/dashboard/tools/${tool.id}`} className="block truncate text-lg font-semibold text-foreground outline-none after:absolute after:inset-0 after:rounded-xl after:content-['']">
+          {tool.naam}
+        </Link>
         <span className="mt-1 flex flex-wrap items-center gap-2">
           <Badge variant={tool.live ? "success" : "muted"}>{tool.live ? "Live" : "Concept"}</Badge>
           <span className="text-sm text-muted-foreground">
             {tool.aantalWerkzaamheden} {tool.aantalWerkzaamheden === 1 ? "onderdeel" : "onderdelen"}
           </span>
+          <NieuweAanvragenBadge toolId={tool.id} naam={tool.naam} aantal={tool.nieuweLeads} />
         </span>
       </span>
-      {tool.nieuweLeads > 0 && (
-        <span className="shrink-0 rounded-full bg-primary px-2.5 py-1 text-sm font-bold text-primary-foreground">
-          {tool.nieuweLeads} nieuw
-        </span>
-      )}
       <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+    </div>
+  );
+}
+
+// "2 nieuwe aanvragen": link naar de aanvragen van deze rekentool die nog nieuw zijn. Raakvlak minimaal 44 px hoog.
+function NieuweAanvragenBadge({ toolId, naam, aantal }: { toolId: string; naam: string; aantal: number }) {
+  if (aantal <= 0) return null;
+  return (
+    <Link
+      href={`/dashboard/leads?status=nieuw&tool=${toolId}`}
+      aria-label={`Bekijk ${meervoud(aantal, "nieuwe aanvraag", "nieuwe aanvragen")} van ${naam}`}
+      className="relative z-10 inline-flex min-h-11 items-center rounded-full bg-primary px-3.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    >
+      {meervoud(aantal, "nieuwe aanvraag", "nieuwe aanvragen")}
     </Link>
   );
 }
@@ -201,7 +215,7 @@ function Kaart({ tool, magDupliceren, onVerwijderd }: { tool: RekentoolKaartData
   }
 
   return (
-    <Card className="flex h-full flex-col">
+    <Card data-kaart={tool.id} className="relative flex h-full flex-col focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">
       <CardContent className="flex flex-1 flex-col gap-4">
         {modus === "hernoem" ? (
           <form onSubmit={hernoem} className="flex flex-col gap-2">
@@ -225,10 +239,14 @@ function Kaart({ tool, magDupliceren, onVerwijderd }: { tool: RekentoolKaartData
           </form>
         ) : (
           <div className="flex items-start gap-2">
-            <h2 className="min-w-0 flex-1 break-words text-lg font-semibold text-foreground">{naam}</h2>
+            <h2 className="min-w-0 flex-1 break-words text-lg font-semibold text-foreground">
+              <Link href={`/dashboard/tools/${tool.id}`} className="outline-none after:absolute after:inset-0 after:rounded-xl after:content-['']">
+                {naam}
+              </Link>
+            </h2>
             <DropdownMenu
               ariaLabel={`Meer acties voor ${naam}`}
-              className="h-11 w-11"
+              className="relative z-10 h-11 w-11"
               items={[
                 { label: "Naam wijzigen", icon: Pencil, onSelect: () => { setTekst(naam); setModus("hernoem"); } },
                 {
@@ -285,23 +303,24 @@ function Kaart({ tool, magDupliceren, onVerwijderd }: { tool: RekentoolKaartData
             {meervoud(tool.aantalWerkzaamheden, "onderdeel", "onderdelen")}
           </span>
           <Badge variant={tool.live ? "success" : "muted"}>{tool.live ? "Live op je website" : "Nog niet op je website"}</Badge>
+          <NieuweAanvragenBadge toolId={tool.id} naam={naam} aantal={tool.nieuweLeads} />
         </div>
 
         {tool.statistiek && tool.live && <Statistiek stat={tool.statistiek} naam={naam} />}
 
         <Link
           href={`/dashboard/leads?tool=${tool.id}`}
-          className="inline-flex min-h-11 w-fit items-center rounded-md text-sm font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="relative z-10 inline-flex min-h-11 w-fit items-center rounded-md text-sm font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          {tool.leadsDezeMaand} {tool.leadsDezeMaand === 1 ? "nieuwe lead" : "nieuwe leads"} deze maand
+          {meervoud(tool.leadsDezeMaand, "aanvraag", "aanvragen")} deze maand
         </Link>
 
         <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-border pt-3">
-          <LinkButton href={`/dashboard/tools/${tool.id}`} className="h-11">
+          <LinkButton href={`/dashboard/tools/${tool.id}`} className="relative z-10 h-11">
             Openen
           </LinkButton>
           {tool.live && (
-            <LinkButton href={tool.toolUrl} target="_blank" variant="ghost" className="h-11">
+            <LinkButton href={tool.toolUrl} target="_blank" variant="ghost" className="relative z-10 h-11">
               <ExternalLink className="h-4 w-4" aria-hidden="true" /> Bekijken
             </LinkButton>
           )}
@@ -365,7 +384,7 @@ function Statistiek({ stat, naam }: { stat: ToolStatistiek; naam: string }) {
         <span className="font-semibold text-foreground">Laatste 30 dagen:</span> {meervoud(stat.bezoekers, "bezoeker", "bezoekers")} · {meervoud(stat.toevoegingen, "onderdeel toegevoegd", "onderdelen toegevoegd")} · {meervoud(stat.aanvragen, "aanvraag", "aanvragen")}
       </p>
       {stat.perWeergave.length > 1 && (
-        <details>
+        <details className="relative z-10">
           <summary className="min-h-11 cursor-pointer py-2.5 font-semibold text-foreground">Per weergave</summary>
           <table className="w-full text-left">
             <caption className="sr-only">Bezoekers, toevoegingen en aanvragen per weergave van {naam}, laatste 30 dagen</caption>
