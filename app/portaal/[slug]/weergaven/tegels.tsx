@@ -11,7 +11,7 @@ import { onderdeelIsGeldig, onderdeelInclCenten } from "@/app/lib/weergave/bedra
 import type { PricingResult } from "@/app/lib/pricing/engine";
 import { Bewerkbaar } from "../bewerkbaar";
 import type { ProductWithDetails } from "../calculator";
-import { MERKKNOP, OnderdeelIcoon, Vinkje, planSamenvatting, VasteBalk, type Configurator } from "./gedeeld";
+import { MERKKNOP, OnderdeelIcoon, ToevoegFab, Vinkje, planSamenvatting, VasteBalk, type Configurator } from "./gedeeld";
 import type { ZichtbaarGebied } from "./host-viewport";
 
 type TegelsProps = {
@@ -161,6 +161,14 @@ export function TegelsWeergave(p: TegelsProps) {
         <Overlay open onClose={sluit} ariaLabel={geopend.naam} portalDoel={p.portalDoel} zichtbaarGebied={p.zichtbaar} backdropClassName="bg-black/50">
           <div className="absolute inset-x-0 bottom-0 flex max-h-[90%] flex-col overflow-hidden rounded-t-2xl border border-border bg-card shadow-xl">
             <PaneelInhoud {...p} product={geopend} onSluit={sluit} inDialoog />
+            <ToevoegFab
+              label={p.toegevoegd.includes(geopend.id) ? "Klaar" : p.wc.toevoegTekst}
+              disabled={!onderdeelIsGeldig(p.resultaatLive, geopend.id)}
+              onClick={() => {
+                p.onToevoegen(geopend.id);
+                sluit();
+              }}
+            />
           </div>
         </Overlay>
       )}
@@ -218,7 +226,8 @@ function PaneelInhoud(p: TegelsProps & { product: ProductWithDetails; onSluit: (
           <X className="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
-      <div className="px-4 pb-4 pt-2 sm:px-5">
+      {/* In de sheet extra ruimte onderin (pb-28), zodat de ronde knop nooit het laatste veld of de prijs afdekt. */}
+      <div className={cn("px-4 pt-2 sm:px-5", p.inDialoog ? "pb-28" : "pb-4")}>
         {p.configurator(p.product, { prijsVerborgen: p.prijsVerborgen })}
         <PaneelKnoppen {...p} />
       </div>
@@ -226,7 +235,7 @@ function PaneelInhoud(p: TegelsProps & { product: ProductWithDetails; onSluit: (
   );
 }
 
-function PaneelKnoppen(p: TegelsProps & { product: ProductWithDetails; onSluit: () => void; direct?: boolean }) {
+function PaneelKnoppen(p: TegelsProps & { product: ProductWithDetails; onSluit: () => void; direct?: boolean; inDialoog?: boolean }) {
   const toegevoegd = p.toegevoegd.includes(p.product.id);
   const geldig = onderdeelIsGeldig(p.resultaatLive, p.product.id);
   const eigen = onderdeelInclCenten(p.resultaatLive, p.product.id);
@@ -244,18 +253,21 @@ function PaneelKnoppen(p: TegelsProps & { product: ProductWithDetails; onSluit: 
           Verwijderen
         </Button>
       )}
-      <Button
-        type="button"
-        size="lg"
-        disabled={!geldig}
-        className={MERKKNOP}
-        onClick={() => {
-          p.onToevoegen(p.product.id);
-          if (!p.direct) p.onSluit();
-        }}
-      >
-        {toegevoegd ? "Klaar" : p.wc.toevoegTekst}
-      </Button>
+      {/* In de sheet op een telefoon is de ronde knop met het vinkje (ToevoegFab) de toevoegknop. */}
+      {!p.inDialoog && (
+        <Button
+          type="button"
+          size="lg"
+          disabled={!geldig}
+          className={MERKKNOP}
+          onClick={() => {
+            p.onToevoegen(p.product.id);
+            if (!p.direct) p.onSluit();
+          }}
+        >
+          {toegevoegd ? "Klaar" : p.wc.toevoegTekst}
+        </Button>
+      )}
     </div>
   );
 }

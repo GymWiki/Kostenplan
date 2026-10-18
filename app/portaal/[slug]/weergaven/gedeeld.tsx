@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { getProductIcon } from "@/app/lib/icons";
 import { cn } from "@/app/lib/cn";
@@ -44,5 +45,42 @@ export function VasteBalk({ zichtbaar, className, children, label }: { zichtbaar
     >
       {children}
     </div>
+  );
+}
+
+// Staat het schermtoetsenbord open? Dan krimpt het zichtbare deel van het scherm (visualViewport) flink.
+export function useToetsenbordOpen(): boolean {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const zet = () => setOpen(window.innerHeight - vv.height > 150);
+    zet();
+    vv.addEventListener("resize", zet);
+    return () => vv.removeEventListener("resize", zet);
+  }, []);
+  return open;
+}
+
+// Ronde knop met een vinkje, rechtsonder in de sheet van een onderdeel (alleen op een telefoon). Staat buiten het scrollende deel,
+// dus altijd in beeld; verdwijnt zolang het toetsenbord open staat (dan zou hij de invoervelden afdekken).
+export function ToevoegFab({ label, disabled, onClick }: { label: string; disabled: boolean; onClick: () => void }) {
+  const toetsenbord = useToetsenbordOpen();
+  if (toetsenbord) return null;
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "absolute right-4 z-10 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full shadow-lg ring-1 ring-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "motion-safe:transition-transform motion-safe:duration-100 enabled:active:scale-90 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none",
+        MERKKNOP
+      )}
+      style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}
+    >
+      <Check className="h-7 w-7" strokeWidth={3} aria-hidden="true" />
+    </button>
   );
 }
