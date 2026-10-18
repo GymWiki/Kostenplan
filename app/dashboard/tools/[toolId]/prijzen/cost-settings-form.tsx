@@ -66,7 +66,7 @@ export function CostSettingsForm({
   async function bevestigEenheid() {
     if (!wissel) return;
     setWisselBezig(true);
-    const r = await wijzigRekenEenheidAction(toolId, wissel.naar);
+    const r = await wijzigRekenEenheidAction(toolId, wissel.naar).catch(() => ({ ok: false as const, error: "Wijzigen is niet gelukt. Controleer je verbinding en probeer het opnieuw." }));
     setWisselBezig(false);
     if (!r.ok) {
       setWisselFout(r.error);

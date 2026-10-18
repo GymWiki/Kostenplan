@@ -50,7 +50,7 @@ export function TarievenSectie({
   async function bevestigEenheid() {
     if (!wissel) return;
     setWisselBezig(true);
-    const r = await wijzigBedrijfRekenEenheidAction(wissel.naar);
+    const r = await wijzigBedrijfRekenEenheidAction(wissel.naar).catch(() => ({ ok: false as const, error: "Wijzigen is niet gelukt. Controleer je verbinding en probeer het opnieuw." }));
     setWisselBezig(false);
     if (!r.ok) {
       setWisselFout(r.error);
@@ -150,11 +150,11 @@ function UrenDefinities({ start }: { start: { urenPerDagdeel: number; urenPerDag
   }
   async function bevestig() {
     setBezig(true);
-    const r = await wijzigUrenAction({ urenPerDagdeel: dagdeel, urenPerDag: dag, modus });
+    const r = await wijzigUrenAction({ urenPerDagdeel: dagdeel, urenPerDag: dag, modus }).catch(() => ({ ok: false as const, error: "Wijzigen is niet gelukt. Controleer je verbinding en probeer het opnieuw." }));
     setBezig(false);
     if (!r.ok) {
-      setFout(r.error ?? "Opslaan is niet gelukt.");
-      if (r.fouten) setFouten(r.fouten);
+      setFout("error" in r && r.error ? r.error : "Opslaan is niet gelukt.");
+      if ("fouten" in r && r.fouten) setFouten(r.fouten);
       return;
     }
     setSamenvatting(null);

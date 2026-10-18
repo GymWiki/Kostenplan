@@ -18,8 +18,6 @@ function ververs(companySlug: string, toolId: string, toolSlug: string) {
 
 // ---- Eén product: eigen eenheid kiezen of terug naar "Standaard" ----------------------------------------------------------
 
-export type { ProductEenheidInvoer };
-
 export async function wijzigProductEenheidAction(productId: string, invoer: ProductEenheidInvoer): Promise<{ ok: true } | { ok: false; error: string }> {
   const { company } = await requireActiveCompany();
   const r = await pasProductEenheidToe(prisma, company.id, productId, invoer);

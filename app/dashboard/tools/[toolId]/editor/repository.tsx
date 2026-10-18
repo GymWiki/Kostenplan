@@ -13,7 +13,8 @@ import {
   type OpslaanResultaat,
   type TarievenResultaat,
 } from "@/app/lib/actions/werkzaamheden";
-import { wijzigProductEenheidAction, type ProductEenheidInvoer } from "@/app/lib/actions/werktempo";
+import { wijzigProductEenheidAction } from "@/app/lib/actions/werktempo";
+import type { ProductEenheidInvoer } from "@/app/lib/werktempo-server";
 import type { ProductMetRelaties, WerkzaamheidDraft } from "@/app/lib/werkzaamheid";
 
 // Waar de editor zijn gegevens leest en schrijft. Eén editor, twee opslagplaatsen:

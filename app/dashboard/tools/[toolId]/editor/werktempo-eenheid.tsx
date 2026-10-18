@@ -64,11 +64,13 @@ export function WerktempoEenheidKeuze({
     setDialoogFout(null);
     // Alleen de materialen die al in de database staan gaan mee; nieuwe, nog niet opgeslagen rijen worden hieronder alleen in het concept omgerekend.
     const opgeslagen = new Set(draft.materialen.filter((m) => m.id).map((m) => m.id!));
-    const r = await repo.wijzigWerktempoEenheid!(productId, {
-      eenheid: plan.eenheid,
-      werktempo: plan.werktempo,
-      materiaalTempos: plan.materiaalTempos.filter((m) => opgeslagen.has(m.id)),
-    });
+    const r = await repo
+      .wijzigWerktempoEenheid!(productId, {
+        eenheid: plan.eenheid,
+        werktempo: plan.werktempo,
+        materiaalTempos: plan.materiaalTempos.filter((m) => opgeslagen.has(m.id)),
+      })
+      .catch(() => ({ ok: false as const, error: "Wijzigen is niet gelukt. Controleer je verbinding en probeer het opnieuw." }));
     setBezig(false);
     if (!r.ok) {
       setDialoogFout(r.error);
