@@ -90,6 +90,9 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
   const [ophalen, setOphalen] = useState<string | null>(null);
   // Mobiel: één vraag per scherm (0 website, 1 werkzaamheden, 2 tarief).
   const [stap, setStap] = useState(0);
+  // "Overslaan" bewaart de tekst in het veld (die wis je niet stilletjes), maar die website telt dan niet mee. Typ je weer, dan wel.
+  const [overgeslagen, setOvergeslagen] = useState(false);
+  const [siteFout, setSiteFout] = useState<string | null>(null);
   const cache = useRef<{ site: string; belofte: Promise<Huisstijl> } | null>(null);
 
   const ophalenVoor = (naam: string) => {
@@ -134,14 +137,39 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
 
   const wissel = (id: string) => setGekozen((g) => (g.includes(id) ? g.filter((x) => x !== id) : [...g, id]));
 
+  const SITE_FOUT = "Vul een geldige website in, bijvoorbeeld jouwtuinbedrijf.nl, of kies Overslaan.";
+
+  // Overslaan: altijd door naar de volgende stap, zonder website. Op een computer staan alle vragen onder elkaar: dan naar de volgende vraag.
+  function overslaan() {
+    setOvergeslagen(true);
+    setSiteFout(null);
+    if (window.matchMedia("(min-width: 768px)").matches) document.querySelector<HTMLInputElement>("input[name=preset]")?.focus();
+    else setStap(1);
+  }
+
+  // Verder (mobiel, stap 1): alleen met een geldige website.
+  function verderNaSite() {
+    const naam = normaliseerSite(site);
+    if (!naam) return setSiteFout(SITE_FOUT);
+    setSiteFout(null);
+    setOvergeslagen(false);
+    void ophalenVoor(naam);
+    setStap(1);
+  }
+
   async function maak(e: React.FormEvent) {
     e.preventDefault();
     setFout(null);
+    // Een ingevulde maar ongeldige website (en niet overgeslagen): niet stilletjes negeren.
+    if (!overgeslagen && site.trim() !== "" && normaliseerSite(site) === "") {
+      setStap(0);
+      return setSiteFout(SITE_FOUT);
+    }
     const bedrag = parseGetal(tarief, NaN);
     if (Number.isNaN(bedrag) || bedrag < 0 || bedrag > 10_000) return setFout("Vul een bedrag in voor je tarief per dagdeel.");
     if (gekozen.length === 0) return setFout("Kies minstens één onderdeel.");
     setBezig(true);
-    const naam = normaliseerSite(site);
+    const naam = overgeslagen ? "" : normaliseerSite(site);
     const stijl: Huisstijl = naam ? await ophalenVoor(naam) : { logoMislukt: false };
     const draft = maakDraft({
       presetIds: gekozen,
@@ -171,23 +199,33 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
         <h2 id="stap-site" className="text-lg font-semibold text-foreground">
           1. Wat is je website?
         </h2>
-        <Label htmlFor="site">Website (niet verplicht)</Label>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Input
-            id="site"
-            name="site"
-            inputMode="url"
-            autoComplete="url"
-            placeholder="Bijv. jouwtuinbedrijf.nl…"
-            value={site}
-            onChange={(e) => setSite(e.target.value)}
-            className="sm:flex-1"
-          />
-          <Button type="button" variant="outline" className="h-11" onClick={() => setSite("")}>
-            Overslaan
-          </Button>
-        </div>
-        <p className="text-sm text-muted-foreground">Dan halen we je logo en kleuren daar vandaan. Lukt dat niet, dan voeg je ze zelf toe.</p>
+        <Label htmlFor="site">Website</Label>
+        <Input
+          id="site"
+          name="site"
+          inputMode="url"
+          autoComplete="url"
+          placeholder="Bijv. jouwtuinbedrijf.nl…"
+          value={site}
+          aria-invalid={siteFout ? true : undefined}
+          aria-describedby={siteFout ? "site-fout" : "site-uitleg"}
+          onChange={(e) => {
+            setSite(e.target.value);
+            setOvergeslagen(false);
+            setSiteFout(null);
+          }}
+        />
+        {siteFout && (
+          <p id="site-fout" role="alert" className="text-sm font-medium text-destructive">
+            {siteFout}
+          </p>
+        )}
+        <p id="site-uitleg" className="text-sm text-muted-foreground">
+          Dan halen we je logo en kleuren daar vandaan. Heb je geen website, of wil je dit later doen? Kies Overslaan.
+        </p>
+        <Button type="button" variant="ghost" className="-ml-3 h-11 w-fit px-3 text-sm font-semibold text-muted-foreground underline underline-offset-4" onClick={overslaan}>
+          Overslaan
+        </Button>
         <p role="status" aria-live="polite" className="min-h-5 text-sm text-muted-foreground">
           {naamOphalen ? `Logo en kleuren ophalen van ${naamOphalen}…` : ""}
         </p>
@@ -264,12 +302,13 @@ export function ProbeerFormulier({ siteStart }: { siteStart: string }) {
             size="lg"
             className="flex-1"
             onClick={() => {
+              if (stap === 0) return verderNaSite();
               if (stap === 1 && gekozen.length === 0) return setFout("Kies minstens één onderdeel.");
               setFout(null);
               setStap((s) => s + 1);
             }}
           >
-            Volgende
+            {stap === 0 ? "Verder" : "Volgende"}
           </Button>
         )}
         {stap === 2 && (
