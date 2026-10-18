@@ -1,5 +1,6 @@
 "use client";
 
+import { renderTemplate } from "@/app/lib/sjabloon/render";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Mail, Phone, Printer, ArrowLeft, ArrowRight } from "lucide-react";
@@ -187,7 +188,7 @@ export function EngineCalculator({
     : STANDAARD_ACHTERGRONDKLEUR;
   const brandPrimaryForeground = accessibleTextColor(primaireKleur);
   const fontFamily = fontFamilyFor(magPersonaliserenUiterlijk ? (branding?.lettertype ?? "MODERN") : "MODERN");
-  const titel = branding?.customTitel?.trim() ? branding.customTitel.replaceAll("{bedrijfsnaam}", bedrijfsnaam) : null;
+  const titel = branding?.customTitel?.trim() ? renderTemplate(branding.customTitel, { bedrijfsnaam }) : null;
   const bedankTekst = branding?.bedankTekst?.trim() || "Bedankt voor je aanvraag! Wij nemen binnen 24 uur contact met je op.";
   const contactPositie = branding?.contactPositie ?? "BOVENAAN";
   const contact = {

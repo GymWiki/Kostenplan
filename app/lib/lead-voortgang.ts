@@ -1,3 +1,4 @@
+import { renderTemplate } from "@/app/lib/sjabloon/render";
 import { openstaandCenten } from "@/app/lib/factuur/betaling";
 import { bepaalFase, volgendeActie, type FaseUitkomst, type LeadFactuur, type VolgendeActie } from "@/app/lib/lead-fase";
 import { formatWeek } from "@/app/lib/offerte/weergave";
@@ -112,7 +113,7 @@ export function bouwVoortgang(l: VoortgangBron, nu: Date = new Date()): LeadVoor
     for (const g of f.gebeurtenissen ?? []) {
       const sjabloon = FACTUUR_TEKST[g.soort];
       if (!sjabloon || !f.nummer) continue;
-      const tekst = sjabloon.replace("{n}", f.nummer) + (g.soort === "BETALING" && g.bedragCenten ? ` (${euro(g.bedragCenten)})` : "");
+      const tekst = renderTemplate(sjabloon, { n: f.nummer }) + (g.soort === "BETALING" && g.bedragCenten ? ` (${euro(g.bedragCenten)})` : "");
       tijdlijn.push({ tijdstip: g.createdAt, tekst, href: `/dashboard/facturen/${f.id}` });
     }
   }

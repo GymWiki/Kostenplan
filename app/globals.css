@@ -3,6 +3,15 @@
 :root,
 [data-portal-shell] {
   --background: #f7faf8;
+
+  /* Gekleurde blokjes voor variabelen in berichten (app/components/ui/bericht-editor.tsx): één kleurfamilie per groep, tekst/achtergrond ≥ 4,5:1. */
+  --chip-blauw-bg: #dbeafe; --chip-blauw-fg: #1e3a8a; --chip-blauw-rand: #93c5fd;
+  --chip-paars-bg: #ede9fe; --chip-paars-fg: #4c1d95; --chip-paars-rand: #c4b5fd;
+  --chip-groen-bg: #d1fae5; --chip-groen-fg: #064e3b; --chip-groen-rand: #6ee7b7;
+  --chip-oranje-bg: #ffedd5; --chip-oranje-fg: #7c2d12; --chip-oranje-rand: #fdba74;
+  --chip-roze-bg: #ffe4e6; --chip-roze-fg: #881337; --chip-roze-rand: #fda4af;
+  --chip-turkoois-bg: #ccfbf1; --chip-turkoois-fg: #134e4a; --chip-turkoois-rand: #5eead4;
+  --chip-onbekend-bg: #f1f5f9; --chip-onbekend-fg: #334155; --chip-onbekend-rand: #64748b;
   --foreground: #0f172a;
 
   --card: #ffffff;
@@ -88,6 +97,14 @@
 .dark,
 .dark [data-portal-shell] {
   --background: #0b1512;
+
+  --chip-blauw-bg: #1e3a8a; --chip-blauw-fg: #dbeafe; --chip-blauw-rand: #3b82f6;
+  --chip-paars-bg: #4c1d95; --chip-paars-fg: #ede9fe; --chip-paars-rand: #8b5cf6;
+  --chip-groen-bg: #064e3b; --chip-groen-fg: #d1fae5; --chip-groen-rand: #10b981;
+  --chip-oranje-bg: #7c2d12; --chip-oranje-fg: #ffedd5; --chip-oranje-rand: #f97316;
+  --chip-roze-bg: #881337; --chip-roze-fg: #ffe4e6; --chip-roze-rand: #f43f5e;
+  --chip-turkoois-bg: #134e4a; --chip-turkoois-fg: #ccfbf1; --chip-turkoois-rand: #14b8a6;
+  --chip-onbekend-bg: #1e293b; --chip-onbekend-fg: #cbd5e1; --chip-onbekend-rand: #94a3b8;
   --foreground: #eaf3ee;
 
   --card: #101f19;

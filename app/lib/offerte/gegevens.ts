@@ -1,3 +1,4 @@
+import { renderTemplate } from "@/app/lib/sjabloon/render";
 import { isGeldigBtwId, isGeldigEmail, isGeldigIban, isGeldigKvk, isGeldigPostcode } from "./validatie";
 import type { RegelSoort } from "./btw-config";
 
@@ -82,7 +83,7 @@ export function voorwaardenTeksten(blokken: VoorwaardenBlok[] | null | undefined
       if (b.tekst && b.tekst.trim()) return b.tekst.trim();
       const info = VOORWAARDEN_INFO[b.id];
       const tekst = info.keuzes ? (info.keuzes.find((k) => k.waarde === b.keuze) ?? info.keuzes[0]).tekst : (info.tekst ?? "");
-      return tekst.replace("{termijn}", String(b.termijnMaanden ?? 12));
+      return renderTemplate(tekst, { termijn: b.termijnMaanden ?? 12 });
     });
 }
 

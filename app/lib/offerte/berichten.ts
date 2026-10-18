@@ -1,3 +1,4 @@
+import { renderTemplate } from "@/app/lib/sjabloon/render";
 import { berekenTotalen } from "./bereken";
 import type { OfferteInhoud } from "./model";
 import { formatCents, formatDatum } from "./weergave";
@@ -45,10 +46,8 @@ export function berichtWaarden(inhoud: OfferteInhoud, link: string): BerichtWaar
   };
 }
 
-// Vult {plaatsaanduidingen}; onbekende aanduidingen blijven staan zodat de hovenier ze ziet.
-export function vulSjabloon(tekst: string, w: BerichtWaarden): string {
-  return tekst.replace(/\{(\w+)\}/g, (m, k: string) => (k in w ? w[k as keyof BerichtWaarden] : m));
-}
+// Vult de {variabelen} via de ene renderTemplate; een onbekende of ontbrekende variabele wordt leeg (de instellingen waarschuwen ervoor).
+export const vulSjabloon = (tekst: string, w: Partial<BerichtWaarden>): string => renderTemplate(tekst, w);
 
 export function bouwDeelBericht({ inhoud, link, sjabloon, herinnering = false }: { inhoud: OfferteInhoud; link: string; sjabloon?: string | null; herinnering?: boolean }): { onderwerp: string; tekst: string } {
   const w = berichtWaarden(inhoud, link);

@@ -24,8 +24,8 @@ describe("deelbericht", () => {
     expect(b.tekst).toMatch(/excl\. btw/);
     expect(STANDAARD_HERINNERINGSTEKST).toContain("{link}");
   });
-  it("onbekende aanduidingen blijven zichtbaar", () => {
-    expect(vulSjabloon("Hoi {naam} {onzin}", { naam: "Jan" } as never)).toBe("Hoi Jan {onzin}");
+  it("een onbekende aanduiding wordt leeg (nooit 'undefined' of een kapotte tekst)", () => {
+    expect(vulSjabloon("Hoi {naam}{onzin}!", { naam: "Jan" })).toBe("Hoi Jan!");
   });
   it("mailto met onderwerp en tekst geëncodeerd", () => {
     const l = mailtoLink({ naar: "a.jansen@example.nl", onderwerp: "Offerte 1 – Terras & schutting", tekst: "Regel 1\nRegel 2" });
