@@ -2,7 +2,7 @@
 // aanbieder; dit stuurt een klein bericht naar /api/landing-event, dat het als
 // één JSON-regel logt (zichtbaar in de Vercel-logs/log drains). Wil je later een
 // aanbieder koppelen, dan hoeft alleen deze functie te veranderen.
-export type KlikBron = "hero" | "afsluiter" | "prijzen" | "nav" | "werkzaamheden";
+export type KlikBron = "hero" | "afsluiter" | "prijzen" | "nav";
 export type KlikActie = "cta" | "website-invoer" | "pakket-kiezen";
 
 export function trackKlik(bron: KlikBron, actie: KlikActie, extra?: { pakket?: string; metSite?: boolean }) {

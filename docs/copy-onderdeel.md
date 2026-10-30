@@ -18,21 +18,12 @@ Oud → nieuw, per bestand. Interne code-, route- en databasenamen zijn niet her
 - **oud:** "Werkzaamheid"
   **nieuw:** "Onderdeel"
 
-## `app/components/landing/sectie-werkzaamheden.tsx`
-
-- **oud:** "Werkzaamheden"
-  **nieuw:** "Onderdelen"
-- **oud:** Elke werkzaamheid rekent op zijn eigen manier, met jouw materialen en jouw werktempo. Dit zijn de werkzaamheden waarmee je begint; je past ze aan of voegt er zelf een toe.
-  **nieuw:** Elk onderdeel rekent op zijn eigen manier, met jouw materialen en jouw werktempo. Dit zijn de onderdelen waarmee je begint; je past ze aan of voegt er zelf een toe.
-- **oud:** Werkzaamheden met rekenmethode en een voorbeeld
-  **nieuw:** Onderdelen met rekenmethode en een voorbeeld
-- **oud:** Werkzaamheid
-  **nieuw:** Onderdeel
-
 ## `app/components/landing/sectie-zo-werkt-het.tsx`
 
 - **oud:** "Kies je werkzaamheden"
   **nieuw:** "Kies je onderdelen"
+- **oud:** Elke werkzaamheid rekent op zijn eigen manier, met jouw materialen en jouw werktempo. Dit zijn de werkzaamheden waarmee je begint; je past ze aan of voegt er zelf een toe. (sinds de slider hier)
+  **nieuw:** Elk onderdeel rekent op zijn eigen manier, met jouw materialen en jouw werktempo. Dit zijn de onderdelen waarmee je begint; je past ze aan of voegt er zelf een toe.
 
 ## `app/dashboard/profiel/company-card.tsx`
 

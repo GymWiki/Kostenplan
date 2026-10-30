@@ -64,15 +64,13 @@ gemarkeerd.
 
 1. Hero — gesplitst scherm, echte rekentool in maatkader, schakelaar klant/beheer
 2. Probleem — editorial, grote typografie, asymmetrisch, twee schuifregelaars
-3. Zo werkt het — sticky-scroll: beeld blijft staan terwijl de stap doorscrolt (CSS-only)
-4. Huisstijl — voor/na-schuif met drie fictieve bedrijven
-5. Aanvragen — breed en compact: inbox-regel + werkbon + conceptofferte
-6. Klantervaring — donkere band met telefoon en tijdlijn
-7. Werkzaamheden — bestek-/materiaallijst als tabel met maatvoering
-8. Vertrouwen — rustig, groot citaat (of feiten als er geen testimonial is)
-9. Prijzen — vergelijkingstabel met maand/jaar-schakelaar (CSS-only)
-10. Vragen — tweekoloms, vraag links, antwoord rechts
-11. Afsluiter — brede, rustige band in de accentkleur
+3. Zo werkt het — slider met vier stappen (onderdelen, prijzen, huisstijl, website): scroll-snap, pijlen, stapknoppen, alle slides in de DOM. Bevat de vroegere secties "Jouw huisstijl" (voor/na-schuif, stap 3) en "Onderdelen" (bestek, stap 1)
+4. Klant en aanvraag — één donkere sectie: tijdlijn en telefoon, daaronder inbox + werkbon + conceptofferte (vroeger 5 en 6)
+5. Prijzen — vergelijkingstabel met maand/jaar-schakelaar (CSS-only); bij jaar staat de besparing per pakket erbij (maandprijs × 12 min jaarprijs, uit `app/lib/subscription.ts`)
+6. Vragen — uitklapbare rijen (`vragen-lijst.tsx`), antwoorden staan altijd in de DOM en in het JSON-LD
+7. Afsluiter — brede, rustige band in de accentkleur
+
+De sectie "Vertrouwen" (citaat of feiten) is vervallen; de feiten staan al in de pagina en in `feiten.ts`.
 
 ## Eerlijkheid over abonnementen
 
@@ -94,8 +92,7 @@ CLS 0 · TBT 120–160 ms · **LCP 2,6 s** (kopregel; doel < 2,5 s, dus 0,1 s te
 de simulatie). Basislijn van de oude pagina: 94 / 97 / 100 / 100, LCP 2,9 s.
 Schermafbeeldingen per sectie: `docs/landing-screens/` (desktop 1440 px en mobiel 390 px).
 
-Open `TODO(Pieter)`: `app/lib/landing/testimonials.ts` (testimonials),
-`app/components/landing/landing-schema.tsx` (`sameAs`), en de voorbeeldprijzen en
+Open `TODO(Pieter)`: `app/components/landing/landing-schema.tsx` (`sameAs`), en de voorbeeldprijzen en
 werktempo's in `app/lib/presets/hovenier.ts` (die de demo's gebruiken).
 
 ## Herontwerp: moderne uitstraling (inhoud ongewijzigd)

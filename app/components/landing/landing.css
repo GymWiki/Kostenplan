@@ -127,7 +127,7 @@
   box-shadow: 0 2px 8px rgb(15 58 36 / 0.35);
 }
 
-/* Materiaalstalen: alleen in de werkzaamheden-tabel. */
+/* Materiaalstalen: in de onderdelenlijst van "Zo werkt het" (stap 1). */
 .lp .staal-klinker {
   background:
     linear-gradient(90deg, transparent 49%, rgba(0, 0, 0, 0.18) 50%, transparent 51%) 0 0 / 14px 100%,
