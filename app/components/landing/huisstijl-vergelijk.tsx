@@ -17,10 +17,10 @@ export function HuisstijlVergelijk({ kop }: { kop?: React.ReactNode }) {
   const stijl = STIJLEN[merk];
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-center lg:gap-14">
+    <div className="grid gap-5 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:items-center md:gap-8 lg:gap-10">
       <div>
         {kop}
-        <div role="group" aria-label="Kies een voorbeeldbedrijf" className="mt-6 flex flex-col border-t border-lp-lijn">
+        <div role="group" aria-label="Kies een voorbeeldbedrijf" className="mt-4 grid grid-cols-3 gap-2 md:flex md:flex-col md:gap-0 md:border-t md:border-lp-lijn">
           {MERKEN.map((id) => {
             const s = STIJLEN[id];
             const aan = id === merk;
@@ -31,26 +31,26 @@ export function HuisstijlVergelijk({ kop }: { kop?: React.ReactNode }) {
                 aria-pressed={aan}
                 onClick={() => setMerk(id)}
                 className={cn(
-                  "flex min-h-16 cursor-pointer items-center gap-4 border-b border-lp-lijn px-1 py-3 text-left transition-colors",
+                  "flex min-h-11 cursor-pointer flex-col items-center gap-1 rounded-xl border border-lp-lijn px-1 py-2 text-center transition-colors md:flex-row md:gap-3 md:rounded-none md:border-0 md:border-b md:text-left",
                   aan ? "bg-lp-papier-2" : "hover:bg-lp-papier-2/60"
                 )}
               >
-                <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl font-serif text-2xl font-semibold text-white" style={{ backgroundColor: s.kleur }}>
+                <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-serif text-xl font-semibold text-white" style={{ backgroundColor: s.kleur }}>
                   {s.letter}
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-base font-semibold">{s.naam}</span>
-                  <span className="block font-lp-maat text-[11px] tracking-wide text-lp-inkt-2">{s.site} · voorbeeld</span>
+                <span className="w-full min-w-0 md:flex-1">
+                  <span className="block truncate text-xs font-semibold md:text-base">{s.naam}</span>
+                  <span className="hidden truncate font-lp-maat md:block text-[11px] tracking-wide text-lp-inkt-2">{s.site} · voorbeeld</span>
                 </span>
-                <span aria-hidden="true" className="h-5 w-5 shrink-0 rounded-lg border border-lp-lijn" style={{ backgroundColor: aan ? s.kleur : "transparent" }} />
+                <span aria-hidden="true" className="hidden h-5 w-5 shrink-0 rounded-lg border md:block border-lp-lijn" style={{ backgroundColor: aan ? s.kleur : "transparent" }} />
               </button>
             );
           })}
         </div>
-        <p className="mt-5 text-base text-lp-inkt-2">
+        <p className="mt-3 text-sm text-lp-inkt-2">
           Vul je website in en Kostenplan haalt je logo en je hoofdkleur eruit. Je klant ziet geen los programma, maar een rekentool die bij je bedrijf hoort.
         </p>
-        <p className="mt-3 text-sm text-lp-inkt-2">
+        <p className="mt-2 text-sm text-lp-inkt-2">
           Eigen logo en kleuren zijn onderdeel van Plus en Pro. In Gratis ziet je rekentool eruit zoals links.
         </p>
       </div>
@@ -60,7 +60,7 @@ export function HuisstijlVergelijk({ kop }: { kop?: React.ReactNode }) {
           <span className="rounded-lg bg-lp-inkt px-2 py-1 text-lp-papier">Voor · zonder huisstijl</span>
           <span className="rounded-lg bg-lp-oker px-2 py-1 text-lp-inkt">Na · jouw huisstijl</span>
         </div>
-        <div className="relative h-[520px] overflow-hidden rounded-3xl border border-lp-lijn bg-lp-wit">
+        <div className="relative h-[240px] overflow-hidden sm:h-[320px] rounded-3xl border border-lp-lijn bg-lp-wit">
           <iframe
             src="/demo/rekentool/standaard"
             title="Voor: een rekentool zonder eigen huisstijl"
@@ -79,7 +79,7 @@ export function HuisstijlVergelijk({ kop }: { kop?: React.ReactNode }) {
           />
           <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 w-0.5 bg-lp-inkt" style={{ left: `${pos}%` }} />
         </div>
-        <label htmlFor={slider} className="mt-3 block text-sm font-semibold">
+        <label htmlFor={slider} className="mt-1 block text-sm font-semibold">
           Schuif om voor en na te vergelijken
         </label>
         <input id={slider} type="range" min={0} max={100} value={pos} onChange={(e) => setPos(Number(e.target.value))} />

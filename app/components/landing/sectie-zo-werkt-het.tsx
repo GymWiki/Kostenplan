@@ -33,20 +33,20 @@ function Beeld1() {
   return (
     <div className="overflow-hidden rounded-3xl border border-lp-lijn bg-lp-wit">
       <p className="border-b border-lp-lijn bg-lp-papier-2 px-4 py-3 font-lp-maat text-[11px] tracking-wide text-lp-inkt-2">Kies wat je doet</p>
-      <ul className="divide-y divide-lp-lijn" aria-label="Onderdelen met rekenmethode en een voorbeeld">
+      <ul className="grid divide-y divide-lp-lijn sm:grid-cols-2 sm:divide-y-0" aria-label="Onderdelen met rekenmethode en een voorbeeld">
         {HOVENIER_PRESETS.map((p) => {
           const aan = GEKOZEN.includes(p.id);
           const Icoon = PRODUCT_ICONS[p.icoon];
           return (
-            <li key={p.id} className={`flex min-h-14 items-center gap-3 px-4 py-2 ${aan ? "bg-lp-bos-100" : ""}`}>
+            <li key={p.id} className={`flex min-h-12 items-center gap-2.5 px-3 py-1.5 sm:border-b sm:border-lp-lijn ${aan ? "bg-lp-bos-100" : ""}`}>
               <span aria-hidden="true" className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-lp-lijn ${aan ? "bg-lp-bos-800 text-white" : "bg-lp-wit"}`}>
                 {aan && <Check className="h-4 w-4" />}
               </span>
-              <span aria-hidden="true" className={`hidden h-7 w-9 shrink-0 border border-lp-inkt sm:block ${STAAL[p.id] ?? ""}`} />
+              <span aria-hidden="true" className={`hidden h-6 w-8 shrink-0 border border-lp-inkt sm:block ${STAAL[p.id] ?? ""}`} />
               {Icoon && <Icoon className="h-5 w-5 shrink-0 text-lp-bos-800" aria-hidden="true" />}
               <span className="min-w-0 flex-1">
-                <span className="block text-base font-semibold">{p.naam}</span>
-                <span className="block text-sm text-lp-inkt-2 tabular-nums">
+                <span className="block truncate text-sm font-semibold sm:text-base">{p.naam}</span>
+                <span className="block truncate text-xs text-lp-inkt-2 tabular-nums sm:text-sm">
                   {METHODE[p.rekenmethode]} · {p.voorbeeldHoeveelheid} {EENHEID[p.eenheid]} · {p.materialen.map((m) => m.naam).slice(0, 3).join(", ")}
                 </span>
               </span>
@@ -74,11 +74,11 @@ function Beeld2() {
         <tbody className="divide-y divide-lp-lijn tabular-nums">
           {p.materialen.map((m) => (
             <tr key={m.naam}>
-              <th scope="row" className="px-4 py-3 text-left font-semibold">
+              <th scope="row" className="px-4 py-2 text-left font-semibold">
                 {m.naam}
                 <span className="ml-2 rounded-sm bg-lp-oker-licht px-1.5 py-0.5 align-middle font-lp-maat text-[10px] text-lp-inkt">voorbeeld</span>
               </th>
-              <td className="px-4 py-3 text-right">€ {m.prijs},00</td>
+              <td className="px-4 py-2 text-right">€ {m.prijs},00</td>
             </tr>
           ))}
         </tbody>
@@ -110,7 +110,7 @@ function Beeld3() {
           <div className="mt-2 flex flex-col gap-2" aria-hidden="true">
             <span className="h-3 w-3/4 bg-lp-lijn" />
             <span className="h-3 w-1/2 bg-lp-lijn" />
-            <span className="mt-1 flex h-24 items-center justify-center rounded-xl border border-dashed border-lp-bos-700 font-lp-maat text-[11px] text-lp-bos-800">hier staat je rekentool</span>
+            <span className="mt-1 flex h-16 items-center justify-center rounded-xl border border-dashed border-lp-bos-700 font-lp-maat text-[11px] text-lp-bos-800">hier staat je rekentool</span>
           </div>
         </div>
         <div>
@@ -133,7 +133,7 @@ const LINK = "font-semibold underline decoration-lp-bos-700 decoration-2 underli
 // Elke slide: nummer, titel, uitleg en beeld. Wat vroeger de losse secties "Jouw huisstijl" en "Onderdelen" waren, staat nu bij de stap waar het over gaat.
 function Slide({ nr, titel, children, beeld }: { nr: string; titel: string; children: React.ReactNode; beeld: React.ReactNode }) {
   return (
-    <div className="lp-zacht grid h-full gap-8 rounded-3xl border border-lp-lijn bg-lp-wit p-5 sm:p-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-center lg:gap-14">
+    <div className="lp-zacht grid h-full gap-5 rounded-3xl border border-lp-lijn bg-lp-wit p-4 sm:px-14 sm:py-6 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:items-center md:gap-8 lg:px-16 lg:gap-10">
       <div>
         <Kop nr={nr} titel={titel} />
         {children}
@@ -146,8 +146,8 @@ function Slide({ nr, titel, children, beeld }: { nr: string; titel: string; chil
 function Kop({ nr, titel }: { nr: string; titel: string }) {
   return (
     <>
-      <p className="text-5xl font-semibold tracking-[-0.05em] text-lp-bos-700">{nr}</p>
-      <h3 className="mt-4 text-3xl font-semibold">{titel}</h3>
+      <p className="text-3xl font-semibold tracking-[-0.05em] text-lp-bos-700 sm:text-4xl">{nr}</p>
+      <h3 className="mt-2 text-2xl font-semibold sm:text-3xl">{titel}</h3>
     </>
   );
 }
@@ -163,10 +163,10 @@ const STAPPEN: Stap[] = [
         titel="Kies je onderdelen"
         beeld={<Beeld1 />}
       >
-        <p className="mt-3 max-w-md text-lg text-lp-inkt-2">
+        <p className="mt-2 max-w-md text-base text-lp-inkt-2 sm:text-lg">
           Vink aan wat je doet: schutting, bestrating, graszoden, vlonder. Je krijgt meteen een werkende rekentool met voorbeeldprijzen, zonder iets te hoeven bouwen.
         </p>
-        <p className="mt-3 max-w-md text-lg text-lp-inkt-2">
+        <p className="mt-2 max-w-md text-base text-lp-inkt-2 sm:text-lg">
           Elk onderdeel rekent op zijn eigen manier, met jouw materialen en jouw werktempo. Dit zijn de onderdelen waarmee je begint; je past ze aan of voegt er zelf een toe.
         </p>
         <p className="mt-4 text-base">
@@ -187,7 +187,7 @@ const STAPPEN: Stap[] = [
     titel: "Vul je prijzen in",
     inhoud: (
       <Slide nr="02" titel="Vul je prijzen in" beeld={<Beeld2 />}>
-        <p className="mt-3 max-w-md text-lg text-lp-inkt-2">
+        <p className="mt-2 max-w-md text-base text-lp-inkt-2 sm:text-lg">
           Zet je eigen materiaalprijzen erin, hoeveel je in een dagdeel doet en wat je per dagdeel rekent. Voorbeeldprijzen zijn geel gemarkeerd tot je ze hebt aangepast.
         </p>
       </Slide>
@@ -198,13 +198,13 @@ const STAPPEN: Stap[] = [
     nr: "03",
     titel: "Maak hem van jou",
     inhoud: (
-      <div className="lp-zacht h-full rounded-3xl border border-lp-lijn bg-lp-wit p-5 sm:p-10">
+      <div className="lp-zacht h-full rounded-3xl border border-lp-lijn bg-lp-wit p-4 sm:px-14 sm:py-6 lg:px-16">
         <HuisstijlVergelijk
           kop={
             <>
               <Kop nr="03" titel="Maak hem van jou" />
-              <p className="mt-3 max-w-md text-lg text-lp-inkt-2">Eruit zien als jouw bedrijf, vanaf de eerste keer.</p>
-              <MaatH label="logo en kleuren van jouw website" className="mt-4 max-w-md" />
+              <p className="mt-2 max-w-md text-base text-lp-inkt-2 sm:text-lg">Eruit zien als jouw bedrijf, vanaf de eerste keer.</p>
+              <MaatH label="logo en kleuren van jouw website" className="mt-4 hidden max-w-md md:flex" />
             </>
           }
         />
@@ -217,7 +217,7 @@ const STAPPEN: Stap[] = [
     titel: "Zet hem op je website",
     inhoud: (
       <Slide nr="04" titel="Zet hem op je website" beeld={<Beeld3 />}>
-        <p className="mt-3 max-w-md text-lg text-lp-inkt-2">
+        <p className="mt-2 max-w-md text-base text-lp-inkt-2 sm:text-lg">
           Plaats de rekentool op je website of deel de link. Het werkt met WordPress, Wix, Squarespace en Jouwweb. Een eerste versie staat er in een paar minuten, ook zonder computerkennis.
         </p>
         <p className="mt-4">

@@ -29,7 +29,7 @@ test.describe("slider Zo werkt het", () => {
     // Alles staat in de DOM, ook de slides buiten beeld.
     const tekst = await slider.textContent();
     for (const t of ["Kies je onderdelen", "Vul je prijzen in", "Maak hem van jou", "Zet hem op je website", "Voorbeelden van rekentools", "Templates", "Rekentool op je eigen website zetten", "Eruit zien als jouw bedrijf"]) expect(tekst).toContain(t);
-    const live = slider.locator("[aria-live=polite]");
+    const live = slider.locator("[aria-live]");
     await expect(live).toHaveText(/Stap 1 van 4: Kies je onderdelen/);
     await slider.scrollIntoViewIfNeeded();
     if (info.project.name === "desktop") {
@@ -48,15 +48,35 @@ test.describe("slider Zo werkt het", () => {
     await expect(live).toHaveText(/Stap 1 van 4/);
   });
 
-  test("een oude ankerlink (#huisstijl) opent stap 3", async ({ page }) => {
-    await page.goto("/#huisstijl");
-    await expect(page.locator("[aria-live=polite]").filter({ hasText: "Stap" }).first()).toHaveText(/Stap 3 van 4: Maak hem van jou/);
-  });
-
-  test("slides hebben gelijke hoogte en de slider verspringt niet bij wisselen (CLS)", async ({ page }) => {
+  test("wisselt vanzelf van stap, stopt bij pauzeren en na een eigen keuze", async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop", "tijdsgevoelig: één keer is genoeg");
+    await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/");
     const slider = page.getByRole("region", { name: "Zo werkt het, in vier stappen" });
     await slider.scrollIntoViewIfNeeded();
+    await page.mouse.move(2, 2);
+    const live = slider.locator("[aria-live]");
+    await expect(live).toHaveText(/Stap 1 van 4/);
+    await expect(live).toHaveText(/Stap 2 van 4/, { timeout: 12000 });
+    await slider.getByRole("button", { name: "Automatisch wisselen pauzeren" }).click();
+    await page.mouse.move(2, 2);
+    await page.waitForTimeout(9000);
+    await expect(live).toHaveText(/Stap 2 van 4/);
+    await expect(slider.getByRole("button", { name: "Automatisch wisselen starten" })).toBeVisible();
+  });
+
+  test("een oude ankerlink (#huisstijl) opent stap 3", async ({ page }) => {
+    await page.goto("/#huisstijl");
+    await expect(page.locator("[aria-live]").filter({ hasText: "Stap" }).first()).toHaveText(/Stap 3 van 4: Maak hem van jou/);
+  });
+
+  test("slides hebben gelijke hoogte en de slider verspringt niet bij wisselen (CLS)", async ({ page }, info) => {
+    await page.goto("/");
+    const slider = page.getByRole("region", { name: "Zo werkt het, in vier stappen" });
+    await slider.scrollIntoViewIfNeeded();
+    // De slider moet compact zijn: de hele slider past in beeld, ook met stapknoppen erboven.
+    const h = (await slider.boundingBox())!.height;
+    expect(h, "hoogte slider").toBeLessThan(info.project.name === "desktop" ? 600 : 1000);
     const hoogtes = await slider.locator('[aria-roledescription="slide"]').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().height)));
     expect(new Set(hoogtes).size).toBe(1);
     const voor = (await slider.boundingBox())!.height;
@@ -71,7 +91,7 @@ test.describe("slider Zo werkt het", () => {
     await page.goto("http://localhost:3200/");
     const slider = page.getByRole("region", { name: "Zo werkt het, in vier stappen" });
     await slider.getByRole("button", { name: /Vul je prijzen in/ }).click();
-    await expect(slider.locator("[aria-live=polite]")).toHaveText(/Stap 2 van 4/);
+    await expect(slider.locator("[aria-live]")).toHaveText(/Stap 2 van 4/);
     await ctx.close();
   });
 });
