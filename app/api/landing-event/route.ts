@@ -5,7 +5,7 @@ import "@/app/lib/zod-nl";
 export const dynamic = "force-dynamic";
 
 const schema = z.object({
-  bron: z.enum(["hero", "afsluiter", "prijzen", "nav", "werkzaamheden"]),
+  bron: z.enum(["hero", "afsluiter", "prijzen", "nav"]),
   actie: z.enum(["cta", "website-invoer", "pakket-kiezen"]),
   pakket: z.enum(["GRATIS", "PLUS", "PRO"]).optional(),
   metSite: z.boolean().optional(),

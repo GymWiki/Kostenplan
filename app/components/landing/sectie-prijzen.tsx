@@ -1,11 +1,11 @@
 import { PAKKETTEN, VERGELIJKING, LAATST_BIJGEWERKT, eur } from "@/app/lib/landing/feiten";
 import { CtaLink } from "@/app/components/landing/cta-link";
 import { Positie } from "@/app/components/landing/maat";
-import { PRIJZEN } from "@/app/lib/subscription";
+import { PRIJZEN, jaarlijkseBesparing } from "@/app/lib/subscription";
 
 // Sectie 9: vergelijkingstabel met een maand/jaar-schakelaar die zonder
 // JavaScript werkt (twee radioknoppen + CSS :has). Prijzen en limieten komen
-// uit app/lib/subscription.ts, dezelfde bron als de betaling.
+// uit app/lib/subscription.ts, dezelfde bron als de betaling. De jaarbesparing is maandprijs × 12 min de jaarprijs, uit diezelfde prijzen.
 export function SectiePrijzen({ hoofdkop = false }: { hoofdkop?: boolean }) {
   const Kop = hoofdkop ? "h1" : "h2";
   return (
@@ -13,7 +13,7 @@ export function SectiePrijzen({ hoofdkop = false }: { hoofdkop?: boolean }) {
       <div className="group/prijs">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <Positie nr="09" label="Prijzen" />
+            <Positie nr="05" label="Prijzen" />
             <Kop id="h-prijzen" className="mt-4 text-4xl font-semibold leading-[1.02] sm:text-5xl">
               Wat Kostenplan kost
             </Kop>
@@ -69,6 +69,11 @@ export function SectiePrijzen({ hoofdkop = false }: { hoofdkop?: boolean }) {
                       </>
                     )}
                   </span>
+                  {p.maand > 0 && p.maand * 12 > p.jaar && (
+                    <span className="mt-1 hidden text-xs font-semibold text-lp-bos-800 group-has-[#periode-jaar:checked]/prijs:block sm:text-sm">
+                      Bespaar {eur(p.maand * 12 - p.jaar)} per jaar ({jaarlijkseBesparing(p.id as "PLUS" | "PRO")}%)
+                    </span>
+                  )}
                 </th>
               ))}
             </tr>
@@ -100,7 +105,7 @@ export function SectiePrijzen({ hoofdkop = false }: { hoofdkop?: boolean }) {
         </div>
 
         <p className="mt-4 text-sm text-lp-inkt-2">
-          Jaarlijks: Plus {eur(PRIJZEN.PLUS.JAARLIJKS)} per jaar, Pro {eur(PRIJZEN.PRO.JAARLIJKS)} per jaar. Je kunt altijd eerst een voorbeeld bouwen; je kiest pas later een pakket.
+          Jaarlijks: Plus {eur(PRIJZEN.PLUS.JAARLIJKS)} per jaar (je bespaart {eur(PRIJZEN.PLUS.MAANDELIJKS * 12 - PRIJZEN.PLUS.JAARLIJKS)} ten opzichte van maandelijks), Pro {eur(PRIJZEN.PRO.JAARLIJKS)} per jaar ({eur(PRIJZEN.PRO.MAANDELIJKS * 12 - PRIJZEN.PRO.JAARLIJKS)} minder). Je kunt altijd eerst een voorbeeld bouwen; je kiest pas later een pakket.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4 border-t border-lp-lijn pt-8">
           <CtaLink href="/probeer" bron="prijzen" stijl="primair" className="w-full sm:w-auto">

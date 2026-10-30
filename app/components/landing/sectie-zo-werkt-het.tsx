@@ -2,30 +2,54 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { HOVENIER_PRESETS } from "@/app/lib/presets";
 import { PRODUCT_ICONS } from "@/app/lib/icons";
-import { Positie } from "@/app/components/landing/maat";
+import { MaatH, Positie } from "@/app/components/landing/maat";
+import { HuisstijlVergelijk } from "@/app/components/landing/huisstijl-vergelijk";
+import { StappenSlider, type Stap } from "@/app/components/landing/stappen-slider";
 
-// Sectie 3: sticky scroll, volledig in CSS. Elke stap is een rij; het beeld
-// blijft staan (sticky) terwijl de tekst van de stap voorbijkomt, daarna komt het
-// beeld van de volgende stap. Zonder JavaScript staat alles gewoon onder elkaar.
+// Sectie 3: slider met de stappen van het proces (zie stappen-slider.tsx). Alle tekst staat in de pagina; de slides worden alleen weggescrold.
 const GEKOZEN = ["bestrating", "schutting", "graszoden"];
 
+const METHODE: Record<string, string> = {
+  "strekkende-meter": "Per meter",
+  "lengte-breedte": "Lengte × breedte",
+  m2: "Per m²",
+  stuks: "Per stuk",
+};
+const EENHEID: Record<string, string> = { m1: "m", m2: "m²", stuks: "stuks" };
+const STAAL: Record<string, string> = {
+  schutting: "staal-hout",
+  bestrating: "staal-klinker",
+  graszoden: "staal-gras",
+  kunstgras: "staal-kunstgras",
+  vlonder: "staal-hout",
+  "haag-beplanting": "staal-haag",
+  "grondwerk-afvoer": "staal-grond",
+  "boom-planten": "staal-boom",
+  tuinonderhoud: "staal-gras",
+};
+
+// Alle onderdelen waarmee je begint, met rekenmethode en een voorbeeld; de rijen komen uit de echte presets.
 function Beeld1() {
-  const lijst = HOVENIER_PRESETS.slice(0, 6);
   return (
     <div className="overflow-hidden rounded-3xl border border-lp-lijn bg-lp-wit">
       <p className="border-b border-lp-lijn bg-lp-papier-2 px-4 py-3 font-lp-maat text-[11px] tracking-wide text-lp-inkt-2">Kies wat je doet</p>
-      <ul className="divide-y divide-lp-lijn">
-        {lijst.map((p) => {
+      <ul className="divide-y divide-lp-lijn" aria-label="Onderdelen met rekenmethode en een voorbeeld">
+        {HOVENIER_PRESETS.map((p) => {
           const aan = GEKOZEN.includes(p.id);
           const Icoon = PRODUCT_ICONS[p.icoon];
           return (
-            <li key={p.id} className={`flex min-h-14 items-center gap-3 px-4 ${aan ? "bg-lp-bos-100" : ""}`}>
+            <li key={p.id} className={`flex min-h-14 items-center gap-3 px-4 py-2 ${aan ? "bg-lp-bos-100" : ""}`}>
               <span aria-hidden="true" className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-lp-lijn ${aan ? "bg-lp-bos-800 text-white" : "bg-lp-wit"}`}>
                 {aan && <Check className="h-4 w-4" />}
               </span>
+              <span aria-hidden="true" className={`hidden h-7 w-9 shrink-0 border border-lp-inkt sm:block ${STAAL[p.id] ?? ""}`} />
               {Icoon && <Icoon className="h-5 w-5 shrink-0 text-lp-bos-800" aria-hidden="true" />}
-              <span className="min-w-0 flex-1 text-base font-semibold">{p.naam}</span>
-              <span className="hidden font-lp-maat text-[11px] text-lp-inkt-2 sm:inline">{p.rekenmethode === "lengte-breedte" ? "l × b" : p.rekenmethode === "m2" ? "per m²" : p.rekenmethode === "stuks" ? "per stuk" : "per m"}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-base font-semibold">{p.naam}</span>
+                <span className="block text-sm text-lp-inkt-2 tabular-nums">
+                  {METHODE[p.rekenmethode]} · {p.voorbeeldHoeveelheid} {EENHEID[p.eenheid]} · {p.materialen.map((m) => m.naam).slice(0, 3).join(", ")}
+                </span>
+              </span>
             </li>
           );
         })}
@@ -104,52 +128,120 @@ function Beeld3() {
   );
 }
 
-const STAPPEN = [
+const LINK = "font-semibold underline decoration-lp-bos-700 decoration-2 underline-offset-4";
+
+// Elke slide: nummer, titel, uitleg en beeld. Wat vroeger de losse secties "Jouw huisstijl" en "Onderdelen" waren, staat nu bij de stap waar het over gaat.
+function Slide({ nr, titel, children, beeld }: { nr: string; titel: string; children: React.ReactNode; beeld: React.ReactNode }) {
+  return (
+    <div className="lp-zacht grid h-full gap-8 rounded-3xl border border-lp-lijn bg-lp-wit p-5 sm:p-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-center lg:gap-14">
+      <div>
+        <Kop nr={nr} titel={titel} />
+        {children}
+      </div>
+      <div>{beeld}</div>
+    </div>
+  );
+}
+
+function Kop({ nr, titel }: { nr: string; titel: string }) {
+  return (
+    <>
+      <p className="text-5xl font-semibold tracking-[-0.05em] text-lp-bos-700">{nr}</p>
+      <h3 className="mt-4 text-3xl font-semibold">{titel}</h3>
+    </>
+  );
+}
+
+const STAPPEN: Stap[] = [
   {
+    id: "stap-onderdelen",
     nr: "01",
     titel: "Kies je onderdelen",
-    tekst: "Vink aan wat je doet: schutting, bestrating, graszoden, vlonder. Je krijgt meteen een werkende rekentool met voorbeeldprijzen, zonder iets te hoeven bouwen.",
-    beeld: <Beeld1 />,
+    inhoud: (
+      <Slide
+        nr="01"
+        titel="Kies je onderdelen"
+        beeld={<Beeld1 />}
+      >
+        <p className="mt-3 max-w-md text-lg text-lp-inkt-2">
+          Vink aan wat je doet: schutting, bestrating, graszoden, vlonder. Je krijgt meteen een werkende rekentool met voorbeeldprijzen, zonder iets te hoeven bouwen.
+        </p>
+        <p className="mt-3 max-w-md text-lg text-lp-inkt-2">
+          Elk onderdeel rekent op zijn eigen manier, met jouw materialen en jouw werktempo. Dit zijn de onderdelen waarmee je begint; je past ze aan of voegt er zelf een toe.
+        </p>
+        <p className="mt-4 text-base">
+          <Link href="/voorbeelden-rekentools" className={LINK}>
+            Voorbeelden van rekentools
+          </Link>{" "}
+          ·{" "}
+          <Link href="/rekentool-templates" className={LINK}>
+            Templates
+          </Link>
+        </p>
+      </Slide>
+    ),
   },
   {
+    id: "stap-prijzen",
     nr: "02",
     titel: "Vul je prijzen in",
-    tekst: "Zet je eigen materiaalprijzen erin, hoeveel je in een dagdeel doet en wat je per dagdeel rekent. Voorbeeldprijzen zijn geel gemarkeerd tot je ze hebt aangepast.",
-    beeld: <Beeld2 />,
+    inhoud: (
+      <Slide nr="02" titel="Vul je prijzen in" beeld={<Beeld2 />}>
+        <p className="mt-3 max-w-md text-lg text-lp-inkt-2">
+          Zet je eigen materiaalprijzen erin, hoeveel je in een dagdeel doet en wat je per dagdeel rekent. Voorbeeldprijzen zijn geel gemarkeerd tot je ze hebt aangepast.
+        </p>
+      </Slide>
+    ),
   },
   {
+    id: "stap-huisstijl",
     nr: "03",
+    titel: "Maak hem van jou",
+    inhoud: (
+      <div className="lp-zacht h-full rounded-3xl border border-lp-lijn bg-lp-wit p-5 sm:p-10">
+        <HuisstijlVergelijk
+          kop={
+            <>
+              <Kop nr="03" titel="Maak hem van jou" />
+              <p className="mt-3 max-w-md text-lg text-lp-inkt-2">Eruit zien als jouw bedrijf, vanaf de eerste keer.</p>
+              <MaatH label="logo en kleuren van jouw website" className="mt-4 max-w-md" />
+            </>
+          }
+        />
+      </div>
+    ),
+  },
+  {
+    id: "stap-website",
+    nr: "04",
     titel: "Zet hem op je website",
-    tekst: "Plaats de rekentool op je website of deel de link. Het werkt met WordPress, Wix, Squarespace en Jouwweb. Een eerste versie staat er in een paar minuten, ook zonder computerkennis.",
-    beeld: <Beeld3 />,
+    inhoud: (
+      <Slide nr="04" titel="Zet hem op je website" beeld={<Beeld3 />}>
+        <p className="mt-3 max-w-md text-lg text-lp-inkt-2">
+          Plaats de rekentool op je website of deel de link. Het werkt met WordPress, Wix, Squarespace en Jouwweb. Een eerste versie staat er in een paar minuten, ook zonder computerkennis.
+        </p>
+        <p className="mt-4">
+          <Link href="/rekentool-op-eigen-website" className={LINK}>
+            Rekentool op je eigen website zetten
+          </Link>
+        </p>
+      </Slide>
+    ),
   },
 ];
+
+// Oude ankers van de losse secties "Jouw huisstijl" (#huisstijl) en "Onderdelen" (#werkzaamheden) openen de bijbehorende slide.
+const ANKERS = { huisstijl: 2, werkzaamheden: 0 };
 
 export function SectieZoWerktHet() {
   return (
     <section id="zo-werkt-het" aria-labelledby="h-zo" className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
       <Positie nr="03" label="Zo werkt het" />
       <h2 id="h-zo" className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.02] sm:text-5xl">
-        In drie stappen staat je rekentool online
+        In vier stappen staat je rekentool online
       </h2>
-      <div className="mt-10 border-t border-lp-lijn">
-        {STAPPEN.map((s) => (
-          <div key={s.nr} className="grid gap-8 border-b border-lp-lijn lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16">
-            <div className="flex flex-col justify-center py-10 lg:min-h-[80vh] lg:py-24">
-              <p className="text-5xl font-semibold tracking-[-0.05em] text-lp-bos-700">{s.nr}</p>
-              <h3 className="mt-4 text-3xl font-semibold">{s.titel}</h3>
-              <p className="mt-3 max-w-md text-lg text-lp-inkt-2">{s.tekst}</p>
-              {s.nr === "03" && (
-                <p className="mt-4">
-                  <Link href="/rekentool-op-eigen-website" className="font-semibold underline decoration-lp-bos-700 decoration-2 underline-offset-4">
-                    Rekentool op je eigen website zetten
-                  </Link>
-                </p>
-              )}
-            </div>
-            <div className="self-start pb-10 lg:sticky lg:top-24 lg:py-24">{s.beeld}</div>
-          </div>
-        ))}
+      <div className="mt-10">
+        <StappenSlider stappen={STAPPEN} ankers={ANKERS} label="Zo werkt het, in vier stappen" />
       </div>
     </section>
   );

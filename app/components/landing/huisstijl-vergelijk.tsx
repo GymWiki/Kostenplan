@@ -10,16 +10,17 @@ const MERKEN: StijlId[] = ["groenhof", "eikenhoek", "terlinden"];
 // Voor/na: links hoe een rekentool zonder eigen huisstijl eruitziet (Gratis),
 // rechts dezelfde rekentool in de huisstijl van een fictief bedrijf. Beide zijn
 // de echte klant-rekentool (iframes), alleen om te bekijken.
-export function HuisstijlVergelijk() {
+export function HuisstijlVergelijk({ kop }: { kop?: React.ReactNode }) {
   const slider = useId();
   const [merk, setMerk] = useState<StijlId>("groenhof");
   const [pos, setPos] = useState(45);
   const stijl = STIJLEN[merk];
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-center lg:gap-14">
       <div>
-        <div role="group" aria-label="Kies een voorbeeldbedrijf" className="flex flex-col border-t border-lp-lijn">
+        {kop}
+        <div role="group" aria-label="Kies een voorbeeldbedrijf" className="mt-6 flex flex-col border-t border-lp-lijn">
           {MERKEN.map((id) => {
             const s = STIJLEN[id];
             const aan = id === merk;

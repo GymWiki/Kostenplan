@@ -5,17 +5,13 @@ import "@/app/components/landing/landing.css";
 import { LandingSchema } from "@/app/components/landing/landing-schema";
 import { LpHeader } from "@/app/components/landing/lp-header";
 import { LpFooter } from "@/app/components/landing/lp-footer";
-import { MaatH, Positie } from "@/app/components/landing/maat";
+import { Positie } from "@/app/components/landing/maat";
 import { CtaLink } from "@/app/components/landing/cta-link";
 import { WebsiteInvoer } from "@/app/components/landing/website-invoer";
 import { HeroDemo } from "@/app/components/landing/hero-demo";
 import { ProbleemModel } from "@/app/components/landing/probleem-model";
 import { SectieZoWerktHet } from "@/app/components/landing/sectie-zo-werkt-het";
-import { HuisstijlVergelijk } from "@/app/components/landing/huisstijl-vergelijk";
 import { SectieAanvragen } from "@/app/components/landing/sectie-aanvragen";
-import { SectieKlantervaring } from "@/app/components/landing/sectie-klantervaring";
-import { SectieWerkzaamheden } from "@/app/components/landing/sectie-werkzaamheden";
-import { SectieVertrouwen } from "@/app/components/landing/sectie-vertrouwen";
 import { SectiePrijzen } from "@/app/components/landing/sectie-prijzen";
 import { SectieVragen } from "@/app/components/landing/sectie-vragen";
 import { SectieAfsluiter } from "@/app/components/landing/sectie-afsluiter";
@@ -115,44 +111,19 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 3 · ZO WERKT HET */}
+        {/* 3 · ZO WERKT HET (slider; bevat ook de vroegere secties 4 en 7) */}
         <SectieZoWerktHet />
 
-        {/* 4 · JOUW HUISSTIJL */}
-        <section id="huisstijl" aria-labelledby="h-huisstijl" className="px-3 py-2 sm:px-6">
-          <div className="mx-auto rounded-[2rem] sm:rounded-[2.5rem] border border-lp-lijn bg-lp-wit lp-zacht max-w-7xl px-5 pb-20 pt-16 sm:px-12 sm:pb-28 sm:pt-24">
-            <div className="max-w-3xl">
-              <Positie nr="04" label="Jouw huisstijl" />
-              <h2 id="h-huisstijl" className="mt-4 text-4xl font-semibold leading-[1.02] sm:text-5xl">
-                Eruit zien als jouw bedrijf, vanaf de eerste keer
-              </h2>
-              <MaatH label="logo en kleuren van jouw website" className="mt-6 max-w-md" />
-            </div>
-            <div className="mt-10">
-              <HuisstijlVergelijk />
-            </div>
-          </div>
-        </section>
-
-        {/* 5 · AANVRAGEN EN OFFERTES */}
+        {/* 4 · KLANT EN AANVRAAG (was 5 + 6) */}
         <SectieAanvragen />
 
-        {/* 6 · WAT JE KLANT ERVAART */}
-        <SectieKlantervaring />
-
-        {/* 7 · WERKZAAMHEDEN */}
-        <SectieWerkzaamheden />
-
-        {/* 8 · VERTROUWEN */}
-        <SectieVertrouwen />
-
-        {/* 9 · PRIJZEN */}
+        {/* 5 · PRIJZEN */}
         <SectiePrijzen />
 
-        {/* 10 · VRAGEN */}
+        {/* 6 · VRAGEN */}
         <SectieVragen />
 
-        {/* 11 · AFSLUITER */}
+        {/* 7 · AFSLUITER */}
         <SectieAfsluiter />
 
         {/* Uitleg over Google-gegevens (vereist voor de Google OAuth-verificatie van "Inloggen met Google") */}
