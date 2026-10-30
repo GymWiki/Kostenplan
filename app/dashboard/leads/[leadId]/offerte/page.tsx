@@ -1,3 +1,4 @@
+import type { LeadSnapshot } from "@/app/lib/leads";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireActiveCompany } from "@/app/lib/dal";
@@ -105,6 +106,7 @@ export default async function OffertePage({
       branding={branding}
       btwPercentage={effectieveBtw}
       siteUrl={getSiteUrl()}
+      snapshot={lead.snapshot as unknown as LeadSnapshot}
     />
   );
 }

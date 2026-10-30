@@ -177,6 +177,7 @@ export async function genereerDeelLinkAction(
       companyId: company.id,
       offerteId,
       regels: parsed.data.regels,
+      snapshot: lead.snapshot as unknown as LeadSnapshot,
       introTekst: parsed.data.introTekst,
       voorwaardenTekst: parsed.data.voorwaardenTekst,
       geldigTot: parsed.data.geldigTot,

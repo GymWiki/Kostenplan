@@ -1,7 +1,8 @@
 import Image from "next/image";
 import { formatCurrency } from "@/app/lib/format";
 import { fontFamilyFor } from "@/app/lib/fonts";
-import { regelTotaal, berekenOfferteTotalen, type OfferteRegel } from "@/app/lib/offertes";
+import { berekenOfferteTotalen, offerteWeergaveRegels, weergaveDetail, type OfferteRegel } from "@/app/lib/offertes";
+import type { LeadSnapshot } from "@/app/lib/leads";
 import type { Branding } from "@/app/generated/prisma/client";
 import { datumLang } from "@/app/lib/datum";
 
@@ -20,6 +21,7 @@ export function OffertePreview({
   voorwaardenTekst,
   geldigTot,
   btwPercentage,
+  snapshot,
 }: {
   bedrijfsnaam: string;
   klantNaam: string;
@@ -29,10 +31,12 @@ export function OffertePreview({
   voorwaardenTekst: string;
   geldigTot: Date | null;
   btwPercentage: number;
+  snapshot?: LeadSnapshot | null;
 }) {
   const primaireKleur = branding?.primaireKleur ?? "#15803d";
   const fontFamily = fontFamilyFor(branding?.lettertype ?? "MODERN");
   const { subtotaal, btw, totaal } = berekenOfferteTotalen(regels, btwPercentage);
+  const weergave = offerteWeergaveRegels(regels, snapshot).regels;
 
   return (
     <div
@@ -61,15 +65,15 @@ export function OffertePreview({
         {regels.length === 0 ? (
           <p className="p-3 text-sm text-muted-foreground">Nog geen regels.</p>
         ) : (
-          regels.map((regel) => (
+          weergave.map((regel) => (
             <div key={regel.id} className="flex items-start justify-between gap-3 p-3 text-sm">
               <div className="min-w-0">
                 <p className="text-foreground">{regel.omschrijving || "…"}</p>
                 <p className="text-xs text-muted-foreground">
-                  {regel.aantal} {regel.eenheid} × {formatCurrency(regel.prijsPerEenheid)}
+                  {weergaveDetail(regel)}
                 </p>
               </div>
-              <span className="shrink-0 font-medium text-foreground">{formatCurrency(regelTotaal(regel))}</span>
+              {regel.totaal !== null && <span className="shrink-0 font-medium text-foreground">{formatCurrency(regel.totaal)}</span>}
             </div>
           ))
         )}

@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/app/lib/prisma";
 import { effectiveTier } from "@/app/lib/subscription";
 import { fontFamilyFor } from "@/app/lib/fonts";
-import { weergaveOfferteStatus, type OfferteRegel } from "@/app/lib/offertes";
+import { weergaveOfferteStatus, offerteWeergaveRegels, type OfferteRegel } from "@/app/lib/offertes";
+import type { LeadSnapshot } from "@/app/lib/leads";
 import { syncOfferteVerval } from "@/app/lib/offerte-verval";
 import { OffertePresentatie } from "./offerte-presentatie";
 
@@ -82,6 +83,7 @@ export default async function PubliekeOffertePage({
       }
       fontFamily={fontFamilyFor(magPersonaliserenUiterlijk ? (branding?.lettertype ?? "MODERN") : "MODERN")}
       regels={offerte.regels as unknown as OfferteRegel[]}
+      weergaveRegels={offerteWeergaveRegels(offerte.regels as unknown as OfferteRegel[], lead.snapshot as unknown as LeadSnapshot).regels}
       introTekst={offerte.introTekst}
       voorwaardenTekst={offerte.voorwaardenTekst}
       geldigTot={offerte.geldigTot}

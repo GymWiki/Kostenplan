@@ -2,7 +2,8 @@ import "server-only";
 
 import { Document, Page, View, Text, Image, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
 import { formatCurrency } from "@/app/lib/format";
-import { regelTotaal, berekenOfferteTotalen, type OfferteRegel } from "@/app/lib/offertes";
+import { berekenOfferteTotalen, offerteWeergaveRegels, type OfferteRegel } from "@/app/lib/offertes";
+import type { LeadSnapshot } from "@/app/lib/leads";
 import { uploadOffertePdf } from "@/app/lib/storage";
 import type { Branding } from "@/app/generated/prisma/client";
 
@@ -56,6 +57,7 @@ type OffertePdfProps = {
   logoUrl: string | null;
   primaireKleur: string;
   regels: OfferteRegel[];
+  snapshot?: LeadSnapshot | null;
   introTekst: string | null;
   voorwaardenTekst: string | null;
   geldigTot: Date;
@@ -68,6 +70,7 @@ function OffertePdfDocument({
   logoUrl,
   primaireKleur,
   regels,
+  snapshot,
   introTekst,
   voorwaardenTekst,
   geldigTot,
@@ -75,6 +78,7 @@ function OffertePdfDocument({
 }: OffertePdfProps) {
   const styles = maakStyles(primaireKleur);
   const { subtotaal, btw, totaal } = berekenOfferteTotalen(regels, btwPercentage);
+  const getoond = offerteWeergaveRegels(regels, snapshot).regels;
 
   return (
     <Document>
@@ -96,14 +100,12 @@ function OffertePdfDocument({
           <Text style={[styles.colPrijs, styles.headerCell]}>Prijs p/eenheid</Text>
           <Text style={[styles.colTotaal, styles.headerCell]}>Totaal</Text>
         </View>
-        {regels.map((regel) => (
+        {getoond.map((regel) => (
           <View key={regel.id} style={styles.tableRow}>
             <Text style={styles.colOmschrijving}>{regel.omschrijving}</Text>
-            <Text style={styles.colAantal}>
-              {regel.aantal} {regel.eenheid}
-            </Text>
-            <Text style={styles.colPrijs}>{formatCurrency(regel.prijsPerEenheid)}</Text>
-            <Text style={styles.colTotaal}>{formatCurrency(regelTotaal(regel))}</Text>
+            <Text style={styles.colAantal}>{regel.aantalTekst}</Text>
+            <Text style={styles.colPrijs}>{regel.prijsTekst ?? ""}</Text>
+            <Text style={styles.colTotaal}>{regel.totaal === null ? "" : formatCurrency(regel.totaal)}</Text>
           </View>
         ))}
 
@@ -136,6 +138,7 @@ export async function genereerEnUploadOffertePdf(params: {
   bedrijfsnaam: string;
   klantNaam: string;
   regels: OfferteRegel[];
+  snapshot?: LeadSnapshot | null;
   introTekst: string | null;
   voorwaardenTekst: string | null;
   geldigTot: Date;
@@ -149,6 +152,7 @@ export async function genereerEnUploadOffertePdf(params: {
       logoUrl={params.branding?.logoUrl ?? null}
       primaireKleur={params.branding?.primaireKleur ?? "#15803d"}
       regels={params.regels}
+      snapshot={params.snapshot}
       introTekst={params.introTekst}
       voorwaardenTekst={params.voorwaardenTekst}
       geldigTot={params.geldigTot}

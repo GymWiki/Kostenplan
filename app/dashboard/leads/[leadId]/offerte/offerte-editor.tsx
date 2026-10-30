@@ -43,6 +43,7 @@ import {
 import { berekenOfferteTotalen, heeftVerouderdeBerekening, regelTotaal, type OfferteRegel } from "@/app/lib/offertes";
 import { formatCurrency } from "@/app/lib/format";
 import type { Branding, Offerte } from "@/app/generated/prisma/client";
+import type { LeadSnapshot } from "@/app/lib/leads";
 import { formatDatum } from "@/app/lib/offerte/weergave";
 
 type EditRegel = { id: string; omschrijving: string; aantal: string; eenheid: string; prijsPerEenheid: string };
@@ -84,6 +85,7 @@ export function OfferteEditor({
   branding,
   btwPercentage,
   siteUrl,
+  snapshot,
 }: {
   offerte: Offerte & { regels: OfferteRegel[] };
   klantNaam: string;
@@ -92,6 +94,7 @@ export function OfferteEditor({
   branding: Branding | null;
   btwPercentage: number;
   siteUrl: string;
+  snapshot?: LeadSnapshot | null;
 }) {
   const [regels, setRegels] = useState<EditRegel[]>(offerte.regels.map(naarEditRegel));
   const [introTekst, setIntroTekst] = useState(offerte.introTekst ?? "");
@@ -384,6 +387,7 @@ export function OfferteEditor({
             voorwaardenTekst={voorwaardenTekst}
             geldigTot={geldigTot ? new Date(geldigTot) : null}
             btwPercentage={btwPercentage}
+            snapshot={snapshot}
           />
         </div>
       ) : (
@@ -694,6 +698,7 @@ export function OfferteEditor({
             voorwaardenTekst={voorwaardenTekst}
             geldigTot={geldigTot ? new Date(geldigTot) : null}
             btwPercentage={btwPercentage}
+            snapshot={snapshot}
           />
         </div>
       </div>
