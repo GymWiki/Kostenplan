@@ -65,3 +65,8 @@ Alle berekeningen uit de tabel in paragraaf 1 lopen nu via `app/lib/pricing`:
 | 17 | de oude PDF en publieke pagina tonen de bedragen van de oude offerte |
 | 18–19 | gebruiken de totalen uit de kern of de offerte |
 | 20 | `app/lib/pricing/format.ts` is de enige opmaak van bedragen, hoeveelheden en eenheden; `formatCurrency`, `formatCents` en `formatAantal` verwijzen ernaar |
+
+
+## Oude offertes met € 0,00 per onderdeel en een restpost
+
+Oude (v1-)offertes die vóór de rekenkern zijn voorgevuld, kunnen elk onderdeel op € 0,00 hebben plus één regel "Materiaal- en overige kosten" met alles. Het totaal klopt, de weergave niet. Nieuwe offertes krijgen die vorm niet meer (`bouwOfferteUitLead`). De klantpagina, de PDF en het voorbeeld in het dashboard gebruiken sinds de fix één functie, `offerteWeergaveRegels` (`app/lib/offertes.ts`): voor zo'n offerte wordt per onderdeel één totaalprijs getoond, opgebouwd uit de bevroren aanvraag, maar alleen als de som tot op de cent gelijk is aan het opgeslagen subtotaal. Anders blijven de opgeslagen regels staan zonder "€ 0,00" en met de restpost onder de naam "Overige kosten voor bovenstaande onderdelen". Er wordt niets in de database aangepast; subtotaal, btw en totaal komen altijd uit de opgeslagen regels. Welke offertes het betreft vind je met `npx tsx scripts/offertes-nulprijzen.ts` (alleen lezen).
