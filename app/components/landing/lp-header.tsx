@@ -23,9 +23,9 @@ const SITE_LINKS: MenuLink[] = [
 export function LpHeader({ variant = "pagina" }: { variant?: "pagina" | "site" }) {
   const links = variant === "site" ? SITE_LINKS : PAGINA_LINKS;
   return (
-    <header className="sticky top-0 z-40 px-3 pt-3 sm:px-6">
-      <div className="relative mx-auto max-w-7xl">
-        <div className="lp-glas lp-zacht flex items-center justify-between gap-3 rounded-full border border-lp-lijn py-2 pl-3 pr-1.5 sm:pl-5 sm:pr-2">
+    <header className="sticky top-0 z-40 border-b border-lp-lijn bg-lp-wit">
+      <div className="relative mx-auto max-w-7xl px-3 sm:px-6">
+        <div className="flex items-center justify-between gap-3 py-2">
           <Link href="/" className="flex shrink-0 items-center gap-2 text-lg font-semibold tracking-[-0.03em] sm:gap-2.5">
             <Logo className="rounded-xl" />
             Kostenplan
