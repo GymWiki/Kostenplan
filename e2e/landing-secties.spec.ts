@@ -123,3 +123,28 @@ test("vragen: dicht met knoppen, antwoorden in de DOM, toetsenbord en JSON-LD kl
   const faq = ld["@graph"].find((x: { "@type": string }) => x["@type"] === "FAQPage");
   expect(faq.mainEntity.map((q: { name: string }) => q.name)).toEqual(VRAGEN.map((v) => v.vraag));
 });
+
+test("navigatiebalk: effen witte achtergrond, boven de content, ankerlinks landen eronder", async ({ page }, info) => {
+  await page.goto("/");
+  const header = page.locator("header").first();
+  const stijl = await header.evaluate((e) => {
+    const s = getComputedStyle(e);
+    return { bg: s.backgroundColor, pos: s.position, z: Number(s.zIndex), breedte: e.getBoundingClientRect().width, venster: window.innerWidth };
+  });
+  expect(stijl.bg).toMatch(/^rgb\(/); // geen rgba/transparant
+  expect(stijl.pos).toBe("sticky");
+  expect(stijl.z).toBeGreaterThanOrEqual(40);
+  expect(stijl.breedte).toBe(stijl.venster);
+  if (info.project.name === "desktop") {
+    const hoogte = (await header.boundingBox())!.height;
+    for (const [naam, kop] of [["Aanvragen", "#h-klant"], ["Prijzen", "#h-prijzen"]] as const) {
+      await page.locator("header nav").getByRole("link", { name: naam, exact: true }).click();
+      await page.waitForTimeout(1000);
+      expect((await page.locator(kop).boundingBox())!.y).toBeGreaterThanOrEqual(hoogte);
+    }
+  } else {
+    await page.getByRole("button", { name: "Menu openen" }).click();
+    const paneel = await page.locator("#lp-menu-paneel").evaluate((e) => getComputedStyle(e).backgroundColor);
+    expect(paneel).toMatch(/^rgb\(/);
+  }
+});

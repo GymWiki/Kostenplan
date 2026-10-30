@@ -205,3 +205,8 @@
 .lp .rounded-xl.border.bg-card {
   border-radius: 1.5rem;
 }
+
+/* De vaste navigatiebalk is ruim 4 rem hoog: ankerlinks (#prijzen, #vragen, …) landen eronder in plaats van erachter. */
+html:has([data-lp]) {
+  scroll-padding-top: 5rem;
+}
