@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { formatCurrency } from "@/app/lib/format";
 import { brandingFontVariables } from "@/app/lib/fonts";
-import { OFFERTE_STATUS_LABELS, berekenOfferteTotalen, regelTotaal, type OfferteRegel } from "@/app/lib/offertes";
+import { OFFERTE_STATUS_LABELS, berekenOfferteTotalen, offerteWeergaveRegels, weergaveDetail, type OfferteRegel, type WeergaveRegel } from "@/app/lib/offertes";
 import { OfferteReactieForm } from "./offerte-reactie-form";
 import type { OfferteStatus } from "@/app/generated/prisma/client";
 import { datumLang } from "@/app/lib/datum";
@@ -20,6 +20,7 @@ export function OffertePresentatie({
   achtergrondKleur,
   fontFamily,
   regels,
+  weergaveRegels,
   introTekst,
   voorwaardenTekst,
   geldigTot,
@@ -39,6 +40,8 @@ export function OffertePresentatie({
   achtergrondKleur: string;
   fontFamily: string;
   regels: OfferteRegel[];
+  // Wat per regel getoond wordt (zie offerteWeergaveRegels); zonder deze prop volgt de weergave de opgeslagen regels.
+  weergaveRegels?: WeergaveRegel[];
   introTekst: string | null;
   voorwaardenTekst: string | null;
   geldigTot: Date;
@@ -56,6 +59,7 @@ export function OffertePresentatie({
   contactTelefoonnummer: string | null;
 }) {
   const { subtotaal, btw, totaal } = berekenOfferteTotalen(regels, btwPercentage);
+  const getoond = weergaveRegels ?? offerteWeergaveRegels(regels).regels;
   const heeftContact = Boolean(contactEmail || contactTelefoonnummer);
 
   // Ingetrokken (een bewuste statuswijziging door de vakman) en "extern
@@ -118,15 +122,15 @@ export function OffertePresentatie({
           {introTekst && <p className="mt-4 whitespace-pre-wrap text-sm text-foreground">{introTekst}</p>}
 
           <div className="mt-5 flex flex-col divide-y divide-border rounded-lg border border-border tabular-nums">
-            {regels.map((regel) => (
+            {getoond.map((regel) => (
               <div key={regel.id} className="flex items-start justify-between gap-3 p-3 text-sm">
                 <div className="min-w-0">
                   <p className="text-foreground">{regel.omschrijving}</p>
                   <p className="text-xs text-muted-foreground">
-                    {regel.aantal} {regel.eenheid} × {formatCurrency(regel.prijsPerEenheid)}
+                    {weergaveDetail(regel)}
                   </p>
                 </div>
-                <span className="shrink-0 font-medium text-foreground">{formatCurrency(regelTotaal(regel))}</span>
+                {regel.totaal !== null && <span className="shrink-0 font-medium text-foreground">{formatCurrency(regel.totaal)}</span>}
               </div>
             ))}
           </div>
